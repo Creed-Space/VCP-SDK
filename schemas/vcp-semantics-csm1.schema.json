@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vcp.creed.space/schema/csm1-code/v1.json",
+  "title": "CSM1 Code Schema",
+  "description": "JSON Schema for Constitutional Safety Minicode (CSM1) validation",
+  "type": "object",
+
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "The CSM1 code string",
+      "pattern": "^[NZGAMRHC][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?(?:@(?:[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}|latest|canary))?$",
+      "minLength": 2,
+      "maxLength": 50,
+      "examples": [
+        "N5",
+        "N5+F",
+        "N5+F+E",
+        "Z4+P+W",
+        "N5:ELEM+F@1.2.0",
+        "C3:ACME+W"
+      ]
+    },
+
+    "persona": {
+      "type": "string",
+      "description": "Persona code (single character)",
+      "enum": ["N", "Z", "G", "A", "M", "R", "H", "C"]
+    },
+
+    "persona_name": {
+      "type": "string",
+      "description": "Full persona name",
+      "enum": ["nanny", "sentinel", "godparent", "ambassador", "muse", "anchor", "hotrod", "custom"]
+    },
+
+    "adherence": {
+      "type": "integer",
+      "description": "Adherence level (0-5)",
+      "minimum": 0,
+      "maximum": 5
+    },
+
+    "scopes": {
+      "type": "array",
+      "description": "Active scope codes",
+      "items": {
+        "type": "string",
+        "enum": ["F", "W", "P", "E", "T", "O", "V", "A", "H", "S", "R"]
+      },
+      "uniqueItems": true
+    },
+
+    "namespace": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Custom namespace identifier",
+          "pattern": "^[A-Z]{1,8}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+
+    "version": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Semantic version",
+          "pattern": "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"
+        },
+        {
+          "type": "string",
+          "enum": ["latest", "canary"]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+
+  "required": ["code", "persona", "adherence"],
+
+  "definitions": {
+    "persona_definition": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": ["N", "Z", "G", "A", "M", "R", "H", "C"]
+        },
+        "name": {
+          "type": "string"
+        },
+        "focus": {
+          "type": "string"
+        },
+        "default_adherence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "compatible_scopes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "incompatible_scopes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "scope_definition": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": ["F", "W", "P", "E", "T", "O", "V", "A", "H", "S", "R"]
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+
+    "adherence_level": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "name": {
+          "type": "string",
+          "enum": ["minimal", "relaxed", "moderate", "standard", "strict", "maximum"]
+        },
+        "enforcement": {
+          "type": "string"
+        },
+        "user_override": {
+          "type": "string"
+        }
+      }
+    }
+  },
+
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "persona": { "const": "C" }
+        }
+      },
+      "then": {
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["namespace"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "scopes": {
+            "contains": { "const": "F" }
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "properties": {
+            "scopes": {
+              "contains": { "const": "A" }
+            }
+          }
+        }
+      }
+    }
+  ],
+
+  "examples": [
+    {
+      "code": "N5+F+E",
+      "persona": "N",
+      "persona_name": "nanny",
+      "adherence": 5,
+      "scopes": ["F", "E"],
+      "namespace": null,
+      "version": null
+    },
+    {
+      "code": "Z4+P+W:SEC@1.0.0",
+      "persona": "Z",
+      "persona_name": "sentinel",
+      "adherence": 4,
+      "scopes": ["P", "W"],
+      "namespace": "SEC",
+      "version": "1.0.0"
+    },
+    {
+      "code": "C3:ACME+W+O",
+      "persona": "C",
+      "persona_name": "custom",
+      "adherence": 3,
+      "scopes": ["W", "O"],
+      "namespace": "ACME",
+      "version": null
+    }
+  ]
+}

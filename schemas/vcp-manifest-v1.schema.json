@@ -1,0 +1,401 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vcp.creed.space/schema/manifest/v1.json",
+  "title": "VCP Manifest Schema v1.0",
+  "description": "JSON Schema for Value-Context Protocol bundle manifests",
+  "type": "object",
+  "required": [
+    "vcp_version",
+    "bundle",
+    "issuer",
+    "timestamps",
+    "budget",
+    "safety_attestation",
+    "signature"
+  ],
+  "properties": {
+    "vcp_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "VCP protocol version"
+    },
+    "bundle": {
+      "type": "object",
+      "required": ["id", "version", "content_hash"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^creed://[a-z0-9.-]+/[a-zA-Z0-9._/-]+$",
+          "description": "Bundle URI (creed://issuer/path)",
+          "examples": ["creed://creed.space/family.safe.guide"]
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$",
+          "description": "Semantic version",
+          "examples": ["1.2.0", "2.0.0-beta.1"]
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "description": "SHA-256 hash of canonical content",
+          "examples": ["sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"]
+        },
+        "content_encoding": {
+          "type": "string",
+          "default": "utf-8",
+          "enum": ["utf-8"],
+          "description": "Character encoding"
+        },
+        "content_format": {
+          "type": "string",
+          "default": "text/markdown",
+          "enum": ["text/plain", "text/markdown"],
+          "description": "Content MIME type"
+        }
+      },
+      "additionalProperties": false
+    },
+    "issuer": {
+      "type": "object",
+      "required": ["id", "public_key", "key_id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9.-]+$",
+          "description": "Issuer identifier (domain-style)",
+          "examples": ["creed.space"]
+        },
+        "public_key": {
+          "type": "string",
+          "pattern": "^ed25519:[A-Za-z0-9+/=]+$",
+          "description": "Ed25519 public key (base64)",
+          "examples": ["ed25519:MC4CAQAwBQYDK2VwBCIEIH..."]
+        },
+        "key_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Key identifier for rotation",
+          "examples": ["creed-space-2026"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "timestamps": {
+      "type": "object",
+      "required": ["iat", "nbf", "exp", "jti"],
+      "properties": {
+        "iat": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Issued At timestamp (ISO8601)"
+        },
+        "nbf": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Not Before timestamp (ISO8601)"
+        },
+        "exp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Expiration timestamp (ISO8601)"
+        },
+        "jti": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique bundle instance identifier (UUID v4)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "budget": {
+      "type": "object",
+      "required": ["token_count", "tokenizer"],
+      "properties": {
+        "token_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "description": "Token count of content"
+        },
+        "tokenizer": {
+          "type": "string",
+          "enum": ["cl100k_base", "p50k_base", "r50k_base", "gpt2"],
+          "description": "Tokenizer used for counting"
+        },
+        "max_context_share": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.5,
+          "default": 0.25,
+          "description": "Maximum share of context window (0.01-0.5)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "model_families": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9*-]+$"
+          },
+          "description": "Allowed model families (glob patterns)",
+          "examples": [["gpt-*", "claude-*"]]
+        },
+        "purposes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "description": "Allowed purposes",
+          "examples": [["general-assistant", "coding-assistant"]]
+        },
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["production", "staging", "development", "testing"]
+          },
+          "description": "Allowed environments"
+        },
+        "audiences": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["enterprise", "consumer", "developer", "internal"]
+          },
+          "description": "Allowed audiences"
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{2,3}$"
+          },
+          "description": "Allowed regions (ISO country codes)",
+          "examples": [["US", "EU", "APAC"]]
+        }
+      },
+      "additionalProperties": false
+    },
+    "composition": {
+      "type": "object",
+      "properties": {
+        "layer": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 2,
+          "description": "Composition layer (0=platform, 1=safety, 2=domain, 3=user, 4=session)"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["base", "extend", "override", "strict"],
+          "default": "extend",
+          "description": "Composition mode"
+        },
+        "conflicts_with": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^creed://[a-z0-9.-]+/[a-zA-Z0-9._/-]+$"
+          },
+          "default": [],
+          "description": "Bundle URIs this constitution conflicts with"
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^creed://[a-z0-9.-]+/[a-zA-Z0-9._/-]+$"
+          },
+          "default": [],
+          "description": "Bundle URIs this constitution requires"
+        }
+      },
+      "additionalProperties": false
+    },
+    "revocation": {
+      "type": "object",
+      "properties": {
+        "check_uri": {
+          "type": "string",
+          "format": "uri",
+          "description": "Real-time revocation check endpoint"
+        },
+        "crl_uri": {
+          "type": "string",
+          "format": "uri",
+          "description": "Certificate revocation list URI"
+        },
+        "stapled_proof": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["type", "response", "valid_until"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["ocsp-response", "signed-timestamp"]
+                },
+                "response": {
+                  "type": "string",
+                  "description": "Base64-encoded proof"
+                },
+                "valid_until": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          ],
+          "description": "Stapled non-revocation proof"
+        }
+      },
+      "additionalProperties": false
+    },
+    "safety_attestation": {
+      "type": "object",
+      "required": ["auditor", "auditor_key_id", "reviewed_at", "attestation_type", "signature"],
+      "properties": {
+        "auditor": {
+          "type": "string",
+          "pattern": "^[a-z0-9.-]+$",
+          "description": "Safety auditor identifier",
+          "examples": ["safety-review.creed.space"]
+        },
+        "auditor_key_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Auditor key identifier",
+          "examples": ["safety-2026"]
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Review timestamp (ISO8601)"
+        },
+        "attestation_type": {
+          "type": "string",
+          "enum": ["injection-safe", "content-safe", "full-audit"],
+          "description": "Type of safety review performed"
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^base64:[A-Za-z0-9+/=]+$",
+          "description": "Ed25519 signature of attestation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Human-readable title"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Human-readable description"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "maxLength": 50
+          },
+          "maxItems": 20,
+          "description": "Searchable tags"
+        },
+        "persona": {
+          "type": "string",
+          "enum": ["nanny", "sentinel", "godparent", "ambassador", "muse", "anchor", "custom"],
+          "description": "Creed Space persona"
+        },
+        "adherence_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Adherence level (1-5)"
+        },
+        "csm1": {
+          "type": "string",
+          "pattern": "^[NZGAMRHC][0-9]+(\\+[FWPETOVA])*(:[A-Za-z0-9]+)?(@[0-9.]+)?$",
+          "description": "CSM1 compact code",
+          "examples": ["N5+F:ELEM@1.2.0"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "signature": {
+      "type": "object",
+      "required": ["algorithm", "value", "signed_fields"],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": ["ed25519", "ed448", "ed25519-multisig"],
+          "description": "Signature algorithm"
+        },
+        "value": {
+          "type": "string",
+          "pattern": "^base64:[A-Za-z0-9+/=]+$",
+          "description": "Base64-encoded signature"
+        },
+        "signed_fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "vcp_version",
+              "bundle",
+              "issuer",
+              "timestamps",
+              "budget",
+              "scope",
+              "composition",
+              "revocation",
+              "safety_attestation",
+              "metadata"
+            ]
+          },
+          "minItems": 6,
+          "description": "Fields included in signature"
+        },
+        "threshold": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Required signatures (for multisig)"
+        },
+        "signers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "signature"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "signature": {
+                "type": "string",
+                "pattern": "^base64:[A-Za-z0-9+/=]+$"
+              }
+            }
+          },
+          "description": "Individual signatures (for multisig)"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

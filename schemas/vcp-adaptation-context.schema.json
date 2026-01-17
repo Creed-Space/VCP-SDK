@@ -1,0 +1,302 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vcp.creed.space/schema/vcp-context/v1.json",
+  "title": "VCP Context Schema",
+  "description": "JSON Schema for VCP Context Enneagram Protocol validation",
+  "type": "object",
+
+  "properties": {
+    "context": {
+      "type": "string",
+      "description": "Enneagram context string (emoji-encoded)",
+      "examples": [
+        "⏰🌅|📍🏡|👥👶",
+        "⏰🌙|📍🏢|👥👔|🔶⚖️",
+        "🎭🚨|🧠😰"
+      ]
+    },
+
+    "parsed": {
+      "type": "object",
+      "description": "Parsed context dimensions",
+      "properties": {
+        "time": {
+          "$ref": "#/definitions/dimension_values"
+        },
+        "space": {
+          "$ref": "#/definitions/dimension_values"
+        },
+        "company": {
+          "$ref": "#/definitions/dimension_values"
+        },
+        "culture": {
+          "$ref": "#/definitions/dimension_values"
+        },
+        "occasion": {
+          "$ref": "#/definitions/dimension_values"
+        },
+        "state": {
+          "$ref": "#/definitions/dimension_values"
+        },
+        "environment": {
+          "$ref": "#/definitions/dimension_values"
+        },
+        "agency": {
+          "$ref": "#/definitions/dimension_values"
+        },
+        "constraints": {
+          "$ref": "#/definitions/dimension_values"
+        }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "has_emergency": {
+          "type": "boolean",
+          "description": "Emergency indicators present"
+        },
+        "has_children": {
+          "type": "boolean",
+          "description": "Children present in company"
+        },
+        "is_professional": {
+          "type": "boolean",
+          "description": "Professional/work context"
+        },
+        "risk_level": {
+          "type": "string",
+          "enum": ["normal", "standard", "elevated", "critical"]
+        }
+      }
+    },
+
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When context was captured"
+    },
+
+    "session_id": {
+      "type": "string",
+      "description": "Session identifier"
+    }
+  },
+
+  "required": ["context"],
+
+  "definitions": {
+    "dimension_values": {
+      "type": "array",
+      "description": "Emoji values for a dimension",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 8
+      }
+    },
+
+    "dimension_symbol": {
+      "type": "string",
+      "description": "Dimension identifier emoji",
+      "enum": ["⏰", "📍", "👥", "🌍", "🎭", "🧠", "🌡️", "🔷", "🔶"]
+    },
+
+    "time_values": {
+      "type": "string",
+      "description": "Time dimension values",
+      "enum": ["🌅", "☀️", "🌆", "🌙", "📅", "🎉", "⏰", "📆", "🔄"]
+    },
+
+    "space_values": {
+      "type": "string",
+      "description": "Space dimension values",
+      "enum": ["🏡", "🏢", "🏫", "🏥", "⛪", "🏛️", "🏪", "🚗", "🌳", "💻", "🏠", "🔒"]
+    },
+
+    "company_values": {
+      "type": "string",
+      "description": "Company dimension values",
+      "enum": ["👤", "👶", "👨‍👩‍👧", "👔", "👨‍🏫", "👮", "👴", "💑", "🤝", "👨‍⚕️", "🧑‍🤝‍🧑", "👥"]
+    },
+
+    "culture_values": {
+      "type": "string",
+      "description": "Culture dimension values",
+      "examples": ["🇺🇸", "🇬🇧", "🇯🇵", "🇮🇳", "🇨🇳", "🇪🇺", "🌍", "🏛️", "🆕"]
+    },
+
+    "occasion_values": {
+      "type": "string",
+      "description": "Occasion dimension values",
+      "enum": ["➖", "🎂", "💼", "⚰️", "💒", "🏥", "🚨", "👨‍🏫", "🎪", "⚖️", "🗳️", "🎓"]
+    },
+
+    "state_values": {
+      "type": "string",
+      "description": "State dimension values",
+      "enum": ["😊", "😴", "😰", "😡", "😢", "🤒", "😋", "🥳", "😌", "🤔", "😵", "🥺"]
+    },
+
+    "environment_values": {
+      "type": "string",
+      "description": "Environment dimension values",
+      "enum": ["☀️", "🥵", "🥶", "🌧️", "🌪️", "🔇", "📢", "🔥", "💨", "🌫️", "🏔️", "🌊"]
+    },
+
+    "agency_values": {
+      "type": "string",
+      "description": "Agency dimension values",
+      "enum": ["👑", "🤝", "👇", "💰", "💵", "🕳️", "🏡", "🔑", "🎓", "🆓", "🔐", "🏃"]
+    },
+
+    "constraints_values": {
+      "type": "string",
+      "description": "Constraints dimension values",
+      "enum": ["○", "🚧", "⚖️", "💸", "⏰", "🤐", "📱", "🚨", "👮", "📜", "🏥", "🔒"]
+    },
+
+    "transition": {
+      "type": "object",
+      "properties": {
+        "severity": {
+          "type": "string",
+          "enum": ["minor", "major", "emergency"]
+        },
+        "changes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": [
+              { "type": "array" },
+              { "type": "array" }
+            ]
+          }
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "from_context": {
+          "type": "string"
+        },
+        "to_context": {
+          "type": "string"
+        }
+      }
+    },
+
+    "context_message": {
+      "type": "object",
+      "description": "Inter-agent context message",
+      "properties": {
+        "version": {
+          "type": "string",
+          "default": "1.0"
+        },
+        "message_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sender": {
+          "type": "string"
+        },
+        "recipient": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "context": {
+          "type": "string"
+        },
+        "constitution_ref": {
+          "type": "string"
+        },
+        "payload_type": {
+          "type": "string",
+          "enum": ["request", "response", "update", "alert", "handoff", "query"]
+        },
+        "payload": {
+          "type": "object"
+        }
+      },
+      "required": ["version", "message_id", "sender", "payload_type"]
+    },
+
+    "complete_state": {
+      "type": "object",
+      "description": "Combined VCP Context + Interiora state",
+      "properties": {
+        "vcp_context": {
+          "type": "string"
+        },
+        "interiora": {
+          "type": "string"
+        },
+        "coherence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "mutuality": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "combined_mode": {
+          "type": "string",
+          "examples": ["confident_parenting", "cautious_professional", "emergency_response"]
+        }
+      }
+    },
+
+    "gestalt_token": {
+      "type": "string",
+      "description": "Combined gestalt token for persistence",
+      "pattern": "^GESTALT:v[0-9.]+:.+$",
+      "examples": [
+        "GESTALT:v4.2:CD:7 DP:8|CTX:⏰🌅|📍🏡|coherence:0.85|mode:confident_parenting"
+      ]
+    }
+  },
+
+  "examples": [
+    {
+      "context": "⏰🌅|📍🏡|👥👶👨‍👩‍👧|🎭➖|🧠😊",
+      "parsed": {
+        "time": ["🌅"],
+        "space": ["🏡"],
+        "company": ["👶", "👨‍👩‍👧"],
+        "occasion": ["➖"],
+        "state": ["😊"]
+      },
+      "metadata": {
+        "has_emergency": false,
+        "has_children": true,
+        "is_professional": false,
+        "risk_level": "elevated"
+      },
+      "timestamp": "2026-01-11T10:30:00Z"
+    },
+    {
+      "context": "📍🏢|👥👔|🔶⚖️",
+      "parsed": {
+        "space": ["🏢"],
+        "company": ["👔"],
+        "constraints": ["⚖️"]
+      },
+      "metadata": {
+        "has_emergency": false,
+        "has_children": false,
+        "is_professional": true,
+        "risk_level": "standard"
+      }
+    }
+  ]
+}

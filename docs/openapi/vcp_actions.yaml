@@ -1,0 +1,420 @@
+openapi: 3.1.0
+info:
+  title: VCP API
+  description: |
+    Value-Context Protocol (VCP) operations for constitutional AI systems.
+
+    VCP provides a three-layer protocol for managing AI constitutional alignment:
+    - **VCP/I (Identity)**: Token-based identification of constitutional bundles
+    - **VCP/S (Semantics)**: CSM1 codes for persona and scope encoding
+    - **VCP/A (Adaptation)**: Context-aware behavioral adaptation
+
+    Feature flags control which layers are active:
+    - `vcp_identity_enabled`: Enable token validation
+    - `vcp_semantics_enabled`: Enable CSM1 parsing
+    - `vcp_adaptation_enabled`: Enable context encoding
+  version: 2.0.0
+  contact:
+    name: Creed Space
+    url: https://creed.space
+    email: support@creed.space
+  license:
+    name: Proprietary
+    url: https://creed.space/terms
+
+servers:
+  - url: https://api.creed.space
+    description: Production API
+  - url: http://localhost:8000
+    description: Local development
+
+tags:
+  - name: vcp
+    description: Value-Context Protocol operations
+
+paths:
+  /api/vcp/token/validate:
+    post:
+      operationId: validateVCPToken
+      summary: Validate a VCP/I token
+      description: |
+        Validates a VCP Identity token string according to the VCP/I grammar.
+        Returns the parsed components if valid.
+
+        Token format: `domain.approach.role[@version][:namespace]`
+
+        Examples:
+        - `family.safe.guide` - Basic token
+        - `family.safe.guide@1.2.0` - With version
+        - `company.acme.legal:SEC` - With namespace
+      tags:
+        - vcp
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: VCP token string
+                  example: "family.safe.guide@1.2.0"
+              required:
+                - token
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    description: Whether the token is valid
+                  canonical:
+                    type: string
+                    description: Canonical form (domain.approach.role)
+                    example: "family.safe.guide"
+                  domain:
+                    type: string
+                    description: Value domain
+                    example: "family"
+                  approach:
+                    type: string
+                    description: Constitutional approach
+                    example: "safe"
+                  role:
+                    type: string
+                    description: Functional role
+                    example: "guide"
+                  version:
+                    type: string
+                    description: Semantic version (if present)
+                    example: "1.2.0"
+                  namespace:
+                    type: string
+                    description: Namespace tier (if present)
+                  uri:
+                    type: string
+                    description: Full URI form
+                    example: "creed://creed.space/family.safe.guide@1.2.0"
+                  error:
+                    type: string
+                    description: Error message (if invalid)
+        '401':
+          description: Unauthorized
+        '503':
+          description: VCP Identity layer not enabled
+
+  /api/vcp/csm1/parse:
+    post:
+      operationId: parseCSM1Code
+      summary: Parse a CSM1 constitutional code
+      description: |
+        Parses a CSM1 (Constitutional Semantics Mark 1) code string.
+
+        Code format: `persona + level + scopes[:namespace][@version]`
+
+        Personas:
+        - N: Nanny (child safety)
+        - Z: Sentinel (security/privacy)
+        - G: Godparent (ethical guidance)
+        - A: Ambassador (professional conduct)
+        - M: Muse (creativity)
+        - R: Anchor (factual accuracy)
+        - H: Hotrod (minimal constraints)
+        - C: Custom
+
+        Scopes: F(amily), W(ork), E(ducation), H(ealth), I(finance), L(egal), P(rivacy), S(afety), A(ccessibility), V(environment), G(eneral)
+
+        Examples:
+        - `N5+F+E` - Nanny, level 5, Family+Education
+        - `Z3+P` - Sentinel, level 3, Privacy
+        - `G4:ELEM` - Godparent, level 4, ELEM namespace
+      tags:
+        - vcp
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: CSM1 code string
+                  example: "N5+F+E"
+              required:
+                - code
+      responses:
+        '200':
+          description: Parse result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  persona:
+                    type: string
+                    description: Persona name
+                    example: "NANNY"
+                  persona_description:
+                    type: string
+                    description: Human-readable persona description
+                    example: "Child safety specialist"
+                  adherence_level:
+                    type: integer
+                    minimum: 0
+                    maximum: 5
+                    description: Adherence level (0-5)
+                    example: 5
+                  scopes:
+                    type: array
+                    items:
+                      type: string
+                    description: Active scopes
+                    example: ["FAMILY", "EDUCATION"]
+                  namespace:
+                    type: string
+                    description: Namespace (if present)
+                  version:
+                    type: string
+                    description: Version (if present)
+                  encoded:
+                    type: string
+                    description: Re-encoded CSM1 string
+                    example: "N5+F+E"
+                  error:
+                    type: string
+                    description: Error message (if invalid)
+        '401':
+          description: Unauthorized
+        '503':
+          description: VCP Semantics layer not enabled
+
+  /api/vcp/context/encode:
+    post:
+      operationId: encodeVCPContext
+      summary: Encode context to VCP/A format
+      description: |
+        Encodes contextual state across 9 dimensions into VCP/A format.
+
+        Returns both wire format (emoji-based, compact) and JSON format.
+
+        Dimensions:
+        - time: Time of day
+        - space: Physical location type
+        - company: Who is present
+        - culture: Cultural context
+        - occasion: Event type
+        - state: Mental/emotional state
+        - environment: Physical environment
+        - agency: Authority/autonomy level
+        - constraints: Active constraints
+      tags:
+        - vcp
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                time:
+                  type: string
+                  enum: [morning, midday, evening, night]
+                  description: Time of day
+                space:
+                  type: string
+                  enum: [home, office, school, hospital, transit]
+                  description: Physical space
+                company:
+                  type: array
+                  items:
+                    type: string
+                  description: Who is present
+                  example: ["children", "family"]
+                culture:
+                  type: string
+                  description: Cultural context
+                occasion:
+                  type: string
+                  enum: [normal, celebration, mourning, emergency]
+                  description: Current occasion
+                state:
+                  type: string
+                  enum: [happy, anxious, tired, contemplative, frustrated]
+                  description: Mental state
+                environment:
+                  type: string
+                  description: Physical environment
+                agency:
+                  type: string
+                  enum: [leader, peer, subordinate, limited]
+                  description: Agency level
+                constraints:
+                  type: array
+                  items:
+                    type: string
+                  description: Active constraints
+      responses:
+        '200':
+          description: Encoded context
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wire_format:
+                    type: string
+                    description: Compact emoji-based wire format
+                    example: "⏰🌅|📍🏡|👥👶👨‍👩‍👧"
+                  json_format:
+                    type: object
+                    description: JSON representation of all dimensions
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+                  dimensions_set:
+                    type: array
+                    items:
+                      type: string
+                    description: Names of dimensions with values
+                    example: ["time", "space", "company"]
+        '401':
+          description: Unauthorized
+        '503':
+          description: VCP Adaptation layer not enabled
+
+  /api/vcp/personas:
+    get:
+      operationId: listPersonas
+      summary: List available CSM1 personas
+      description: Returns all 8 archetypal personas with their codes and descriptions.
+      tags:
+        - vcp
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Persona list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  personas:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          description: Single character code
+                          example: "N"
+                        name:
+                          type: string
+                          description: Persona name
+                          example: "NANNY"
+                        description:
+                          type: string
+                          description: Human-readable description
+                          example: "Child safety specialist"
+        '401':
+          description: Unauthorized
+
+  /api/vcp/dimensions:
+    get:
+      operationId: listDimensions
+      summary: List context dimensions
+      description: Returns all 9 context dimensions with their possible values.
+      tags:
+        - vcp
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dimension list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dimensions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: Dimension name
+                          example: "time"
+                        symbol:
+                          type: string
+                          description: Emoji symbol
+                          example: "⏰"
+                        position:
+                          type: integer
+                          description: Position in enneagram
+                          example: 1
+                        values:
+                          type: object
+                          additionalProperties:
+                            type: string
+                          description: Emoji-to-name mapping
+        '401':
+          description: Unauthorized
+
+  /api/vcp/status:
+    get:
+      operationId: getVCPStatus
+      summary: Get VCP feature status
+      description: Returns current state of all VCP feature flags. No authentication required.
+      tags:
+        - vcp
+      responses:
+        '200':
+          description: Feature flag status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vcp_identity_enabled:
+                    type: boolean
+                    description: VCP/I layer active
+                  vcp_semantics_enabled:
+                    type: boolean
+                    description: VCP/S layer active
+                  vcp_adaptation_enabled:
+                    type: boolean
+                    description: VCP/A layer active
+                  vcp_full_stack_enabled:
+                    type: boolean
+                    description: All layers active
+                  vcp_strict_mode:
+                    type: boolean
+                    description: Strict validation mode
+                  version:
+                    type: string
+                    description: VCP version
+                    example: "2.0.0"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: API token from Creed Space authentication

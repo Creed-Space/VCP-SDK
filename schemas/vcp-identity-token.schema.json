@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vcp.creed.space/schema/uvc-token/v1.json",
+  "title": "UVC Token Schema",
+  "description": "JSON Schema for Universal Value Code (UVC) token validation",
+  "type": "object",
+
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "The UVC token string (3-10 segments)",
+      "pattern": "^[a-z][a-z0-9-]{0,31}(?:\\.[a-z][a-z0-9-]{0,31}){2,9}(?:@(?:[\\^~]?[0-9]{1,5}\\.[0-9]{1,5}\\.[0-9]{1,5}(?:-[a-zA-Z0-9.-]+)?|latest|canary))?(?::[A-Z][A-Z0-9]{0,31})?$",
+      "minLength": 5,
+      "maxLength": 256,
+      "examples": [
+        "family.safe.guide",
+        "family.safe.guide@1.2.0",
+        "company.acme.legal.compliance",
+        "company.acme.legal.compliance:SEC",
+        "org.example.dept.team.policy@1.0.0",
+        "religion.buddhist.meditation",
+        "user.alice.personal"
+      ]
+    },
+
+    "canonical": {
+      "type": "string",
+      "description": "Canonical form of the token (lowercase, normalized)",
+      "pattern": "^[a-z0-9.-]+(?:@[a-z0-9.^~-]+)?$"
+    },
+
+    "segments": {
+      "type": "array",
+      "description": "Token path segments (3-10 segments). First=domain, second-to-last=approach, last=role",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$",
+        "maxLength": 32
+      },
+      "minItems": 3,
+      "maxItems": 10
+    },
+
+    "depth": {
+      "type": "integer",
+      "description": "Number of segments in the token",
+      "minimum": 3,
+      "maximum": 10
+    },
+
+    "path": {
+      "type": "array",
+      "description": "Middle segments between domain and approach (empty for 3-segment tokens)",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$",
+        "maxLength": 32
+      }
+    },
+
+    "domain": {
+      "type": "string",
+      "description": "First segment (domain/category)",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "maxLength": 32
+    },
+
+    "approach": {
+      "type": "string",
+      "description": "Second-to-last segment (approach/method)",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "maxLength": 32
+    },
+
+    "role": {
+      "type": "string",
+      "description": "Last segment (role/function)",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "maxLength": 32
+    },
+
+    "namespace_type": {
+      "type": "string",
+      "description": "Type of namespace governance",
+      "enum": ["core", "org", "community", "personal"]
+    },
+
+    "namespace": {
+      "type": "string",
+      "description": "Full namespace prefix",
+      "examples": ["family", "company.acme", "religion.buddhist", "user.alice"]
+    },
+
+    "version": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Semantic version",
+          "pattern": "^[0-9]{1,5}\\.[0-9]{1,5}\\.[0-9]{1,5}(-[a-zA-Z0-9.-]+)?$"
+        },
+        {
+          "type": "string",
+          "description": "Version alias",
+          "enum": ["latest", "canary"]
+        },
+        {
+          "type": "null",
+          "description": "No version specified"
+        }
+      ]
+    },
+
+    "version_constraint": {
+      "type": "string",
+      "description": "Version constraint type",
+      "enum": ["none", "exact", "compatible", "approximate", "alias"]
+    }
+  },
+
+  "required": ["token"],
+
+  "definitions": {
+    "core_namespace": {
+      "type": "string",
+      "enum": ["family", "work", "secure", "creative", "reality"],
+      "description": "Creed Space core namespaces"
+    },
+
+    "org_prefix": {
+      "type": "string",
+      "enum": ["company", "school", "ngo"],
+      "description": "Organizational namespace prefixes"
+    },
+
+    "community_prefix": {
+      "type": "string",
+      "enum": ["religion", "culture", "community"],
+      "description": "Community namespace prefixes"
+    },
+
+    "segment": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$|^[a-z]$",
+      "minLength": 1,
+      "maxLength": 32,
+      "description": "Valid path segment"
+    },
+
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Semantic version (semver 2.0)"
+    }
+  },
+
+  "examples": [
+    {
+      "token": "family.safe.guide@1.2.0",
+      "canonical": "family.safe.guide@1.2.0",
+      "segments": ["family", "safe", "guide"],
+      "depth": 3,
+      "domain": "family",
+      "approach": "safe",
+      "role": "guide",
+      "path": [],
+      "namespace_type": "core",
+      "namespace": "family",
+      "version": "1.2.0",
+      "version_constraint": "exact"
+    },
+    {
+      "token": "company.acme.legal.compliance@^2.0.0",
+      "canonical": "company.acme.legal.compliance@^2.0.0",
+      "segments": ["company", "acme", "legal", "compliance"],
+      "depth": 4,
+      "domain": "company",
+      "approach": "legal",
+      "role": "compliance",
+      "path": ["acme"],
+      "namespace_type": "org",
+      "namespace": "company.acme",
+      "version": "2.0.0",
+      "version_constraint": "compatible"
+    },
+    {
+      "token": "org.example.dept.team.policy@1.0.0",
+      "canonical": "org.example.dept.team.policy@1.0.0",
+      "segments": ["org", "example", "dept", "team", "policy"],
+      "depth": 5,
+      "domain": "org",
+      "approach": "team",
+      "role": "policy",
+      "path": ["example", "dept"],
+      "namespace_type": "org",
+      "namespace": "org.example",
+      "version": "1.0.0",
+      "version_constraint": "exact"
+    }
+  ]
+}
