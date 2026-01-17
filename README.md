@@ -61,7 +61,7 @@ VCP is a four-layer protocol stack—like OSI for AI values:
 ## Repository Structure
 
 ```
-Value-Context-Protocol/
+Value Context Protocol/
 ├── README.md                    # This file
 ├── specs/                       # Core specifications
 │   ├── VCP_SPECIFICATION_v1.0.md
@@ -70,29 +70,32 @@ Value-Context-Protocol/
 │   ├── VCP_PAPER_OUTLINE.md
 │   └── value_context_protocols_paper_v1.md
 ├── docs/                        # Documentation
-│   ├── VCP_OVERVIEW.md
-│   ├── VCP_NEWCOMER_GUIDE.md
+│   ├── VCP_OVERVIEW.md          # Start here
+│   ├── VCP_NEWCOMER_GUIDE.md    # Gentle introduction
 │   ├── VCP_IMPLEMENTATION_GUIDE.md
-│   ├── identity/                # VCP-Identity layer docs
-│   ├── semantics/               # VCP-Semantics layer docs
-│   ├── adaptation/              # VCP-Adaptation layer docs
+│   ├── identity/                # VCP-Identity layer (5 docs)
+│   ├── semantics/               # VCP-Semantics layer (2 docs)
+│   ├── adaptation/              # VCP-Adaptation layer (1 doc)
 │   ├── context/                 # Context specification
-│   ├── uvc/                     # Universal Value Codes
-│   ├── content/                 # CSM1 grammar
-│   └── openapi/                 # API specification
-├── src/                         # Reference implementation
+│   ├── uvc/                     # Universal Value Codes (5 docs)
+│   ├── content/                 # CSM1 grammar specification
+│   └── openapi/                 # API specification (OpenAPI)
+├── src/                         # Reference implementation (Python)
 │   ├── vcp/                     # Core VCP library
-│   │   ├── identity/            # Identity layer
-│   │   ├── semantics/           # Semantics layer
-│   │   └── adaptation/          # Adaptation layer
-│   ├── mcp/                     # MCP server
+│   │   ├── identity/            # Identity layer implementation
+│   │   ├── semantics/           # Semantics layer implementation
+│   │   └── adaptation/          # Adaptation layer implementation
+│   ├── mcp/                     # MCP server for Claude Code
 │   └── api/                     # FastAPI router
-├── schemas/                     # JSON schemas
+├── integrations/                # Example integrations
+│   └── safety_stack/            # PDP integration example
+├── schemas/                     # JSON schemas for validation
 │   ├── vcp-manifest-v1.schema.json
 │   ├── vcp-identity-token.schema.json
 │   ├── vcp-semantics-csm1.schema.json
 │   └── vcp-adaptation-context.schema.json
 └── tests/                       # Test suite
+    ├── conftest.py              # Pytest fixtures
     ├── vcp/                     # Core VCP tests
     ├── unit/                    # Unit tests
     └── integration/             # Integration tests
