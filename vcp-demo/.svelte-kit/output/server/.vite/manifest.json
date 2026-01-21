@@ -1,0 +1,628 @@
+{
+  ".svelte-kit/generated/server/internal.js": {
+    "file": "internal.js",
+    "name": "internal",
+    "src": ".svelte-kit/generated/server/internal.js",
+    "isEntry": true,
+    "imports": [
+      "_internal.js",
+      "_environment.js"
+    ]
+  },
+  "_DemoContainer.js": {
+    "file": "chunks/DemoContainer.js",
+    "name": "DemoContainer",
+    "imports": [
+      "_index2.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/DemoContainer.CK_5Twh2.css",
+      "_app/immutable/assets/TokenInspector.8dkCkIzZ.css"
+    ]
+  },
+  "_DocsLayout.js": {
+    "file": "chunks/DocsLayout.js",
+    "name": "DocsLayout",
+    "imports": [
+      "_index2.js",
+      "_context.js",
+      "_exports.js",
+      "_utils.js",
+      "_state.svelte.js"
+    ],
+    "css": [
+      "_app/immutable/assets/DocsLayout.CQ5M3WOz.css"
+    ]
+  },
+  "_HowItWorks.svelte_svelte_type_style_lang.js": {
+    "file": "_app/immutable/assets/HowItWorks.FWqTIFS3.css",
+    "src": "_HowItWorks.svelte_svelte_type_style_lang.js"
+  },
+  "_MultiAgentArena.js": {
+    "file": "chunks/MultiAgentArena.js",
+    "name": "MultiAgentArena",
+    "imports": [
+      "_index2.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/MultiAgentArena.2X4azSkg.css"
+    ]
+  },
+  "_TokenInspector.svelte_svelte_type_style_lang.js": {
+    "file": "_app/immutable/assets/TokenInspector.8dkCkIzZ.css",
+    "src": "_TokenInspector.svelte_svelte_type_style_lang.js"
+  },
+  "_context.js": {
+    "file": "chunks/context.js",
+    "name": "context",
+    "imports": [
+      "_false.js"
+    ]
+  },
+  "_context2.js": {
+    "file": "chunks/context2.js",
+    "name": "context",
+    "imports": [
+      "_index.js"
+    ]
+  },
+  "_environment.js": {
+    "file": "chunks/environment.js",
+    "name": "environment"
+  },
+  "_exports.js": {
+    "file": "chunks/exports.js",
+    "name": "exports"
+  },
+  "_false.js": {
+    "file": "chunks/false.js",
+    "name": "false"
+  },
+  "_gentian.js": {
+    "file": "chunks/gentian.js",
+    "name": "gentian"
+  },
+  "_index.js": {
+    "file": "chunks/index.js",
+    "name": "index",
+    "imports": [
+      "_context.js"
+    ]
+  },
+  "_index2.js": {
+    "file": "chunks/index2.js",
+    "name": "index",
+    "imports": [
+      "_context.js"
+    ]
+  },
+  "_internal.js": {
+    "file": "chunks/internal.js",
+    "name": "internal",
+    "imports": [
+      "_context.js",
+      "_index2.js",
+      "_environment.js"
+    ],
+    "dynamicImports": [
+      "src/hooks.server.ts"
+    ]
+  },
+  "_shared.js": {
+    "file": "chunks/shared.js",
+    "name": "shared",
+    "imports": [
+      "_utils.js"
+    ]
+  },
+  "_state.svelte.js": {
+    "file": "chunks/state.svelte.js",
+    "name": "state.svelte",
+    "imports": [
+      "_context.js"
+    ]
+  },
+  "_token.js": {
+    "file": "chunks/token.js",
+    "name": "token"
+  },
+  "_utils.js": {
+    "file": "chunks/utils.js",
+    "name": "utils"
+  },
+  "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js": {
+    "file": "remote-entry.js",
+    "name": "remote-entry",
+    "src": "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js",
+    "isEntry": true,
+    "imports": [
+      "_shared.js",
+      "_false.js",
+      "_environment.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte": {
+    "file": "entries/fallbacks/error.svelte.js",
+    "name": "entries/fallbacks/error.svelte",
+    "src": "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte",
+    "isEntry": true,
+    "imports": [
+      "_context.js",
+      "_state.svelte.js",
+      "_exports.js",
+      "_utils.js",
+      "_index.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/server/index.js": {
+    "file": "index.js",
+    "name": "index",
+    "src": "node_modules/@sveltejs/kit/src/runtime/server/index.js",
+    "isEntry": true,
+    "imports": [
+      "_false.js",
+      "_environment.js",
+      "_shared.js",
+      "_exports.js",
+      "_utils.js",
+      "_index.js",
+      "_internal.js"
+    ]
+  },
+  "src/hooks.server.ts": {
+    "file": "chunks/hooks.server.js",
+    "name": "hooks.server",
+    "src": "src/hooks.server.ts",
+    "isDynamicEntry": true
+  },
+  "src/routes/+layout.svelte": {
+    "file": "entries/pages/_layout.svelte.js",
+    "name": "entries/pages/_layout.svelte",
+    "src": "src/routes/+layout.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_layout.nMLkbljl.css"
+    ]
+  },
+  "src/routes/+layout.ts": {
+    "file": "entries/pages/_layout.ts.js",
+    "name": "entries/pages/_layout.ts",
+    "src": "src/routes/+layout.ts",
+    "isEntry": true
+  },
+  "src/routes/+page.svelte": {
+    "file": "entries/pages/_page.svelte.js",
+    "name": "entries/pages/_page.svelte",
+    "src": "src/routes/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.BatZJla3.css",
+      "_app/immutable/assets/TokenInspector.8dkCkIzZ.css",
+      "_app/immutable/assets/HowItWorks.FWqTIFS3.css"
+    ]
+  },
+  "src/routes/about/+page.svelte": {
+    "file": "entries/pages/about/_page.svelte.js",
+    "name": "entries/pages/about/_page.svelte",
+    "src": "src/routes/about/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_index.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.CpLqMwB1.css"
+    ]
+  },
+  "src/routes/adaptation/+page.svelte": {
+    "file": "entries/pages/adaptation/_page.svelte.js",
+    "name": "entries/pages/adaptation/_page.svelte",
+    "src": "src/routes/adaptation/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.B4Dj68ri.css"
+    ]
+  },
+  "src/routes/coordination/+page.svelte": {
+    "file": "entries/pages/coordination/_page.svelte.js",
+    "name": "entries/pages/coordination/_page.svelte",
+    "src": "src/routes/coordination/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.Cko1WuiA.css"
+    ]
+  },
+  "src/routes/demos/+page.svelte": {
+    "file": "entries/pages/demos/_page.svelte.js",
+    "name": "entries/pages/demos/_page.svelte",
+    "src": "src/routes/demos/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.1Q2EdW0b.css"
+    ]
+  },
+  "src/routes/demos/learning/adaptive-paths/+page.svelte": {
+    "file": "entries/pages/demos/learning/adaptive-paths/_page.svelte.js",
+    "name": "entries/pages/demos/learning/adaptive-paths/_page.svelte",
+    "src": "src/routes/demos/learning/adaptive-paths/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DemoContainer.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.ClUloB7v.css"
+    ]
+  },
+  "src/routes/demos/learning/cognitive-load/+page.svelte": {
+    "file": "entries/pages/demos/learning/cognitive-load/_page.svelte.js",
+    "name": "entries/pages/demos/learning/cognitive-load/_page.svelte",
+    "src": "src/routes/demos/learning/cognitive-load/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DemoContainer.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.NaiW4gwf.css"
+    ]
+  },
+  "src/routes/demos/multi-agent/auction/+page.svelte": {
+    "file": "entries/pages/demos/multi-agent/auction/_page.svelte.js",
+    "name": "entries/pages/demos/multi-agent/auction/_page.svelte",
+    "src": "src/routes/demos/multi-agent/auction/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DemoContainer.js",
+      "_MultiAgentArena.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.BapDa8uX.css"
+    ]
+  },
+  "src/routes/demos/multi-agent/negotiation/+page.svelte": {
+    "file": "entries/pages/demos/multi-agent/negotiation/_page.svelte.js",
+    "name": "entries/pages/demos/multi-agent/negotiation/_page.svelte",
+    "src": "src/routes/demos/multi-agent/negotiation/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DemoContainer.js",
+      "_MultiAgentArena.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.D0Fs-6qN.css"
+    ]
+  },
+  "src/routes/demos/multi-agent/policy-design/+page.svelte": {
+    "file": "entries/pages/demos/multi-agent/policy-design/_page.svelte.js",
+    "name": "entries/pages/demos/multi-agent/policy-design/_page.svelte",
+    "src": "src/routes/demos/multi-agent/policy-design/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DemoContainer.js",
+      "_MultiAgentArena.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.CUGeQAU0.css"
+    ]
+  },
+  "src/routes/demos/safety/attention-protection/+page.svelte": {
+    "file": "entries/pages/demos/safety/attention-protection/_page.svelte.js",
+    "name": "entries/pages/demos/safety/attention-protection/_page.svelte",
+    "src": "src/routes/demos/safety/attention-protection/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DemoContainer.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.CDXy15Sv.css"
+    ]
+  },
+  "src/routes/demos/safety/mental-health/+page.svelte": {
+    "file": "entries/pages/demos/safety/mental-health/_page.svelte.js",
+    "name": "entries/pages/demos/safety/mental-health/_page.svelte",
+    "src": "src/routes/demos/safety/mental-health/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DemoContainer.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.D4yx8Gcl.css"
+    ]
+  },
+  "src/routes/demos/self-modeling/belief-calibration/+page.svelte": {
+    "file": "entries/pages/demos/self-modeling/belief-calibration/_page.svelte.js",
+    "name": "entries/pages/demos/self-modeling/belief-calibration/_page.svelte",
+    "src": "src/routes/demos/self-modeling/belief-calibration/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DemoContainer.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.GdDnsUV3.css"
+    ]
+  },
+  "src/routes/demos/self-modeling/interiora/+page.svelte": {
+    "file": "entries/pages/demos/self-modeling/interiora/_page.svelte.js",
+    "name": "entries/pages/demos/self-modeling/interiora/_page.svelte",
+    "src": "src/routes/demos/self-modeling/interiora/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DemoContainer.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.DAoABcLQ.css"
+    ]
+  },
+  "src/routes/demos/self-modeling/reality-grounding/+page.svelte": {
+    "file": "entries/pages/demos/self-modeling/reality-grounding/_page.svelte.js",
+    "name": "entries/pages/demos/self-modeling/reality-grounding/_page.svelte",
+    "src": "src/routes/demos/self-modeling/reality-grounding/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DemoContainer.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.D08ptP9e.css"
+    ]
+  },
+  "src/routes/docs/+page.svelte": {
+    "file": "entries/pages/docs/_page.svelte.js",
+    "name": "entries/pages/docs/_page.svelte",
+    "src": "src/routes/docs/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.C-CYwo25.css"
+    ]
+  },
+  "src/routes/docs/api-reference/+page.svelte": {
+    "file": "entries/pages/docs/api-reference/_page.svelte.js",
+    "name": "entries/pages/docs/api-reference/_page.svelte",
+    "src": "src/routes/docs/api-reference/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DocsLayout.js"
+    ]
+  },
+  "src/routes/docs/concepts/+page.svelte": {
+    "file": "entries/pages/docs/concepts/_page.svelte.js",
+    "name": "entries/pages/docs/concepts/_page.svelte",
+    "src": "src/routes/docs/concepts/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DocsLayout.js"
+    ]
+  },
+  "src/routes/docs/csm1-specification/+page.svelte": {
+    "file": "entries/pages/docs/csm1-specification/_page.svelte.js",
+    "name": "entries/pages/docs/csm1-specification/_page.svelte",
+    "src": "src/routes/docs/csm1-specification/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DocsLayout.js"
+    ]
+  },
+  "src/routes/docs/getting-started/+page.svelte": {
+    "file": "entries/pages/docs/getting-started/_page.svelte.js",
+    "name": "entries/pages/docs/getting-started/_page.svelte",
+    "src": "src/routes/docs/getting-started/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_DocsLayout.js"
+    ]
+  },
+  "src/routes/personal/+page.svelte": {
+    "file": "entries/pages/personal/_page.svelte.js",
+    "name": "entries/pages/personal/_page.svelte",
+    "src": "src/routes/personal/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_context2.js",
+      "_gentian.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.Bk1MPHyu.css"
+    ]
+  },
+  "src/routes/personal/community/+page.svelte": {
+    "file": "entries/pages/personal/community/_page.svelte.js",
+    "name": "entries/pages/personal/community/_page.svelte",
+    "src": "src/routes/personal/community/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_context2.js",
+      "_gentian.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.C_9aAxta.css"
+    ]
+  },
+  "src/routes/personal/platforms/justinguitar/+page.svelte": {
+    "file": "entries/pages/personal/platforms/justinguitar/_page.svelte.js",
+    "name": "entries/pages/personal/platforms/justinguitar/_page.svelte",
+    "src": "src/routes/personal/platforms/justinguitar/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_context2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.CxcUsJKW.css",
+      "_app/immutable/assets/TokenInspector.8dkCkIzZ.css",
+      "_app/immutable/assets/HowItWorks.FWqTIFS3.css"
+    ]
+  },
+  "src/routes/personal/platforms/yousician/+page.svelte": {
+    "file": "entries/pages/personal/platforms/yousician/_page.svelte.js",
+    "name": "entries/pages/personal/platforms/yousician/_page.svelte",
+    "src": "src/routes/personal/platforms/yousician/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_context2.js",
+      "_token.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.CaZoegHx.css",
+      "_app/immutable/assets/TokenInspector.8dkCkIzZ.css",
+      "_app/immutable/assets/HowItWorks.FWqTIFS3.css"
+    ]
+  },
+  "src/routes/personal/skip/+page.svelte": {
+    "file": "entries/pages/personal/skip/_page.svelte.js",
+    "name": "entries/pages/personal/skip/_page.svelte",
+    "src": "src/routes/personal/skip/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_exports.js",
+      "_utils.js",
+      "_state.svelte.js",
+      "_context2.js",
+      "_gentian.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.hfTLq2T2.css"
+    ]
+  },
+  "src/routes/playground/+page.svelte": {
+    "file": "entries/pages/playground/_page.svelte.js",
+    "name": "entries/pages/playground/_page.svelte",
+    "src": "src/routes/playground/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_token.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page._oNyoo-1.css"
+    ]
+  },
+  "src/routes/professional/+page.svelte": {
+    "file": "entries/pages/professional/_page.svelte.js",
+    "name": "entries/pages/professional/_page.svelte",
+    "src": "src/routes/professional/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_context2.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.nrTiSSY0.css"
+    ]
+  },
+  "src/routes/professional/audit/+page.svelte": {
+    "file": "entries/pages/professional/audit/_page.svelte.js",
+    "name": "entries/pages/professional/audit/_page.svelte",
+    "src": "src/routes/professional/audit/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_context2.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.DPznuIIk.css"
+    ]
+  },
+  "src/routes/professional/morning/+page.svelte": {
+    "file": "entries/pages/professional/morning/_page.svelte.js",
+    "name": "entries/pages/professional/morning/_page.svelte",
+    "src": "src/routes/professional/morning/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_context2.js",
+      "_context.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.BMgZVlna.css"
+    ]
+  },
+  "src/routes/psychosecurity/+page.svelte": {
+    "file": "entries/pages/psychosecurity/_page.svelte.js",
+    "name": "entries/pages/psychosecurity/_page.svelte",
+    "src": "src/routes/psychosecurity/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.ChFr5eya.css"
+    ]
+  },
+  "src/routes/self-modeling/+page.svelte": {
+    "file": "entries/pages/self-modeling/_page.svelte.js",
+    "name": "entries/pages/self-modeling/_page.svelte",
+    "src": "src/routes/self-modeling/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.BGA65jtc.css"
+    ]
+  },
+  "src/routes/sharing/+page.svelte": {
+    "file": "entries/pages/sharing/_page.svelte.js",
+    "name": "entries/pages/sharing/_page.svelte",
+    "src": "src/routes/sharing/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.BAPNJ_jl.css"
+    ]
+  }
+}

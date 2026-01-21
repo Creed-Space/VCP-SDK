@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/demos/safety/mental-health/+page.svelte";

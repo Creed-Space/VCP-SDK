@@ -1,0 +1,99 @@
+{
+	"/": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/about": [
+		"src/routes/+layout.ts"
+	],
+	"/adaptation": [
+		"src/routes/+layout.ts"
+	],
+	"/coordination": [
+		"src/routes/+layout.ts"
+	],
+	"/demos": [
+		"src/routes/+layout.ts"
+	],
+	"/demos/learning/adaptive-paths": [
+		"src/routes/+layout.ts"
+	],
+	"/demos/learning/cognitive-load": [
+		"src/routes/+layout.ts"
+	],
+	"/demos/multi-agent/auction": [
+		"src/routes/+layout.ts"
+	],
+	"/demos/multi-agent/negotiation": [
+		"src/routes/+layout.ts"
+	],
+	"/demos/multi-agent/policy-design": [
+		"src/routes/+layout.ts"
+	],
+	"/demos/safety/attention-protection": [
+		"src/routes/+layout.ts"
+	],
+	"/demos/safety/mental-health": [
+		"src/routes/+layout.ts"
+	],
+	"/demos/self-modeling/belief-calibration": [
+		"src/routes/+layout.ts"
+	],
+	"/demos/self-modeling/interiora": [
+		"src/routes/+layout.ts"
+	],
+	"/demos/self-modeling/reality-grounding": [
+		"src/routes/+layout.ts"
+	],
+	"/docs": [
+		"src/routes/+layout.ts"
+	],
+	"/docs/api-reference": [
+		"src/routes/+layout.ts"
+	],
+	"/docs/concepts": [
+		"src/routes/+layout.ts"
+	],
+	"/docs/csm1-specification": [
+		"src/routes/+layout.ts"
+	],
+	"/docs/getting-started": [
+		"src/routes/+layout.ts"
+	],
+	"/personal": [
+		"src/routes/+layout.ts"
+	],
+	"/personal/community": [
+		"src/routes/+layout.ts"
+	],
+	"/personal/platforms/justinguitar": [
+		"src/routes/+layout.ts"
+	],
+	"/personal/platforms/yousician": [
+		"src/routes/+layout.ts"
+	],
+	"/personal/skip": [
+		"src/routes/+layout.ts"
+	],
+	"/playground": [
+		"src/routes/+layout.ts"
+	],
+	"/professional": [
+		"src/routes/+layout.ts"
+	],
+	"/professional/audit": [
+		"src/routes/+layout.ts"
+	],
+	"/professional/morning": [
+		"src/routes/+layout.ts"
+	],
+	"/psychosecurity": [
+		"src/routes/+layout.ts"
+	],
+	"/self-modeling": [
+		"src/routes/+layout.ts"
+	],
+	"/sharing": [
+		"src/routes/+layout.ts"
+	]
+}
