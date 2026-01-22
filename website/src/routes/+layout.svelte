@@ -26,8 +26,7 @@
 	<header class="app-header">
 		<nav class="container flex items-center justify-between">
 			<a href="/" class="logo" aria-label="VCP Demo Home">
-				<span class="logo-icon" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
-				<span class="logo-text">VCP</span>
+				<img src="/vcp-logo.png" alt="VCP" class="logo-img" />
 				<span class="logo-badge">Demo</span>
 			</a>
 
@@ -121,7 +120,7 @@
 		<div class="container">
 			<div class="footer-content">
 				<div class="footer-brand">
-					<span class="footer-logo" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
+					<img src="/vcp-logo.png" alt="VCP" class="footer-logo-img" />
 					<div>
 						<p class="footer-title">Value Context Protocol</p>
 						<p class="footer-tagline">Your context stays yours. Private reasons stay private.</p>
@@ -193,17 +192,9 @@
 		text-decoration: none;
 	}
 
-	.logo-icon {
-		font-size: 1.5rem;
-	}
-
-	.logo-text {
-		font-weight: 700;
-		font-size: 1.25rem;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
+	.logo-img {
+		height: 32px;
+		width: auto;
 	}
 
 	.logo-badge {
@@ -405,8 +396,9 @@
 		gap: var(--space-md);
 	}
 
-	.footer-logo {
-		font-size: 2rem;
+	.footer-logo-img {
+		height: 40px;
+		width: auto;
 	}
 
 	.footer-title {
