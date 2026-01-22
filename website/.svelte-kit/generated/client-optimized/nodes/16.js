@@ -1,1 +1,0 @@
-export { default as component } from "../../../../src/routes/demos/self-modeling/reality-grounding/+page.svelte";

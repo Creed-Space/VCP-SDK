@@ -1,1 +1,0 @@
-export { default as component } from "../../../../src/routes/demos/safety/attention-protection/+page.svelte";
