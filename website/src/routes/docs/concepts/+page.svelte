@@ -43,7 +43,7 @@
   constitution: {
     id: "learning-assistant",  // Which constitution
     version: "1.0",            // Specific version
-    persona: "muse",           // Interaction style
+    persona: "godparent",      // Interaction style
     adherence: 3,              // How strictly to follow (1-5)
     scopes: ["education", "creativity"]  // Applicable domains
   }
@@ -195,11 +195,6 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td><i class="fa-solid fa-palette" aria-hidden="true"></i> <strong>Muse</strong></td>
-					<td>Creative, exploratory, encouraging</td>
-					<td>Creative work, learning, exploration</td>
-				</tr>
 				<tr>
 					<td><i class="fa-solid fa-shield" aria-hidden="true"></i> <strong>Sentinel</strong></td>
 					<td>Cautious, protective, conservative</td>

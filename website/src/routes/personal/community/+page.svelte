@@ -181,7 +181,7 @@
 
 		<!-- Adjusted Days Explainer -->
 		<section class="explainer-card card">
-			<h3>ℹ️ What are "Adjusted" Days?</h3>
+			<h3><i class="fa-solid fa-circle-info" aria-hidden="true"></i> What are "Adjusted" Days?</h3>
 			<p class="text-muted">
 				{challengeData.privacy_explainer.adjusted_days_explanation}
 			</p>

@@ -12,7 +12,7 @@
 		constitution: {
 			id: 'personal.growth.creative',
 			version: '1.0.0',
-			persona: 'muse',
+			persona: 'godparent',
 			adherence: 3,
 			scopes: ['creativity', 'health', 'privacy']
 		},
@@ -48,14 +48,13 @@
 	const summary = $derived(getTransmissionSummary(context));
 	const legend = getEmojiLegend();
 
-	// Personas for quick selection
+	// Personas for quick selection (5 personas - Muse removed 2026-01-22)
 	const personas = [
-		{ id: 'muse', name: 'Muse', iconClass: 'fa-palette' },
+		{ id: 'godparent', name: 'Godparent', iconClass: 'fa-people-group' },
+		{ id: 'sentinel', name: 'Sentinel', iconClass: 'fa-shield' },
 		{ id: 'ambassador', name: 'Ambassador', iconClass: 'fa-handshake' },
-		{ id: 'godparent', name: 'Godparent', iconClass: 'fa-shield' },
-		{ id: 'sentinel', name: 'Sentinel', iconClass: 'fa-eye' },
 		{ id: 'anchor', name: 'Anchor', iconClass: 'fa-anchor' },
-		{ id: 'nanny', name: 'Nanny', iconClass: 'fa-child' }
+		{ id: 'nanny', name: 'Nanny', iconClass: 'fa-baby' }
 	];
 
 	function updateConstraint(key: keyof ConstraintFlags, value: boolean) {

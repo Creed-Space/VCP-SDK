@@ -201,7 +201,7 @@
 				</div>
 
 				<div class="hr-note privacy-note">
-					<span class="privacy-note-icon">ℹ️</span>
+					<span class="privacy-note-icon"><i class="fa-solid fa-circle-info" aria-hidden="true"></i></span>
 					<div>
 						<strong>What HR Cannot See:</strong>
 						<ul class="hidden-list">

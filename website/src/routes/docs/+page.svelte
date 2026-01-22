@@ -50,37 +50,37 @@
 			<span class="doc-time">Reference</span>
 		</a>
 
-		<!-- Constitutional AI -->
-		<a href="/docs/constitutional-ai" class="doc-card">
+		<!-- Constitutional AI (Coming Soon) -->
+		<div class="doc-card doc-card-coming-soon">
 			<span class="doc-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>
 			<h3>Constitutional AI</h3>
 			<p>How VCP integrates with constitution-based AI alignment.</p>
-			<span class="doc-time">12 min read</span>
-		</a>
+			<span class="doc-time coming-soon-badge">Coming Soon</span>
+		</div>
 
-		<!-- Privacy Architecture -->
-		<a href="/docs/privacy-architecture" class="doc-card">
+		<!-- Privacy Architecture (Coming Soon) -->
+		<div class="doc-card doc-card-coming-soon">
 			<span class="doc-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
 			<h3>Privacy Architecture</h3>
 			<p>Deep dive into privacy filtering, consent, and audit trails.</p>
-			<span class="doc-time">8 min read</span>
-		</a>
+			<span class="doc-time coming-soon-badge">Coming Soon</span>
+		</div>
 
-		<!-- Interiora Specification -->
-		<a href="/docs/interiora" class="doc-card">
+		<!-- Interiora Specification (Coming Soon) -->
+		<div class="doc-card doc-card-coming-soon">
 			<span class="doc-icon"><i class="fa-solid fa-brain" aria-hidden="true"></i></span>
 			<h3>Interiora Specification</h3>
 			<p>VCP 2.5 self-modeling framework for AI embodied states.</p>
-			<span class="doc-time">20 min read</span>
-		</a>
+			<span class="doc-time coming-soon-badge">Coming Soon</span>
+		</div>
 
-		<!-- Multi-Agent Patterns -->
-		<a href="/docs/multi-agent" class="doc-card">
+		<!-- Multi-Agent Patterns (Coming Soon) -->
+		<div class="doc-card doc-card-coming-soon">
 			<span class="doc-icon"><i class="fa-solid fa-robot" aria-hidden="true"></i></span>
 			<h3>Multi-Agent Patterns</h3>
 			<p>Implementing VCP in multi-agent coordination scenarios.</p>
-			<span class="doc-time">15 min read</span>
-		</a>
+			<span class="doc-time coming-soon-badge">Coming Soon</span>
+		</div>
 	</div>
 
 	<!-- Quick Reference -->
@@ -170,6 +170,24 @@ S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-
 		border-color: var(--color-primary);
 		transform: translateY(-2px);
 		text-decoration: none;
+	}
+
+	.doc-card-coming-soon {
+		opacity: 0.6;
+		cursor: default;
+	}
+
+	.doc-card-coming-soon:hover {
+		border-color: rgba(255, 255, 255, 0.1);
+		transform: none;
+	}
+
+	.coming-soon-badge {
+		background: var(--color-warning-muted);
+		color: var(--color-warning);
+		padding: 2px 8px;
+		border-radius: var(--radius-sm);
+		font-weight: 500;
 	}
 
 	.doc-icon {
