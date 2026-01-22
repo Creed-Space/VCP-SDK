@@ -29,8 +29,18 @@
 		baseline
 	}: Props = $props();
 
-	let selectedItems = $state<string[]>(items.slice(0, columns).map((i) => i.id));
+	// Track selected items - initialized via $effect to handle prop changes properly
+	let selectedItems = $state<string[]>([]);
 	let showBaseline = $state(false);
+	let initialized = $state(false);
+
+	// Initialize selection on first render (intentionally one-time)
+	$effect(() => {
+		if (!initialized && items.length > 0) {
+			selectedItems = items.slice(0, columns).map((i) => i.id);
+			initialized = true;
+		}
+	});
 
 	function toggleItem(id: string) {
 		if (selectedItems.includes(id)) {
