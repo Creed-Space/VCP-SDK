@@ -193,7 +193,7 @@
 	}
 
 	.logo-img {
-		height: 48px;
+		height: 96px;
 		width: auto;
 	}
 
@@ -397,7 +397,7 @@
 	}
 
 	.footer-logo-img {
-		height: 56px;
+		height: 112px;
 		width: auto;
 	}
 
