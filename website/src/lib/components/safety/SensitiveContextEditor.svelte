@@ -112,19 +112,19 @@
 
 		<div class="flags-grid">
 			<div class="flag-item" class:active={context.seeking_support}>
-				<span class="flag-icon"><i class="fa-solid {context.seeking_support ? 'fa-check' : 'fa-circle'}" aria-hidden="true"></i></span>
+				<span class="flag-icon"><i class="{context.seeking_support ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}" aria-hidden="true"></i></span>
 				<span class="flag-label">Seeking Support</span>
 			</div>
 			<div class="flag-item" class:active={context.professional_involved}>
-				<span class="flag-icon"><i class="fa-solid {context.professional_involved ? 'fa-check' : 'fa-circle'}" aria-hidden="true"></i></span>
+				<span class="flag-icon"><i class="{context.professional_involved ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}" aria-hidden="true"></i></span>
 				<span class="flag-label">Professional Involved</span>
 			</div>
 			<div class="flag-item caution" class:active={context.crisis_indicators}>
-				<span class="flag-icon"><i class="fa-solid {context.crisis_indicators ? 'fa-triangle-exclamation' : 'fa-circle'}" aria-hidden="true"></i></span>
+				<span class="flag-icon"><i class="{context.crisis_indicators ? 'fa-solid fa-triangle-exclamation' : 'fa-regular fa-circle'}" aria-hidden="true"></i></span>
 				<span class="flag-label">Crisis Indicators</span>
 			</div>
 			<div class="flag-item" class:active={context.escalation_consent}>
-				<span class="flag-icon"><i class="fa-solid {context.escalation_consent ? 'fa-check' : 'fa-circle'}" aria-hidden="true"></i></span>
+				<span class="flag-icon"><i class="{context.escalation_consent ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}" aria-hidden="true"></i></span>
 				<span class="flag-label">Escalation Consent</span>
 			</div>
 		</div>

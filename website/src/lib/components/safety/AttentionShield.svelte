@@ -12,7 +12,7 @@
 	let { protection, onModeChange }: Props = $props();
 
 	const modes: { value: ProtectionMode; label: string; icon: string; desc: string }[] = [
-		{ value: 'off', label: 'Off', icon: 'fa-circle', desc: 'No protection' },
+		{ value: 'off', label: 'Off', icon: 'fa-power-off', desc: 'No protection' },
 		{ value: 'monitor', label: 'Monitor', icon: 'fa-eye', desc: 'Track only' },
 		{ value: 'warn', label: 'Warn', icon: 'fa-triangle-exclamation', desc: 'Show warnings' },
 		{ value: 'block', label: 'Block', icon: 'fa-shield-halved', desc: 'Block detected' },
@@ -51,7 +51,7 @@
 	<!-- Protection Status -->
 	<div class="status-header" class:active={protection.active}>
 		<div class="status-icon">
-			<i class="fa-solid {protection.active ? 'fa-shield-halved' : 'fa-circle'}" aria-hidden="true"></i>
+			<i class="{protection.active ? 'fa-solid fa-shield-halved' : 'fa-regular fa-circle'}" aria-hidden="true"></i>
 		</div>
 		<div class="status-info">
 			<h3>Attention Shield</h3>
