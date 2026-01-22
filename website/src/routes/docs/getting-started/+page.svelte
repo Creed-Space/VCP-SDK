@@ -10,6 +10,7 @@
 <DocsLayout
 	title="Getting Started"
 	description="Get up and running with VCP in 5 minutes."
+	editPath="/src/routes/docs/getting-started/+page.svelte"
 >
 	{#snippet children()}
 		<h2>What is VCP?</h2>
@@ -74,7 +75,7 @@ const token = encodeContextToCSM1(context);
 // Output:
 // VCP:1.0:user_001
 // C:learning-assistant@1.0
-// P:muse:3
+// P:godparent:3
 // G:learn_guitar:beginner:visual
 // X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes
 // F:none

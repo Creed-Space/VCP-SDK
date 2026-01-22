@@ -7,10 +7,13 @@
 	interface Props {
 		title: string;
 		description?: string;
+		editPath?: string;
 		children: import('svelte').Snippet;
 	}
 
-	let { title, description, children }: Props = $props();
+	let { title, description, editPath, children }: Props = $props();
+
+	const repoBase = 'https://github.com/Creed-Space/Value-Context-Protocol/edit/main/website';
 
 	const navSections = [
 		{
@@ -102,6 +105,12 @@
 			<h1>{title}</h1>
 			{#if description}
 				<p class="docs-description">{description}</p>
+			{/if}
+			{#if editPath}
+				<a href="{repoBase}{editPath}" target="_blank" rel="noopener noreferrer" class="edit-link">
+					<i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+					Edit this page on GitHub
+				</a>
 			{/if}
 		</header>
 
@@ -246,6 +255,25 @@
 		margin-bottom: var(--space-2xl);
 		padding-bottom: var(--space-xl);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.edit-link {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+		font-size: 0.8125rem;
+		color: var(--color-text-subtle);
+		text-decoration: none;
+		margin-top: var(--space-md);
+		padding: var(--space-xs) var(--space-sm);
+		border-radius: var(--radius-sm);
+		transition: all var(--transition-fast);
+	}
+
+	.edit-link:hover {
+		color: var(--color-primary);
+		background: var(--color-primary-muted);
+		text-decoration: none;
 	}
 
 	.breadcrumbs {

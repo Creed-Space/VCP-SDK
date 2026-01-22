@@ -7,7 +7,7 @@
 	// Example token for display
 	const exampleToken = `VCP:1.0:gentian-bcn-2026
 C:personal.growth.creative@1.0.0
-P:muse:3
+P:godparent:3
 G:learn_guitar:beginner:hands_on
 X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-bolt" aria-hidden="true"></i>var
 F:time_limited|noise_restricted

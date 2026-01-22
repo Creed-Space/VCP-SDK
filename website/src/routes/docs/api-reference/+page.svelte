@@ -10,6 +10,7 @@
 <DocsLayout
 	title="API Reference"
 	description="Complete reference for all VCP library types and functions."
+	editPath="/src/routes/docs/api-reference/+page.svelte"
 >
 	{#snippet children()}
 		<h2>Installation</h2>
@@ -97,7 +98,7 @@ const token = encodeContextToCSM1(context);
 // Returns:
 // VCP:1.0:user_001
 // C:learning-assistant@1.0
-// P:muse:3
+// P:godparent:3
 // ...`}</code></pre>
 
 		<h4>Parameters</h4>
@@ -184,7 +185,7 @@ const SHARED_MARKER = '<i class="fa-solid fa-check" aria-hidden="true"></i>';`}<
 		<h2>Enums</h2>
 
 		<h3>PersonaType</h3>
-		<pre><code>type PersonaType = 'muse' | 'ambassador' | 'godparent' | 'sentinel' | 'anchor' | 'nanny';</code></pre>
+		<pre><code>type PersonaType = 'godparent' | 'sentinel' | 'ambassador' | 'anchor' | 'nanny';</code></pre>
 
 		<h3>ExperienceLevel</h3>
 		<pre><code>type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';</code></pre>

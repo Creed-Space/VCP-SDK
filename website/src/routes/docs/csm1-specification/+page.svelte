@@ -10,6 +10,7 @@
 <DocsLayout
 	title="CSM-1 Specification"
 	description="Complete specification for the Compact State Message format."
+	editPath="/src/routes/docs/csm1-specification/+page.svelte"
 >
 	{#snippet children()}
 		<h2>Overview</h2>
@@ -38,7 +39,7 @@ S:<private_markers>`}</code></pre>
 		<h3>Example Token</h3>
 		<pre><code>{`VCP:1.0:user_001
 C:learning-assistant@1.0
-P:muse:3
+P:godparent:3
 G:learn_guitar:beginner:visual
 X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes
 F:time_limited|budget_limited
@@ -77,7 +78,7 @@ S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-
 				<tr><th>Field</th><th>Type</th><th>Values</th></tr>
 			</thead>
 			<tbody>
-				<tr><td>persona</td><td>enum</td><td>muse, sentinel, godparent, ambassador, anchor, nanny</td></tr>
+				<tr><td>persona</td><td>enum</td><td>godparent, sentinel, ambassador, anchor, nanny</td></tr>
 				<tr><td>adherence</td><td>1-5</td><td>How strictly to follow constitution rules</td></tr>
 			</tbody>
 		</table>
@@ -158,7 +159,7 @@ S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-
 		<h3>Optional Fields</h3>
 		<ul>
 			<li>Missing goal: <code>G:unset:beginner:mixed</code></li>
-			<li>Missing persona: <code>P:muse:3</code> (default)</li>
+			<li>Missing persona: <code>P:godparent:3</code> (default)</li>
 			<li>Empty constraints: <code>X:none</code></li>
 		</ul>
 
@@ -192,7 +193,7 @@ S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-
 		<pre><code>{`┌────────────────────────────────────────┐
 │ VCP:1.0:user_001                       │
 │ C:learning-assistant@1.0               │
-│ P:muse:3                               │
+│ P:godparent:3                               │
 │ G:learn_guitar:beginner:visual         │
 │ X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes            │
 │ F:time_limited|budget_limited          │
