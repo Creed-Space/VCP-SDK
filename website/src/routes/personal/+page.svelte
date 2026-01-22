@@ -41,7 +41,7 @@
 	{#if ctx}
 		<section class="profile-card card">
 			<div class="profile-header">
-				<div class="profile-avatar">🎸</div>
+				<div class="profile-avatar"><i class="fa-solid fa-guitar" aria-hidden="true"></i></div>
 				<div class="profile-info">
 					<h2>{ctx.public_profile.display_name}</h2>
 					<p class="text-muted">{ctx.public_profile.goal?.replace(/_/g, ' ')}</p>
@@ -130,7 +130,7 @@
 			</div>
 
 			<div class="privacy-note" style="margin-top: 1rem;">
-				<span class="privacy-note-icon">🔒</span>
+				<span class="privacy-note-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
 				<span>
 					Community members see "18/21 (3 adjusted)" - they don't know WHY days were adjusted.
 					Gentian's work schedule and living situation stay private.
@@ -139,7 +139,7 @@
 		</section>
 
 		<section class="challenge-preview card">
-			<h3>🏆 30-Day Challenge Progress</h3>
+			<h3><i class="fa-solid fa-trophy" aria-hidden="true"></i> 30-Day Challenge Progress</h3>
 			<div class="challenge-stats">
 				<div class="stat">
 					<span class="stat-value">{progress.days_completed}</span>
@@ -169,7 +169,7 @@
 			<h2>Choose Your Path</h2>
 			<div class="grid grid-2 gap-lg">
 				<a href="/personal/platforms/justinguitar" class="card card-hover path-card">
-					<div class="path-icon">📱</div>
+					<div class="path-icon"><i class="fa-solid fa-mobile" aria-hidden="true"></i></div>
 					<h3>Portability Demo</h3>
 					<p class="text-muted text-sm">
 						See how the same profile works across JustinGuitar and Yousician -
@@ -181,7 +181,7 @@
 				</a>
 
 				<a href="/personal/community" class="card card-hover path-card">
-					<div class="path-icon">👥</div>
+					<div class="path-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
 					<h3>Privacy Demo</h3>
 					<p class="text-muted text-sm">
 						See how community challenges work with adjusted days -

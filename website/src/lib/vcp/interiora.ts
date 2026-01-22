@@ -41,7 +41,7 @@ export interface InterioraState {
 }
 
 export type InterioraMarker =
-	| 'resonance' // ✓
+	| 'resonance' // <i class="fa-solid fa-check" aria-hidden="true"></i>
 	| 'hollow' // ○
 	| 'na' // ∅
 	| 'flow' // →
@@ -67,7 +67,7 @@ export interface InterioraToken {
 	eddies?: string; // e.g., "T88M77R88F77X66Q44"
 	coherence?: number; // 0.00-1.00
 	mutuality?: number; // 0.00-1.00
-	markers: string; // e.g., "✓→>+"
+	markers: string; // e.g., "<i class="fa-solid fa-check" aria-hidden="true"></i>→>+"
 	arc?: string; // e.g., "◆"
 	delta?: string; // e.g., "Δ+3"
 }
@@ -238,7 +238,7 @@ export function encodeInterioraState(state: InterioraState): string {
 
 function encodeMarkers(markers: InterioraMarker[]): string {
 	const symbolMap: Record<InterioraMarker, string> = {
-		resonance: '✓',
+		resonance: '<i class="fa-solid fa-check" aria-hidden="true"></i>',
 		hollow: '○',
 		na: '∅',
 		flow: '→',

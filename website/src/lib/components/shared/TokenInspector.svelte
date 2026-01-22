@@ -72,7 +72,7 @@
 				<div class="transmission-summary">
 					<div class="summary-section">
 						<div class="summary-label summary-label-shared">
-							<span class="summary-icon">✓</span> Transmitted ({summary.transmitted.length})
+							<span class="summary-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span> Transmitted ({summary.transmitted.length})
 						</div>
 						<div class="field-list">
 							{#each summary.transmitted as field}
@@ -83,7 +83,7 @@
 
 					<div class="summary-section">
 						<div class="summary-label summary-label-influence">
-							<span class="summary-icon">⚡</span> Influencing ({summary.influencing.length})
+							<span class="summary-icon"><i class="fa-solid fa-bolt" aria-hidden="true"></i></span> Influencing ({summary.influencing.length})
 						</div>
 						<div class="field-list">
 							{#each summary.influencing as field}
@@ -94,7 +94,7 @@
 
 					<div class="summary-section">
 						<div class="summary-label summary-label-withheld">
-							<span class="summary-icon">🔒</span> Withheld ({summary.withheld.length})
+							<span class="summary-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span> Withheld ({summary.withheld.length})
 						</div>
 						<div class="field-list">
 							{#each summary.withheld as field}
@@ -107,7 +107,7 @@
 
 			<div class="token-footer">
 				<span class="footer-note">
-					Private fields are represented by category markers (🔒work, 🔒housing) — values never transmitted
+					Private fields are represented by category markers (<i class="fa-solid fa-lock" aria-hidden="true"></i>work, <i class="fa-solid fa-lock" aria-hidden="true"></i>housing) — values never transmitted
 				</span>
 			</div>
 		</div>

@@ -151,7 +151,7 @@
 
 			<div class="footer-bottom">
 				<p>
-					Built with <span aria-label="love">♡</span> by
+					Built with <span aria-label="love"><i class="fa-solid fa-heart" aria-hidden="true"></i></span> by
 					<a href="https://creed.space" target="_blank" rel="noopener noreferrer">Creed Space</a>
 				</p>
 				<p class="footer-version">VCP Demo v0.1</p>

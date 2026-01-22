@@ -12,7 +12,7 @@ export const negotiationAgents: AgentIdentity[] = [
 		agent_id: 'employee',
 		display_name: 'Sam',
 		role: 'negotiator',
-		avatar: '👨‍💻',
+		avatar: '<i class="fa-solid fa-laptop-code" aria-hidden="true"></i>',
 		color: '#3498db',
 		constitution: {
 			id: 'employee-advocate',
@@ -25,7 +25,7 @@ export const negotiationAgents: AgentIdentity[] = [
 		agent_id: 'manager',
 		display_name: 'Patricia',
 		role: 'negotiator',
-		avatar: '👩‍💼',
+		avatar: '<i class="fa-solid fa-user-tie" aria-hidden="true"></i>',
 		color: '#e74c3c',
 		constitution: {
 			id: 'team-leader',
@@ -38,7 +38,7 @@ export const negotiationAgents: AgentIdentity[] = [
 		agent_id: 'mediator',
 		display_name: 'HR Mediator',
 		role: 'mediator',
-		avatar: '⚖️',
+		avatar: '<i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>',
 		color: '#9b59b6',
 		constitution: {
 			id: 'fair-process',

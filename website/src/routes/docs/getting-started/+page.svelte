@@ -76,9 +76,9 @@ const token = encodeContextToCSM1(context);
 // C:learning-assistant@1.0
 // P:muse:3
 // G:learn_guitar:beginner:visual
-// X:🔇quiet:💰low:⏱️30minutes
+// X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes
 // F:none
-// S:🔒work|🔒housing`}</code></pre>
+// S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-lock" aria-hidden="true"></i>housing`}</code></pre>
 
 		<h3>3. Share with Stakeholders</h3>
 		<p>The token tells AI systems what they need to know, while keeping private details hidden:</p>
@@ -95,17 +95,17 @@ const token = encodeContextToCSM1(context);
 				<tr>
 					<td><code>G:learn_guitar:beginner:visual</code></td>
 					<td>Goal + skill level + style</td>
-					<td>✓ Full detail</td>
+					<td><i class="fa-solid fa-check" aria-hidden="true"></i> Full detail</td>
 				</tr>
 				<tr>
-					<td><code>X:🔇quiet:💰low</code></td>
+					<td><code>X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-coins" aria-hidden="true"></i>low</code></td>
 					<td>Noise + budget constraints</td>
-					<td>✓ Flags only</td>
+					<td><i class="fa-solid fa-check" aria-hidden="true"></i> Flags only</td>
 				</tr>
 				<tr>
-					<td><code>S:🔒work|🔒housing</code></td>
+					<td><code>S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-lock" aria-hidden="true"></i>housing</code></td>
 					<td>Private context exists</td>
-					<td>✗ Categories only</td>
+					<td><i class="fa-solid fa-xmark" aria-hidden="true"></i> Categories only</td>
 				</tr>
 			</tbody>
 		</table>

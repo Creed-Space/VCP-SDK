@@ -47,7 +47,7 @@
 	}
 
 	function getDifficultyStars(difficulty: number): string {
-		return '★'.repeat(difficulty) + '☆'.repeat(5 - difficulty);
+		return '<i class="fa-solid fa-star" aria-hidden="true"></i>'.repeat(difficulty) + '<i class="fa-regular fa-star" aria-hidden="true"></i>'.repeat(5 - difficulty);
 	}
 
 	function getProgressPercent(): number {
@@ -117,7 +117,7 @@
 					<div class="node-content">
 						<span class="topic-name">{topic.name}</span>
 						<div class="topic-meta">
-							<span class="difficulty">{getDifficultyStars(topic.difficulty)}</span>
+							<span class="difficulty">{@html getDifficultyStars(topic.difficulty)}</span>
 							<span class="duration">{topic.estimated_hours}h</span>
 						</div>
 						{#if topicMastery}

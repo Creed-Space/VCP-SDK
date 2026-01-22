@@ -91,12 +91,12 @@
 						<div class="context-indicators">
 							{#if message.vcpContextShared?.length}
 								<span class="context-shared" title="VCP context shared">
-									✓ {message.vcpContextShared.join(', ')}
+									<i class="fa-solid fa-check" aria-hidden="true"></i> {message.vcpContextShared.join(', ')}
 								</span>
 							{/if}
 							{#if message.vcpContextHidden?.length}
 								<span class="context-hidden" title="VCP context (private, influenced output)">
-									🔒 {message.vcpContextHidden.length} private field{message.vcpContextHidden.length > 1 ? 's' : ''} influenced
+									<i class="fa-solid fa-lock" aria-hidden="true"></i> {message.vcpContextHidden.length} private field{message.vcpContextHidden.length > 1 ? 's' : ''} influenced
 								</span>
 							{/if}
 						</div>
@@ -107,7 +107,7 @@
 
 		{#if messages.length === 0}
 			<div class="empty-state">
-				<span class="empty-icon">💬</span>
+				<span class="empty-icon"><i class="fa-solid fa-comment" aria-hidden="true"></i></span>
 				<p>No messages yet. Start the simulation to see agent interactions.</p>
 			</div>
 		{/if}

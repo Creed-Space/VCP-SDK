@@ -50,7 +50,13 @@
 		aria-expanded={sidebarOpen}
 		aria-controls="docs-sidebar"
 	>
-		<span class="toggle-icon">{sidebarOpen ? '✕' : '☰'}</span>
+		<span class="toggle-icon">
+			{#if sidebarOpen}
+				<i class="fa-solid fa-xmark" aria-hidden="true"></i>
+			{:else}
+				<i class="fa-solid fa-bars" aria-hidden="true"></i>
+			{/if}
+		</span>
 		<span class="toggle-text">Menu</span>
 	</button>
 
@@ -58,7 +64,7 @@
 	<aside id="docs-sidebar" class="sidebar" class:open={sidebarOpen}>
 		<nav class="sidebar-nav" aria-label="Documentation navigation">
 			<a href="/docs" class="sidebar-home" class:active={currentPath === '/docs'}>
-				<span class="home-icon">📚</span>
+				<span class="home-icon"><i class="fa-solid fa-book" aria-hidden="true"></i></span>
 				Documentation Home
 			</a>
 

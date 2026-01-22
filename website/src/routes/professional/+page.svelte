@@ -40,7 +40,7 @@
 	{#if ctx}
 		<section class="profile-card card">
 			<div class="profile-header">
-				<div class="profile-avatar">👤</div>
+				<div class="profile-avatar"><i class="fa-solid fa-user" aria-hidden="true"></i></div>
 				<div class="profile-info">
 					<h2>{ctx.public_profile.display_name}</h2>
 					<p class="text-muted">{ctx.public_profile.role?.replace(/_/g, ' ')}</p>
@@ -110,7 +110,7 @@
 			</div>
 
 			<div class="privacy-note" style="margin-top: 1rem;">
-				<span class="privacy-note-icon">🔒</span>
+				<span class="privacy-note-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
 				<span>
 					HR and platforms see boolean flags only. They know constraints exist but not WHY.
 					The reasons (family situation, health details) stay with Campion.

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="../../favicon.svg" type="image/svg+xml" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>VCP Demo - Value Context Protocol</title>
+		<meta name="description" content="Interactive demos showcasing VCP's privacy-preserving context sharing" />
+		<!-- Font Awesome -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+		
+		<link href="../../_app/immutable/assets/0.Bp4ND8dq.css" rel="stylesheet">
+		<link href="../../_app/immutable/assets/DocsLayout.CrTJsvvt.css" rel="stylesheet">
+		<link rel="modulepreload" href="../../_app/immutable/entry/start.Y-BHlpDX.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/DDCcBiF0.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/CA-YEXjj.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/Bz1WZ207.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/DahdQlr5.js">
+		<link rel="modulepreload" href="../../_app/immutable/entry/app.B1mUfMQt.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/CcFbpJ_b.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/DLAMQWiX.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/Cjh8sQO3.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/C_FJgLy-.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/D8G-iT40.js">
+		<link rel="modulepreload" href="../../_app/immutable/nodes/0.J0kyLxQC.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/CevX9nUO.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/BSTOKesL.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/C5dXRjDF.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/BRzKQYUk.js">
+		<link rel="modulepreload" href="../../_app/immutable/nodes/18.D0BNNjob.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/sU9ev7NS.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/B8NQnvAs.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/DGVoXilZ.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/DlD--9Nh.js">
+		<link rel="modulepreload" href="../../_app/immutable/chunks/bFwemPRK.js"><!--d104oh--><meta name="description" content="Full API documentation for all VCP library functions."/><!----><title>API Reference - VCP Documentation</title>
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents"><!--[--><!--[--><!----><div class="app svelte-12qhfyh"><a href="#main-content" class="skip-link">Skip to main content</a> <header class="app-header svelte-12qhfyh"><nav class="container flex items-center justify-between"><a href="/" class="logo svelte-12qhfyh" aria-label="VCP Demo Home"><span class="logo-icon svelte-12qhfyh" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span> <span class="logo-text svelte-12qhfyh">VCP</span> <span class="logo-badge svelte-12qhfyh">Demo</span></a> <div class="nav-links desktop-nav svelte-12qhfyh" role="navigation" aria-label="Main navigation"><a href="/about" class="nav-link svelte-12qhfyh">About</a> <a href="/demos" class="nav-link svelte-12qhfyh">Demos</a> <a href="/docs" class="nav-link svelte-12qhfyh">Docs</a> <a href="/playground" class="nav-link svelte-12qhfyh">Playground</a> <span class="nav-divider svelte-12qhfyh" aria-hidden="true"></span> <a href="https://creed.space" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-brand svelte-12qhfyh" aria-label="Learn more about Creed Space (opens in new tab)"><span class="brand-icon svelte-12qhfyh" aria-hidden="true">◈</span> Creed Space</a></div> <button class="mobile-menu-btn svelte-12qhfyh" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><span class="hamburger svelte-12qhfyh"><span class="svelte-12qhfyh"></span> <span class="svelte-12qhfyh"></span> <span class="svelte-12qhfyh"></span></span></button></nav> <!--[!--><!--]--></header> <main id="main-content" tabindex="-1" class="svelte-12qhfyh"><!--[!--><!----><div class="docs-layout svelte-fxrvrl"><button class="sidebar-toggle svelte-fxrvrl" aria-expanded="false" aria-controls="docs-sidebar"><span class="toggle-icon svelte-fxrvrl"><!--[!--><i class="fa-solid fa-bars" aria-hidden="true"></i><!--]--></span> <span class="toggle-text">Menu</span></button> <aside id="docs-sidebar" class="sidebar svelte-fxrvrl"><nav class="sidebar-nav" aria-label="Documentation navigation"><a href="/docs" class="sidebar-home svelte-fxrvrl"><span class="home-icon svelte-fxrvrl"><i class="fa-solid fa-book" aria-hidden="true"></i></span> Documentation Home</a> <!--[--><div class="nav-section svelte-fxrvrl"><h3 class="nav-section-title svelte-fxrvrl">Getting Started</h3> <ul class="nav-list svelte-fxrvrl"><!--[--><li><a href="/docs/getting-started" class="nav-link svelte-fxrvrl"><span class="nav-link-label">Quick Start</span> <span class="nav-link-time svelte-fxrvrl">5 min</span></a></li><li><a href="/docs/concepts" class="nav-link svelte-fxrvrl"><span class="nav-link-label">Core Concepts</span> <span class="nav-link-time svelte-fxrvrl">10 min</span></a></li><!--]--></ul></div><div class="nav-section svelte-fxrvrl"><h3 class="nav-section-title svelte-fxrvrl">Specifications</h3> <ul class="nav-list svelte-fxrvrl"><!--[--><li><a href="/docs/csm1-specification" class="nav-link svelte-fxrvrl"><span class="nav-link-label">CSM-1 Format</span> <span class="nav-link-time svelte-fxrvrl">15 min</span></a></li><li><a href="/docs/api-reference" class="nav-link svelte-fxrvrl"><span class="nav-link-label">API Reference</span> <span class="nav-link-time svelte-fxrvrl">Ref</span></a></li><!--]--></ul></div><div class="nav-section svelte-fxrvrl"><h3 class="nav-section-title svelte-fxrvrl">Advanced</h3> <ul class="nav-list svelte-fxrvrl"><!--[--><li><a href="/docs/constitutional-ai" class="nav-link svelte-fxrvrl"><span class="nav-link-label">Constitutional AI</span> <span class="nav-link-time svelte-fxrvrl">12 min</span></a></li><li><a href="/docs/privacy-architecture" class="nav-link svelte-fxrvrl"><span class="nav-link-label">Privacy Architecture</span> <span class="nav-link-time svelte-fxrvrl">8 min</span></a></li><li><a href="/docs/interiora" class="nav-link svelte-fxrvrl"><span class="nav-link-label">Interiora Spec</span> <span class="nav-link-time svelte-fxrvrl">20 min</span></a></li><li><a href="/docs/multi-agent" class="nav-link svelte-fxrvrl"><span class="nav-link-label">Multi-Agent Patterns</span> <span class="nav-link-time svelte-fxrvrl">15 min</span></a></li><!--]--></ul></div><!--]--></nav></aside> <main class="docs-content svelte-fxrvrl"><header class="docs-header svelte-fxrvrl"><nav class="breadcrumbs svelte-fxrvrl" aria-label="Breadcrumb"><a href="/docs" class="svelte-fxrvrl">Docs</a> <span class="breadcrumb-sep svelte-fxrvrl" aria-hidden="true">/</span> <span class="breadcrumb-current svelte-fxrvrl">API Reference</span></nav> <h1 class="svelte-fxrvrl">API Reference</h1> <!--[--><p class="docs-description svelte-fxrvrl">Complete reference for all VCP library types and functions.</p><!--]--></header> <article class="docs-article svelte-fxrvrl"><h2>Installation</h2> <pre><code>npm install @creed-space/vcp</code></pre> <h2>Core Types</h2> <h3>VCPContext</h3> <p>The main context object containing all user preferences and settings.</p> <pre><code>interface VCPContext {
+  vcp_version: string;           // Protocol version
+  profile_id: string;            // Unique identifier
+  created?: string;              // ISO date
+  updated?: string;              // ISO date
+
+  constitution: ConstitutionReference;
+  public_profile: PublicProfile;
+  portable_preferences?: PortablePreferences;
+  current_skills?: CurrentSkills;
+  constraints?: ConstraintFlags;
+  availability?: Availability;
+  sharing_settings?: SharingSettings;
+  private_context?: PrivateContext;
+}</code></pre> <h3>ConstitutionReference</h3> <pre><code>interface ConstitutionReference {
+  id: string;              // Constitution identifier
+  version: string;         // Version string
+  persona?: PersonaType;   // Interaction style
+  adherence?: number;      // 1-5, how strictly to follow
+  scopes?: ScopeType[];    // Applicable domains
+}</code></pre> <h3>PublicProfile</h3> <pre><code>interface PublicProfile {
+  display_name?: string;
+  goal?: string;
+  experience?: ExperienceLevel;  // beginner | intermediate | advanced | expert
+  learning_style?: LearningStyle; // visual | auditory | hands_on | reading | mixed
+  pace?: Pace;                   // intensive | steady | relaxed
+  motivation?: Motivation;       // career | stress_relief | social | achievement | curiosity
+
+  // Professional fields
+  role?: string;
+  team?: string;
+  tenure_years?: number;
+  career_goal?: string;
+  career_timeline?: string;
+}</code></pre> <h3>PortablePreferences</h3> <pre><code>interface PortablePreferences {
+  noise_mode?: NoiseMode;           // normal | quiet_preferred | silent_required
+  session_length?: SessionLength;   // 15_minutes | 30_minutes | 60_minutes | flexible
+  pressure_tolerance?: PressureTolerance; // high | medium | low
+  budget_range?: BudgetRange;       // unlimited | high | medium | low | free_only
+  feedback_style?: FeedbackStyle;   // direct | encouraging | detailed | minimal
+}</code></pre> <h3>ConstraintFlags</h3> <pre><code>interface ConstraintFlags {
+  time_limited?: boolean;
+  budget_limited?: boolean;
+  noise_restricted?: boolean;
+  energy_variable?: boolean;
+  schedule_irregular?: boolean;
+  mobility_limited?: boolean;
+  health_considerations?: boolean;
+}</code></pre> <h3>PrivateContext</h3> <pre><code>interface PrivateContext {
+  _note?: string;        // Internal documentation
+  [key: string]: unknown; // Any private values
+}</code></pre> <h2>Encoding Functions</h2> <h3>encodeContextToCSM1</h3> <p>Encodes a VCP context into CSM-1 token format.</p> <pre><code>import { encodeContextToCSM1 } from '@creed-space/vcp';
+
+const token = encodeContextToCSM1(context);
+// Returns:
+// VCP:1.0:user_001
+// C:learning-assistant@1.0
+// P:muse:3
+// ...</code></pre> <h4>Parameters</h4> <table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>ctx</td><td>VCPContext</td><td>The context to encode</td></tr></tbody></table> <h4>Returns</h4> <p><code>string</code> — CSM-1 formatted token</p> <h3>formatTokenForDisplay</h3> <p>Wraps a CSM-1 token in a box for visual display.</p> <pre><code>import { formatTokenForDisplay } from '@creed-space/vcp';
+
+const boxed = formatTokenForDisplay(token);
+// Returns:
+// ┌────────────────────────────────────────┐
+// │ VCP:1.0:user_001                       │
+// │ ...                                    │
+// └────────────────────────────────────────┘</code></pre> <h3>parseCSM1Token</h3> <p>Parses a CSM-1 token back into key-value components.</p> <pre><code>import { parseCSM1Token } from '@creed-space/vcp';
+
+const parsed = parseCSM1Token(token);
+// Returns:
+// {
+//   VCP: "1.0:user_001",
+//   C: "learning-assistant@1.0",
+//   P: "muse:3",
+//   ...
+// }</code></pre> <h2>Utility Functions</h2> <h3>getEmojiLegend</h3> <p>Returns an array of emoji shortcodes and their meanings.</p> <pre><code>import { getEmojiLegend } from '@creed-space/vcp';
+
+const legend = getEmojiLegend();
+// Returns:
+// [
+//   { emoji: '&lt;i class="fa-solid fa-volume-xmark" aria-hidden="true">&lt;/i>', meaning: 'quiet mode' },
+//   { emoji: '&lt;i class="fa-solid fa-coins" aria-hidden="true">&lt;/i>', meaning: 'budget tier' },
+//   ...
+// ]</code></pre> <h3>getTransmissionSummary</h3> <p>Analyzes a context and returns what would be transmitted vs withheld.</p> <pre><code>import { getTransmissionSummary } from '@creed-space/vcp';
+
+const summary = getTransmissionSummary(context);
+// Returns:
+// {
+//   transmitted: ['goal', 'experience', 'learning_style'],
+//   withheld: ['work_situation', 'housing_situation'],
+//   influencing: ['budget_limited', 'time_limited']
+// }</code></pre> <h2>Constants</h2> <h3>CONSTRAINT_EMOJI</h3> <p>Mapping of constraint flags to emoji shortcodes.</p> <pre><code>const CONSTRAINT_EMOJI = {
+  noise_restricted: '&lt;i class="fa-solid fa-volume-xmark" aria-hidden="true">&lt;/i>',
+  budget_limited: '&lt;i class="fa-solid fa-coins" aria-hidden="true">&lt;/i>',
+  energy_variable: '&lt;i class="fa-solid fa-bolt" aria-hidden="true">&lt;/i>',
+  time_limited: '⏰',
+  schedule_irregular: '&lt;i class="fa-solid fa-calendar" aria-hidden="true">&lt;/i>',
+  mobility_limited: '&lt;i class="fa-solid fa-person-walking" aria-hidden="true">&lt;/i>',
+  health_considerations: '&lt;i class="fa-solid fa-pills" aria-hidden="true">&lt;/i>'
+}</code></pre> <h3>PRIVATE_MARKER / SHARED_MARKER</h3> <pre><code>const PRIVATE_MARKER = '&lt;i class="fa-solid fa-lock" aria-hidden="true">&lt;/i>';
+const SHARED_MARKER = '&lt;i class="fa-solid fa-check" aria-hidden="true">&lt;/i>';</code></pre> <h2>Enums</h2> <h3>PersonaType</h3> <pre><code>type PersonaType = 'muse' | 'ambassador' | 'godparent' | 'sentinel' | 'anchor' | 'nanny';</code></pre> <h3>ExperienceLevel</h3> <pre><code>type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';</code></pre> <h3>LearningStyle</h3> <pre><code>type LearningStyle = 'visual' | 'auditory' | 'hands_on' | 'reading' | 'mixed';</code></pre> <h3>NoiseMode</h3> <pre><code>type NoiseMode = 'normal' | 'quiet_preferred' | 'silent_required';</code></pre> <h3>SessionLength</h3> <pre><code>type SessionLength = '15_minutes' | '30_minutes' | '60_minutes' | 'flexible';</code></pre> <h3>BudgetRange</h3> <pre><code>type BudgetRange = 'unlimited' | 'high' | 'medium' | 'low' | 'free_only';</code></pre> <h3>ScopeType</h3> <pre><code>type ScopeType = 'work' | 'education' | 'creativity' | 'health' | 'privacy'
+  | 'family' | 'finance' | 'social' | 'legal' | 'safety';</code></pre> <h2>Audit Types</h2> <h3>AuditEntry</h3> <pre><code>interface AuditEntry {
+  id: string;
+  timestamp: string;              // ISO date
+  event_type: AuditEventType;
+  platform_id?: string;
+  data_shared?: string[];         // Fields that were shared
+  data_withheld?: string[];       // Fields that were withheld
+  private_fields_influenced?: number; // Count of private fields that shaped output
+  private_fields_exposed?: number;    // Always 0 in valid VCP
+  details?: Record&lt;string, unknown>;
+}</code></pre> <h3>AuditEventType</h3> <pre><code>type AuditEventType =
+  | 'context_shared'
+  | 'context_withheld'
+  | 'consent_granted'
+  | 'consent_revoked'
+  | 'progress_synced'
+  | 'recommendation_generated'
+  | 'skip_requested'
+  | 'adjustment_recorded';</code></pre> <h2>Platform Types</h2> <h3>PlatformManifest</h3> <pre><code>interface PlatformManifest {
+  platform_id: string;
+  platform_name: string;
+  platform_type: 'learning' | 'community' | 'commerce' | 'coaching';
+  version: string;
+  context_requirements: {
+    required: string[];
+    optional: string[];
+  };
+  capabilities: string[];
+  branding?: {
+    primary_color: string;
+    logo?: string;
+  };
+}</code></pre> <h3>FilteredContext</h3> <p>The context as seen by a specific stakeholder after privacy filtering.</p> <pre><code>interface FilteredContext {
+  public: Partial&lt;PublicProfile>;
+  preferences: Partial&lt;PortablePreferences>;
+  constraints: ConstraintFlags;
+  skills?: Partial&lt;CurrentSkills>;
+}</code></pre> <h2>Next Steps</h2> <ul><li><a href="/playground">Playground</a> — Test the API interactively</li> <li><a href="/docs/concepts">Core Concepts</a> — Understand the architecture</li> <li><a href="/demos">Demos</a> — See real-world examples</li></ul><!----></article> <footer class="docs-footer svelte-fxrvrl"><div class="footer-nav svelte-fxrvrl"><a href="/docs" class="footer-link svelte-fxrvrl"><span class="footer-link-direction svelte-fxrvrl">←</span> <span>Back to Docs</span></a> <a href="/playground" class="footer-link svelte-fxrvrl"><span>Try the Playground</span> <span class="footer-link-direction svelte-fxrvrl">→</span></a></div></footer></main></div> <!--[!--><!--]--><!----><!----><!--]--></main> <footer class="app-footer svelte-12qhfyh"><div class="container"><div class="footer-content svelte-12qhfyh"><div class="footer-brand svelte-12qhfyh"><span class="footer-logo svelte-12qhfyh" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span> <div><p class="footer-title svelte-12qhfyh">Value Context Protocol</p> <p class="footer-tagline svelte-12qhfyh">Your context stays yours. Private reasons stay private.</p></div></div> <div class="footer-links svelte-12qhfyh"><div class="footer-section svelte-12qhfyh"><h4 class="svelte-12qhfyh">Demos</h4> <a href="/sharing" class="svelte-12qhfyh">Sharing</a> <a href="/coordination" class="svelte-12qhfyh">Coordination</a> <a href="/self-modeling" class="svelte-12qhfyh">Self-Modeling</a> <a href="/adaptation" class="svelte-12qhfyh">Adaptation</a> <a href="/psychosecurity" class="svelte-12qhfyh">Psychosecurity</a></div> <div class="footer-section svelte-12qhfyh"><h4 class="svelte-12qhfyh">Learn More</h4> <a href="https://creed.space" target="_blank" rel="noopener noreferrer" class="svelte-12qhfyh">Creed Space</a> <a href="https://github.com/creed-space" target="_blank" rel="noopener noreferrer" class="svelte-12qhfyh">GitHub</a></div></div></div> <div class="footer-bottom svelte-12qhfyh"><p>Built with <span aria-label="love"><i class="fa-solid fa-heart" aria-hidden="true"></i></span> by <a href="https://creed.space" target="_blank" rel="noopener noreferrer" class="svelte-12qhfyh">Creed Space</a></p> <p class="footer-version svelte-12qhfyh">VCP Demo v0.1</p></div></div></footer></div><!----><!--]--> <!--[!--><!--]--><!--]-->
+			
+			<script>
+				{
+					__sveltekit_1datamw = {
+						base: new URL("../..", location).pathname.slice(0, -1)
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("../../_app/immutable/entry/start.Y-BHlpDX.js"),
+						import("../../_app/immutable/entry/app.B1mUfMQt.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 18],
+							data: [null,null],
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>

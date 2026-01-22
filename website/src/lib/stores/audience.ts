@@ -50,17 +50,17 @@ export const audience = createAudienceStore();
 export const AUDIENCE_META: Record<AudienceType, { label: string; icon: string; description: string }> = {
 	general: {
 		label: 'Everyone',
-		icon: '👥',
+		icon: '<i class="fa-solid fa-users" aria-hidden="true"></i>',
 		description: 'Accessible explanations for all'
 	},
 	business: {
 		label: 'Business',
-		icon: '💼',
+		icon: '<i class="fa-solid fa-briefcase" aria-hidden="true"></i>',
 		description: 'Value propositions and case studies'
 	},
 	developer: {
 		label: 'Developer',
-		icon: '🛠️',
+		icon: '<i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i>',
 		description: 'Technical details and API docs'
 	}
 };

@@ -91,7 +91,7 @@
 		<div class="platform-frame platform-frame-community">
 			<div class="platform-header platform-header-community">
 				<div class="platform-brand">
-					<span class="platform-logo">👥</span>
+					<span class="platform-logo"><i class="fa-solid fa-users" aria-hidden="true"></i></span>
 					<span class="platform-name">Guitar Community</span>
 				</div>
 				<div class="header-actions">
@@ -109,7 +109,7 @@
 
 	<div class="platform-content">
 		<header class="challenge-header">
-			<h1>🏆 {challengeData.challenge.name}</h1>
+			<h1><i class="fa-solid fa-trophy" aria-hidden="true"></i> {challengeData.challenge.name}</h1>
 			<p class="text-muted">
 				Day {challengeData.challenge.current_day} of {challengeData.challenge.total_days}
 			</p>
@@ -133,11 +133,11 @@
 						<tr class:highlighted={entry.is_current_user}>
 							<td class="rank-cell">
 								{#if entry.rank === 1}
-									🥇
+									<i class="fa-solid fa-medal" aria-hidden="true"></i>
 								{:else if entry.rank === 2}
-									🥈
+									<i class="fa-solid fa-medal" aria-hidden="true"></i>
 								{:else if entry.rank === 3}
-									🥉
+									<i class="fa-solid fa-medal" aria-hidden="true"></i>
 								{:else}
 									#{entry.rank}
 								{/if}
@@ -186,7 +186,7 @@
 				{challengeData.privacy_explainer.adjusted_days_explanation}
 			</p>
 			<div class="privacy-note" style="margin-top: 1rem;">
-				<span class="privacy-note-icon">🔒</span>
+				<span class="privacy-note-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
 				<span>
 					<strong>Community cannot see:</strong>
 					{challengeData.privacy_explainer.what_community_cannot_see.join(', ')}
@@ -241,7 +241,7 @@
 			<h2>What Others See vs What You See</h2>
 			<div class="comparison-grid">
 				<div class="comparison-column comparison-column-stakeholder">
-					<h4>👥 Community Sees:</h4>
+					<h4><i class="fa-solid fa-users" aria-hidden="true"></i> Community Sees:</h4>
 					<ul class="comparison-list">
 						<li>Your display name: <strong>Gentian</strong></li>
 						<li>Days completed: <strong>18</strong></li>
@@ -251,7 +251,7 @@
 					</ul>
 				</div>
 				<div class="comparison-column comparison-column-user">
-					<h4>👤 You See:</h4>
+					<h4><i class="fa-solid fa-user" aria-hidden="true"></i> You See:</h4>
 					<ul class="comparison-list">
 						<li>All of the above, plus:</li>
 						<li>Why Jan 18 was adjusted: <em>Night shift recovery</em></li>

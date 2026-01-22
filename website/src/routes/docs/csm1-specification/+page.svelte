@@ -40,9 +40,9 @@ S:<private_markers>`}</code></pre>
 C:learning-assistant@1.0
 P:muse:3
 G:learn_guitar:beginner:visual
-X:🔇quiet:💰low:⏱️30minutes
+X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes
 F:time_limited|budget_limited
-S:🔒work|🔒housing`}</code></pre>
+S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-lock" aria-hidden="true"></i>housing`}</code></pre>
 
 		<h2>Line-by-Line Breakdown</h2>
 
@@ -104,15 +104,15 @@ S:🔒work|🔒housing`}</code></pre>
 				<tr><th>Emoji</th><th>Meaning</th><th>Example</th></tr>
 			</thead>
 			<tbody>
-				<tr><td>🔇</td><td>Quiet mode preference</td><td><code>🔇quiet</code></td></tr>
-				<tr><td>🔕</td><td>Silent required</td><td><code>🔕silent</code></td></tr>
-				<tr><td>💰</td><td>Budget tier</td><td><code>💰low</code></td></tr>
+				<tr><td><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i></td><td>Quiet mode preference</td><td><code><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet</code></td></tr>
+				<tr><td><i class="fa-solid fa-bell-slash" aria-hidden="true"></i></td><td>Silent required</td><td><code><i class="fa-solid fa-bell-slash" aria-hidden="true"></i>silent</code></td></tr>
+				<tr><td><i class="fa-solid fa-coins" aria-hidden="true"></i></td><td>Budget tier</td><td><code><i class="fa-solid fa-coins" aria-hidden="true"></i>low</code></td></tr>
 				<tr><td>🆓</td><td>Free only</td><td><code>🆓</code></td></tr>
-				<tr><td>💎</td><td>Premium budget</td><td><code>💎high</code></td></tr>
-				<tr><td>⚡</td><td>Energy variable</td><td><code>⚡var</code></td></tr>
+				<tr><td><i class="fa-solid fa-gem" aria-hidden="true"></i></td><td>Premium budget</td><td><code><i class="fa-solid fa-gem" aria-hidden="true"></i>high</code></td></tr>
+				<tr><td><i class="fa-solid fa-bolt" aria-hidden="true"></i></td><td>Energy variable</td><td><code><i class="fa-solid fa-bolt" aria-hidden="true"></i>var</code></td></tr>
 				<tr><td>⏰</td><td>Time limited</td><td><code>⏰lim</code></td></tr>
-				<tr><td>⏱️</td><td>Session length</td><td><code>⏱️30minutes</code></td></tr>
-				<tr><td>📅</td><td>Irregular schedule</td><td><code>📅irreg</code></td></tr>
+				<tr><td><i class="fa-solid fa-stopwatch" aria-hidden="true"></i></td><td>Session length</td><td><code><i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes</code></td></tr>
+				<tr><td><i class="fa-solid fa-calendar" aria-hidden="true"></i></td><td>Irregular schedule</td><td><code><i class="fa-solid fa-calendar" aria-hidden="true"></i>irreg</code></td></tr>
 			</tbody>
 		</table>
 		<p>If no constraints: <code>X:none</code></p>
@@ -132,16 +132,16 @@ S:🔒work|🔒housing`}</code></pre>
 		<p>If none: <code>F:none</code></p>
 
 		<h3>Line 7: Private Markers (S-line)</h3>
-		<pre><code>S:🔒&lt;category1&gt;|🔒&lt;category2&gt;|...</code></pre>
+		<pre><code>S:<i class="fa-solid fa-lock" aria-hidden="true"></i>&lt;category1&gt;|<i class="fa-solid fa-lock" aria-hidden="true"></i>&lt;category2&gt;|...</code></pre>
 		<p>
 			Shows <em>categories</em> of private data that influenced the context, but
 			<strong>never the values</strong>:
 		</p>
 		<ul>
-			<li><code>🔒work</code> — Work-related private context exists</li>
-			<li><code>🔒housing</code> — Housing-related private context exists</li>
-			<li><code>🔒health</code> — Health-related private context exists</li>
-			<li><code>🔒financial</code> — Financial private context exists</li>
+			<li><code><i class="fa-solid fa-lock" aria-hidden="true"></i>work</code> — Work-related private context exists</li>
+			<li><code><i class="fa-solid fa-lock" aria-hidden="true"></i>housing</code> — Housing-related private context exists</li>
+			<li><code><i class="fa-solid fa-lock" aria-hidden="true"></i>health</code> — Health-related private context exists</li>
+			<li><code><i class="fa-solid fa-lock" aria-hidden="true"></i>financial</code> — Financial private context exists</li>
 		</ul>
 		<p>If no private context: <code>S:none</code></p>
 
@@ -182,9 +182,9 @@ S:🔒work|🔒housing`}</code></pre>
 //   C: "learning-assistant@1.0",
 //   P: "muse:3",
 //   G: "learn_guitar:beginner:visual",
-//   X: "🔇quiet:💰low:⏱️30minutes",
+//   X: "<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes",
 //   F: "time_limited|budget_limited",
-//   S: "🔒work|🔒housing"
+//   S: "<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-lock" aria-hidden="true"></i>housing"
 // }`}</code></pre>
 
 		<h2>Display Formatting</h2>
@@ -194,9 +194,9 @@ S:🔒work|🔒housing`}</code></pre>
 │ C:learning-assistant@1.0               │
 │ P:muse:3                               │
 │ G:learn_guitar:beginner:visual         │
-│ X:🔇quiet:💰low:⏱️30minutes            │
+│ X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes            │
 │ F:time_limited|budget_limited          │
-│ S:🔒work|🔒housing                     │
+│ S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-lock" aria-hidden="true"></i>housing                     │
 └────────────────────────────────────────┘`}</code></pre>
 
 		<h2>Security Considerations</h2>

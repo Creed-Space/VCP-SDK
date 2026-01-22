@@ -403,7 +403,7 @@
 									</div>
 									<span class="mod-value">{Math.round(mod.effectiveness * 100)}%</span>
 									{#if !mod.current_availability}
-										<span class="mod-note" title={mod.notes}>⚠</span>
+										<span class="mod-note" title={mod.notes}><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
 									{/if}
 								</div>
 							{/each}

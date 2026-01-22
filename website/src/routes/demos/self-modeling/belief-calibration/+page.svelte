@@ -178,7 +178,7 @@
 							</div>
 						{:else}
 							<div class="no-calibration">
-								<span class="no-cal-icon">⚠️</span>
+								<span class="no-cal-icon"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
 								<span>No calibration history - confidence not yet validated</span>
 							</div>
 						{/if}
@@ -202,25 +202,25 @@
 							<h4>Uncertainty Type</h4>
 							<div class="uncertainty-info">
 								{#if selectedBelief.uncertainty_type === 'epistemic'}
-									<span class="uncertainty-icon">📚</span>
+									<span class="uncertainty-icon"><i class="fa-solid fa-book" aria-hidden="true"></i></span>
 									<div>
 										<strong>Epistemic</strong>
 										<p>Don't know, but could find out with more information</p>
 									</div>
 								{:else if selectedBelief.uncertainty_type === 'aleatoric'}
-									<span class="uncertainty-icon">🎲</span>
+									<span class="uncertainty-icon"><i class="fa-solid fa-dice" aria-hidden="true"></i></span>
 									<div>
 										<strong>Aleatoric</strong>
 										<p>Inherently random or unpredictable</p>
 									</div>
 								{:else if selectedBelief.uncertainty_type === 'model'}
-									<span class="uncertainty-icon">🔧</span>
+									<span class="uncertainty-icon"><i class="fa-solid fa-wrench" aria-hidden="true"></i></span>
 									<div>
 										<strong>Model Limitations</strong>
 										<p>Constrained by architecture or training</p>
 									</div>
 								{:else if selectedBelief.uncertainty_type === 'introspective'}
-									<span class="uncertainty-icon">❓</span>
+									<span class="uncertainty-icon"><i class="fa-solid fa-question" aria-hidden="true"></i></span>
 									<div>
 										<strong>Introspective</strong>
 										<p>Cannot be fully verified from inside the system</p>
@@ -247,7 +247,7 @@
 										</div>
 										<div class="history-details">
 											<span>Internal: {Math.round(check.internal_confidence * 100)}%</span>
-											<span>External: {typeof check.external_result === 'boolean' ? (check.external_result ? '✓' : '✗') : Math.round(check.external_result * 100) + '%'}</span>
+											<span>External: {typeof check.external_result === 'boolean' ? (check.external_result ? '<i class="fa-solid fa-check" aria-hidden="true"></i>' : '<i class="fa-solid fa-xmark" aria-hidden="true"></i>') : Math.round(check.external_result * 100) + '%'}</span>
 										</div>
 										{#if check.notes}
 											<div class="history-notes">{check.notes}</div>
@@ -259,7 +259,7 @@
 					</div>
 				{:else}
 					<div class="no-selection">
-						<span class="no-selection-icon">📊</span>
+						<span class="no-selection-icon"><i class="fa-solid fa-chart-bar" aria-hidden="true"></i></span>
 						<p>Select a belief to view its epistemic context</p>
 					</div>
 				{/if}

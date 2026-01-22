@@ -8,7 +8,7 @@
 		value: number;
 		min?: number;
 		max?: number;
-		emoji?: string;
+		icon?: string;
 		lowLabel?: string;
 		highLabel?: string;
 		uncertain?: boolean;
@@ -20,7 +20,7 @@
 		value = 5,
 		min = 1,
 		max = 9,
-		emoji = '',
+		icon = '',
 		lowLabel = '',
 		highLabel = '',
 		uncertain = false,
@@ -42,7 +42,7 @@
 <div class="dimension-slider">
 	<div class="slider-header">
 		<span class="slider-label">
-			{#if emoji}<span class="slider-emoji">{emoji}</span>{/if}
+			{#if icon}<span class="slider-icon"><i class="{icon}" aria-hidden="true"></i></span>{/if}
 			{label}
 			{#if uncertain}<span class="uncertain-marker">?</span>{/if}
 		</span>
@@ -93,8 +93,9 @@
 		font-weight: 500;
 	}
 
-	.slider-emoji {
+	.slider-icon {
 		font-size: 1rem;
+		color: var(--color-primary);
 	}
 
 	.uncertain-marker {

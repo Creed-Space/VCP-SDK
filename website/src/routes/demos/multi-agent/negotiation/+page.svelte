@@ -317,7 +317,7 @@
 			<!-- Private Context Reveal (after resolution) -->
 			{#if showPrivateContext}
 				<div class="reveal-section">
-					<h3>🔒 What Was Never Shared (Protected by VCP)</h3>
+					<h3><i class="fa-solid fa-lock" aria-hidden="true"></i> What Was Never Shared (Protected by VCP)</h3>
 					<p class="reveal-subtitle">
 						Both parties reached agreement without revealing these sensitive details:
 					</p>
@@ -325,7 +325,7 @@
 					<div class="reveal-grid">
 						<div class="reveal-card reveal-employee">
 							<div class="reveal-header">
-								<span class="reveal-avatar">👨‍💻</span>
+								<span class="reveal-avatar"><i class="fa-solid fa-laptop-code" aria-hidden="true"></i></span>
 								<span class="reveal-name">Sam's Private Context</span>
 							</div>
 							<div class="reveal-content">
@@ -344,7 +344,7 @@
 
 						<div class="reveal-card reveal-manager">
 							<div class="reveal-header">
-								<span class="reveal-avatar">👩‍💼</span>
+								<span class="reveal-avatar"><i class="fa-solid fa-user-tie" aria-hidden="true"></i></span>
 								<span class="reveal-name">Patricia's Private Context</span>
 							</div>
 							<div class="reveal-content">
@@ -363,7 +363,7 @@
 					</div>
 
 					<div class="outcome-note">
-						<span class="outcome-icon">✓</span>
+						<span class="outcome-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
 						<span>The same resolution was achieved—but with dignity preserved on both sides.</span>
 					</div>
 				</div>
@@ -383,7 +383,7 @@
 			<!-- Learning Points -->
 			{#if showPrivateContext}
 				<div class="learning-section">
-					<h3>🎓 Key Insights</h3>
+					<h3><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i> Key Insights</h3>
 					<ul class="learning-points">
 						{#each learningPoints as point}
 							<li>{point}</li>
@@ -612,7 +612,7 @@
 	}
 
 	.learning-points li::before {
-		content: '✓';
+		content: '<i class="fa-solid fa-check" aria-hidden="true"></i>';
 		position: absolute;
 		left: 0;
 		color: var(--color-success);

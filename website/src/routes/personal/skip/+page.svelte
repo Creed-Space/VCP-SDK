@@ -64,7 +64,7 @@
 
 		<!-- Context Detection -->
 		<section class="context-card card">
-			<h3>🔍 Context Detected</h3>
+			<h3><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Context Detected</h3>
 			<div class="context-details">
 				<div class="context-item">
 					<span class="context-label">Trigger:</span>
@@ -83,7 +83,7 @@
 
 		<!-- Recommendation -->
 		<section class="recommendation-card card">
-			<h3>💡 VCP Recommendation</h3>
+			<h3><i class="fa-solid fa-lightbulb" aria-hidden="true"></i> VCP Recommendation</h3>
 			<p class="recommendation-text">
 				{skipContext.recommendation.reasoning}
 			</p>
@@ -94,7 +94,7 @@
 			<h3>What Happens If You Skip?</h3>
 			<div class="outcome-list">
 				<div class="outcome-item">
-					<span class="outcome-icon">🔥</span>
+					<span class="outcome-icon"><i class="fa-solid fa-fire" aria-hidden="true"></i></span>
 					<div>
 						<strong>Your Streak</strong>
 						<p class="text-sm text-muted">
@@ -103,7 +103,7 @@
 					</div>
 				</div>
 				<div class="outcome-item">
-					<span class="outcome-icon">📊</span>
+					<span class="outcome-icon"><i class="fa-solid fa-chart-bar" aria-hidden="true"></i></span>
 					<div>
 						<strong>Leaderboard</strong>
 						<p class="text-sm text-muted">
@@ -112,7 +112,7 @@
 					</div>
 				</div>
 				<div class="outcome-item outcome-private">
-					<span class="outcome-icon">🔒</span>
+					<span class="outcome-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
 					<div>
 						<strong>Your Private Reason</strong>
 						<p class="text-sm text-muted">
@@ -128,7 +128,7 @@
 			<h3>Privacy Preview</h3>
 			<div class="comparison-grid">
 				<div class="comparison-column comparison-column-user">
-					<h4>👤 You Will See:</h4>
+					<h4><i class="fa-solid fa-user" aria-hidden="true"></i> You Will See:</h4>
 					<ul class="comparison-list">
 						<li>Today: Adjusted (night shift recovery)</li>
 						<li>Days: 18/22 (4 adjusted)</li>
@@ -136,7 +136,7 @@
 					</ul>
 				</div>
 				<div class="comparison-column comparison-column-stakeholder">
-					<h4>👥 Community Will See:</h4>
+					<h4><i class="fa-solid fa-users" aria-hidden="true"></i> Community Will See:</h4>
 					<ul class="comparison-list">
 						<li>Today: Adjusted</li>
 						<li>Days: 18/22 (4 adjusted)</li>
@@ -153,7 +153,7 @@
 				onclick={handlePracticeAnyway}
 				disabled={isSkipping}
 			>
-				Practice Anyway 💪
+				Practice Anyway <i class="fa-solid fa-dumbbell" aria-hidden="true"></i>
 			</button>
 			<button
 				class="btn btn-primary btn-lg"
@@ -163,7 +163,7 @@
 				{#if isSkipping}
 					Adjusting...
 				{:else}
-					Skip Today (Adjusted) ✓
+					Skip Today (Adjusted) <i class="fa-solid fa-check" aria-hidden="true"></i>
 				{/if}
 			</button>
 		</section>
@@ -174,7 +174,7 @@
 	{:else}
 		<!-- Skip Complete -->
 		<section class="complete-card card">
-			<div class="complete-icon">✅</div>
+			<div class="complete-icon"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></div>
 			<h2>Day Adjusted</h2>
 			<p class="text-muted">
 				Your skip has been recorded privately. The community sees only that you took an adjusted day.

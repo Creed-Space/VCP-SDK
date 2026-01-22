@@ -116,7 +116,7 @@
 		<div class="platform-frame platform-frame-yousician">
 			<div class="platform-header platform-header-yousician">
 				<div class="platform-brand">
-					<span class="platform-logo">🎮</span>
+					<span class="platform-logo"><i class="fa-solid fa-gamepad" aria-hidden="true"></i></span>
 					<span class="platform-name">Yousician</span>
 				</div>
 				<div class="header-actions">
@@ -138,7 +138,7 @@
 			{#if showSyncBanner}
 				<div class="sync-banner">
 					<div class="sync-content">
-						<span class="sync-icon">🔄</span>
+						<span class="sync-icon"><i class="fa-solid fa-rotate" aria-hidden="true"></i></span>
 						<div>
 							<strong>Skills Synced from JustinGuitar!</strong>
 							<p class="text-sm">
@@ -161,11 +161,11 @@
 
 			<!-- Synced Skills -->
 			<section class="synced-skills card">
-				<h3>🎯 Your Skills (Via VCP)</h3>
+				<h3><i class="fa-solid fa-bullseye" aria-hidden="true"></i> Your Skills (Via VCP)</h3>
 				<div class="skills-grid">
 					{#each syncedSkills() as skill}
 						<div class="skill-item">
-							<span class="skill-check">✓</span>
+							<span class="skill-check"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
 							<span>{skill.replace(/_/g, ' ')}</span>
 						</div>
 					{/each}
@@ -177,37 +177,37 @@
 
 			<!-- Gamified challenges -->
 			<section class="challenges-section">
-				<h2>🏆 Today's Challenges</h2>
+				<h2><i class="fa-solid fa-trophy" aria-hidden="true"></i> Today's Challenges</h2>
 				<div class="challenge-cards">
 					<div class="challenge-card">
-						<div class="challenge-icon">🎸</div>
+						<div class="challenge-icon"><i class="fa-solid fa-guitar" aria-hidden="true"></i></div>
 						<h3>Chord Hero: G C D</h3>
 						<p class="text-sm text-muted">Rock out with chords you know!</p>
 						<div class="challenge-reward">
-							<span>🌟 +50 XP</span>
+							<span><i class="fa-solid fa-star" aria-hidden="true"></i> +50 XP</span>
 						</div>
 						<button class="btn btn-primary">Play Now</button>
 					</div>
 
 					<div class="challenge-card">
-						<div class="challenge-icon">🎵</div>
+						<div class="challenge-icon"><i class="fa-solid fa-music" aria-hidden="true"></i></div>
 						<h3>Rhythm Challenge</h3>
 						<p class="text-sm text-muted">Test your timing skills</p>
 						<div class="challenge-reward">
-							<span>🌟 +30 XP</span>
+							<span><i class="fa-solid fa-star" aria-hidden="true"></i> +30 XP</span>
 						</div>
 						<button class="btn btn-secondary">Play Now</button>
 					</div>
 
 					{#if ctx.constraints?.noise_restricted}
 						<div class="challenge-card quiet-mode">
-							<div class="challenge-icon">🎧</div>
+							<div class="challenge-icon"><i class="fa-solid fa-headphones" aria-hidden="true"></i></div>
 							<h3>Tone Trainer Mode</h3>
 							<p class="text-sm text-muted">
 								Practice with headphones - perfect for your quiet setting!
 							</p>
 							<div class="challenge-reward">
-								<span class="badge badge-success">🔇 Quiet Friendly</span>
+								<span class="badge badge-success"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i> Quiet Friendly</span>
 							</div>
 							<button class="btn btn-primary">Start Training</button>
 						</div>
@@ -217,7 +217,7 @@
 
 			<!-- Lessons -->
 			<section class="lessons-section">
-				<h2>📚 Lessons for You</h2>
+				<h2><i class="fa-solid fa-book" aria-hidden="true"></i> Lessons for You</h2>
 				<div class="lessons-grid">
 					{#each lessons() as lesson}
 						<div class="lesson-card">
@@ -227,12 +227,12 @@
 							</div>
 							<p class="text-sm text-muted">{lesson.description}</p>
 							<div class="lesson-meta">
-								<span>⏱️ {lesson.duration_minutes} min</span>
+								<span><i class="fa-solid fa-stopwatch" aria-hidden="true"></i> {lesson.duration_minutes} min</span>
 								{#if lesson.quiet_friendly}
-									<span class="badge badge-success text-xs">🔇 Quiet OK</span>
+									<span class="badge badge-success text-xs"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i> Quiet OK</span>
 								{:else if lesson.alternative_quiet}
 									<span class="badge badge-warning text-xs">
-										🎧 {lesson.alternative_quiet}
+										<i class="fa-solid fa-headphones" aria-hidden="true"></i> {lesson.alternative_quiet}
 									</span>
 								{/if}
 							</div>
@@ -266,7 +266,7 @@
 					</div>
 				</div>
 				<div class="privacy-note" style="margin-top: 1rem;">
-					<span class="privacy-note-icon">🔄</span>
+					<span class="privacy-note-icon"><i class="fa-solid fa-rotate" aria-hidden="true"></i></span>
 					<span>
 						Same VCP profile, different platform. Your skills transferred, your privacy remained.
 					</span>

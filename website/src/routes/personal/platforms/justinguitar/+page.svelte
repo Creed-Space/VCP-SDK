@@ -170,7 +170,7 @@
 			</div>
 
 			<div class="privacy-note">
-				<span class="privacy-note-icon">🔒</span>
+				<span class="privacy-note-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
 				<span>
 					Your private context (work schedule, housing situation) is NEVER shared.
 					Only the fields listed above are transmitted.
@@ -190,7 +190,7 @@
 		<div class="platform-frame platform-frame-justinguitar">
 			<div class="platform-header platform-header-justinguitar">
 				<div class="platform-brand">
-					<span class="platform-logo">🎸</span>
+					<span class="platform-logo"><i class="fa-solid fa-guitar" aria-hidden="true"></i></span>
 					<span class="platform-name">JustinGuitar</span>
 				</div>
 				<div class="header-actions">
@@ -228,14 +228,14 @@
 						</div>
 						<p class="lesson-description">{recommendedLesson()?.description}</p>
 						<div class="lesson-meta">
-							<span>⏱️ {recommendedLesson()?.duration_minutes} min</span>
-							<span>📚 {recommendedLesson()?.module}</span>
+							<span><i class="fa-solid fa-stopwatch" aria-hidden="true"></i> {recommendedLesson()?.duration_minutes} min</span>
+							<span><i class="fa-solid fa-book" aria-hidden="true"></i> {recommendedLesson()?.module}</span>
 							{#if recommendedLesson()?.quiet_friendly}
-								<span class="badge badge-success">🔇 Quiet Friendly</span>
+								<span class="badge badge-success"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i> Quiet Friendly</span>
 							{/if}
 						</div>
 						<div class="lesson-reason">
-							<span class="reason-icon">💡</span>
+							<span class="reason-icon"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i></span>
 							<span>
 								Recommended because your current focus is "{ctx.current_skills?.current_focus?.replace(/_/g, ' ')}"
 							</span>
@@ -248,7 +248,7 @@
 			<!-- Quiet practice tip if noise restricted -->
 			{#if ctx.constraints?.noise_restricted}
 				<div class="quiet-tip card">
-					<span class="tip-icon">🔇</span>
+					<span class="tip-icon"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i></span>
 					<div>
 						<strong>Quiet Practice Mode Active</strong>
 						<p class="text-sm text-muted">
@@ -268,13 +268,13 @@
 							<div class="lesson-header">
 								<h3>{lesson.title}</h3>
 								{#if lesson.quiet_friendly}
-									<span class="badge badge-success text-xs">🔇</span>
+									<span class="badge badge-success text-xs"><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i></span>
 								{/if}
 							</div>
 							<p class="text-sm text-muted">{lesson.description}</p>
 							<div class="lesson-meta text-xs">
-								<span>⏱️ {lesson.duration_minutes} min</span>
-								<span>📚 {lesson.module}</span>
+								<span><i class="fa-solid fa-stopwatch" aria-hidden="true"></i> {lesson.duration_minutes} min</span>
+								<span><i class="fa-solid fa-book" aria-hidden="true"></i> {lesson.module}</span>
 							</div>
 						</div>
 					{/each}

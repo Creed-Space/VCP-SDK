@@ -21,29 +21,29 @@ import type { VCPContext, ConstraintFlags, PortablePreferences } from './types';
 // ============================================
 
 export const CONSTRAINT_EMOJI = {
-	noise_restricted: '🔇',
-	budget_limited: '💰',
-	energy_variable: '⚡',
+	noise_restricted: '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>',
+	budget_limited: '<i class="fa-solid fa-coins" aria-hidden="true"></i>',
+	energy_variable: '<i class="fa-solid fa-bolt" aria-hidden="true"></i>',
 	time_limited: '⏰',
-	schedule_irregular: '📅',
-	mobility_limited: '🚶',
-	health_considerations: '💊'
+	schedule_irregular: '<i class="fa-solid fa-calendar" aria-hidden="true"></i>',
+	mobility_limited: '<i class="fa-solid fa-person-walking" aria-hidden="true"></i>',
+	health_considerations: '<i class="fa-solid fa-pills" aria-hidden="true"></i>'
 } as const;
 
 export const PREFERENCE_EMOJI = {
-	quiet_preferred: '🔇',
-	silent_required: '🔕',
-	low: '💰',
+	quiet_preferred: '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>',
+	silent_required: '<i class="fa-solid fa-bell-slash" aria-hidden="true"></i>',
+	low: '<i class="fa-solid fa-coins" aria-hidden="true"></i>',
 	free_only: '🆓',
-	high: '💎',
+	high: '<i class="fa-solid fa-gem" aria-hidden="true"></i>',
 	flexible: '⏰',
-	'15_minutes': '⚡',
-	'30_minutes': '⏱️',
-	'60_minutes': '🕐'
+	'15_minutes': '<i class="fa-solid fa-bolt" aria-hidden="true"></i>',
+	'30_minutes': '<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>',
+	'60_minutes': '<i class="fa-solid fa-clock" aria-hidden="true"></i>'
 } as const;
 
-export const PRIVATE_MARKER = '🔒';
-export const SHARED_MARKER = '✓';
+export const PRIVATE_MARKER = '<i class="fa-solid fa-lock" aria-hidden="true"></i>';
+export const SHARED_MARKER = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
 
 // ============================================
 // CSM-1 Encoding
@@ -92,16 +92,16 @@ function encodeConstraints(
 	const parts: string[] = [];
 
 	// From constraints
-	if (constraints?.noise_restricted) parts.push('🔇');
+	if (constraints?.noise_restricted) parts.push('<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>');
 	if (constraints?.time_limited) parts.push('⏰lim');
-	if (constraints?.energy_variable) parts.push('⚡var');
+	if (constraints?.energy_variable) parts.push('<i class="fa-solid fa-bolt" aria-hidden="true"></i>var');
 
 	// From preferences
-	if (prefs?.noise_mode === 'quiet_preferred') parts.push('🔇quiet');
-	if (prefs?.noise_mode === 'silent_required') parts.push('🔕silent');
-	if (prefs?.budget_range === 'low') parts.push('💰low');
+	if (prefs?.noise_mode === 'quiet_preferred') parts.push('<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet');
+	if (prefs?.noise_mode === 'silent_required') parts.push('<i class="fa-solid fa-bell-slash" aria-hidden="true"></i>silent');
+	if (prefs?.budget_range === 'low') parts.push('<i class="fa-solid fa-coins" aria-hidden="true"></i>low');
 	if (prefs?.budget_range === 'free_only') parts.push('🆓');
-	if (prefs?.session_length) parts.push(`⏱️${prefs.session_length.replace('_', '')}`);
+	if (prefs?.session_length) parts.push(`<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>${prefs.session_length.replace('_', '')}`);
 
 	if (parts.length === 0) {
 		return 'X:none';
@@ -183,16 +183,16 @@ export function formatTokenForDisplay(csm1: string): string {
  */
 export function getEmojiLegend(): { emoji: string; meaning: string }[] {
 	return [
-		{ emoji: '🔇', meaning: 'quiet mode' },
-		{ emoji: '🔕', meaning: 'silent required' },
-		{ emoji: '💰', meaning: 'budget tier' },
+		{ emoji: '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>', meaning: 'quiet mode' },
+		{ emoji: '<i class="fa-solid fa-bell-slash" aria-hidden="true"></i>', meaning: 'silent required' },
+		{ emoji: '<i class="fa-solid fa-coins" aria-hidden="true"></i>', meaning: 'budget tier' },
 		{ emoji: '🆓', meaning: 'free only' },
-		{ emoji: '⚡', meaning: 'energy variable' },
+		{ emoji: '<i class="fa-solid fa-bolt" aria-hidden="true"></i>', meaning: 'energy variable' },
 		{ emoji: '⏰', meaning: 'time limited' },
-		{ emoji: '⏱️', meaning: 'session length' },
-		{ emoji: '📅', meaning: 'irregular schedule' },
-		{ emoji: '🔒', meaning: 'private (hidden value)' },
-		{ emoji: '✓', meaning: 'shared' }
+		{ emoji: '<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>', meaning: 'session length' },
+		{ emoji: '<i class="fa-solid fa-calendar" aria-hidden="true"></i>', meaning: 'irregular schedule' },
+		{ emoji: '<i class="fa-solid fa-lock" aria-hidden="true"></i>', meaning: 'private (hidden value)' },
+		{ emoji: '<i class="fa-solid fa-check" aria-hidden="true"></i>', meaning: 'shared' }
 	];
 }
 

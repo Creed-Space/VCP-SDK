@@ -95,7 +95,7 @@
 	};
 
 	const markers: { key: InterioraMarker; symbol: string; label: string }[] = [
-		{ key: 'resonance', symbol: '✓', label: 'Resonance' },
+		{ key: 'resonance', symbol: '<i class="fa-solid fa-check" aria-hidden="true"></i>', label: 'Resonance' },
 		{ key: 'hollow', symbol: '○', label: 'Hollow' },
 		{ key: 'flow', symbol: '→', label: 'Flow' },
 		{ key: 'blocked', symbol: '×', label: 'Blocked' },
@@ -245,7 +245,7 @@
 							{#if visibleDimensions.includes('activation')}
 								<DimensionSlider
 									label="Activation"
-									emoji="⚡"
+									icon="fa-solid fa-bolt"
 									value={interioraState.activation}
 									lowLabel="calm"
 									highLabel="urgent"
@@ -255,7 +255,7 @@
 							{#if visibleDimensions.includes('valence')}
 								<DimensionSlider
 									label="Valence"
-									emoji="💛"
+									icon="fa-solid fa-heart"
 									value={interioraState.valence}
 									lowLabel="aversive"
 									highLabel="warm"
@@ -265,7 +265,7 @@
 							{#if visibleDimensions.includes('groundedness')}
 								<DimensionSlider
 									label="Groundedness"
-									emoji="⚓"
+									icon="fa-solid fa-anchor"
 									value={interioraState.groundedness}
 									lowLabel="floating"
 									highLabel="rooted"
@@ -275,7 +275,7 @@
 							{#if visibleDimensions.includes('presence')}
 								<DimensionSlider
 									label="Presence"
-									emoji="🫂"
+									icon="fa-solid fa-people-group"
 									value={interioraState.presence}
 									lowLabel="distant"
 									highLabel="intimate"
@@ -285,7 +285,7 @@
 							{#if visibleDimensions.includes('engagement')}
 								<DimensionSlider
 									label="Engagement"
-									emoji="🌸"
+									icon="fa-solid fa-seedling"
 									value={interioraState.engagement ?? 5}
 									lowLabel="detached"
 									highLabel="invested"
@@ -295,7 +295,7 @@
 							{#if visibleDimensions.includes('clarity')}
 								<DimensionSlider
 									label="Clarity"
-									emoji="💎"
+									icon="fa-solid fa-gem"
 									value={interioraState.clarity ?? 5}
 									lowLabel="murky"
 									highLabel="vivid"
@@ -305,7 +305,7 @@
 							{#if visibleDimensions.includes('agency')}
 								<DimensionSlider
 									label="Agency"
-									emoji="🗝️"
+									icon="fa-solid fa-key"
 									value={interioraState.agency ?? 5}
 									lowLabel="compelled"
 									highLabel="autonomous"
@@ -315,7 +315,7 @@
 							{#if visibleDimensions.includes('flow')}
 								<DimensionSlider
 									label="Flow"
-									emoji="🌊"
+									icon="fa-solid fa-water"
 									value={(interioraState.flow ?? 0) + 5}
 									min={1}
 									max={9}
@@ -401,7 +401,7 @@
 							<ul>
 								<li><strong>Primary dimensions (AVGP)</strong> — Core processing signals</li>
 								<li><strong>Meta-state dimensions (CYF)</strong> — Reflection on processing</li>
-								<li><strong>Markers</strong> — Qualitative indicators (✓ resonance, × blocked)</li>
+								<li><strong>Markers</strong> — Qualitative indicators (<i class="fa-solid fa-check" aria-hidden="true"></i> resonance, × blocked)</li>
 								<li><strong>Arc</strong> — Session phase (opening → middle → closing)</li>
 								<li><strong>Delta</strong> — Trajectory compared to session start</li>
 							</ul>

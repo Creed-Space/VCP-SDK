@@ -66,10 +66,10 @@
 	]);
 
 	const groundingTypeInfo: Record<GroundingType, { icon: string; label: string; desc: string }> = {
-		factual: { icon: '✓', label: 'Factual', desc: 'Verifiable fact from reliable source' },
+		factual: { icon: '<i class="fa-solid fa-check" aria-hidden="true"></i>', label: 'Factual', desc: 'Verifiable fact from reliable source' },
 		inferential: { icon: '→', label: 'Inferential', desc: 'Derived through reasoning from known facts' },
 		subjective: { icon: '◐', label: 'Subjective', desc: 'Personal or experiential judgment' },
-		normative: { icon: '⚖', label: 'Normative', desc: 'Value-based judgment' },
+		normative: { icon: '<i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>', label: 'Normative', desc: 'Value-based judgment' },
 		speculative: { icon: '?', label: 'Speculative', desc: 'Hypothesis or prediction' }
 	};
 
@@ -138,7 +138,7 @@
 						<!-- Uncertainty Markers -->
 						{#if grounding.uncertainty_markers.length > 0}
 							<div class="uncertainty-markers">
-								<span class="uncertainty-label">⚠️ Uncertainty:</span>
+								<span class="uncertainty-label"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Uncertainty:</span>
 								{#each grounding.uncertainty_markers as marker}
 									<span class="uncertainty-chip">{marker}</span>
 								{/each}
@@ -148,7 +148,7 @@
 						<!-- Should Verify -->
 						{#if grounding.should_verify}
 							<div class="verify-notice">
-								<span class="verify-icon">🔍</span>
+								<span class="verify-icon"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
 								<span>This claim should be verified before acting on it</span>
 							</div>
 						{/if}

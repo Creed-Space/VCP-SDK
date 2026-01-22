@@ -146,8 +146,8 @@ const parsed = parseCSM1Token(token);
 const legend = getEmojiLegend();
 // Returns:
 // [
-//   { emoji: '🔇', meaning: 'quiet mode' },
-//   { emoji: '💰', meaning: 'budget tier' },
+//   { emoji: '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>', meaning: 'quiet mode' },
+//   { emoji: '<i class="fa-solid fa-coins" aria-hidden="true"></i>', meaning: 'budget tier' },
 //   ...
 // ]`}</code></pre>
 
@@ -168,18 +168,18 @@ const summary = getTransmissionSummary(context);
 		<h3>CONSTRAINT_EMOJI</h3>
 		<p>Mapping of constraint flags to emoji shortcodes.</p>
 		<pre><code>{`const CONSTRAINT_EMOJI = {
-  noise_restricted: '🔇',
-  budget_limited: '💰',
-  energy_variable: '⚡',
+  noise_restricted: '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>',
+  budget_limited: '<i class="fa-solid fa-coins" aria-hidden="true"></i>',
+  energy_variable: '<i class="fa-solid fa-bolt" aria-hidden="true"></i>',
   time_limited: '⏰',
-  schedule_irregular: '📅',
-  mobility_limited: '🚶',
-  health_considerations: '💊'
+  schedule_irregular: '<i class="fa-solid fa-calendar" aria-hidden="true"></i>',
+  mobility_limited: '<i class="fa-solid fa-person-walking" aria-hidden="true"></i>',
+  health_considerations: '<i class="fa-solid fa-pills" aria-hidden="true"></i>'
 }`}</code></pre>
 
 		<h3>PRIVATE_MARKER / SHARED_MARKER</h3>
-		<pre><code>{`const PRIVATE_MARKER = '🔒';
-const SHARED_MARKER = '✓';`}</code></pre>
+		<pre><code>{`const PRIVATE_MARKER = '<i class="fa-solid fa-lock" aria-hidden="true"></i>';
+const SHARED_MARKER = '<i class="fa-solid fa-check" aria-hidden="true"></i>';`}</code></pre>
 
 		<h2>Enums</h2>
 

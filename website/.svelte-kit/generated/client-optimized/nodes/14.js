@@ -1,0 +1,1 @@
+export { default as component } from "../../../../src/routes/demos/self-modeling/belief-calibration/+page.svelte";

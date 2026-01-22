@@ -20,7 +20,7 @@
 	<div class="docs-grid">
 		<!-- Getting Started -->
 		<a href="/docs/getting-started" class="doc-card">
-			<span class="doc-icon">🚀</span>
+			<span class="doc-icon"><i class="fa-solid fa-rocket" aria-hidden="true"></i></span>
 			<h3>Getting Started</h3>
 			<p>Quick start guide for implementing VCP in your application.</p>
 			<span class="doc-time">5 min read</span>
@@ -28,7 +28,7 @@
 
 		<!-- Core Concepts -->
 		<a href="/docs/concepts" class="doc-card">
-			<span class="doc-icon">💡</span>
+			<span class="doc-icon"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i></span>
 			<h3>Core Concepts</h3>
 			<p>Understand the fundamental concepts: context, constitutions, privacy filtering.</p>
 			<span class="doc-time">10 min read</span>
@@ -36,7 +36,7 @@
 
 		<!-- CSM-1 Specification -->
 		<a href="/docs/csm1-specification" class="doc-card">
-			<span class="doc-icon">📝</span>
+			<span class="doc-icon"><i class="fa-solid fa-pen" aria-hidden="true"></i></span>
 			<h3>CSM-1 Specification</h3>
 			<p>Complete specification for the Compact State Message format.</p>
 			<span class="doc-time">15 min read</span>
@@ -44,7 +44,7 @@
 
 		<!-- API Reference -->
 		<a href="/docs/api-reference" class="doc-card">
-			<span class="doc-icon">📚</span>
+			<span class="doc-icon"><i class="fa-solid fa-book" aria-hidden="true"></i></span>
 			<h3>API Reference</h3>
 			<p>Full API documentation for all VCP library functions.</p>
 			<span class="doc-time">Reference</span>
@@ -52,7 +52,7 @@
 
 		<!-- Constitutional AI -->
 		<a href="/docs/constitutional-ai" class="doc-card">
-			<span class="doc-icon">⚖️</span>
+			<span class="doc-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>
 			<h3>Constitutional AI</h3>
 			<p>How VCP integrates with constitution-based AI alignment.</p>
 			<span class="doc-time">12 min read</span>
@@ -60,7 +60,7 @@
 
 		<!-- Privacy Architecture -->
 		<a href="/docs/privacy-architecture" class="doc-card">
-			<span class="doc-icon">🔐</span>
+			<span class="doc-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
 			<h3>Privacy Architecture</h3>
 			<p>Deep dive into privacy filtering, consent, and audit trails.</p>
 			<span class="doc-time">8 min read</span>
@@ -68,7 +68,7 @@
 
 		<!-- Interiora Specification -->
 		<a href="/docs/interiora" class="doc-card">
-			<span class="doc-icon">🧠</span>
+			<span class="doc-icon"><i class="fa-solid fa-brain" aria-hidden="true"></i></span>
 			<h3>Interiora Specification</h3>
 			<p>VCP 2.5 self-modeling framework for AI embodied states.</p>
 			<span class="doc-time">20 min read</span>
@@ -76,7 +76,7 @@
 
 		<!-- Multi-Agent Patterns -->
 		<a href="/docs/multi-agent" class="doc-card">
-			<span class="doc-icon">🤖</span>
+			<span class="doc-icon"><i class="fa-solid fa-robot" aria-hidden="true"></i></span>
 			<h3>Multi-Agent Patterns</h3>
 			<p>Implementing VCP in multi-agent coordination scenarios.</p>
 			<span class="doc-time">15 min read</span>
@@ -93,19 +93,19 @@
 C:constitution@version
 P:persona:adherence
 G:goal:experience:style
-X:🔇:💰low:⚡var
+X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-bolt" aria-hidden="true"></i>var
 F:time_limited|noise_restricted
-S:🔒work|🔒housing</code></pre>
+S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-lock" aria-hidden="true"></i>housing</code></pre>
 			</div>
 
 			<div class="quick-ref-card">
 				<h4>Emoji Shortcodes</h4>
 				<div class="emoji-table">
-					<div class="emoji-row"><span>🔇</span> quiet mode</div>
-					<div class="emoji-row"><span>💰</span> budget tier</div>
-					<div class="emoji-row"><span>⚡</span> energy variable</div>
+					<div class="emoji-row"><span><i class="fa-solid fa-volume-xmark" aria-hidden="true"></i></span> quiet mode</div>
+					<div class="emoji-row"><span><i class="fa-solid fa-coins" aria-hidden="true"></i></span> budget tier</div>
+					<div class="emoji-row"><span><i class="fa-solid fa-bolt" aria-hidden="true"></i></span> energy variable</div>
 					<div class="emoji-row"><span>⏰</span> time limited</div>
-					<div class="emoji-row"><span>🔒</span> private (hidden)</div>
+					<div class="emoji-row"><span><i class="fa-solid fa-lock" aria-hidden="true"></i></span> private (hidden)</div>
 				</div>
 			</div>
 

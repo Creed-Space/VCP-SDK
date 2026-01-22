@@ -196,32 +196,32 @@
 			</thead>
 			<tbody>
 				<tr>
-					<td>🎨 <strong>Muse</strong></td>
+					<td><i class="fa-solid fa-palette" aria-hidden="true"></i> <strong>Muse</strong></td>
 					<td>Creative, exploratory, encouraging</td>
 					<td>Creative work, learning, exploration</td>
 				</tr>
 				<tr>
-					<td>🛡️ <strong>Sentinel</strong></td>
+					<td><i class="fa-solid fa-shield" aria-hidden="true"></i> <strong>Sentinel</strong></td>
 					<td>Cautious, protective, conservative</td>
 					<td>Security, safety-critical decisions</td>
 				</tr>
 				<tr>
-					<td>👪 <strong>Godparent</strong></td>
+					<td><i class="fa-solid fa-people-group" aria-hidden="true"></i> <strong>Godparent</strong></td>
 					<td>Nurturing, supportive, patient</td>
 					<td>Education, skill building, recovery</td>
 				</tr>
 				<tr>
-					<td>🤝 <strong>Ambassador</strong></td>
+					<td><i class="fa-solid fa-handshake" aria-hidden="true"></i> <strong>Ambassador</strong></td>
 					<td>Professional, diplomatic, balanced</td>
 					<td>Business, negotiations, formal contexts</td>
 				</tr>
 				<tr>
-					<td>⚓ <strong>Anchor</strong></td>
+					<td><i class="fa-solid fa-anchor" aria-hidden="true"></i> <strong>Anchor</strong></td>
 					<td>Stable, grounding, realistic</td>
 					<td>Crisis support, reality checking</td>
 				</tr>
 				<tr>
-					<td>👶 <strong>Nanny</strong></td>
+					<td><i class="fa-solid fa-baby" aria-hidden="true"></i> <strong>Nanny</strong></td>
 					<td>Structured, directive, safe</td>
 					<td>Children, vulnerable users, strict guidance</td>
 				</tr>

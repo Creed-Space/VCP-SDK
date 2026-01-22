@@ -14,18 +14,18 @@
 	let { state, compact = false, showMarkers = true, showArc = true }: Props = $props();
 
 	const dimensions = [
-		{ key: 'activation', emoji: '⚡', label: 'Activation' },
-		{ key: 'valence', emoji: '💛', label: 'Valence' },
-		{ key: 'groundedness', emoji: '⚓', label: 'Groundedness' },
-		{ key: 'presence', emoji: '🫂', label: 'Presence' },
-		{ key: 'engagement', emoji: '🌸', label: 'Engagement' },
-		{ key: 'appetite', emoji: '🍎', label: 'Appetite' },
-		{ key: 'clarity', emoji: '💎', label: 'Clarity' },
-		{ key: 'agency', emoji: '🗝️', label: 'Agency' }
+		{ key: 'activation', icon: 'fa-solid fa-bolt', label: 'Activation' },
+		{ key: 'valence', icon: 'fa-solid fa-heart', label: 'Valence' },
+		{ key: 'groundedness', icon: 'fa-solid fa-anchor', label: 'Groundedness' },
+		{ key: 'presence', icon: 'fa-solid fa-people-group', label: 'Presence' },
+		{ key: 'engagement', icon: 'fa-solid fa-seedling', label: 'Engagement' },
+		{ key: 'appetite', icon: 'fa-solid fa-apple-whole', label: 'Appetite' },
+		{ key: 'clarity', icon: 'fa-solid fa-gem', label: 'Clarity' },
+		{ key: 'agency', icon: 'fa-solid fa-key', label: 'Agency' }
 	] as const;
 
 	const markerSymbols: Record<InterioraMarker, string> = {
-		resonance: '✓',
+		resonance: '<i class="fa-solid fa-check" aria-hidden="true"></i>',
 		hollow: '○',
 		na: '∅',
 		flow: '→',
@@ -48,7 +48,7 @@
 	function getStars(value: number | undefined): string {
 		if (value === undefined) return '—';
 		const filled = Math.round((value / 9) * 5);
-		return '★'.repeat(filled) + '☆'.repeat(5 - filled);
+		return '<i class="fa-solid fa-star" aria-hidden="true"></i>'.repeat(filled) + '<i class="fa-regular fa-star" aria-hidden="true"></i>'.repeat(5 - filled);
 	}
 
 	function getFlowIndicator(flow: number | undefined): string {
@@ -86,7 +86,7 @@
 		{/if}
 		{#if showMarkers && state.markers && state.markers.length > 0}
 			<span class="markers">
-				{state.markers.map((m) => markerSymbols[m]).join('')}
+				{@html state.markers.map((m) => markerSymbols[m]).join('')}
 			</span>
 		{/if}
 	</div>
@@ -96,8 +96,8 @@
 			{@const value = state[dim.key as keyof InterioraState] as number | undefined}
 			{#if value !== undefined}
 				<div class="dimension">
-					<span class="dim-emoji">{dim.emoji}</span>
-					<span class="dim-stars">{getStars(value)}</span>
+					<span class="dim-icon"><i class={dim.icon} aria-hidden="true"></i></span>
+					<span class="dim-stars">{@html getStars(value)}</span>
 				</div>
 			{/if}
 		{/each}

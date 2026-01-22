@@ -62,7 +62,7 @@
 			<!-- Shared context center -->
 			{#if showSharedFields && sharedContext}
 				<div class="shared-center">
-					<span class="shared-icon">🔗</span>
+					<span class="shared-icon"><i class="fa-solid fa-link" aria-hidden="true"></i></span>
 					<span class="shared-label">Shared</span>
 					<span class="shared-count">{sharedContext.shared_fields.length} fields</span>
 				</div>
@@ -88,7 +88,7 @@
 						<span class="agent-role">{agent.role}</span>
 						{#if sharedContext?.private_per_agent[agent.agent_id]}
 							<span class="private-badge">
-								🔒 {sharedContext.private_per_agent[agent.agent_id].length} private
+								<i class="fa-solid fa-lock" aria-hidden="true"></i> {sharedContext.private_per_agent[agent.agent_id].length} private
 							</span>
 						{/if}
 					</div>
@@ -112,7 +112,7 @@
 	{#if showSharedFields && sharedContext && layout !== 'circle'}
 		<div class="shared-panel">
 			<h4>
-				<span class="panel-icon">🔗</span>
+				<span class="panel-icon"><i class="fa-solid fa-link" aria-hidden="true"></i></span>
 				Shared Context Space
 			</h4>
 			<div class="shared-fields">

@@ -26,20 +26,20 @@
 		lg: 'size-lg'
 	};
 
-	const stateLabels = {
+	const stateLabels: Record<string, string> = {
 		idle: '',
 		thinking: '...',
-		speaking: '💬',
-		listening: '👂'
+		speaking: 'fa-solid fa-comment',
+		listening: 'fa-solid fa-ear-listen'
 	};
 
 	const roleIcons: Record<string, string> = {
-		negotiator: '🤝',
-		mediator: '⚖️',
-		voter: '🗳️',
-		advocate: '📢',
-		bidder: '💰',
-		auctioneer: '🔨'
+		negotiator: 'fa-solid fa-handshake',
+		mediator: 'fa-solid fa-scale-balanced',
+		voter: 'fa-solid fa-box-ballot',
+		advocate: 'fa-solid fa-bullhorn',
+		bidder: 'fa-solid fa-coins',
+		auctioneer: 'fa-solid fa-gavel'
 	};
 </script>
 
@@ -49,13 +49,19 @@
 			{agent.avatar}
 		</div>
 		{#if state !== 'idle'}
-			<span class="state-indicator">{stateLabels[state]}</span>
+			<span class="state-indicator">
+				{#if stateLabels[state].startsWith('fa-')}
+					<i class={stateLabels[state]} aria-hidden="true"></i>
+				{:else}
+					{stateLabels[state]}
+				{/if}
+			</span>
 		{/if}
 	</div>
 
 	{#if showBadge}
 		<span class="role-badge" title={agent.role}>
-			{roleIcons[agent.role] || '🤖'}
+			<i class={roleIcons[agent.role] || 'fa-solid fa-robot'} aria-hidden="true"></i>
 		</span>
 	{/if}
 
