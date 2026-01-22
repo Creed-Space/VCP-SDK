@@ -1,0 +1,80 @@
+{
+	"courses": [
+		{
+			"id": "SEC-101",
+			"title": "Cybersecurity Fundamentals",
+			"description": "Essential security practices for all engineering staff. Covers threat modeling, secure coding, and incident response basics.",
+			"duration_hours": 8,
+			"price_eur": 200,
+			"format": "self_paced",
+			"mandatory": true,
+			"deadline": "2026-03-15",
+			"career_paths": ["all"],
+			"priority": "required",
+			"reasoning": "Mandatory compliance training - deadline March 15"
+		},
+		{
+			"id": "LEAD-101",
+			"title": "Engineering Leadership Essentials",
+			"description": "Core leadership skills for aspiring tech leads. Includes 1-on-1 coaching, team dynamics, and decision-making frameworks.",
+			"duration_weeks": 4,
+			"hours_per_week": 3,
+			"price_eur": 500,
+			"format": "self_paced",
+			"mandatory": false,
+			"career_paths": ["tech_lead", "engineering_manager"],
+			"priority": "recommended",
+			"reasoning": "Directly aligned with your Tech Lead goal"
+		},
+		{
+			"id": "LEAD-102",
+			"title": "Technical Mentorship Skills",
+			"description": "Learn to effectively mentor junior engineers. Practical exercises and real-world scenarios.",
+			"duration_hours": 12,
+			"price_eur": 300,
+			"format": "video",
+			"mandatory": false,
+			"career_paths": ["tech_lead", "senior_engineer"],
+			"priority": "recommended",
+			"reasoning": "Supports leadership development and team growth"
+		},
+		{
+			"id": "ARCH-201",
+			"title": "Advanced System Design",
+			"description": "Deep dive into distributed systems, scaling patterns, and architectural trade-offs. Intensive course with hands-on projects.",
+			"duration_weeks": 6,
+			"hours_per_week": 5,
+			"price_eur": 1000,
+			"format": "interactive",
+			"mandatory": false,
+			"career_paths": ["tech_lead", "architect"],
+			"priority": "deferred",
+			"defer_reason": "Your current workload is high - recommend deferring to Q2",
+			"reasoning": "Excellent for Tech Lead path but time-intensive"
+		},
+		{
+			"id": "COMM-101",
+			"title": "Technical Communication",
+			"description": "Improve your ability to communicate complex technical concepts to various audiences. Writing, presenting, and stakeholder management.",
+			"duration_hours": 6,
+			"price_eur": 150,
+			"format": "self_paced",
+			"mandatory": false,
+			"career_paths": ["tech_lead", "engineering_manager", "architect"],
+			"priority": "recommended",
+			"reasoning": "Essential skill for leadership roles"
+		}
+	],
+	"budget": {
+		"annual_total_eur": 6000,
+		"spent_eur": 1000,
+		"remaining_eur": 5000,
+		"policy": "Can request increase for mandatory training"
+	},
+	"recommendations_context": {
+		"career_goal_influence": "Prioritized leadership and mentorship courses",
+		"workload_influence": "Deferred time-intensive courses due to high workload",
+		"budget_influence": "All recommendations within remaining budget",
+		"private_context_note": "Schedule flexibility needs influenced format preferences (self-paced prioritized)"
+	}
+}
