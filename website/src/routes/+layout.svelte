@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 
 	interface Props {
 		children: import('svelte').Snippet;
@@ -9,6 +10,7 @@
 	let { children }: Props = $props();
 	let mobileMenuOpen = $state(false);
 	let error = $state<Error | null>(null);
+	let logoError = $state(false);
 
 	function handleError(e: Error) {
 		error = e;
@@ -25,11 +27,15 @@
 		main?.focus();
 	}
 
-	// Global error boundary
+	// Handle logo load error
+	function handleLogoError() {
+		logoError = true;
+	}
+
+	// Global error boundary + navigation listener
 	onMount(() => {
 		const handleGlobalError = (event: ErrorEvent) => {
 			handleError(event.error || new Error(event.message));
-			// Don't prevent default - let errors still log to console
 		};
 
 		const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
@@ -39,9 +45,15 @@
 		window.addEventListener('error', handleGlobalError);
 		window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
+		// Close mobile menu on navigation (back/forward)
+		const unsubscribe = page.subscribe(() => {
+			mobileMenuOpen = false;
+		});
+
 		return () => {
 			window.removeEventListener('error', handleGlobalError);
 			window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+			unsubscribe();
 		};
 	});
 </script>
@@ -53,7 +65,11 @@
 	<header class="app-header">
 		<nav class="container flex items-center justify-between">
 			<a href="/" class="logo" aria-label="VCP Demo Home">
-				<img src="/vcp-logo.png" alt="VCP" class="logo-img" />
+				{#if logoError}
+					<span class="logo-text">VCP</span>
+				{:else}
+					<img src="/vcp-logo.png" alt="VCP" class="logo-img" onerror={handleLogoError} />
+				{/if}
 				<span class="logo-badge">Demo</span>
 			</a>
 
@@ -147,7 +163,11 @@
 		<div class="container">
 			<div class="footer-content">
 				<div class="footer-brand">
-					<img src="/vcp-logo.png" alt="VCP" class="footer-logo-img" />
+					{#if logoError}
+						<span class="footer-logo-text">VCP</span>
+					{:else}
+						<img src="/vcp-logo.png" alt="VCP" class="footer-logo-img" onerror={handleLogoError} />
+					{/if}
 					<div>
 						<p class="footer-title">Value Context Protocol</p>
 						<p class="footer-tagline">Your context stays yours. Private reasons stay private.</p>
@@ -222,6 +242,12 @@
 	.logo-img {
 		height: 96px;
 		width: auto;
+	}
+
+	.logo-text {
+		font-size: 1.5rem;
+		font-weight: 700;
+		color: var(--color-primary);
 	}
 
 	.logo-badge {
@@ -426,6 +452,12 @@
 	.footer-logo-img {
 		height: 112px;
 		width: auto;
+	}
+
+	.footer-logo-text {
+		font-size: 2rem;
+		font-weight: 700;
+		color: var(--color-primary);
 	}
 
 	.footer-title {

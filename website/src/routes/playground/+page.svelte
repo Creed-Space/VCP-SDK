@@ -145,6 +145,8 @@
 						id="display-name"
 						type="text"
 						class="input"
+						maxlength="50"
+						placeholder="Your display name"
 						bind:value={context.public_profile.display_name}
 					/>
 				</div>
@@ -154,6 +156,8 @@
 						id="goal"
 						type="text"
 						class="input"
+						maxlength="100"
+						placeholder="What are you learning?"
 						bind:value={context.public_profile.goal}
 					/>
 				</div>

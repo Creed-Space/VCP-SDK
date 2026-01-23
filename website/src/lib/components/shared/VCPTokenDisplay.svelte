@@ -32,19 +32,20 @@
 
 	let copied = $state(false);
 	let copyError = $state(false);
-	let prevToken = $state(token);
+	let prevToken = $state('');
 	let isUpdating = $state(false);
 
-	// Fix: Always return cleanup to prevent memory leaks
+	// Track token changes for animation
 	$effect(() => {
+		const currentToken = token; // Capture current value
 		let timeout: ReturnType<typeof setTimeout> | undefined;
-		if (token !== prevToken && animated) {
+		if (currentToken !== prevToken && prevToken !== '' && animated) {
 			isUpdating = true;
 			timeout = setTimeout(() => {
 				isUpdating = false;
 			}, 300);
 		}
-		prevToken = token;
+		prevToken = currentToken;
 		return () => {
 			if (timeout) clearTimeout(timeout);
 		};
