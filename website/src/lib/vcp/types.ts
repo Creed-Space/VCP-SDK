@@ -7,7 +7,7 @@
 // Core Enums
 // ============================================
 
-export type PersonaType = 'muse' | 'ambassador' | 'godparent' | 'sentinel' | 'anchor' | 'nanny';
+export type PersonaType = 'godparent' | 'sentinel' | 'ambassador' | 'anchor' | 'nanny';
 
 export type ScopeType =
 	| 'work'

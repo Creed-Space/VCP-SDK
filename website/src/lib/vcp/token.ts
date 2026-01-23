@@ -62,7 +62,7 @@ export function encodeContextToCSM1(ctx: VCPContext): string {
 	lines.push(`C:${ctx.constitution.id}@${ctx.constitution.version}`);
 
 	// Line 3: Persona and adherence
-	lines.push(`P:${ctx.constitution.persona || 'muse'}:${ctx.constitution.adherence || 3}`);
+	lines.push(`P:${ctx.constitution.persona || 'godparent'}:${ctx.constitution.adherence || 3}`);
 
 	// Line 4: Goal context
 	const goal = ctx.public_profile?.goal || 'unset';

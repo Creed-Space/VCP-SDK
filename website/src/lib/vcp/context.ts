@@ -19,8 +19,11 @@ import { logAuditEntry } from './audit';
 // Storage Keys
 // ============================================
 
-const CONTEXT_STORAGE_KEY = 'vcp_context';
-const CONSENT_STORAGE_KEY = 'vcp_consents';
+// Schema version for localStorage data migration
+const STORAGE_SCHEMA_VERSION = 2;
+const CONTEXT_STORAGE_KEY = 'vcp_context_v2';
+const CONSENT_STORAGE_KEY = 'vcp_consents_v2';
+const LEGACY_CONTEXT_KEY = 'vcp_context'; // For migration
 
 // ============================================
 // Helper Functions
@@ -30,27 +33,67 @@ function isBrowser(): boolean {
 	return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
 }
 
-function loadFromStorage<T>(key: string): T | null {
+function loadFromStorage<T>(key: string, validator?: (data: unknown) => data is T): T | null {
 	if (!isBrowser()) return null;
 	try {
 		const stored = localStorage.getItem(key);
-		return stored ? JSON.parse(stored) : null;
-	} catch {
-		console.warn(`Failed to load ${key} from localStorage`);
+		if (!stored) return null;
+
+		const parsed = JSON.parse(stored);
+
+		// If validator provided, validate the data
+		if (validator && !validator(parsed)) {
+			console.warn(`Invalid data in ${key}, clearing corrupt data`);
+			try {
+				localStorage.removeItem(key);
+			} catch {
+				// Ignore removal errors
+			}
+			return null;
+		}
+
+		return parsed as T;
+	} catch (error) {
+		console.error(`Failed to load ${key} from localStorage:`, error);
+		// Clear corrupt data
+		try {
+			localStorage.removeItem(key);
+		} catch {
+			// Ignore removal errors
+		}
 		return null;
 	}
 }
 
-function saveToStorage<T>(key: string, value: T | null): void {
-	if (!isBrowser()) return;
+// Basic validator for VCPContext
+function isValidContext(data: unknown): data is VCPContext {
+	if (!data || typeof data !== 'object') return false;
+	const ctx = data as Record<string, unknown>;
+	return (
+		typeof ctx.vcp_version === 'string' &&
+		typeof ctx.profile_id === 'string' &&
+		ctx.constitution !== undefined &&
+		ctx.public_profile !== undefined
+	);
+}
+
+function saveToStorage<T>(key: string, value: T | null): boolean {
+	if (!isBrowser()) return false;
 	try {
 		if (value) {
 			localStorage.setItem(key, JSON.stringify(value));
 		} else {
 			localStorage.removeItem(key);
 		}
-	} catch {
-		console.warn(`Failed to save ${key} to localStorage`);
+		return true;
+	} catch (error) {
+		// Handle quota exceeded or other storage errors
+		if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+			console.error(`Storage quota exceeded for ${key}`);
+		} else {
+			console.warn(`Failed to save ${key} to localStorage:`, error);
+		}
+		return false;
 	}
 }
 
@@ -61,8 +104,29 @@ function saveToStorage<T>(key: string, value: T | null): void {
 function createContextStore(): Writable<VCPContext | null> & {
 	clear: () => void;
 	updateField: <K extends keyof VCPContext>(key: K, value: VCPContext[K]) => void;
+	reset: () => void;
 } {
-	const initial = loadFromStorage<VCPContext>(CONTEXT_STORAGE_KEY);
+	// Try to load from new versioned key, fall back to legacy
+	let initial = loadFromStorage<VCPContext>(CONTEXT_STORAGE_KEY, isValidContext);
+
+	// Migrate from legacy key if needed
+	if (!initial && isBrowser()) {
+		const legacy = loadFromStorage<VCPContext>(LEGACY_CONTEXT_KEY, isValidContext);
+		if (legacy) {
+			// Migrate persona from 'muse' to 'godparent'
+			if (legacy.constitution?.persona === 'muse') {
+				legacy.constitution.persona = 'godparent';
+			}
+			initial = legacy;
+			saveToStorage(CONTEXT_STORAGE_KEY, legacy);
+			// Remove legacy key
+			try {
+				localStorage.removeItem(LEGACY_CONTEXT_KEY);
+			} catch {
+				// Ignore
+			}
+		}
+	}
 	const { subscribe, set, update } = writable<VCPContext | null>(initial);
 
 	return {
@@ -89,6 +153,21 @@ function createContextStore(): Writable<VCPContext | null> & {
 				saveToStorage(CONTEXT_STORAGE_KEY, updated);
 				return updated;
 			});
+		},
+		// Reset demo state - clears all VCP data for fresh demo experience
+		reset: () => {
+			set(null);
+			saveToStorage(CONTEXT_STORAGE_KEY, null);
+			// Also clear any related stores
+			if (isBrowser()) {
+				try {
+					localStorage.removeItem(CONSENT_STORAGE_KEY);
+					localStorage.removeItem('vcp_audit_log');
+					localStorage.removeItem('vcp_audit_log_v2');
+				} catch {
+					// Ignore
+				}
+			}
 		}
 	};
 }
@@ -395,7 +474,7 @@ export function createContext(profile: Partial<PublicProfile>, profileId?: strin
 		constitution: {
 			id: 'personal.growth.creative',
 			version: '1.0.0',
-			persona: 'muse',
+			persona: 'godparent',
 			adherence: 3,
 			scopes: ['creativity', 'health', 'privacy']
 		},

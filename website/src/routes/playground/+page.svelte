@@ -3,7 +3,7 @@
 	 * VCP Playground - Interactive token builder and inspector
 	 */
 	import { encodeContextToCSM1, getEmojiLegend, getTransmissionSummary } from '$lib/vcp/token';
-	import type { VCPContext, ConstraintFlags, PortablePreferences } from '$lib/vcp/types';
+	import type { VCPContext, ConstraintFlags, PortablePreferences, PersonaType } from '$lib/vcp/types';
 
 	// Default context for playground
 	let context = $state<VCPContext>({
@@ -49,7 +49,7 @@
 	const legend = getEmojiLegend();
 
 	// Personas for quick selection (5 personas - Muse removed 2026-01-22)
-	const personas = [
+	const personas: { id: PersonaType; name: string; iconClass: string }[] = [
 		{ id: 'godparent', name: 'Godparent', iconClass: 'fa-people-group' },
 		{ id: 'sentinel', name: 'Sentinel', iconClass: 'fa-shield' },
 		{ id: 'ambassador', name: 'Ambassador', iconClass: 'fa-handshake' },
@@ -65,8 +65,32 @@
 		context.portable_preferences = { ...context.portable_preferences, [key]: value };
 	}
 
-	function copyToken() {
-		navigator.clipboard.writeText(token);
+	let copied = $state(false);
+	let copyError = $state(false);
+
+	async function copyToken() {
+		copyError = false;
+		try {
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(token);
+			} else {
+				// Fallback for older browsers
+				const textarea = document.createElement('textarea');
+				textarea.value = token;
+				textarea.style.position = 'fixed';
+				textarea.style.opacity = '0';
+				document.body.appendChild(textarea);
+				textarea.select();
+				const success = document.execCommand('copy');
+				document.body.removeChild(textarea);
+				if (!success) throw new Error('Copy failed');
+			}
+			copied = true;
+			setTimeout(() => { copied = false; }, 2000);
+		} catch {
+			copyError = true;
+			setTimeout(() => { copyError = false; }, 2000);
+		}
 	}
 
 	function resetContext() {
@@ -166,7 +190,8 @@
 							<button
 								class="persona-btn"
 								class:active={context.constitution.persona === persona.id}
-								onclick={() => (context.constitution.persona = persona.id as any)}
+								onclick={() => (context.constitution.persona = persona.id)}
+								aria-pressed={context.constitution.persona === persona.id}
 							>
 								<span class="persona-icon"><i class="fa-solid {persona.iconClass}" aria-hidden="true"></i></span>
 								<span class="persona-name">{persona.name}</span>
@@ -183,6 +208,10 @@
 						max="5"
 						bind:value={context.constitution.adherence}
 						class="slider"
+						aria-valuemin="1"
+						aria-valuemax="5"
+						aria-valuenow={context.constitution.adherence}
+						aria-valuetext="Level {context.constitution.adherence} of 5"
 					/>
 				</div>
 			</section>
@@ -274,7 +303,22 @@
 		<div class="panel token-panel">
 			<div class="panel-header">
 				<h2>CSM-1 Token</h2>
-				<button class="btn btn-primary btn-sm" onclick={copyToken}>Copy</button>
+				<button
+					class="btn btn-sm"
+					class:btn-primary={!copied && !copyError}
+					class:btn-success={copied}
+					class:btn-danger={copyError}
+					onclick={copyToken}
+					aria-label={copied ? 'Copied!' : copyError ? 'Failed to copy' : 'Copy token'}
+				>
+					{#if copied}
+						<i class="fa-solid fa-check" aria-hidden="true"></i> Copied
+					{:else if copyError}
+						<i class="fa-solid fa-xmark" aria-hidden="true"></i> Failed
+					{:else}
+						<i class="fa-solid fa-copy" aria-hidden="true"></i> Copy
+					{/if}
+				</button>
 			</div>
 
 			<div class="token-display">

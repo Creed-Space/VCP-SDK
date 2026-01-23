@@ -106,7 +106,7 @@ export function logContextShared(
 	privateInfluenced: number
 ): AuditEntry {
 	const entry: AuditEntry = {
-		id: `share-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+		id: `share-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
 		timestamp: new Date().toISOString(),
 		event_type: 'context_shared',
 		platform_id: platformId,
@@ -129,7 +129,7 @@ export function logRecommendation(
 	details?: Record<string, unknown>
 ): AuditEntry {
 	const entry: AuditEntry = {
-		id: `rec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+		id: `rec-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
 		timestamp: new Date().toISOString(),
 		event_type: 'recommendation_generated',
 		platform_id: platformId,
@@ -152,7 +152,7 @@ export function logAdjustment(
 	privateDetails: Record<string, unknown>
 ): AuditEntry {
 	const entry: AuditEntry = {
-		id: `adj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+		id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
 		timestamp: new Date().toISOString(),
 		event_type: 'adjustment_recorded',
 		platform_id: platformId,

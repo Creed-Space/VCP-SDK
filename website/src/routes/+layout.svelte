@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import { onMount } from 'svelte';
 
 	interface Props {
 		children: import('svelte').Snippet;
@@ -17,11 +18,37 @@
 	function clearError() {
 		error = null;
 	}
+
+	// Focus main content for skip link
+	function focusMain() {
+		const main = document.getElementById('main-content');
+		main?.focus();
+	}
+
+	// Global error boundary
+	onMount(() => {
+		const handleGlobalError = (event: ErrorEvent) => {
+			handleError(event.error || new Error(event.message));
+			// Don't prevent default - let errors still log to console
+		};
+
+		const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+			handleError(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+		};
+
+		window.addEventListener('error', handleGlobalError);
+		window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+		return () => {
+			window.removeEventListener('error', handleGlobalError);
+			window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+		};
+	});
 </script>
 
 <div class="app">
 	<!-- Skip to main content for keyboard users -->
-	<a href="#main-content" class="skip-link">Skip to main content</a>
+	<a href="#main-content" class="skip-link" onclick={focusMain}>Skip to main content</a>
 
 	<header class="app-header">
 		<nav class="container flex items-center justify-between">

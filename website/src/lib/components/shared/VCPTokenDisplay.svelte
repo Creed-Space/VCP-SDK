@@ -31,30 +31,53 @@
 	}: Props = $props();
 
 	let copied = $state(false);
+	let copyError = $state(false);
 	let prevToken = $state(token);
 	let isUpdating = $state(false);
 
+	// Fix: Always return cleanup to prevent memory leaks
 	$effect(() => {
+		let timeout: ReturnType<typeof setTimeout> | undefined;
 		if (token !== prevToken && animated) {
 			isUpdating = true;
-			const timeout = setTimeout(() => {
+			timeout = setTimeout(() => {
 				isUpdating = false;
 			}, 300);
-			prevToken = token;
-			return () => clearTimeout(timeout);
 		}
 		prevToken = token;
+		return () => {
+			if (timeout) clearTimeout(timeout);
+		};
 	});
 
 	async function copyToken() {
+		copyError = false;
 		try {
-			await navigator.clipboard.writeText(token);
+			// Modern clipboard API
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(token);
+			} else {
+				// Fallback for older browsers / HTTP contexts
+				const textarea = document.createElement('textarea');
+				textarea.value = token;
+				textarea.style.position = 'fixed';
+				textarea.style.opacity = '0';
+				document.body.appendChild(textarea);
+				textarea.select();
+				const success = document.execCommand('copy');
+				document.body.removeChild(textarea);
+				if (!success) throw new Error('execCommand failed');
+			}
 			copied = true;
 			setTimeout(() => {
 				copied = false;
 			}, 2000);
-		} catch {
-			console.error('Failed to copy token');
+		} catch (e) {
+			console.error('Failed to copy token:', e);
+			copyError = true;
+			setTimeout(() => {
+				copyError = false;
+			}, 2000);
 		}
 	}
 </script>
@@ -67,9 +90,18 @@
 		</span>
 		<span class="token-version">v{version}</span>
 		{#if showCopy}
-			<button class="copy-btn" onclick={copyToken} title="Copy token">
+			<button
+				class="copy-btn"
+				class:copied
+				class:error={copyError}
+				onclick={copyToken}
+				title={copyError ? 'Failed to copy' : copied ? 'Copied!' : 'Copy token'}
+				aria-label={copyError ? 'Failed to copy token' : copied ? 'Token copied to clipboard' : 'Copy token to clipboard'}
+			>
 				{#if copied}
 					<i class="fa-solid fa-check" aria-hidden="true"></i>
+				{:else if copyError}
+					<i class="fa-solid fa-xmark" aria-hidden="true"></i>
 				{:else}
 					<i class="fa-solid fa-copy" aria-hidden="true"></i>
 				{/if}
@@ -151,6 +183,14 @@
 	.copy-btn:hover {
 		background: rgba(255, 255, 255, 0.1);
 		color: var(--color-text);
+	}
+
+	.copy-btn.copied {
+		color: var(--color-success);
+	}
+
+	.copy-btn.error {
+		color: var(--color-danger);
 	}
 
 	.token-body {

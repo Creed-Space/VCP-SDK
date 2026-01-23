@@ -309,6 +309,26 @@ h4 {
 	border-color: rgba(255, 255, 255, 0.3);
 }
 
+.btn-success {
+	background: var(--color-success);
+	color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+	background: var(--color-success);
+	filter: brightness(1.1);
+}
+
+.btn-danger {
+	background: var(--color-danger);
+	color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+	background: var(--color-danger);
+	filter: brightness(1.1);
+}
+
 .btn-ghost {
 	background: transparent;
 	color: var(--color-text-muted);

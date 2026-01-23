@@ -13,11 +13,12 @@
 
 	let { path, mastery, onTopicSelect }: Props = $props();
 
+	// Use CSS variables for theming consistency
 	const levelColors: Record<ExperienceLevel, string> = {
-		beginner: '#3498db',
-		intermediate: '#f39c12',
-		advanced: '#2ecc71',
-		expert: '#9b59b6'
+		beginner: 'var(--color-info)',
+		intermediate: 'var(--color-warning)',
+		advanced: 'var(--color-success)',
+		expert: 'var(--color-primary)'
 	};
 
 	function getMasteryForTopic(topicId: string): MasteryLevel | undefined {
@@ -46,8 +47,8 @@
 		return prereqsMet ? 'available' : 'locked';
 	}
 
-	function getDifficultyStars(difficulty: number): string {
-		return '<i class="fa-solid fa-star" aria-hidden="true"></i>'.repeat(difficulty) + '<i class="fa-regular fa-star" aria-hidden="true"></i>'.repeat(5 - difficulty);
+	function getDifficultyStars(difficulty: number): { filled: number; empty: number } {
+		return { filled: difficulty, empty: 5 - difficulty };
 	}
 
 	function getProgressPercent(): number {
@@ -117,7 +118,14 @@
 					<div class="node-content">
 						<span class="topic-name">{topic.name}</span>
 						<div class="topic-meta">
-							<span class="difficulty">{@html getDifficultyStars(topic.difficulty)}</span>
+							<span class="difficulty" role="img" aria-label="Difficulty {topic.difficulty} of 5">
+								{#each Array(topic.difficulty) as _}
+									<i class="fa-solid fa-star" aria-hidden="true"></i>
+								{/each}
+								{#each Array(5 - topic.difficulty) as _}
+									<i class="fa-regular fa-star" aria-hidden="true"></i>
+								{/each}
+							</span>
 							<span class="duration">{topic.estimated_hours}h</span>
 						</div>
 						{#if topicMastery}
