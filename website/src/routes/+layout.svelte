@@ -1,5 +1,7 @@
 <script lang="ts">
 	import '../app.css';
+	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 
 	interface Props {
 		children: import('svelte').Snippet;
@@ -8,6 +10,7 @@
 	let { children }: Props = $props();
 	let mobileMenuOpen = $state(false);
 	let error = $state<Error | null>(null);
+	let logoError = $state(false);
 
 	function handleError(e: Error) {
 		error = e;
@@ -17,17 +20,68 @@
 	function clearError() {
 		error = null;
 	}
+
+	// Focus main content for skip link
+	function focusMain() {
+		const main = document.getElementById('main-content');
+		main?.focus();
+	}
+
+	// Handle logo load error
+	function handleLogoError() {
+		logoError = true;
+	}
+
+	// Global error boundary + navigation listener + service worker
+	onMount(() => {
+		const handleGlobalError = (event: ErrorEvent) => {
+			handleError(event.error || new Error(event.message));
+		};
+
+		const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+			handleError(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+		};
+
+		window.addEventListener('error', handleGlobalError);
+		window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+		// Close mobile menu on navigation (back/forward)
+		const unsubscribe = page.subscribe(() => {
+			mobileMenuOpen = false;
+		});
+
+		// Register service worker for offline support
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker
+				.register('/sw.js')
+				.then((registration) => {
+					console.log('SW registered:', registration.scope);
+				})
+				.catch((err) => {
+					console.log('SW registration failed:', err);
+				});
+		}
+
+		return () => {
+			window.removeEventListener('error', handleGlobalError);
+			window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+			unsubscribe();
+		};
+	});
 </script>
 
 <div class="app">
 	<!-- Skip to main content for keyboard users -->
-	<a href="#main-content" class="skip-link">Skip to main content</a>
+	<a href="#main-content" class="skip-link" onclick={focusMain}>Skip to main content</a>
 
 	<header class="app-header">
 		<nav class="container flex items-center justify-between">
 			<a href="/" class="logo" aria-label="VCP Demo Home">
-				<span class="logo-icon" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
-				<span class="logo-text">VCP</span>
+				{#if logoError}
+					<span class="logo-text">VCP</span>
+				{:else}
+					<img src="/vcp-logo.png" alt="VCP" class="logo-img" onerror={handleLogoError} />
+				{/if}
 				<span class="logo-badge">Demo</span>
 			</a>
 
@@ -125,7 +179,11 @@
 		<div class="container">
 			<div class="footer-content">
 				<div class="footer-brand">
-					<span class="footer-logo" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
+					{#if logoError}
+						<span class="footer-logo-text">VCP</span>
+					{:else}
+						<img src="/vcp-logo.png" alt="VCP" class="footer-logo-img" onerror={handleLogoError} />
+					{/if}
 					<div>
 						<p class="footer-title">Value Context Protocol</p>
 						<p class="footer-tagline">Share what matters. Keep what's personal.</p>
@@ -158,7 +216,7 @@
 
 			<div class="footer-bottom">
 				<p>
-					Built with <span aria-label="love">♡</span> by
+					Built with <span aria-label="love"><i class="fa-solid fa-heart" aria-hidden="true"></i></span> by
 					<a href="https://creed.space" target="_blank" rel="noopener noreferrer">Creed Space</a>
 				</p>
 				<p class="footer-version">VCP Demo v0.1</p>
@@ -200,17 +258,15 @@
 		text-decoration: none;
 	}
 
-	.logo-icon {
-		font-size: 1.5rem;
+	.logo-img {
+		height: 96px;
+		width: auto;
 	}
 
 	.logo-text {
+		font-size: 1.5rem;
 		font-weight: 700;
-		font-size: 1.25rem;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
+		color: var(--color-primary);
 	}
 
 	.logo-badge {
@@ -428,8 +484,15 @@
 		gap: var(--space-md);
 	}
 
-	.footer-logo {
+	.footer-logo-img {
+		height: 112px;
+		width: auto;
+	}
+
+	.footer-logo-text {
 		font-size: 2rem;
+		font-weight: 700;
+		color: var(--color-primary);
 	}
 
 	.footer-title {
