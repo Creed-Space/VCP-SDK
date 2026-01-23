@@ -32,7 +32,7 @@
 		logoError = true;
 	}
 
-	// Global error boundary + navigation listener
+	// Global error boundary + navigation listener + service worker
 	onMount(() => {
 		const handleGlobalError = (event: ErrorEvent) => {
 			handleError(event.error || new Error(event.message));
@@ -49,6 +49,18 @@
 		const unsubscribe = page.subscribe(() => {
 			mobileMenuOpen = false;
 		});
+
+		// Register service worker for offline support
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker
+				.register('/sw.js')
+				.then((registration) => {
+					console.log('SW registered:', registration.scope);
+				})
+				.catch((err) => {
+					console.log('SW registration failed:', err);
+				});
+		}
 
 		return () => {
 			window.removeEventListener('error', handleGlobalError);

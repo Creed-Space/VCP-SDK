@@ -3,6 +3,8 @@
 	 * DocsLayout - Documentation page layout with sidebar navigation
 	 */
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import DocsSearch from '$lib/components/DocsSearch.svelte';
 
 	interface Props {
 		title: string;
@@ -66,6 +68,10 @@
 	<!-- Sidebar -->
 	<aside id="docs-sidebar" class="sidebar" class:open={sidebarOpen}>
 		<nav class="sidebar-nav" aria-label="Documentation navigation">
+			<div class="sidebar-search">
+				<DocsSearch onSelect={(path) => { sidebarOpen = false; goto(path); }} />
+			</div>
+
 			<a href="/docs" class="sidebar-home" class:active={currentPath === '/docs'}>
 				<span class="home-icon"><i class="fa-solid fa-book" aria-hidden="true"></i></span>
 				Documentation Home
@@ -161,6 +167,10 @@
 		top: 60px;
 		height: calc(100vh - 60px);
 		overflow-y: auto;
+	}
+
+	.sidebar-search {
+		margin-bottom: var(--space-lg);
 	}
 
 	.sidebar-home {
