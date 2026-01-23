@@ -34,6 +34,7 @@
 			<!-- Desktop Nav -->
 			<div class="nav-links desktop-nav" role="navigation" aria-label="Main navigation">
 				<a href="/about" class="nav-link">About</a>
+				<a href="/paper" class="nav-link nav-link-highlight">Paper</a>
 				<a href="/demos" class="nav-link">Demos</a>
 				<a href="/docs" class="nav-link">Docs</a>
 				<a href="/playground" class="nav-link">Playground</a>
@@ -76,6 +77,9 @@
 			>
 				<a href="/about" class="mobile-nav-link" onclick={() => (mobileMenuOpen = false)}>
 					About VCP
+				</a>
+				<a href="/paper" class="mobile-nav-link mobile-nav-highlight" onclick={() => (mobileMenuOpen = false)}>
+					<i class="fa-solid fa-file-lines"></i> Research Paper
 				</a>
 				<a href="/demos" class="mobile-nav-link" onclick={() => (mobileMenuOpen = false)}>
 					Interactive Demos
@@ -139,6 +143,9 @@
 					</div>
 					<div class="footer-section">
 						<h4>Learn More</h4>
+						<a href="/Value Context Protocol Paper I1D1.pdf" target="_blank" rel="noopener noreferrer">
+							<i class="fa-solid fa-file-pdf"></i> Whitepaper (PDF)
+						</a>
 						<a href="https://creed.space" target="_blank" rel="noopener noreferrer">
 							Creed Space
 						</a>
@@ -251,6 +258,17 @@
 		background: rgba(255, 255, 255, 0.2);
 	}
 
+	.nav-link-highlight {
+		color: var(--color-primary) !important;
+		background: var(--color-primary-muted);
+		border-radius: var(--radius-md);
+	}
+
+	.nav-link-highlight:hover {
+		background: var(--color-primary);
+		color: var(--color-bg) !important;
+	}
+
 	.nav-link-brand {
 		display: flex;
 		align-items: center;
@@ -332,6 +350,11 @@
 	.mobile-nav-link:hover {
 		background: rgba(255, 255, 255, 0.05);
 		text-decoration: none;
+	}
+
+	.mobile-nav-highlight {
+		color: var(--color-primary);
+		background: var(--color-primary-muted);
 	}
 
 	.mobile-nav-brand {
