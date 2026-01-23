@@ -186,7 +186,7 @@
 					{/if}
 					<div>
 						<p class="footer-title">Value Context Protocol</p>
-						<p class="footer-tagline">Share what matters. Keep what's personal.</p>
+						<p class="footer-tagline">Connect the personal to the practical.</p>
 					</div>
 				</div>
 
