@@ -98,7 +98,7 @@ const docsIndex: SearchDocument[] = [
 		path: '/about',
 		section: 'Overview',
 		content:
-			'What is the Value Context Protocol? Your context stays yours, private reasons stay private. A standard for privacy-preserving context sharing.',
+			'What is the Value Context Protocol? Share what matters. Keep what\'s personal. A standard for privacy-preserving context sharing.',
 		keywords: ['about', 'overview', 'what is', 'introduction']
 	}
 ];

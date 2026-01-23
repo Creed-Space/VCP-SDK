@@ -128,7 +128,7 @@
 					<span class="footer-logo" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></span>
 					<div>
 						<p class="footer-title">Value Context Protocol</p>
-						<p class="footer-tagline">Your context stays yours. Private reasons stay private.</p>
+						<p class="footer-tagline">Share what matters. Keep what's personal.</p>
 					</div>
 				</div>
 

@@ -21,7 +21,7 @@
 		</p>
 
 		<blockquote>
-			"Your context stays yours. Private reasons stay private."
+			"Share what matters. Keep what's personal."
 		</blockquote>
 
 		<h2>Quick Start</h2>

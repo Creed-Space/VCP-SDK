@@ -10,7 +10,7 @@
 	<title>VCP Demo - Value Context Protocol</title>
 	<meta name="description" content="Experience the Value Context Protocol in action. See how VCP protects your privacy while enabling personalized experiences across platforms." />
 	<meta property="og:title" content="VCP Demo - Value Context Protocol" />
-	<meta property="og:description" content="Your context. Your control. Private reasons stay private. Experience VCP through interactive demos." />
+	<meta property="og:description" content="Share what matters. Keep what's personal. Experience VCP through interactive demos." />
 	<meta property="og:type" content="website" />
 </svelte:head>
 
@@ -18,7 +18,7 @@
 	<section class="hero">
 		<h1>Value Context Protocol</h1>
 		<p class="hero-subtitle">
-			Your context. Your control. Private reasons stay private.
+			Share what matters. Keep what's personal.
 		</p>
 	</section>
 
