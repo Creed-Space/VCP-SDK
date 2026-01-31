@@ -337,9 +337,11 @@
 	}
 
 	.belief-domain {
-		font-size: 0.6875rem;
+		font-size: 0.75rem;
 		text-transform: uppercase;
-		color: var(--color-text-subtle);
+		color: #e0e0e0;
+		font-weight: 600;
+		letter-spacing: 0.05em;
 	}
 
 	.belief-confidence {
@@ -348,17 +350,19 @@
 	}
 
 	.belief-claim {
-		font-size: 0.875rem;
+		font-size: 0.9375rem;
 		margin-bottom: var(--space-sm);
-		line-height: 1.4;
+		line-height: 1.5;
+		color: #ffffff;
+		font-weight: 500;
 	}
 
 	.belief-meta {
 		display: flex;
 		align-items: center;
 		gap: var(--space-sm);
-		font-size: 0.75rem;
-		color: var(--color-text-subtle);
+		font-size: 0.8125rem;
+		color: var(--color-text-muted);
 	}
 
 	.uncertainty-badge {

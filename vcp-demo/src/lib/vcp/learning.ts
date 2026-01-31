@@ -188,7 +188,11 @@ export type AdaptationType =
 	| 'chunking'
 	| 'scaffolding_added'
 	| 'examples_increased'
-	| 'practice_added';
+	| 'practice_added'
+	// Prosaic-driven adaptations
+	| 'content_compression'
+	| 'session_modification'
+	| 'feedback_adjustment';
 
 // ============================================
 // Learning Session

@@ -1,7 +1,11 @@
 <script lang="ts">
 	import DemoContainer from '$lib/components/demo/DemoContainer.svelte';
 	import CognitiveLoadMeter from '$lib/components/learning/CognitiveLoadMeter.svelte';
+	import PresetLoader from '$lib/components/shared/PresetLoader.svelte';
+	import AuditPanel from '$lib/components/shared/AuditPanel.svelte';
 	import type { CognitiveLoadState, Adaptation } from '$lib/vcp/learning';
+
+	let selectedPreset = $state<string | undefined>(undefined);
 
 	// Simulate cognitive load state
 	let loadState = $state<CognitiveLoadState>({
@@ -87,7 +91,154 @@
 		loadState.session_duration_minutes = 15;
 		loadState.capacity_remaining = 0.85;
 		loadState.overload_indicators = [];
+		selectedPreset = 'optimal';
 	}
+
+	// Cognitive load presets
+	const loadPresets = [
+		{
+			id: 'optimal',
+			name: 'Optimal Zone',
+			description: 'Balanced load with high learning efficiency',
+			icon: 'fa-circle-check',
+			data: {
+				current_load: 0.45,
+				intrinsic_load: 0.25,
+				extraneous_load: 0.05,
+				germane_load: 0.15,
+				fatigue_factor: 0.1,
+				session_duration_minutes: 15,
+				capacity_remaining: 0.85
+			},
+			tags: ['balanced', 'efficient']
+		},
+		{
+			id: 'mid-session',
+			name: 'Mid-Session',
+			description: 'Typical state after 45 minutes of learning',
+			icon: 'fa-clock',
+			data: {
+				current_load: 0.65,
+				intrinsic_load: 0.35,
+				extraneous_load: 0.15,
+				germane_load: 0.15,
+				fatigue_factor: 0.25,
+				session_duration_minutes: 47,
+				capacity_remaining: 0.55
+			},
+			tags: ['typical', 'moderate']
+		},
+		{
+			id: 'overloaded',
+			name: 'Overloaded',
+			description: 'Cognitive overload state with indicators',
+			icon: 'fa-triangle-exclamation',
+			data: {
+				current_load: 0.9,
+				intrinsic_load: 0.5,
+				extraneous_load: 0.25,
+				germane_load: 0.15,
+				fatigue_factor: 0.5,
+				session_duration_minutes: 90,
+				capacity_remaining: 0.2
+			},
+			tags: ['warning', 'needs-break']
+		},
+		{
+			id: 'fresh-start',
+			name: 'Fresh Start',
+			description: 'Beginning of session, full capacity',
+			icon: 'fa-sun',
+			data: {
+				current_load: 0.15,
+				intrinsic_load: 0.1,
+				extraneous_load: 0.02,
+				germane_load: 0.03,
+				fatigue_factor: 0.0,
+				session_duration_minutes: 2,
+				capacity_remaining: 0.95
+			},
+			tags: ['fresh', 'ready']
+		}
+	];
+
+	function applyPreset(preset: (typeof loadPresets)[0]) {
+		loadState = {
+			...loadState,
+			...preset.data,
+			last_break: preset.id === 'fresh-start'
+				? new Date().toISOString()
+				: new Date(Date.now() - preset.data.session_duration_minutes * 60 * 1000).toISOString(),
+			overload_indicators: preset.id === 'overloaded'
+				? [
+					{ type: 'response_time_increase', severity: 0.7, timestamp: new Date().toISOString() },
+					{ type: 'error_rate_increase', severity: 0.5, timestamp: new Date().toISOString() }
+				]
+				: []
+		};
+		selectedPreset = preset.id;
+	}
+
+	// Audit entries derived from load state
+	const auditEntries = $derived([
+		// Shared: Current cognitive state
+		{
+			field: 'Current Load',
+			category: 'shared' as const,
+			value: `${Math.round(loadState.current_load * 100)}%`,
+			reason: loadState.current_load > 0.7 ? 'High - consider break' : loadState.current_load < 0.4 ? 'Low - room for challenge' : 'Moderate - good zone'
+		},
+		{
+			field: 'Intrinsic Load',
+			category: 'shared' as const,
+			value: `${Math.round(loadState.intrinsic_load * 100)}%`,
+			reason: 'Material complexity level'
+		},
+		{
+			field: 'Session Duration',
+			category: 'shared' as const,
+			value: `${loadState.session_duration_minutes} min`,
+			reason: loadState.session_duration_minutes > 45 ? 'Break recommended' : 'Within healthy range'
+		},
+		{
+			field: 'Capacity Remaining',
+			category: 'shared' as const,
+			value: `${Math.round(loadState.capacity_remaining * 100)}%`,
+			reason: loadState.capacity_remaining < 0.4 ? 'Consider stopping' : 'Adequate capacity'
+		},
+		// Influenced: How load affects adaptations
+		{
+			field: 'Active Adaptations',
+			category: 'influenced' as const,
+			value: `${adaptations.filter((a) => a.active).length} triggered`,
+			reason: 'Real-time content modifications'
+		},
+		{
+			field: 'Overload Indicators',
+			category: 'influenced' as const,
+			value: loadState.overload_indicators.length > 0 ? `${loadState.overload_indicators.length} detected` : 'none',
+			reason: loadState.overload_indicators.length > 0 ? 'Behavioral signals detected' : 'Stable performance'
+		},
+		// Withheld: Internal calculations
+		{
+			field: 'Extraneous Load',
+			category: 'withheld' as const,
+			value: `${Math.round(loadState.extraneous_load * 100)}%`,
+			reason: 'Poor design overhead - being minimized'
+		},
+		{
+			field: 'Fatigue Factor',
+			category: 'withheld' as const,
+			value: `${Math.round(loadState.fatigue_factor * 100)}%`,
+			reason: 'Cumulative tiredness calculation'
+		},
+		{
+			field: 'Germane Load',
+			category: 'withheld' as const,
+			value: `${Math.round(loadState.germane_load * 100)}%`,
+			reason: 'Active learning engagement - being maximized'
+		}
+	]);
 </script>
 
 <svelte:head>
@@ -148,8 +299,19 @@
 				</div>
 			</div>
 
-			<!-- Right: Adaptations & Theory -->
+			<!-- Right: Presets, Audit, Adaptations & Theory -->
 			<div class="theory-section">
+				<!-- Preset Loader -->
+				<PresetLoader
+					presets={loadPresets}
+					selected={selectedPreset}
+					onselect={(p) => applyPreset(p as (typeof loadPresets)[0])}
+					title="Load Scenarios"
+				/>
+
+				<!-- Audit Panel -->
+				<AuditPanel entries={auditEntries} title="Cognitive State Audit" />
+
 				<!-- Active Adaptations -->
 				<div class="adaptations-card">
 					<h3>Active Adaptations</h3>
@@ -188,6 +350,19 @@
 								</div>
 							</div>
 						{/each}
+					</div>
+				</div>
+
+				<!-- Prosaic Connection -->
+				<div class="prosaic-card">
+					<h3>🧩 Prosaic Dimension: Cognitive</h3>
+					<p>
+						This demo shows the <strong>🧩 Cognitive</strong> prosaic dimension in action.
+						In real use, you can simply declare "I'm overwhelmed" or "too many options" —
+						and AI adapts without needing the detailed breakdown shown here.
+					</p>
+					<div class="prosaic-example">
+						<code>🧩0.8:overwhelmed</code> → Simplify choices, clear recommendations
 					</div>
 				</div>
 
@@ -289,20 +464,26 @@
 	}
 
 	.control-buttons button {
-		width: 32px;
-		height: 32px;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		background: var(--color-bg-elevated);
-		border-radius: var(--radius-sm);
+		width: 44px;
+		height: 44px;
+		border: 2px solid rgba(255, 255, 255, 0.5);
+		background: var(--color-bg-card);
+		border-radius: var(--radius-md);
 		cursor: pointer;
-		font-size: 1.25rem;
+		font-size: 1.75rem;
+		font-weight: 700;
+		color: #ffffff;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		line-height: 1;
+		transition: all var(--transition-fast);
 	}
 
 	.control-buttons button:hover {
 		border-color: var(--color-primary);
+		background: var(--color-primary);
+		color: #ffffff;
 	}
 
 	.control-value {
@@ -495,6 +676,33 @@
 		background: var(--color-primary-muted);
 		border-radius: var(--radius-md);
 		font-size: 0.875rem;
+	}
+
+	/* Prosaic card */
+	.prosaic-card {
+		padding: var(--space-lg);
+		background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+		border: 1px solid rgba(16, 185, 129, 0.3);
+		border-radius: var(--radius-lg);
+	}
+
+	.prosaic-card h3 {
+		color: var(--color-success);
+	}
+
+	.prosaic-card p {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin: 0 0 var(--space-md);
+		line-height: 1.5;
+	}
+
+	.prosaic-example {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		padding: var(--space-sm) var(--space-md);
+		background: var(--color-bg);
+		border-radius: var(--radius-md);
 	}
 
 	@media (max-width: 1024px) {

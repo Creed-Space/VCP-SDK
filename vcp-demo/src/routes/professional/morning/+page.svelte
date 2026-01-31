@@ -6,6 +6,10 @@
 	import { vcpContext, logRecommendation } from '$lib/vcp';
 	import { campionProfile, getCampionRecommendationContext } from '$lib/personas/campion';
 	import coursesData from '$lib/data/courses.json';
+	import AuditPanel from '$lib/components/shared/AuditPanel.svelte';
+
+	// Audit panel visibility state
+	let showAuditPanel = $state(true);
 
 	// Ensure profile is loaded
 	$effect(() => {
@@ -31,6 +35,46 @@
 	const budgetSpent = coursesData.budget.spent_eur;
 	const budgetRemaining = coursesData.budget.remaining_eur;
 	const budgetUsedPercent = $derived((budgetSpent / budgetTotal) * 100);
+
+	// Transform recommendation context into AuditPanel entries
+	const auditEntries = $derived(() => {
+		const entries: { field: string; category: 'shared' | 'withheld' | 'influenced'; value?: string; reason?: string; stakeholder?: string }[] = [];
+
+		// Shared fields
+		for (const field of recommendationContext.contextUsed) {
+			const [name, value] = field.split(':').map((s) => s.trim());
+			entries.push({
+				field: name.replace(/_/g, ' '),
+				category: 'shared',
+				value: value?.replace(/_/g, ' '),
+				stakeholder: 'TechCorp LMS'
+			});
+		}
+
+		// Influenced fields (private context that affects recommendations)
+		for (const field of recommendationContext.contextInfluencing) {
+			const match = field.match(/^([^:]+):\s*([^(]+)(?:\(([^)]+)\))?/);
+			if (match) {
+				entries.push({
+					field: match[1].replace(/_/g, ' '),
+					category: 'influenced',
+					value: match[2].trim(),
+					reason: match[3]
+				});
+			}
+		}
+
+		// Withheld fields (never exposed)
+		for (const field of recommendationContext.contextWithheld) {
+			entries.push({
+				field: field.replace(/_/g, ' '),
+				category: 'withheld',
+				reason: 'Private - not transmitted to platforms'
+			});
+		}
+
+		return entries;
+	});
 
 	// Log the recommendation on mount
 	$effect(() => {
@@ -74,12 +118,21 @@
 	<title>Morning Recommendations - Professional Demo</title>
 </svelte:head>
 
-<div class="container-narrow">
-	<div class="breadcrumb">
-		<a href="/professional">← Back to profile</a>
-	</div>
+<div class="page-layout" class:audit-open={showAuditPanel}>
+	<div class="main-content container-narrow">
+		<div class="breadcrumb">
+			<a href="/professional">← Back to profile</a>
+			<button
+				class="audit-toggle-btn"
+				onclick={() => showAuditPanel = !showAuditPanel}
+				aria-label={showAuditPanel ? 'Hide audit panel' : 'Show audit panel'}
+			>
+				<i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
+				{showAuditPanel ? 'Hide' : 'Show'} Audit
+			</button>
+		</div>
 
-	<header class="journey-header">
+		<header class="journey-header">
 		<span class="badge badge-primary">Morning Journey</span>
 		<h1>Course Recommendations</h1>
 		<p class="journey-subtitle">
@@ -203,10 +256,50 @@
 			See what Campion sees vs what HR sees
 		</p>
 	</section>
+	</div>
+
+	<!-- Audit Sidebar -->
+	{#if showAuditPanel}
+		<aside class="audit-sidebar">
+			<AuditPanel
+				entries={auditEntries()}
+				title="Real-Time Audit"
+				compact={true}
+				showTimestamps={false}
+			/>
+		</aside>
+	{/if}
 </div>
 
 <style>
+	/* Page Layout with Sidebar */
+	.page-layout {
+		display: flex;
+		gap: var(--space-lg);
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: 0 var(--space-md);
+	}
+
+	.main-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.audit-sidebar {
+		width: 320px;
+		flex-shrink: 0;
+		position: sticky;
+		top: var(--space-lg);
+		height: fit-content;
+		max-height: calc(100vh - var(--space-xl));
+		overflow-y: auto;
+	}
+
 	.breadcrumb {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 		margin-bottom: var(--space-lg);
 	}
 
@@ -214,6 +307,25 @@
 		color: var(--color-text-muted);
 		text-decoration: none;
 		font-size: 0.875rem;
+	}
+
+	.audit-toggle-btn {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-xs) var(--space-sm);
+		background: var(--color-bg-elevated);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: var(--radius-md);
+		color: var(--color-text-muted);
+		font-size: 0.75rem;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.audit-toggle-btn:hover {
+		background: var(--color-bg-card);
+		color: var(--color-text);
 	}
 
 	.journey-header {
@@ -354,6 +466,20 @@
 		padding: var(--space-xl) 0;
 	}
 
+	@media (max-width: 1024px) {
+		.page-layout {
+			flex-direction: column;
+		}
+
+		.audit-sidebar {
+			width: 100%;
+			position: static;
+			max-height: none;
+			order: -1;
+			margin-bottom: var(--space-lg);
+		}
+	}
+
 	@media (max-width: 640px) {
 		.context-grid {
 			grid-template-columns: 1fr;
@@ -362,6 +488,16 @@
 		.course-title-row {
 			flex-direction: column;
 			gap: var(--space-sm);
+		}
+
+		.breadcrumb {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: var(--space-sm);
+		}
+
+		.audit-toggle-btn {
+			align-self: flex-end;
 		}
 	}
 </style>

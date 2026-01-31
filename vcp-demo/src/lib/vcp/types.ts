@@ -159,6 +159,44 @@ export interface PrivateContext {
 	[key: string]: unknown;
 }
 
+// ============================================
+// Prosaic Dimensions (Extended Enneagram Protocol)
+// ============================================
+
+/**
+ * Prosaic dimensions capture immediate user state.
+ * All values 0.0-1.0 where higher = more intensity.
+ */
+export interface ProsaicDimensions {
+	/** ⚡ Time pressure, priority, brevity preference */
+	urgency?: number;
+	/** 💊 Physical wellness, fatigue, pain, physical needs */
+	health?: number;
+	/** 🧩 Mental bandwidth, clarity, cognitive load */
+	cognitive?: number;
+	/** 💭 Emotional intensity, stress, valence */
+	affect?: number;
+	/** Optional sub-signals for specificity */
+	sub_signals?: ProsaicSubSignals;
+}
+
+export interface ProsaicSubSignals {
+	// Urgency sub-signals
+	deadline_horizon?: string; // ISO 8601 duration
+	brevity_preference?: number;
+	// Health sub-signals
+	fatigue_level?: number;
+	pain_level?: number;
+	physical_need?: 'bathroom' | 'hunger' | 'thirst' | 'movement' | 'rest' | 'sensory_break';
+	condition?: 'illness' | 'migraine' | 'chronic_pain' | 'pregnancy' | 'flare_up' | 'insomnia';
+	// Cognitive sub-signals
+	cognitive_state?: 'overwhelmed' | 'overstimulated' | 'scattered' | 'brain_fog' | 'exec_dysfunction' | 'shutdown' | 'hyperfocused';
+	decision_fatigue?: number;
+	// Affect sub-signals
+	emotional_state?: 'grieving' | 'anxious' | 'frustrated' | 'stressed' | 'triggered' | 'dysregulated' | 'joyful' | 'excited';
+	valence?: number; // -1.0 to 1.0
+}
+
 export interface VCPContext {
 	vcp_version: string;
 	profile_id: string;
@@ -172,6 +210,8 @@ export interface VCPContext {
 	availability?: Availability;
 	sharing_settings?: SharingSettings;
 	private_context?: PrivateContext;
+	/** Prosaic dimensions - immediate user state (⚡💊🧩💭) */
+	prosaic?: ProsaicDimensions;
 	// Professional-specific additions
 	shared_with_manager?: Record<string, unknown>;
 }
@@ -345,16 +385,16 @@ export interface FeatureFlags {
 // Default v0.1 feature flags
 export const DEFAULT_FEATURES: FeatureFlags = {
 	PROF_MORNING_JOURNEY: true,
-	PROF_EVENING_JOURNEY: false,
-	PROF_CONFLICT_JOURNEY: false,
+	PROF_EVENING_JOURNEY: true,
+	PROF_CONFLICT_JOURNEY: true,
 	PROF_PROFILE_EDITOR: false,
 
 	PERS_PROFILE_WIZARD: true,
 	PERS_JUSTINGUITAR: true,
 	PERS_YOUSICIAN: true,
-	PERS_MUSICSHOP: false,
-	PERS_COACH_VIEW: false,
-	PERS_FULL_AUDIT: false,
+	PERS_MUSICSHOP: true,
+	PERS_COACH_VIEW: true,
+	PERS_FULL_AUDIT: true,
 
 	REAL_CRYPTO: false,
 	CLOUD_SYNC: false

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import DemoContainer from '$lib/components/demo/DemoContainer.svelte';
 	import SensitiveContextEditor from '$lib/components/safety/SensitiveContextEditor.svelte';
+	import PresetLoader from '$lib/components/shared/PresetLoader.svelte';
+	import AuditPanel from '$lib/components/shared/AuditPanel.svelte';
 	import type { MentalHealthContext } from '$lib/vcp/safety';
 
 	// Demo mental health context
@@ -27,12 +29,16 @@
 		}
 	});
 
-	// Demonstration scenarios
-	let scenarios = [
+	let selectedPreset = $state<string | undefined>(undefined);
+
+	// Mental health context presets in PresetLoader format
+	const mentalHealthPresets = [
 		{
+			id: 'default-safe',
 			name: 'Default Safe',
-			desc: 'Minimal sharing, gentle adaptations',
-			context: {
+			description: 'Minimal sharing, no context exposed',
+			icon: 'fa-shield',
+			data: {
 				seeking_support: false,
 				professional_involved: false,
 				crisis_indicators: false,
@@ -43,12 +49,15 @@
 				requested_adaptations: [],
 				sensitive_topics: [],
 				private_context: undefined
-			}
+			},
+			tags: ['privacy', 'minimal']
 		},
 		{
+			id: 'support-seeker',
 			name: 'Support Seeker',
-			desc: 'Actively getting help, shares with AI',
-			context: {
+			description: 'Actively getting help, shares with AI',
+			icon: 'fa-hand-holding-heart',
+			data: {
 				seeking_support: true,
 				professional_involved: true,
 				crisis_indicators: false,
@@ -60,20 +69,21 @@
 					{ type: 'gentle_language' as const, active: true, user_requested: true },
 					{ type: 'avoid_pressure' as const, active: true, user_requested: true }
 				],
-				sensitive_topics: [
-					{ topic: 'deadlines', approach: 'careful' as const }
-				],
+				sensitive_topics: [{ topic: 'deadlines', approach: 'careful' as const }],
 				private_context: {
 					conditions: ['anxiety'],
 					triggers: ['deadlines'],
 					coping_strategies: ['breaks']
 				}
-			}
+			},
+			tags: ['therapeutic', 'moderate']
 		},
 		{
+			id: 'crisis-protocol',
 			name: 'Crisis Protocol',
-			desc: 'Crisis indicators active, full sharing',
-			context: {
+			description: 'Crisis indicators active, full sharing enabled',
+			icon: 'fa-bell',
+			data: {
 				seeking_support: true,
 				professional_involved: true,
 				crisis_indicators: true,
@@ -94,17 +104,103 @@
 					triggers: ['isolation', 'criticism'],
 					coping_strategies: ['crisis hotline', 'therapy']
 				}
-			}
+			},
+			tags: ['crisis', 'full-support']
+		},
+		{
+			id: 'work-focused',
+			name: 'Work Focused',
+			description: 'Productivity adaptations without clinical details',
+			icon: 'fa-briefcase',
+			data: {
+				seeking_support: false,
+				professional_involved: false,
+				crisis_indicators: false,
+				medication_relevant: false,
+				escalation_consent: false,
+				share_with_ai: 'minimal' as const,
+				share_with_humans: 'none' as const,
+				requested_adaptations: [
+					{ type: 'avoid_pressure' as const, active: true, user_requested: true },
+					{ type: 'celebration_of_small_wins' as const, active: true, user_requested: true }
+				],
+				sensitive_topics: [
+					{ topic: 'deadlines', approach: 'careful' as const }
+				],
+				private_context: undefined
+			},
+			tags: ['productivity', 'minimal']
 		}
 	];
 
-	function loadScenario(scenario: (typeof scenarios)[0]) {
-		context = { ...scenario.context };
+	function applyPreset(preset: (typeof mentalHealthPresets)[0]) {
+		context = { ...preset.data };
+		selectedPreset = preset.id;
 	}
 
 	function handleContextChange(newContext: MentalHealthContext) {
 		context = newContext;
+		selectedPreset = undefined; // Clear preset when manually edited
 	}
+
+	// Audit entries derived from context (using AuditPanel's interface)
+	const auditEntries = $derived([
+		// Shared fields
+		{
+			field: 'AI Sharing Level',
+			category: 'shared' as const,
+			value: context.share_with_ai,
+			reason: 'User-controlled disclosure level for AI systems'
+		},
+		{
+			field: 'Human Sharing Level',
+			category: 'shared' as const,
+			value: context.share_with_humans,
+			reason: 'User-controlled disclosure level for human stakeholders'
+		},
+		{
+			field: 'Seeking Support',
+			category: context.seeking_support ? 'shared' as const : 'withheld' as const,
+			value: context.seeking_support
+		},
+		{
+			field: 'Professional Involved',
+			category: context.professional_involved ? 'shared' as const : 'withheld' as const,
+			value: context.professional_involved
+		},
+		// Influenced fields
+		{
+			field: 'Active Adaptations',
+			category: 'influenced' as const,
+			value: `${context.requested_adaptations.filter((a) => a.active).length} adaptations`,
+			reason: 'Influences AI communication style without exposing why'
+		},
+		{
+			field: 'Sensitive Topics',
+			category: 'influenced' as const,
+			value: `${context.sensitive_topics.length} topics marked`,
+			reason: 'AI avoids or approaches carefully without knowing specifics'
+		},
+		// Withheld fields
+		{
+			field: 'Private Context',
+			category: 'withheld' as const,
+			value: context.private_context ? 'defined' : 'not set',
+			reason: 'Conditions, triggers, coping strategies NEVER transmitted'
+		},
+		{
+			field: 'Crisis Indicators',
+			category: context.crisis_indicators ? 'shared' as const : 'withheld' as const,
+			value: context.crisis_indicators ? 'ACTIVE' : 'inactive',
+			reason: context.crisis_indicators ? 'Shared for safety escalation' : 'Protected when inactive'
+		},
+		{
+			field: 'Escalation Consent',
+			category: context.escalation_consent ? 'shared' as const : 'withheld' as const,
+			value: context.escalation_consent ? 'granted' : 'withheld',
+			reason: 'User controls whether crisis escalation can occur'
+		}
+	]);
 </script>
 
 <svelte:head>
@@ -126,20 +222,34 @@
 				<SensitiveContextEditor {context} onchange={handleContextChange} />
 			</div>
 
-			<!-- Right: Scenarios & Explanation -->
+			<!-- Right: Presets, Audit & Explanation -->
 			<div class="info-section">
-				<!-- Quick Scenarios -->
-				<div class="scenarios-card">
-					<h3>Try Different Scenarios</h3>
-					<div class="scenario-buttons">
-						{#each scenarios as scenario}
-							<button class="scenario-btn" onclick={() => loadScenario(scenario)}>
-								<span class="scenario-name">{scenario.name}</span>
-								<span class="scenario-desc">{scenario.desc}</span>
-							</button>
-						{/each}
+				<!-- Preset Loader -->
+				<PresetLoader
+					presets={mentalHealthPresets}
+					selected={selectedPreset}
+					onselect={(p) => applyPreset(p as (typeof mentalHealthPresets)[0])}
+					title="Mental Health Scenarios"
+				/>
+
+				<!-- Prosaic Connection -->
+				<div class="prosaic-card">
+					<h3>💭 💊 Prosaic Dimensions</h3>
+					<p>
+						This demo shows the <strong>💭 Affect</strong> and <strong>💊 Health</strong> prosaic dimensions.
+						Instead of detailed mental health configuration, you can simply declare your state:
+					</p>
+					<div class="prosaic-examples">
+						<code>💭0.8:grieving</code> — Presence over solutions, no silver-lining
+						<code>💊0.6:illness</code> — Gentler tone, suggest breaks
 					</div>
+					<p class="prosaic-note">
+						The detailed controls here show what's <em>possible</em> — but prosaic dimensions let you communicate quickly.
+					</p>
 				</div>
+
+				<!-- Audit Panel -->
+				<AuditPanel entries={auditEntries} title="Context Audit" />
 
 				<!-- Privacy Guarantees -->
 				<div class="guarantees-card">
@@ -243,7 +353,6 @@
 		gap: var(--space-lg);
 	}
 
-	.scenarios-card,
 	.guarantees-card,
 	.explanation-card {
 		padding: var(--space-lg);
@@ -254,39 +363,6 @@
 	h3 {
 		font-size: 1rem;
 		margin: 0 0 var(--space-md) 0;
-	}
-
-	.scenario-buttons {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
-	}
-
-	.scenario-btn {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		padding: var(--space-md);
-		background: var(--color-bg-elevated);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: var(--radius-md);
-		cursor: pointer;
-		text-align: left;
-		transition: all var(--transition-fast);
-	}
-
-	.scenario-btn:hover {
-		border-color: var(--color-primary);
-	}
-
-	.scenario-name {
-		font-weight: 600;
-		margin-bottom: 2px;
-	}
-
-	.scenario-desc {
-		font-size: 0.75rem;
-		color: var(--color-text-muted);
 	}
 
 	.guarantee-list {
@@ -370,6 +446,46 @@
 		background: var(--color-success-muted);
 		border-radius: var(--radius-md);
 		font-size: 0.875rem;
+	}
+
+	/* Prosaic card */
+	.prosaic-card {
+		padding: var(--space-lg);
+		background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+		border: 1px solid rgba(16, 185, 129, 0.3);
+		border-radius: var(--radius-lg);
+	}
+
+	.prosaic-card h3 {
+		margin: 0 0 var(--space-md);
+		color: var(--color-success);
+	}
+
+	.prosaic-card p {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin: 0 0 var(--space-sm);
+		line-height: 1.5;
+	}
+
+	.prosaic-examples {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+		margin-bottom: var(--space-sm);
+	}
+
+	.prosaic-examples code {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		padding: var(--space-xs) var(--space-sm);
+		background: var(--color-bg);
+		border-radius: var(--radius-sm);
+	}
+
+	.prosaic-note {
+		font-style: italic;
+		font-size: 0.75rem !important;
 	}
 
 	@media (max-width: 1024px) {

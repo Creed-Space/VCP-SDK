@@ -11,6 +11,10 @@
 		getGentianPrivacyComparison
 	} from '$lib/personas/gentian';
 	import challengeData from '$lib/data/challenge.json';
+	import AuditPanel from '$lib/components/shared/AuditPanel.svelte';
+
+	// Audit panel visibility state
+	let showAuditPanel = $state(true);
 
 	// Ensure profile is loaded
 	$effect(() => {
@@ -28,20 +32,80 @@
 	function getProgressPercent(completed: number, total: number): number {
 		return Math.round((completed / total) * 100);
 	}
+
+	// Transform privacy context into AuditPanel entries
+	const auditEntries = $derived(() => {
+		const entries: { field: string; category: 'shared' | 'withheld' | 'influenced'; value?: string; reason?: string; stakeholder?: string }[] = [];
+
+		// Shared fields (what community sees)
+		const sharedFields = [
+			{ field: 'display_name', value: ctx?.public_profile?.display_name },
+			{ field: 'days_completed', value: String(progress.days_completed) },
+			{ field: 'days_adjusted', value: `${progress.days_adjusted} (count only)` },
+			{ field: 'badges', value: `${progress.badges?.length ?? 0} earned` },
+			{ field: 'rank', value: '#3' }
+		];
+		for (const { field, value } of sharedFields) {
+			entries.push({
+				field: field.replace(/_/g, ' '),
+				category: 'shared',
+				value: String(value ?? '—'),
+				stakeholder: 'Community'
+			});
+		}
+
+		// Influenced fields (private context affecting participation)
+		entries.push({
+			field: 'adjusted days policy',
+			category: 'influenced',
+			value: 'active',
+			reason: 'Private reasons accepted without penalty'
+		});
+
+		// Withheld fields (reasons for adjustments never exposed)
+		const withheldFields = [
+			{ field: 'Jan 18 adjustment reason', reason: 'Night shift recovery' },
+			{ field: 'Jan 14 adjustment reason', reason: 'Double shift exhaustion' },
+			{ field: 'Jan 10 adjustment reason', reason: 'Night shift recovery' },
+			{ field: 'work schedule', reason: 'Rotating shift details' },
+			{ field: 'housing situation', reason: 'Apartment noise constraints' }
+		];
+		for (const { field, reason } of withheldFields) {
+			entries.push({
+				field: field,
+				category: 'withheld',
+				reason: reason
+			});
+		}
+
+		return entries;
+	});
 </script>
 
 <svelte:head>
 	<title>30-Day Challenge - VCP Demo</title>
 </svelte:head>
 
-<div class="platform-frame platform-frame-community">
-	<div class="platform-header platform-header-community">
-		<div class="platform-brand">
-			<span class="platform-logo">👥</span>
-			<span class="platform-name">Guitar Community</span>
-		</div>
-		<div class="vcp-badge">VCP Connected</div>
-	</div>
+<div class="page-layout" class:audit-open={showAuditPanel}>
+	<div class="main-content">
+		<div class="platform-frame platform-frame-community">
+			<div class="platform-header platform-header-community">
+				<div class="platform-brand">
+					<span class="platform-logo">👥</span>
+					<span class="platform-name">Guitar Community</span>
+				</div>
+				<div class="header-actions">
+					<div class="vcp-badge">VCP Connected</div>
+					<button
+						class="audit-toggle-btn"
+						onclick={() => showAuditPanel = !showAuditPanel}
+						aria-label={showAuditPanel ? 'Hide audit panel' : 'Show audit panel'}
+					>
+						<i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
+						{showAuditPanel ? 'Hide' : 'Show'} Audit
+					</button>
+				</div>
+			</div>
 
 	<div class="platform-content">
 		<header class="challenge-header">
@@ -208,17 +272,94 @@
 				See how VCP handles private skip reasons
 			</p>
 		</section>
+		</div>
 	</div>
-</div>
 
-<div class="container-narrow" style="margin-top: 2rem;">
-	<div class="nav-links">
-		<a href="/personal/platforms/yousician" class="btn btn-ghost">← Yousician</a>
-		<a href="/personal" class="btn btn-primary">Back to Profile →</a>
+	<div class="container-narrow" style="margin-top: 2rem;">
+		<div class="nav-links">
+			<a href="/personal/platforms/yousician" class="btn btn-ghost">← Yousician</a>
+			<a href="/personal" class="btn btn-primary">Back to Profile →</a>
+		</div>
 	</div>
+	</div>
+
+	<!-- Audit Sidebar -->
+	{#if showAuditPanel && ctx}
+		<aside class="audit-sidebar">
+			<AuditPanel
+				entries={auditEntries()}
+				title="Privacy Audit"
+				compact={true}
+				showTimestamps={false}
+			/>
+		</aside>
+	{/if}
 </div>
 
 <style>
+	/* Page Layout with Sidebar */
+	.page-layout {
+		display: flex;
+		gap: var(--space-lg);
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: 0 var(--space-md);
+	}
+
+	.main-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.audit-sidebar {
+		width: 320px;
+		flex-shrink: 0;
+		position: sticky;
+		top: var(--space-lg);
+		height: fit-content;
+		max-height: calc(100vh - var(--space-xl));
+		overflow-y: auto;
+	}
+
+	.header-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	.audit-toggle-btn {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-xs) var(--space-sm);
+		background: var(--color-bg-elevated);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: var(--radius-md);
+		color: var(--color-text-muted);
+		font-size: 0.75rem;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.audit-toggle-btn:hover {
+		background: var(--color-bg-card);
+		color: var(--color-text);
+	}
+
+	@media (max-width: 1024px) {
+		.page-layout {
+			flex-direction: column;
+		}
+
+		.audit-sidebar {
+			width: 100%;
+			position: static;
+			max-height: none;
+			order: -1;
+			margin-bottom: var(--space-lg);
+		}
+	}
+
 	.platform-brand {
 		display: flex;
 		align-items: center;

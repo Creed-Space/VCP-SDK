@@ -1,8 +1,10 @@
-# Value-Context Protocol (VCP)
+# VCP Python SDK
 
 **Version**: 1.0.0
 **Status**: Specification Complete
 **License**: MIT (pending)
+
+> **See also**: [VCP-Demo-Site](https://github.com/Creed-Space/VCP-Demo-Site) — Interactive demos and documentation website
 
 ---
 
@@ -61,7 +63,7 @@ VCP is a four-layer protocol stack—like OSI for AI values:
 ## Repository Structure
 
 ```
-Value Context Protocol/
+VCP-Python-SDK/
 ├── README.md                    # This file
 ├── specs/                       # Core specifications
 │   ├── VCP_SPECIFICATION_v1.0.md

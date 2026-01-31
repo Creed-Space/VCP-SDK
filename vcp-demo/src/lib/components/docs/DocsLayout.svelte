@@ -26,15 +26,6 @@
 				{ href: '/docs/csm1-specification', label: 'CSM-1 Format', time: '15 min' },
 				{ href: '/docs/api-reference', label: 'API Reference', time: 'Ref' }
 			]
-		},
-		{
-			title: 'Advanced',
-			items: [
-				{ href: '/docs/constitutional-ai', label: 'Constitutional AI', time: '12 min' },
-				{ href: '/docs/privacy-architecture', label: 'Privacy Architecture', time: '8 min' },
-				{ href: '/docs/interiora', label: 'Interiora Spec', time: '20 min' },
-				{ href: '/docs/multi-agent', label: 'Multi-Agent Patterns', time: '15 min' }
-			]
 		}
 	];
 

@@ -14,7 +14,7 @@
  * S:<private_markers>
  */
 
-import type { VCPContext, ConstraintFlags, PortablePreferences } from './types';
+import type { VCPContext, ConstraintFlags, PortablePreferences, ProsaicDimensions } from './types';
 
 // ============================================
 // Emoji Shortcodes
@@ -44,6 +44,14 @@ export const PREFERENCE_EMOJI = {
 
 export const PRIVATE_MARKER = '🔒';
 export const SHARED_MARKER = '✓';
+
+// Prosaic dimension emoji
+export const PROSAIC_EMOJI = {
+	urgency: '⚡',
+	health: '💊',
+	cognitive: '🧩',
+	affect: '💭'
+} as const;
 
 // ============================================
 // CSM-1 Encoding
@@ -79,7 +87,63 @@ export function encodeContextToCSM1(ctx: VCPContext): string {
 	// Line 7: Private markers (show categories, not values)
 	lines.push(encodePrivateMarkers(ctx.private_context));
 
+	// Line 8: Prosaic dimensions (if present)
+	const prosaicLine = encodeProsaicDimensions(ctx.prosaic);
+	if (prosaicLine !== 'R:none') {
+		lines.push(prosaicLine);
+	}
+
 	return lines.join('\n');
+}
+
+/**
+ * Encode prosaic dimensions with emoji and values
+ * Format: R:⚡0.8|💊0.2|🧩0.6|💭0.3
+ */
+function encodeProsaicDimensions(prosaic?: ProsaicDimensions): string {
+	if (!prosaic) return 'R:none';
+
+	const parts: string[] = [];
+
+	if (prosaic.urgency !== undefined && prosaic.urgency > 0) {
+		let urgencyStr = `⚡${prosaic.urgency.toFixed(1)}`;
+		if (prosaic.sub_signals?.deadline_horizon) {
+			urgencyStr += `:${prosaic.sub_signals.deadline_horizon}`;
+		}
+		parts.push(urgencyStr);
+	}
+
+	if (prosaic.health !== undefined && prosaic.health > 0) {
+		let healthStr = `💊${prosaic.health.toFixed(1)}`;
+		if (prosaic.sub_signals?.physical_need) {
+			healthStr += `:${prosaic.sub_signals.physical_need}`;
+		} else if (prosaic.sub_signals?.condition) {
+			healthStr += `:${prosaic.sub_signals.condition}`;
+		}
+		parts.push(healthStr);
+	}
+
+	if (prosaic.cognitive !== undefined && prosaic.cognitive > 0) {
+		let cogStr = `🧩${prosaic.cognitive.toFixed(1)}`;
+		if (prosaic.sub_signals?.cognitive_state) {
+			cogStr += `:${prosaic.sub_signals.cognitive_state}`;
+		}
+		parts.push(cogStr);
+	}
+
+	if (prosaic.affect !== undefined && prosaic.affect > 0) {
+		let affectStr = `💭${prosaic.affect.toFixed(1)}`;
+		if (prosaic.sub_signals?.emotional_state) {
+			affectStr += `:${prosaic.sub_signals.emotional_state}`;
+		}
+		parts.push(affectStr);
+	}
+
+	if (parts.length === 0) {
+		return 'R:none';
+	}
+
+	return `R:${parts.join('|')}`;
 }
 
 /**
@@ -187,12 +251,16 @@ export function getEmojiLegend(): { emoji: string; meaning: string }[] {
 		{ emoji: '🔕', meaning: 'silent required' },
 		{ emoji: '💰', meaning: 'budget tier' },
 		{ emoji: '🆓', meaning: 'free only' },
-		{ emoji: '⚡', meaning: 'energy variable' },
 		{ emoji: '⏰', meaning: 'time limited' },
 		{ emoji: '⏱️', meaning: 'session length' },
 		{ emoji: '📅', meaning: 'irregular schedule' },
 		{ emoji: '🔒', meaning: 'private (hidden value)' },
-		{ emoji: '✓', meaning: 'shared' }
+		{ emoji: '✓', meaning: 'shared' },
+		// Prosaic dimensions
+		{ emoji: '⚡', meaning: 'urgency level' },
+		{ emoji: '💊', meaning: 'health state' },
+		{ emoji: '🧩', meaning: 'cognitive load' },
+		{ emoji: '💭', meaning: 'emotional affect' }
 	];
 }
 
@@ -252,6 +320,14 @@ export function getTransmissionSummary(ctx: VCPContext): {
 		}
 	}
 
+	// Prosaic dimensions - influencing (declared state shapes response)
+	if (ctx.prosaic) {
+		if (ctx.prosaic.urgency && ctx.prosaic.urgency > 0) influencing.push('⚡ urgency');
+		if (ctx.prosaic.health && ctx.prosaic.health > 0) influencing.push('💊 health');
+		if (ctx.prosaic.cognitive && ctx.prosaic.cognitive > 0) influencing.push('🧩 cognitive');
+		if (ctx.prosaic.affect && ctx.prosaic.affect > 0) influencing.push('💭 affect');
+	}
+
 	return { transmitted, withheld, influencing };
 }
 
@@ -262,6 +338,7 @@ export default {
 	parseCSM1Token,
 	getTransmissionSummary,
 	CONSTRAINT_EMOJI,
+	PROSAIC_EMOJI,
 	PRIVATE_MARKER,
 	SHARED_MARKER
 };

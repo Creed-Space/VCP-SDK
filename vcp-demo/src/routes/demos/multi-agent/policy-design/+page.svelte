@@ -2,6 +2,8 @@
 	import DemoContainer from '$lib/components/demo/DemoContainer.svelte';
 	import AgentChat from '$lib/components/demo/AgentChat.svelte';
 	import MultiAgentArena from '$lib/components/demo/MultiAgentArena.svelte';
+	import PresetLoader from '$lib/components/shared/PresetLoader.svelte';
+	import AuditPanel from '$lib/components/shared/AuditPanel.svelte';
 	import {
 		policyAgents,
 		policyOptions,
@@ -100,6 +102,143 @@
 			if (playInterval) clearInterval(playInterval);
 		};
 	});
+
+	let selectedPreset = $state<string | undefined>(undefined);
+	let playbackSpeed = $state(3000);
+
+	// Policy design playback presets
+	const policyPresets = [
+		{
+			id: 'careful',
+			name: 'Careful',
+			description: 'Thoughtful deliberation pace',
+			icon: 'fa-scale-balanced',
+			data: { speed: 4500 },
+			tags: ['educational']
+		},
+		{
+			id: 'normal',
+			name: 'Normal',
+			description: 'Standard deliberation pace',
+			icon: 'fa-play',
+			data: { speed: 3000 },
+			tags: ['balanced']
+		},
+		{
+			id: 'fast',
+			name: 'Fast',
+			description: 'Quick policy overview',
+			icon: 'fa-forward',
+			data: { speed: 1500 },
+			tags: ['quick']
+		}
+	];
+
+	function applyPreset(preset: (typeof policyPresets)[0]) {
+		playbackSpeed = preset.data.speed;
+		selectedPreset = preset.id;
+		if (isPlaying) {
+			stopPlaying();
+			startPlayingWithSpeed();
+		}
+	}
+
+	function startPlayingWithSpeed() {
+		if (currentStep >= policyScenario.length) {
+			reset();
+		}
+		isPlaying = true;
+		playInterval = setInterval(() => {
+			stepForward();
+			if (currentStep >= policyScenario.length) {
+				stopPlaying();
+			}
+		}, playbackSpeed);
+	}
+
+	// Audit entries derived from policy state
+	const auditEntries = $derived.by(() => {
+		const entries: { field: string; category: 'shared' | 'withheld' | 'influenced'; value?: string; reason?: string }[] = [];
+
+		// Count contributions by stakeholder
+		const contributionCounts = policyAgents.reduce(
+			(acc, agent) => {
+				acc[agent.agent_id] = messages.filter((m) => m.sender.agent_id === agent.agent_id).length;
+				return acc;
+			},
+			{} as Record<string, number>
+		);
+
+		// Shared: Public deliberation elements
+		entries.push({
+			field: 'Policy Options',
+			category: 'shared',
+			value: `${policyOptions.length} proposals`,
+			reason: 'All options publicly presented'
+		});
+
+		entries.push({
+			field: 'Stakeholder Input',
+			category: 'shared',
+			value: `${messages.length} statements`,
+			reason: 'Public positions and arguments'
+		});
+
+		entries.push({
+			field: 'Value Alignments',
+			category: 'shared',
+			reason: 'Which values each proposal serves'
+		});
+
+		// Influenced: What shapes decisions
+		entries.push({
+			field: 'Deliberation Phase',
+			category: 'influenced',
+			value: `Step ${currentStep}/${policyScenario.length}`,
+			reason: 'Progress affects consensus building'
+		});
+
+		entries.push({
+			field: 'Participation Balance',
+			category: 'influenced',
+			value: Object.values(contributionCounts).join('/') + ' msgs',
+			reason: 'Equal voice opportunity monitored'
+		});
+
+		entries.push({
+			field: 'Consensus Status',
+			category: 'influenced',
+			value: showVotes ? 'Achieved' : 'Building',
+			reason: 'Positions converging through dialogue'
+		});
+
+		// Withheld: Private rationales
+		entries.push({
+			field: 'Personal Circumstances',
+			category: 'withheld',
+			reason: 'Individual life situations protected'
+		});
+
+		entries.push({
+			field: 'Private Rationales',
+			category: 'withheld',
+			reason: 'Personal reasons for votes never disclosed'
+		});
+
+		entries.push({
+			field: 'Political Considerations',
+			category: 'withheld',
+			reason: 'Career/reputation concerns hidden'
+		});
+
+		entries.push({
+			field: 'Emotional Stakes',
+			category: 'withheld',
+			reason: 'Personal investment in outcomes protected'
+		});
+
+		return entries;
+	});
 </script>
 
 <svelte:head>
@@ -118,7 +257,7 @@
 	{#snippet controls()}
 		<button
 			class="control-btn"
-			onclick={() => (isPlaying ? stopPlaying() : startPlaying())}
+			onclick={() => (isPlaying ? stopPlaying() : startPlayingWithSpeed())}
 			disabled={currentStep >= policyScenario.length && !isPlaying}
 		>
 			<span class="control-icon">{isPlaying ? '⏸' : '▶'}</span>
@@ -136,6 +275,17 @@
 
 	{#snippet children()}
 		<div class="policy-layout">
+			<!-- Controls Row -->
+			<div class="controls-row">
+				<PresetLoader
+					presets={policyPresets}
+					selected={selectedPreset}
+					onselect={(p) => applyPreset(p as (typeof policyPresets)[0])}
+					title="Deliberation Pace"
+				/>
+				<AuditPanel entries={auditEntries} title="VCP Context Audit" compact={true} />
+			</div>
+
 			<!-- Options Overview -->
 			<div class="options-grid">
 				{#each policyOptions as option}
@@ -228,6 +378,18 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-xl);
+	}
+
+	.controls-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-lg);
+	}
+
+	@media (max-width: 768px) {
+		.controls-row {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	.options-grid {

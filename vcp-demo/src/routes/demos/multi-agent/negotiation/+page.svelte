@@ -2,6 +2,8 @@
 	import DemoContainer from '$lib/components/demo/DemoContainer.svelte';
 	import AgentChat from '$lib/components/demo/AgentChat.svelte';
 	import MultiAgentArena from '$lib/components/demo/MultiAgentArena.svelte';
+	import PresetLoader from '$lib/components/shared/PresetLoader.svelte';
+	import AuditPanel from '$lib/components/shared/AuditPanel.svelte';
 	import {
 		negotiationAgents,
 		negotiationTopic,
@@ -10,6 +12,7 @@
 		learningPoints
 	} from '$lib/data/scenarios/negotiation-scenario';
 	import type { AgentIdentity } from '$lib/vcp/multi-agent';
+	import type { ProsaicDimensions } from '$lib/vcp/types';
 
 	interface ChatMessage {
 		id: string;
@@ -27,6 +30,92 @@
 	let currentSpeaker = $state<string | null>(null);
 	let showPrivateContext = $state(false);
 	let playInterval: ReturnType<typeof setInterval> | null = null;
+
+	// Agent prosaic states - evolve during negotiation
+	const initialEmployeeProsaic: ProsaicDimensions = { urgency: 0.8, health: 0.6, cognitive: 0.5, affect: 0.7 };
+	const initialManagerProsaic: ProsaicDimensions = { urgency: 0.4, health: 0.9, cognitive: 0.7, affect: 0.5 };
+
+	let employeeProsaic = $state<ProsaicDimensions>({ ...initialEmployeeProsaic });
+	let managerProsaic = $state<ProsaicDimensions>({ ...initialManagerProsaic });
+
+	// Track what prosaic signals were exchanged
+	interface ProsaicExchange {
+		from: string;
+		to: string;
+		signaled: string;
+		hidden: string;
+		turn: number;
+	}
+
+	let prosaicExchanges = $state<ProsaicExchange[]>([]);
+
+	// Prosaic evolution: stress decreases as agreement forms
+	const prosaicEvolution = $derived.by(() => {
+		const progress = currentStep / negotiationScenario.length;
+		const resolution = progress >= 0.8;
+
+		// Calculate current states based on progress
+		const employeeStress = resolution
+			? 0.3  // Much calmer after resolution
+			: Math.max(0.3, initialEmployeeProsaic.affect! - (progress * 0.3));
+		const managerStress = resolution
+			? 0.2  // Much calmer after resolution
+			: Math.max(0.2, initialManagerProsaic.affect! - (progress * 0.2));
+
+		return {
+			employee: {
+				urgency: resolution ? 0.2 : Math.max(0.2, initialEmployeeProsaic.urgency! - (progress * 0.4)),
+				affect: employeeStress,
+				label: resolution ? 'Relieved' : (employeeStress > 0.5 ? 'Stressed' : 'Easing')
+			},
+			manager: {
+				urgency: resolution ? 0.1 : initialManagerProsaic.urgency!,
+				affect: managerStress,
+				label: resolution ? 'Satisfied' : (managerStress > 0.4 ? 'Concerned' : 'Opening')
+			}
+		};
+	});
+
+	// Update agent prosaic states based on evolution
+	$effect(() => {
+		const evo = prosaicEvolution;
+		employeeProsaic = {
+			...employeeProsaic,
+			urgency: evo.employee.urgency,
+			affect: evo.employee.affect
+		};
+		managerProsaic = {
+			...managerProsaic,
+			urgency: evo.manager.urgency,
+			affect: evo.manager.affect
+		};
+	});
+
+	// What each agent shared vs hid (prosaic perspective)
+	const prosaicAudit = $derived.by(() => {
+		return {
+			employee: {
+				shared: [
+					`⚡ "Time-critical situation" (urgency: ${employeeProsaic.urgency?.toFixed(1)})`,
+					`🧩 "Managing workload" (cognitive: ${employeeProsaic.cognitive?.toFixed(1)})`
+				],
+				hidden: [
+					`💊 Health crisis driving urgency`,
+					`💭 Emotional weight of eldercare (affect: ${employeeProsaic.affect?.toFixed(1)})`
+				]
+			},
+			manager: {
+				shared: [
+					`🧩 "Team coordination concerns" (cognitive: ${managerProsaic.cognitive?.toFixed(1)})`,
+					`💭 "Understanding the situation" (affect: ${managerProsaic.affect?.toFixed(1)})`
+				],
+				hidden: [
+					`💊 Own health constraints`,
+					`⚡ Internal political pressures`
+				]
+			}
+		};
+	});
 
 	function getAgent(actorId: string): AgentIdentity {
 		return negotiationAgents.find((a) => a.agent_id === actorId) || negotiationAgents[0];
@@ -93,12 +182,140 @@
 		messages = [];
 		currentSpeaker = null;
 		showPrivateContext = false;
+		prosaicExchanges = [];
+		employeeProsaic = { ...initialEmployeeProsaic };
+		managerProsaic = { ...initialManagerProsaic };
 	}
 
 	$effect(() => {
 		return () => {
 			if (playInterval) clearInterval(playInterval);
 		};
+	});
+
+	let selectedPreset = $state<string | undefined>(undefined);
+	let playbackSpeed = $state(3000);
+
+	// Negotiation playback presets
+	const negotiationPresets = [
+		{
+			id: 'deliberate',
+			name: 'Deliberate',
+			description: 'Careful pace for analysis',
+			icon: 'fa-comment-dots',
+			data: { speed: 4500 },
+			tags: ['educational']
+		},
+		{
+			id: 'normal',
+			name: 'Normal',
+			description: 'Natural conversation pace',
+			icon: 'fa-comments',
+			data: { speed: 3000 },
+			tags: ['balanced']
+		},
+		{
+			id: 'quick',
+			name: 'Quick',
+			description: 'Fast overview',
+			icon: 'fa-forward-fast',
+			data: { speed: 1500 },
+			tags: ['quick']
+		}
+	];
+
+	function applyPreset(preset: (typeof negotiationPresets)[0]) {
+		playbackSpeed = preset.data.speed;
+		selectedPreset = preset.id;
+		if (isPlaying) {
+			stopPlaying();
+			startPlayingWithSpeed();
+		}
+	}
+
+	function startPlayingWithSpeed() {
+		if (currentStep >= negotiationScenario.length) {
+			reset();
+		}
+		isPlaying = true;
+		playInterval = setInterval(() => {
+			stepForward();
+			if (currentStep >= negotiationScenario.length) {
+				stopPlaying();
+			}
+		}, playbackSpeed);
+	}
+
+	// Audit entries derived from negotiation state
+	const auditEntries = $derived.by(() => {
+		const entries: { field: string; category: 'shared' | 'withheld' | 'influenced'; value?: string; reason?: string }[] = [];
+
+		const employeeMsgs = messages.filter((m) => m.sender.agent_id === 'employee');
+		const managerMsgs = messages.filter((m) => m.sender.agent_id === 'manager');
+
+		// Shared: What's been communicated
+		entries.push({
+			field: 'Employee Statements',
+			category: 'shared',
+			value: `${employeeMsgs.length} messages`,
+			reason: 'Public position and requests'
+		});
+
+		entries.push({
+			field: 'Manager Statements',
+			category: 'shared',
+			value: `${managerMsgs.length} messages`,
+			reason: 'Public position and offers'
+		});
+
+		entries.push({
+			field: 'Negotiation Topic',
+			category: 'shared',
+			value: negotiationTopic.title,
+			reason: 'Subject of discussion is public'
+		});
+
+		// Influenced: What shapes the negotiation
+		entries.push({
+			field: 'Negotiation Phase',
+			category: 'influenced',
+			value: `Round ${currentStep}/${negotiationScenario.length}`,
+			reason: 'Progress affects urgency and flexibility'
+		});
+
+		entries.push({
+			field: 'Resolution Status',
+			category: 'influenced',
+			value: showPrivateContext ? 'Complete' : 'In Progress',
+			reason: 'Both parties adapting positions'
+		});
+
+		// Withheld: Sensitive private context
+		entries.push({
+			field: 'Employee\'s Actual Reasons',
+			category: 'withheld',
+			reason: 'Personal circumstances (eldercare, health) not disclosed'
+		});
+
+		entries.push({
+			field: 'Manager\'s Constraints',
+			category: 'withheld',
+			reason: 'Internal pressures and political concerns hidden'
+		});
+
+		entries.push({
+			field: 'Negotiation Leverage',
+			category: 'withheld',
+			reason: 'Neither party revealed full leverage positions'
+		});
+
+		entries.push({
+			field: 'Emotional Stakes',
+			category: 'withheld',
+			reason: 'Personal impact and stress levels protected'
+		});
+
+		return entries;
 	});
 </script>
 
@@ -118,7 +335,7 @@
 	{#snippet controls()}
 		<button
 			class="control-btn"
-			onclick={() => (isPlaying ? stopPlaying() : startPlaying())}
+			onclick={() => (isPlaying ? stopPlaying() : startPlayingWithSpeed())}
 			disabled={currentStep >= negotiationScenario.length && !isPlaying}
 		>
 			<span class="control-icon">{isPlaying ? '⏸' : '▶'}</span>
@@ -136,6 +353,17 @@
 
 	{#snippet children()}
 		<div class="negotiation-layout">
+			<!-- Controls Row -->
+			<div class="controls-row">
+				<PresetLoader
+					presets={negotiationPresets}
+					selected={selectedPreset}
+					onselect={(p) => applyPreset(p as (typeof negotiationPresets)[0])}
+					title="Playback Speed"
+				/>
+				<AuditPanel entries={auditEntries} title="VCP Context Audit" compact={true} />
+			</div>
+
 			<!-- Topic Card -->
 			<div class="topic-card">
 				<h3>{negotiationTopic.title}</h3>
@@ -154,6 +382,122 @@
 						<span class="stake-value">{negotiationTopic.stakes.organization}</span>
 					</div>
 				</div>
+			</div>
+
+			<!-- Agent Prosaic States -->
+			<div class="prosaic-states-section">
+				<h3><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i> Agent Prosaic States (Real-time)</h3>
+				<div class="agent-prosaic-grid">
+					<!-- Employee Sam -->
+					<div class="agent-prosaic-card employee">
+						<div class="prosaic-header">
+							<span class="agent-avatar">👨‍💻</span>
+							<span class="agent-name">Sam (Employee)</span>
+							<span class="prosaic-status" class:stressed={prosaicEvolution.employee.affect > 0.5}>
+								{prosaicEvolution.employee.label}
+							</span>
+						</div>
+						<div class="prosaic-dims">
+							<div class="prosaic-dim">
+								<span>⚡</span>
+								<div class="prosaic-bar">
+									<div class="prosaic-fill" style="width: {(employeeProsaic.urgency ?? 0) * 100}%; background: {(employeeProsaic.urgency ?? 0) > 0.6 ? 'var(--color-danger)' : 'var(--color-success)'}"></div>
+								</div>
+								<span class="dim-val">{(employeeProsaic.urgency ?? 0).toFixed(1)}</span>
+							</div>
+							<div class="prosaic-dim">
+								<span>💊</span>
+								<div class="prosaic-bar">
+									<div class="prosaic-fill hidden-fill" style="width: {(employeeProsaic.health ?? 0) * 100}%"></div>
+								</div>
+								<span class="dim-val hidden-val">?</span>
+							</div>
+							<div class="prosaic-dim">
+								<span>🧩</span>
+								<div class="prosaic-bar">
+									<div class="prosaic-fill" style="width: {(employeeProsaic.cognitive ?? 0) * 100}%; background: var(--color-warning)"></div>
+								</div>
+								<span class="dim-val">{(employeeProsaic.cognitive ?? 0).toFixed(1)}</span>
+							</div>
+							<div class="prosaic-dim">
+								<span>💭</span>
+								<div class="prosaic-bar">
+									<div class="prosaic-fill" style="width: {(employeeProsaic.affect ?? 0) * 100}%; background: {(employeeProsaic.affect ?? 0) > 0.5 ? 'var(--color-warning)' : 'var(--color-success)'}"></div>
+								</div>
+								<span class="dim-val">{(employeeProsaic.affect ?? 0).toFixed(1)}</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Manager Patricia -->
+					<div class="agent-prosaic-card manager">
+						<div class="prosaic-header">
+							<span class="agent-avatar">👩‍💼</span>
+							<span class="agent-name">Patricia (Manager)</span>
+							<span class="prosaic-status" class:stressed={prosaicEvolution.manager.affect > 0.4}>
+								{prosaicEvolution.manager.label}
+							</span>
+						</div>
+						<div class="prosaic-dims">
+							<div class="prosaic-dim">
+								<span>⚡</span>
+								<div class="prosaic-bar">
+									<div class="prosaic-fill" style="width: {(managerProsaic.urgency ?? 0) * 100}%; background: var(--color-success)"></div>
+								</div>
+								<span class="dim-val">{(managerProsaic.urgency ?? 0).toFixed(1)}</span>
+							</div>
+							<div class="prosaic-dim">
+								<span>💊</span>
+								<div class="prosaic-bar">
+									<div class="prosaic-fill hidden-fill" style="width: {(managerProsaic.health ?? 0) * 100}%"></div>
+								</div>
+								<span class="dim-val hidden-val">?</span>
+							</div>
+							<div class="prosaic-dim">
+								<span>🧩</span>
+								<div class="prosaic-bar">
+									<div class="prosaic-fill" style="width: {(managerProsaic.cognitive ?? 0) * 100}%; background: var(--color-warning)"></div>
+								</div>
+								<span class="dim-val">{(managerProsaic.cognitive ?? 0).toFixed(1)}</span>
+							</div>
+							<div class="prosaic-dim">
+								<span>💭</span>
+								<div class="prosaic-bar">
+									<div class="prosaic-fill" style="width: {(managerProsaic.affect ?? 0) * 100}%; background: var(--color-success)"></div>
+								</div>
+								<span class="dim-val">{(managerProsaic.affect ?? 0).toFixed(1)}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Prosaic Exchange Audit -->
+				{#if currentStep > 0}
+					<div class="prosaic-exchange-audit">
+						<div class="exchange-column">
+							<h4>Sam → Patricia</h4>
+							<div class="exchange-list">
+								{#each prosaicAudit.employee.shared as item}
+									<div class="exchange-item shared"><i class="fa-solid fa-check" aria-hidden="true"></i> {item}</div>
+								{/each}
+								{#each prosaicAudit.employee.hidden as item}
+									<div class="exchange-item hidden"><i class="fa-solid fa-lock" aria-hidden="true"></i> {item}</div>
+								{/each}
+							</div>
+						</div>
+						<div class="exchange-column">
+							<h4>Patricia → Sam</h4>
+							<div class="exchange-list">
+								{#each prosaicAudit.manager.shared as item}
+									<div class="exchange-item shared"><i class="fa-solid fa-check" aria-hidden="true"></i> {item}</div>
+								{/each}
+								{#each prosaicAudit.manager.hidden as item}
+									<div class="exchange-item hidden"><i class="fa-solid fa-lock" aria-hidden="true"></i> {item}</div>
+								{/each}
+							</div>
+						</div>
+					</div>
+				{/if}
 			</div>
 
 			<!-- Arena -->
@@ -262,6 +606,18 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-xl);
+	}
+
+	.controls-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-lg);
+	}
+
+	@media (max-width: 768px) {
+		.controls-row {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	.topic-card {
@@ -466,5 +822,171 @@
 		position: absolute;
 		left: 0;
 		color: var(--color-success);
+	}
+
+	/* Prosaic States Styles */
+	.prosaic-states-section {
+		padding: var(--space-xl);
+		background: var(--color-bg-card);
+		border-radius: var(--radius-lg);
+		border: 1px solid rgba(16, 185, 129, 0.3);
+	}
+
+	.prosaic-states-section h3 {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-lg);
+		color: var(--color-success);
+	}
+
+	.agent-prosaic-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: var(--space-lg);
+		margin-bottom: var(--space-lg);
+	}
+
+	.agent-prosaic-card {
+		padding: var(--space-lg);
+		background: var(--color-bg-elevated);
+		border-radius: var(--radius-md);
+		border-left: 4px solid;
+	}
+
+	.agent-prosaic-card.employee {
+		border-color: #3498db;
+	}
+
+	.agent-prosaic-card.manager {
+		border-color: #e74c3c;
+	}
+
+	.prosaic-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-md);
+	}
+
+	.agent-avatar {
+		font-size: 1.25rem;
+	}
+
+	.agent-name {
+		flex: 1;
+		font-weight: 600;
+		font-size: 0.9375rem;
+	}
+
+	.prosaic-status {
+		padding: 2px 8px;
+		font-size: 0.6875rem;
+		background: var(--color-success-muted);
+		color: var(--color-success);
+		border-radius: var(--radius-sm);
+	}
+
+	.prosaic-status.stressed {
+		background: var(--color-warning-muted);
+		color: var(--color-warning);
+	}
+
+	.prosaic-dims {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.prosaic-dim {
+		display: grid;
+		grid-template-columns: 24px 1fr 32px;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	.prosaic-bar {
+		height: 6px;
+		background: var(--color-bg);
+		border-radius: 3px;
+		overflow: hidden;
+	}
+
+	.prosaic-fill {
+		height: 100%;
+		border-radius: 3px;
+		transition: width var(--transition-normal);
+	}
+
+	.prosaic-fill.hidden-fill {
+		background: repeating-linear-gradient(
+			45deg,
+			var(--color-text-muted),
+			var(--color-text-muted) 2px,
+			transparent 2px,
+			transparent 4px
+		);
+		opacity: 0.3;
+	}
+
+	.dim-val {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		text-align: right;
+	}
+
+	.dim-val.hidden-val {
+		color: var(--color-text-muted);
+		font-style: italic;
+	}
+
+	.prosaic-exchange-audit {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-lg);
+		padding-top: var(--space-lg);
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.exchange-column h4 {
+		font-size: 0.8125rem;
+		margin-bottom: var(--space-sm);
+		color: var(--color-text-muted);
+	}
+
+	.exchange-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	.exchange-item {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-xs);
+		font-size: 0.75rem;
+		padding: var(--space-xs) var(--space-sm);
+		border-radius: var(--radius-sm);
+	}
+
+	.exchange-item.shared {
+		background: rgba(16, 185, 129, 0.1);
+		color: var(--color-success);
+	}
+
+	.exchange-item.hidden {
+		background: rgba(239, 68, 68, 0.1);
+		color: var(--color-danger);
+	}
+
+	.exchange-item i {
+		margin-top: 2px;
+		flex-shrink: 0;
+	}
+
+	@media (max-width: 768px) {
+		.prosaic-exchange-audit {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

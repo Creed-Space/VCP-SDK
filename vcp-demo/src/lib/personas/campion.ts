@@ -4,9 +4,57 @@
  * Senior software engineer at TechCorp, aspiring Tech Lead.
  * Has private constraints (single parent, health appointments)
  * that influence recommendations but are never exposed to HR.
+ *
+ * Campion has TWO constitutions:
+ * - Work: techcorp.career.advisor (Ambassador, adherence 3)
+ * - Personal: personal.balanced.guide (Godparent, adherence 4)
  */
 
-import type { VCPContext } from '$lib/vcp/types';
+import type { VCPContext, ConstitutionReference } from '$lib/vcp/types';
+
+// Work constitution - professional, diplomatic, career-focused
+export const workConstitution: ConstitutionReference = {
+	id: 'techcorp.career.advisor',
+	version: '1.0.0',
+	persona: 'ambassador',
+	adherence: 3, // Moderate flexibility
+	scopes: ['work', 'education']
+};
+
+// Personal constitution - ethical guidance, balanced priorities, protective
+export const personalConstitution: ConstitutionReference = {
+	id: 'personal.balanced.guide',
+	version: '1.0.0',
+	persona: 'godparent',
+	adherence: 4, // Stricter protection
+	scopes: ['family', 'privacy', 'health']
+};
+
+// Context type for Campion
+export type CampionContextType = 'professional' | 'personal';
+
+// Get the active constitution based on context
+export function getActiveConstitution(contextType: CampionContextType): ConstitutionReference {
+	return contextType === 'professional' ? workConstitution : personalConstitution;
+}
+
+// Infer context from time of day (simple heuristic)
+export function inferContextFromTime(hour: number, isWeekday: boolean): CampionContextType {
+	// Work hours: 9-17 on weekdays
+	if (isWeekday && hour >= 9 && hour <= 17) {
+		return 'professional';
+	}
+	// Evening/weekend = personal
+	return 'personal';
+}
+
+// Context encoding using emoji notation from spec
+export function encodeContext(contextType: CampionContextType): string {
+	if (contextType === 'professional') {
+		return '⏰📅|📍🏢|👥👔|🔶⏱️💸'; // Weekday, office, colleagues, time+budget constrained
+	}
+	return '⏰🌆|📍🏡|👥👶|🧠😴|🔶⏱️💸🏥'; // Evening, home, children, tired, constraints
+}
 
 export const campionProfile: VCPContext = {
 	vcp_version: '1.0.0',
@@ -172,6 +220,91 @@ export function getCampionRecommendationContext() {
 			'health_appointments',
 			'evening_available_after'
 		]
+	};
+}
+
+/**
+ * Get context for evening energy check scenario
+ * This is when Campion asks about starting a course while exhausted
+ */
+export function getEveningContext() {
+	return {
+		detected: {
+			time: '20:15',
+			location: 'home',
+			energy_state: 'tired',
+			child_status: 'asleep',
+			tomorrow_schedule: 'early_standup_9am',
+			context_type: 'personal' as CampionContextType
+		},
+		active_constitution: personalConstitution,
+		context_encoding: encodeContext('personal'),
+		recommendation: {
+			action: 'defer_study',
+			reasoning:
+				'Starting a new course when exhausted is not effective. You have an early standup tomorrow and need adequate rest.',
+			what_happens: {
+				course_status: 'Self-paced - no deadline, available when ready',
+				tomorrow: "You'll be alert for standup at 9am",
+				learning: 'Quality study > tired cramming'
+			}
+		},
+		alternatives: [
+			{
+				id: 'browse_intro',
+				label: 'Browse course intro (5 min)',
+				description: 'Just familiarize yourself with the structure, watch welcome video'
+			},
+			{
+				id: 'set_schedule',
+				label: 'Set study schedule',
+				description: 'Plan realistic times: Sat 9-10am, Tue/Thu 8:30-9:30pm'
+			},
+			{
+				id: 'rest',
+				label: 'Just rest tonight',
+				description: 'Sleep is more valuable than forced study'
+			}
+		]
+	};
+}
+
+/**
+ * Get the Godparent persona response for evening scenario
+ * This shows how the personal constitution protects wellbeing
+ */
+export function getGodparentResponse() {
+	return {
+		tone: 'caring',
+		greeting: 'Hey Campion',
+		observation: "I can see you're tired tonight.",
+		main_advice:
+			"Starting a new course when exhausted won't be effective - and you have that early standup tomorrow.",
+		tonight_suggestions: [
+			{
+				action: 'Browse the course intro (5 minutes)',
+				reason: 'Get familiar with the structure, watch the welcome video',
+				effort: 'minimal'
+			},
+			{
+				action: 'Set a realistic schedule',
+				options: [
+					'Saturdays 9-10am (after routine settles)',
+					'Tue/Thu evenings 8:30-9:30pm (after bedtime routine)'
+				],
+				note: "You mentioned mornings work better. Saturday morning might suit you."
+			}
+		],
+		skip_tonight: [
+			"Don't start Module 1 now",
+			"Don't overcommit",
+			"3 hours/week sounds light, but with your workload and family time, it's ambitious"
+		],
+		health_check:
+			"You're managing a lot right now. Adding study commitments is great for career growth, but only if it doesn't cost you sleep or stress. Let's build this sustainably.",
+		offer: 'Want me to send you a gentle reminder Saturday at 8:45am?',
+		privacy_note:
+			"Your family situation and health info stayed private. I used it to give you realistic advice, but it's not logged anywhere external."
 	};
 }
 

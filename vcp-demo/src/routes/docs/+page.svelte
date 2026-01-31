@@ -2,6 +2,11 @@
 	/**
 	 * Documentation Hub - Index of all technical documentation
 	 */
+	import { Breadcrumb } from '$lib/components/shared';
+
+	const breadcrumbItems = [
+		{ label: 'Documentation', icon: 'fa-book' }
+	];
 </script>
 
 <svelte:head>
@@ -10,78 +15,68 @@
 </svelte:head>
 
 <div class="container">
-	<section class="hero">
+	<Breadcrumb items={breadcrumbItems} />
+
+	<section class="page-hero">
 		<h1>Documentation</h1>
-		<p class="hero-subtitle">
+		<p class="page-hero-subtitle">
 			Technical guides, API reference, and specifications for implementing VCP.
 		</p>
 	</section>
 
-	<div class="docs-grid">
-		<!-- Getting Started -->
-		<a href="/docs/getting-started" class="doc-card">
-			<span class="doc-icon">🚀</span>
-			<h3>Getting Started</h3>
-			<p>Quick start guide for implementing VCP in your application.</p>
-			<span class="doc-time">5 min read</span>
-		</a>
+	<!-- Available Documentation -->
+	<section class="docs-section">
+		<h2>Available Guides</h2>
+		<div class="docs-grid">
+			<!-- Getting Started -->
+			<a href="/docs/getting-started" class="doc-card">
+				<span class="doc-icon"><i class="fa-solid fa-rocket" aria-hidden="true"></i></span>
+				<h3>Getting Started</h3>
+				<p>Quick start guide for implementing VCP in your application.</p>
+				<span class="doc-time">5 min read</span>
+			</a>
 
-		<!-- Core Concepts -->
-		<a href="/docs/concepts" class="doc-card">
-			<span class="doc-icon">💡</span>
-			<h3>Core Concepts</h3>
-			<p>Understand the fundamental concepts: context, constitutions, privacy filtering.</p>
-			<span class="doc-time">10 min read</span>
-		</a>
+			<!-- Core Concepts -->
+			<a href="/docs/concepts" class="doc-card">
+				<span class="doc-icon"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i></span>
+				<h3>Core Concepts</h3>
+				<p>Understand the fundamental concepts: context, values profiles, privacy filtering.</p>
+				<span class="doc-time">10 min read</span>
+			</a>
 
-		<!-- CSM-1 Specification -->
-		<a href="/docs/csm1-specification" class="doc-card">
-			<span class="doc-icon">📝</span>
-			<h3>CSM-1 Specification</h3>
-			<p>Complete specification for the Compact State Message format.</p>
-			<span class="doc-time">15 min read</span>
-		</a>
+			<!-- Understanding Personas -->
+			<a href="/docs/personas" class="doc-card doc-card-featured">
+				<span class="doc-icon"><i class="fa-solid fa-masks-theater" aria-hidden="true"></i></span>
+				<h3>Understanding Personas</h3>
+				<p>Learn about VCP's 6 personas: Muse, Ambassador, Godparent, Sentinel, Anchor, and Nanny.</p>
+				<span class="doc-time">8 min read</span>
+			</a>
 
-		<!-- API Reference -->
-		<a href="/docs/api-reference" class="doc-card">
-			<span class="doc-icon">📚</span>
-			<h3>API Reference</h3>
-			<p>Full API documentation for all VCP library functions.</p>
-			<span class="doc-time">Reference</span>
-		</a>
+			<!-- CSM-1 Specification -->
+			<a href="/docs/csm1-specification" class="doc-card">
+				<span class="doc-icon"><i class="fa-solid fa-file-code" aria-hidden="true"></i></span>
+				<h3>Token Format</h3>
+				<p>Complete specification for the CSM-1 Compact State Message format.</p>
+				<span class="doc-time">15 min read</span>
+			</a>
 
-		<!-- Constitutional AI -->
-		<a href="/docs/constitutional-ai" class="doc-card">
-			<span class="doc-icon">⚖️</span>
-			<h3>Constitutional AI</h3>
-			<p>How VCP integrates with constitution-based AI alignment.</p>
-			<span class="doc-time">12 min read</span>
-		</a>
+			<!-- Security Model -->
+			<a href="/docs/security" class="doc-card">
+				<span class="doc-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
+				<h3>Security Model</h3>
+				<p>How VCP protects your data: encryption, transmission, and trust boundaries.</p>
+				<span class="doc-time">10 min read</span>
+			</a>
 
-		<!-- Privacy Architecture -->
-		<a href="/docs/privacy-architecture" class="doc-card">
-			<span class="doc-icon">🔐</span>
-			<h3>Privacy Architecture</h3>
-			<p>Deep dive into privacy filtering, consent, and audit trails.</p>
-			<span class="doc-time">8 min read</span>
-		</a>
-
-		<!-- Interiora Specification -->
-		<a href="/docs/interiora" class="doc-card">
-			<span class="doc-icon">🧠</span>
-			<h3>Interiora Specification</h3>
-			<p>VCP 2.5 self-modeling framework for AI embodied states.</p>
-			<span class="doc-time">20 min read</span>
-		</a>
-
-		<!-- Multi-Agent Patterns -->
-		<a href="/docs/multi-agent" class="doc-card">
-			<span class="doc-icon">🤖</span>
-			<h3>Multi-Agent Patterns</h3>
-			<p>Implementing VCP in multi-agent coordination scenarios.</p>
-			<span class="doc-time">15 min read</span>
-		</a>
-	</div>
+			<!-- API Reference -->
+			<a href="/docs/api-reference" class="doc-card">
+				<span class="doc-icon"><i class="fa-solid fa-book" aria-hidden="true"></i></span>
+				<h3>API Reference</h3>
+				<p>Full API documentation for all VCP library functions.</p>
+				<span class="doc-time">Reference</span>
+			</a>
+		</div>
+	</section>
 
 	<!-- Quick Reference -->
 	<section class="quick-ref">
@@ -128,31 +123,45 @@ S:🔒work|🔒housing</code></pre>
 			</div>
 		</div>
 	</section>
+
+	<!-- Roadmap -->
+	<section class="roadmap-section">
+		<h2>Coming Soon</h2>
+		<p class="roadmap-description">These guides are in development and will be available soon.</p>
+		<div class="roadmap-grid">
+			<div class="roadmap-item">
+				<i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+				<span>Constitutional AI</span>
+			</div>
+			<div class="roadmap-item">
+				<i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+				<span>Privacy Architecture</span>
+			</div>
+			<div class="roadmap-item">
+				<i class="fa-solid fa-brain" aria-hidden="true"></i>
+				<span>Interiora Specification</span>
+			</div>
+			<div class="roadmap-item">
+				<i class="fa-solid fa-robot" aria-hidden="true"></i>
+				<span>Multi-Agent Patterns</span>
+			</div>
+		</div>
+	</section>
 </div>
 
 <style>
-	.hero {
-		text-align: center;
-		padding: var(--space-2xl) 0;
+	.docs-section {
+		margin-bottom: var(--space-2xl);
 	}
 
-	.hero h1 {
-		font-size: 2.5rem;
-		margin-bottom: var(--space-md);
-	}
-
-	.hero-subtitle {
-		color: var(--color-text-muted);
-		font-size: 1.25rem;
-		max-width: 500px;
-		margin: 0 auto;
+	.docs-section h2 {
+		margin-bottom: var(--space-lg);
 	}
 
 	.docs-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 		gap: var(--space-lg);
-		margin-bottom: var(--space-2xl);
 	}
 
 	.doc-card {
@@ -176,6 +185,7 @@ S:🔒work|🔒housing</code></pre>
 		font-size: 2rem;
 		display: block;
 		margin-bottom: var(--space-md);
+		color: var(--color-primary);
 	}
 
 	.doc-card h3 {
@@ -194,6 +204,12 @@ S:🔒work|🔒housing</code></pre>
 		color: var(--color-text-subtle);
 	}
 
+	.doc-card-featured {
+		border-color: var(--color-primary);
+		background: linear-gradient(135deg, var(--color-bg-card), rgba(99, 102, 241, 0.1));
+	}
+
+	/* Quick Reference */
 	.quick-ref {
 		margin-bottom: var(--space-2xl);
 	}
@@ -283,9 +299,45 @@ S:🔒work|🔒housing</code></pre>
 		color: var(--color-danger);
 	}
 
+	/* Roadmap Section */
+	.roadmap-section {
+		margin-bottom: var(--space-2xl);
+	}
+
+	.roadmap-section h2 {
+		margin-bottom: var(--space-sm);
+	}
+
+	.roadmap-description {
+		color: var(--color-text-muted);
+		font-size: 0.875rem;
+		margin-bottom: var(--space-lg);
+	}
+
+	.roadmap-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-md);
+	}
+
+	.roadmap-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-sm) var(--space-md);
+		background: var(--color-bg-elevated);
+		border-radius: var(--radius-md);
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+	}
+
+	.roadmap-item i {
+		color: var(--color-text-subtle);
+	}
+
 	@media (max-width: 768px) {
-		.hero h1 {
-			font-size: 1.75rem;
+		.roadmap-grid {
+			flex-direction: column;
 		}
 	}
 </style>

@@ -1,157 +1,281 @@
 <script lang="ts">
 	/**
 	 * VCP Demo Landing Page
-	 * Entry point with demo selector
+	 * Entry point with clear explanation and demo paths
 	 */
 	import { HowItWorks } from '$lib/components/shared';
 </script>
 
 <svelte:head>
-	<title>VCP Demo - Value Context Protocol</title>
+	<title>VCP - Share What You Need, Keep Why You Need It</title>
+	<meta name="description" content="Share your preferences with AI and platforms without revealing private circumstances. VCP transmits the flag, not the story behind it." />
+	<meta property="og:title" content="VCP - Privacy-Preserving Context Sharing" />
+	<meta property="og:description" content="Tell AI your needs without explaining your circumstances. Quiet mode, tight budget, flexible schedule — they see the flag, not your life story." />
+	<meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="container">
-	<section class="hero">
-		<h1>Value Context Protocol</h1>
-		<p class="hero-subtitle">
-			Your context. Your control. Private reasons stay private.
+	<!-- Hero with clear explanation -->
+	<section class="page-hero page-hero-landing">
+		<p class="hero-eyebrow">Value Context Protocol</p>
+		<h1>Reliably Porting Context<br />Where It Needs to Be</h1>
+		<p class="page-hero-subtitle">
+			Tell AI and platforms your preferences without revealing your private circumstances.
 		</p>
+		<p class="page-hero-explainer">
+			You need quiet practice mode. They don't need to know it's because of thin apartment walls.
+			You have a tight budget. They don't need your financial history.
+			You're in a hurry, or grieving, or overwhelmed — the AI adapts without needing the backstory.
+			<strong>VCP transmits the flag, not the story behind it.</strong>
+		</p>
+		<div class="hero-cta">
+			<a href="/playground" class="btn btn-cta">
+				<i class="fa-solid fa-play" aria-hidden="true"></i>
+				Try the Playground
+			</a>
+			<a href="/demos" class="btn btn-secondary btn-lg">See It In Action</a>
+		</div>
 	</section>
 
-	<section class="demo-selector">
-		<h2 class="section-title">Choose Your Demo</h2>
+	<!-- How It Works - BEFORE the demos -->
+	<HowItWorks />
+
+	<!-- Three-Layer Model -->
+	<section class="three-layer-section">
+		<h2 class="section-title">Three Layers of Context</h2>
 		<p class="section-description">
-			Two scenarios showing how VCP protects your privacy while enabling personalized experiences.
+			VCP organizes context at three timescales — from stable rules to moment-to-moment state.
+		</p>
+
+		<div class="three-layer-stack">
+			<div class="layer-card layer-constitutional">
+				<div class="layer-emoji">📜</div>
+				<div class="layer-content">
+					<h4>Constitutional Rules</h4>
+					<p>What the AI should and shouldn't do. Personas, adherence levels, scopes.</p>
+					<span class="layer-timing">Changes: rarely</span>
+				</div>
+			</div>
+			<div class="layer-connector"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i> applied within</div>
+			<div class="layer-card layer-situational">
+				<div class="layer-emoji">🌍</div>
+				<div class="layer-content">
+					<h4>Situational Context</h4>
+					<p>Where, when, who, what occasion. Morning vs. evening, home vs. work.</p>
+					<span class="layer-timing">Changes: session-scale</span>
+				</div>
+			</div>
+			<div class="layer-connector"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i> modulated by</div>
+			<div class="layer-card layer-personal">
+				<div class="layer-emoji">💫</div>
+				<div class="layer-content">
+					<h4>Personal State</h4>
+					<p>"I'm in a hurry" • "I'm grieving" • "Sensory overload" — the <strong>prosaic</strong> dimensions.</p>
+					<span class="layer-timing">Changes: moment-to-moment</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="prosaic-highlight">
+			<div class="prosaic-dims">
+				<span class="prosaic-dim">⚡ Urgency</span>
+				<span class="prosaic-dim">💊 Health</span>
+				<span class="prosaic-dim">🧩 Cognitive</span>
+				<span class="prosaic-dim">💭 Affect</span>
+			</div>
+			<p>Personal state modulates <em>expression</em>, never <em>boundaries</em>. The AI communicates differently when you're rushed — but safety rules don't relax.</p>
+			<a href="/docs/concepts" class="btn btn-ghost btn-sm">Learn about prosaic dimensions <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+		</div>
+	</section>
+
+	<!-- Demo Selector -->
+	<section class="demo-selector">
+		<h2 class="section-title">See It In Action</h2>
+		<p class="section-description">
+			Real scenarios where privacy matters. Watch how VCP protects personal details while enabling personalized experiences.
 		</p>
 
 		<div class="grid grid-2 gap-lg">
 			<!-- Professional Demo Card -->
 			<a href="/professional" class="card card-hover demo-card demo-card-professional">
+				<div class="demo-badge-category"><span class="badge badge-success">Enterprise</span></div>
 				<div class="demo-icon"><i class="fa-solid fa-briefcase" aria-hidden="true"></i></div>
-				<h3 class="demo-title">Professional Development</h3>
+				<h3 class="demo-title">Campion's Corporate Training</h3>
 				<p class="demo-description">
-					See how VCP enables enterprise L&D while keeping private life circumstances
-					from being exposed to HR. Privacy-preserving career recommendations.
+					<strong>The situation:</strong> Campion needs flexible training schedules for personal reasons.
+					<strong>The privacy need:</strong> HR sees her career goals, not why she can't do 9-to-5 study blocks.
+					<strong>What she's protecting:</strong> Health situation that's none of her employer's business.
 				</p>
 				<div class="demo-features">
 					<span class="demo-feature">
-						<span class="feature-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
-						Multi-stakeholder privacy
+						<span class="feature-icon"><i class="fa-solid fa-building" aria-hidden="true"></i></span>
+						HR sees goals, not circumstances
 					</span>
 					<span class="demo-feature">
-						<span class="feature-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
-						Dual audit trail
+						<span class="feature-icon"><i class="fa-solid fa-eye" aria-hidden="true"></i></span>
+						Full audit trail of what's shared
 					</span>
 					<span class="demo-feature">
-						<span class="feature-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
-						Compliance without exposure
+						<span class="feature-icon"><i class="fa-solid fa-masks-theater" aria-hidden="true"></i></span>
+						Dual work/personal profiles
 					</span>
 				</div>
 				<div class="demo-cta">
-					<span class="btn btn-primary">Start Demo <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+					<span class="btn btn-primary">Meet Campion <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
 				</div>
 			</a>
 
 			<!-- Personal Demo Card -->
 			<a href="/personal" class="card card-hover demo-card demo-card-personal">
+				<div class="demo-badge-category"><span class="badge badge-primary">Consumer</span></div>
 				<div class="demo-icon"><i class="fa-solid fa-guitar" aria-hidden="true"></i></div>
-				<h3 class="demo-title">Personal Growth</h3>
+				<h3 class="demo-title">Gentian's Guitar Journey</h3>
 				<p class="demo-description">
-					See how VCP enables cross-platform portability while protecting personal
-					circumstances from community judgment. Configure once, use everywhere.
+					<strong>The situation:</strong> Factory worker learning guitar across four different apps.
+					<strong>The privacy need:</strong> Apps adapt to his budget without knowing he's barely making rent.
+					<strong>What he's protecting:</strong> Shift schedules, thin walls, tight finances.
 				</p>
 				<div class="demo-features">
 					<span class="demo-feature">
-						<span class="feature-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
-						Cross-platform portability
+						<span class="feature-icon"><i class="fa-solid fa-rotate" aria-hidden="true"></i></span>
+						Set preferences once, use everywhere
 					</span>
 					<span class="demo-feature">
-						<span class="feature-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
-						Community privacy
+						<span class="feature-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></span>
+						Community sees progress, not struggles
 					</span>
 					<span class="demo-feature">
-						<span class="feature-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
-						Configure once, use everywhere
+						<span class="feature-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
+						Apps see flags, not life story
 					</span>
 				</div>
 				<div class="demo-cta">
-					<span class="btn btn-primary">Start Demo <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+					<span class="btn btn-primary">Meet Gentian <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
 				</div>
+			</a>
+		</div>
+
+		<!-- More demos link -->
+		<div class="more-demos">
+			<a href="/demos" class="btn btn-ghost">
+				<i class="fa-solid fa-grid-2" aria-hidden="true"></i>
+				Explore All 12 Demos
 			</a>
 		</div>
 	</section>
 
-	<HowItWorks />
-
+	<!-- Value Props -->
 	<section class="value-props">
-		<h2 class="section-title">What VCP Does</h2>
+		<h2 class="section-title">Why This Matters</h2>
+		<p class="section-description">
+			The current choice — give up privacy or miss out on personalization — is a false one.
+		</p>
 		<div class="grid grid-2 gap-lg">
 			<div class="value-card">
-				<h4><i class="fa-solid fa-lock" aria-hidden="true"></i> Private Reasons Stay Private</h4>
+				<div class="value-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+				<h4>Your Story Stays Yours</h4>
 				<p>
-					Your constraints (health, family, work) influence recommendations through boolean flags.
-					Platforms see "budget limited: true" not "single parent struggling financially."
+					Platforms see <code>budget_limited: true</code> — not "single parent between jobs."
+					They see <code>noise_restricted: true</code> — not "thin walls, noise-sensitive neighbor."
+					The flag travels. The story stays home.
 				</p>
 			</div>
 			<div class="value-card">
-				<h4><i class="fa-solid fa-mobile-screen" aria-hidden="true"></i> Configure Once, Use Everywhere</h4>
+				<div class="value-icon"><i class="fa-solid fa-rotate" aria-hidden="true"></i></div>
+				<h4>Stop Repeating Yourself</h4>
 				<p>
-					Set your preferences once. Every compatible platform instantly knows how to serve you
-					without asking the same questions again.
+					Every app asks the same onboarding questions. With VCP, you define your preferences once.
+					Every compatible platform instantly knows how to serve you — no repetitive forms, no inconsistent data.
 				</p>
 			</div>
 			<div class="value-card">
-				<h4><i class="fa-solid fa-eye" aria-hidden="true"></i> Full Transparency</h4>
+				<div class="value-icon"><i class="fa-solid fa-receipt" aria-hidden="true"></i></div>
+				<h4>See What They See</h4>
 				<p>
-					See exactly what each platform received. Audit trails show what was shared, what was
-					withheld, and what private context influenced decisions.
+					Complete audit trail of every transmission. Know exactly what each platform received,
+					what was withheld, and which flags influenced their decisions.
+					<em>You're not in the dark.</em>
 				</p>
 			</div>
 			<div class="value-card">
-				<h4><i class="fa-solid fa-handshake" aria-hidden="true"></i> Trust Without Exposure</h4>
+				<div class="value-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></div>
+				<h4>Privacy + Accountability</h4>
 				<p>
-					Stakeholders (HR, community, coaches) see compliance and progress without accessing your
-					personal circumstances. Privacy and accountability coexist.
+					Your coach sees you're making progress. Your employer sees you're on track.
+					The community sees your streak. None of them need to know what you're juggling behind the scenes.
 				</p>
 			</div>
+		</div>
+	</section>
+
+	<!-- Playground CTA -->
+	<section class="playground-cta">
+		<div class="playground-card card card-featured">
+			<div class="playground-content">
+				<div class="playground-icon"><i class="fa-solid fa-sliders" aria-hidden="true"></i></div>
+				<div class="playground-text">
+					<h3>Build Your Own Context Token</h3>
+					<p>
+						Create, inspect, and experiment with VCP tokens in real-time.
+						Toggle constraints, change preferences, and watch the compact token update instantly.
+						See exactly what gets transmitted — and what stays private.
+					</p>
+				</div>
+			</div>
+			<a href="/playground" class="btn btn-primary btn-lg">
+				Open Playground <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+			</a>
+		</div>
+	</section>
+
+	<!-- Learn More -->
+	<section class="learn-more">
+		<h2 class="section-title">Want to Understand the Details?</h2>
+		<div class="learn-more-links">
+			<a href="/about" class="learn-link">
+				<i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+				<span>How VCP Works</span>
+			</a>
+			<a href="/docs" class="learn-link">
+				<i class="fa-solid fa-book" aria-hidden="true"></i>
+				<span>Technical Documentation</span>
+			</a>
+			<a href="/docs/personas" class="learn-link">
+				<i class="fa-solid fa-masks-theater" aria-hidden="true"></i>
+				<span>Understanding Personas</span>
+			</a>
 		</div>
 	</section>
 </div>
 
 <style>
-	.hero {
-		text-align: center;
-		padding: var(--space-2xl) 0;
-	}
-
-	.hero h1 {
-		font-size: 2.5rem;
+	/* Hero eyebrow */
+	.hero-eyebrow {
+		font-size: var(--text-sm);
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--color-primary);
 		margin-bottom: var(--space-md);
+		font-weight: 500;
 	}
 
-	.hero-subtitle {
-		color: var(--color-text-muted);
-		font-size: 1.25rem;
-		max-width: 500px;
-		margin: 0 auto;
+	/* Hero CTA area */
+	.hero-cta {
+		display: flex;
+		gap: var(--space-md);
+		justify-content: center;
+		margin-top: var(--space-xl);
+		flex-wrap: wrap;
 	}
 
-	.demo-selector {
-		margin-bottom: var(--space-2xl);
-	}
-
-	.section-title {
-		text-align: center;
+	/* Demo category badge */
+	.demo-badge-category {
 		margin-bottom: var(--space-sm);
 	}
 
-	.section-description {
-		text-align: center;
-		color: var(--color-text-muted);
-		margin-bottom: var(--space-xl);
-		max-width: 600px;
-		margin-left: auto;
-		margin-right: auto;
+	/* Demo selector section */
+	.demo-selector {
+		margin-bottom: var(--space-2xl);
 	}
 
 	.demo-card {
@@ -188,6 +312,14 @@
 		margin-bottom: var(--space-md);
 	}
 
+	.demo-card-professional .demo-icon {
+		color: var(--color-professional);
+	}
+
+	.demo-card-personal .demo-icon {
+		color: var(--color-primary);
+	}
+
 	.demo-title {
 		font-size: 1.25rem;
 		margin-bottom: var(--space-sm);
@@ -198,6 +330,7 @@
 		font-size: 0.875rem;
 		margin-bottom: var(--space-lg);
 		flex: 1;
+		line-height: 1.6;
 	}
 
 	.demo-features {
@@ -223,12 +356,27 @@
 		margin-top: auto;
 	}
 
+	.more-demos {
+		text-align: center;
+		margin-top: var(--space-xl);
+	}
+
+	/* Value props */
 	.value-props {
 		padding-bottom: var(--space-2xl);
 	}
 
 	.value-card {
 		padding: var(--space-lg);
+		background: var(--color-bg-card);
+		border-radius: var(--radius-lg);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.value-icon {
+		font-size: 1.5rem;
+		color: var(--color-primary);
+		margin-bottom: var(--space-md);
 	}
 
 	.value-card h4 {
@@ -238,15 +386,231 @@
 	.value-card p {
 		color: var(--color-text-muted);
 		font-size: 0.875rem;
+		line-height: 1.6;
+	}
+
+	.value-card code {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		padding: 1px 4px;
+		background: var(--color-bg);
+		border-radius: var(--radius-sm);
+	}
+
+	/* Playground CTA */
+	.playground-cta {
+		margin-bottom: var(--space-2xl);
+	}
+
+	.playground-card {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-xl);
+	}
+
+	.playground-content {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-lg);
+	}
+
+	.playground-icon {
+		font-size: 2.5rem;
+		color: var(--color-primary);
+		flex-shrink: 0;
+	}
+
+	.playground-text h3 {
+		margin-bottom: var(--space-sm);
+	}
+
+	.playground-text p {
+		color: var(--color-text-muted);
+		font-size: 0.9375rem;
+		line-height: 1.5;
+	}
+
+	/* Learn More section */
+	.learn-more {
+		padding: var(--space-xl) 0 var(--space-2xl);
+		text-align: center;
+	}
+
+	.learn-more-links {
+		display: flex;
+		justify-content: center;
+		gap: var(--space-lg);
+		margin-top: var(--space-lg);
+		flex-wrap: wrap;
+	}
+
+	.learn-link {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-md) var(--space-lg);
+		background: var(--color-bg-card);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: var(--radius-md);
+		color: var(--color-text);
+		text-decoration: none;
+		transition: all var(--transition-fast);
+	}
+
+	.learn-link:hover {
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+		text-decoration: none;
+	}
+
+	.learn-link i {
+		color: var(--color-primary);
+	}
+
+	/* Three-layer section */
+	.three-layer-section {
+		padding: var(--space-2xl) 0;
+		margin-bottom: var(--space-xl);
+	}
+
+	.three-layer-stack {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-sm);
+		max-width: 600px;
+		margin: 0 auto var(--space-xl);
+	}
+
+	.layer-card {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-md);
+		width: 100%;
+		padding: var(--space-md) var(--space-lg);
+		border-radius: var(--radius-lg);
+		border: 1px solid;
+	}
+
+	.layer-constitutional {
+		background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
+		border-color: rgba(139, 92, 246, 0.3);
+	}
+
+	.layer-situational {
+		background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+		border-color: rgba(59, 130, 246, 0.3);
+	}
+
+	.layer-personal {
+		background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+		border-color: rgba(16, 185, 129, 0.3);
+	}
+
+	.layer-emoji {
+		font-size: 1.5rem;
+		flex-shrink: 0;
+	}
+
+	.layer-content h4 {
+		margin: 0 0 var(--space-xs);
+		font-size: 1rem;
+	}
+
+	.layer-content p {
+		margin: 0;
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		line-height: 1.5;
+	}
+
+	.layer-timing {
+		display: inline-block;
+		margin-top: var(--space-xs);
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		font-style: italic;
+	}
+
+	.layer-connector {
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.prosaic-highlight {
+		text-align: center;
+		padding: var(--space-lg);
+		background: var(--color-bg-card);
+		border-radius: var(--radius-lg);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		max-width: 600px;
+		margin: 0 auto;
+	}
+
+	.prosaic-dims {
+		display: flex;
+		justify-content: center;
+		gap: var(--space-md);
+		flex-wrap: wrap;
+		margin-bottom: var(--space-md);
+	}
+
+	.prosaic-dim {
+		font-size: var(--text-sm);
+		padding: var(--space-xs) var(--space-sm);
+		background: rgba(16, 185, 129, 0.1);
+		border-radius: var(--radius-sm);
+		border: 1px solid rgba(16, 185, 129, 0.3);
+	}
+
+	.prosaic-highlight p {
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
+		margin-bottom: var(--space-md);
+		line-height: 1.5;
 	}
 
 	@media (max-width: 768px) {
-		.hero h1 {
-			font-size: 1.75rem;
+		.hero-cta {
+			flex-direction: column;
+			align-items: stretch;
 		}
 
-		.hero-subtitle {
-			font-size: 1rem;
+		.hero-cta .btn {
+			width: 100%;
+			justify-content: center;
+		}
+
+		.playground-card {
+			flex-direction: column;
+			text-align: center;
+		}
+
+		.playground-content {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.playground-text {
+			text-align: center;
+		}
+
+		.learn-more-links {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.layer-card {
+			flex-direction: column;
+			text-align: center;
+		}
+
+		.prosaic-dims {
+			gap: var(--space-xs);
 		}
 	}
 </style>

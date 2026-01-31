@@ -7,6 +7,10 @@
 	import { gentianProfile } from '$lib/personas/gentian';
 	import lessonsData from '$lib/data/lessons.json';
 	import { TokenInspector } from '$lib/components/shared';
+	import AuditPanel from '$lib/components/shared/AuditPanel.svelte';
+
+	// Audit panel visibility state
+	let showAuditPanel = $state(true);
 
 	// Ensure profile is loaded
 	$effect(() => {
@@ -66,6 +70,55 @@
 			return lessons().find((l) => l.skills.includes('chord_transitions'));
 		}
 		return lessons()[0];
+	});
+
+	// Transform shared context into AuditPanel entries
+	const auditEntries = $derived(() => {
+		const entries: { field: string; category: 'shared' | 'withheld' | 'influenced'; value?: string; reason?: string; stakeholder?: string }[] = [];
+
+		// Shared fields (what JustinGuitar received)
+		const sharedFields = ['skill_level', 'learning_style', 'noise_mode', 'pace', 'display_name'];
+		for (const field of sharedFields) {
+			let value = ctx?.public_profile?.[field as keyof typeof ctx.public_profile];
+			if (field === 'display_name') value = ctx?.public_profile?.display_name;
+			if (field === 'noise_mode') value = ctx?.constraints?.noise_restricted ? 'quiet' : 'normal';
+			entries.push({
+				field: field.replace(/_/g, ' '),
+				category: 'shared',
+				value: String(value ?? '—').replace(/_/g, ' '),
+				stakeholder: 'JustinGuitar'
+			});
+		}
+
+		// Influenced fields (private context affecting recommendations)
+		if (ctx?.constraints?.noise_restricted) {
+			entries.push({
+				field: 'noise restricted',
+				category: 'influenced',
+				value: 'true',
+				reason: 'Filtering to quiet-friendly lessons'
+			});
+		}
+		if (ctx?.constraints?.schedule_irregular) {
+			entries.push({
+				field: 'schedule irregular',
+				category: 'influenced',
+				value: 'true',
+				reason: 'Preferring self-paced content'
+			});
+		}
+
+		// Withheld fields (never exposed)
+		const withheldFields = ['work_type', 'schedule', 'housing', 'neighbor_situation'];
+		for (const field of withheldFields) {
+			entries.push({
+				field: field.replace(/_/g, ' '),
+				category: 'withheld',
+				reason: 'Private - not transmitted to platforms'
+			});
+		}
+
+		return entries;
 	});
 </script>
 
@@ -132,16 +185,28 @@
 	</div>
 {/if}
 
-<div class="platform-frame platform-frame-justinguitar">
-	<div class="platform-header platform-header-justinguitar">
-		<div class="platform-brand">
-			<span class="platform-logo">🎸</span>
-			<span class="platform-name">JustinGuitar</span>
-		</div>
-		{#if consentGranted}
-			<div class="vcp-badge">VCP Connected</div>
-		{/if}
-	</div>
+<div class="page-layout" class:audit-open={showAuditPanel}>
+	<div class="main-content">
+		<div class="platform-frame platform-frame-justinguitar">
+			<div class="platform-header platform-header-justinguitar">
+				<div class="platform-brand">
+					<span class="platform-logo">🎸</span>
+					<span class="platform-name">JustinGuitar</span>
+				</div>
+				<div class="header-actions">
+					{#if consentGranted}
+						<div class="vcp-badge">VCP Connected</div>
+					{/if}
+					<button
+						class="audit-toggle-btn"
+						onclick={() => showAuditPanel = !showAuditPanel}
+						aria-label={showAuditPanel ? 'Hide audit panel' : 'Show audit panel'}
+					>
+						<i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
+						{showAuditPanel ? 'Hide' : 'Show'} Audit
+					</button>
+				</div>
+			</div>
 
 	<div class="platform-content">
 		{#if consentGranted && ctx}
@@ -244,19 +309,96 @@
 				</button>
 			</div>
 		{/if}
+		</div>
 	</div>
-</div>
 
-<div class="container-narrow" style="margin-top: 2rem;">
-	<div class="nav-links">
-		<a href="/personal" class="btn btn-ghost">← Back to Profile</a>
-		<a href="/personal/platforms/yousician" class="btn btn-primary">
-			Try Yousician →
-		</a>
+	<div class="container-narrow" style="margin-top: 2rem;">
+		<div class="nav-links">
+			<a href="/personal" class="btn btn-ghost">← Back to Profile</a>
+			<a href="/personal/platforms/yousician" class="btn btn-primary">
+				Try Yousician →
+			</a>
+		</div>
 	</div>
+	</div>
+
+	<!-- Audit Sidebar -->
+	{#if showAuditPanel && consentGranted}
+		<aside class="audit-sidebar">
+			<AuditPanel
+				entries={auditEntries()}
+				title="Real-Time Audit"
+				compact={true}
+				showTimestamps={false}
+			/>
+		</aside>
+	{/if}
 </div>
 
 <style>
+	/* Page Layout with Sidebar */
+	.page-layout {
+		display: flex;
+		gap: var(--space-lg);
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: 0 var(--space-md);
+	}
+
+	.main-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.audit-sidebar {
+		width: 320px;
+		flex-shrink: 0;
+		position: sticky;
+		top: var(--space-lg);
+		height: fit-content;
+		max-height: calc(100vh - var(--space-xl));
+		overflow-y: auto;
+	}
+
+	.header-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	.audit-toggle-btn {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-xs) var(--space-sm);
+		background: var(--color-bg-elevated);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: var(--radius-md);
+		color: var(--color-text-muted);
+		font-size: 0.75rem;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.audit-toggle-btn:hover {
+		background: var(--color-bg-card);
+		color: var(--color-text);
+	}
+
+	@media (max-width: 1024px) {
+		.page-layout {
+			flex-direction: column;
+		}
+
+		.audit-sidebar {
+			width: 100%;
+			position: static;
+			max-height: none;
+			order: -1;
+			margin-bottom: var(--space-lg);
+		}
+	}
+
 	.consent-overlay {
 		position: fixed;
 		inset: 0;

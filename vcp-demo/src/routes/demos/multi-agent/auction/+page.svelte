@@ -2,6 +2,8 @@
 	import DemoContainer from '$lib/components/demo/DemoContainer.svelte';
 	import AgentChat from '$lib/components/demo/AgentChat.svelte';
 	import MultiAgentArena from '$lib/components/demo/MultiAgentArena.svelte';
+	import PresetLoader from '$lib/components/shared/PresetLoader.svelte';
+	import AuditPanel from '$lib/components/shared/AuditPanel.svelte';
 	import {
 		auctionAgents,
 		auctionItem,
@@ -93,6 +95,134 @@
 			if (playInterval) clearInterval(playInterval);
 		};
 	});
+
+	let selectedPreset = $state<string | undefined>(undefined);
+
+	// Playback speed presets
+	const auctionPresets = [
+		{
+			id: 'slow',
+			name: 'Slow',
+			description: 'Careful analysis of each bid',
+			icon: 'fa-clock',
+			data: { speed: 4000 },
+			tags: ['educational']
+		},
+		{
+			id: 'normal',
+			name: 'Normal',
+			description: 'Standard auction pace',
+			icon: 'fa-play',
+			data: { speed: 2500 },
+			tags: ['balanced']
+		},
+		{
+			id: 'fast',
+			name: 'Fast',
+			description: 'Quick overview of auction',
+			icon: 'fa-forward-fast',
+			data: { speed: 1200 },
+			tags: ['quick']
+		}
+	];
+
+	let playbackSpeed = $state(2500);
+
+	function applyPreset(preset: (typeof auctionPresets)[0]) {
+		playbackSpeed = preset.data.speed;
+		selectedPreset = preset.id;
+		// If playing, restart with new speed
+		if (isPlaying) {
+			stopPlaying();
+			startPlaying();
+		}
+	}
+
+	// Override startPlaying to use playbackSpeed
+	function startPlayingWithSpeed() {
+		if (currentStep >= auctionScenario.length) {
+			reset();
+		}
+		isPlaying = true;
+		playInterval = setInterval(() => {
+			stepForward();
+			if (currentStep >= auctionScenario.length) {
+				stopPlaying();
+			}
+		}, playbackSpeed);
+	}
+
+	// Audit entries derived from current state
+	const auditEntries = $derived.by(() => {
+		const entries: { field: string; category: 'shared' | 'withheld' | 'influenced'; value?: string; reason?: string }[] = [];
+
+		// Count what's been shared vs hidden
+		const sharedCount = messages.filter((m) => m.vcpContextShared && m.vcpContextShared.length > 0).length;
+		const hiddenCount = messages.filter((m) => m.vcpContextHidden && m.vcpContextHidden.length > 0).length;
+		const bidCount = messages.filter((m) => m.action === 'bid').length;
+
+		// Shared fields
+		entries.push({
+			field: 'Public Bids',
+			category: 'shared',
+			value: `${bidCount} bids made`,
+			reason: 'All bids are publicly announced'
+		});
+
+		entries.push({
+			field: 'Agent Identities',
+			category: 'shared',
+			value: `${auctionAgents.length} participants`,
+			reason: 'Names and roles are public'
+		});
+
+		// Influenced fields
+		entries.push({
+			field: 'Bidding Strategy',
+			category: 'influenced',
+			value: `Round ${currentStep}/${auctionScenario.length}`,
+			reason: 'Strategy adapts to competitive pressure'
+		});
+
+		if (sharedCount > 0) {
+			entries.push({
+				field: 'Context Signals',
+				category: 'influenced',
+				value: `${sharedCount} shared`,
+				reason: 'Selective signals influence perception'
+			});
+		}
+
+		// Withheld fields
+		entries.push({
+			field: 'Maximum Valuations',
+			category: 'withheld',
+			reason: 'Private ceiling never revealed'
+		});
+
+		entries.push({
+			field: 'Bidding Algorithms',
+			category: 'withheld',
+			reason: 'Strategic logic stays hidden'
+		});
+
+		if (hiddenCount > 0) {
+			entries.push({
+				field: 'Hidden Context',
+				category: 'withheld',
+				value: `${hiddenCount} protected`,
+				reason: 'Sensitive preferences concealed'
+			});
+		}
+
+		entries.push({
+			field: 'Emotional Attachment',
+			category: 'withheld',
+			reason: 'Personal motivations not exposed'
+		});
+
+		return entries;
+	});
 </script>
 
 <svelte:head>
@@ -111,7 +241,7 @@
 	{#snippet controls()}
 		<button
 			class="control-btn"
-			onclick={() => (isPlaying ? stopPlaying() : startPlaying())}
+			onclick={() => (isPlaying ? stopPlaying() : startPlayingWithSpeed())}
 			disabled={currentStep >= auctionScenario.length && !isPlaying}
 		>
 			<span class="control-icon">{isPlaying ? '⏸' : '▶'}</span>
@@ -129,6 +259,17 @@
 
 	{#snippet children()}
 		<div class="auction-layout">
+			<!-- Controls Row -->
+			<div class="controls-row">
+				<PresetLoader
+					presets={auctionPresets}
+					selected={selectedPreset}
+					onselect={(p) => applyPreset(p as (typeof auctionPresets)[0])}
+					title="Playback Speed"
+				/>
+				<AuditPanel entries={auditEntries} title="VCP Context Audit" compact={true} />
+			</div>
+
 			<!-- Item Card -->
 			<div class="item-card">
 				<div class="item-image">🖼️</div>
@@ -206,6 +347,18 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-xl);
+	}
+
+	.controls-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-lg);
+	}
+
+	@media (max-width: 768px) {
+		.controls-row {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	.item-card {

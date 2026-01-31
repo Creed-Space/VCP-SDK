@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import { page } from '$app/stores';
 
 	interface Props {
 		children: import('svelte').Snippet;
@@ -7,15 +8,14 @@
 
 	let { children }: Props = $props();
 	let mobileMenuOpen = $state(false);
-	let error = $state<Error | null>(null);
 
-	function handleError(e: Error) {
-		error = e;
-		console.error('VCP Demo Error:', e);
-	}
+	// Derive current path for nav active states
+	const currentPath = $derived($page.url.pathname);
 
-	function clearError() {
-		error = null;
+	// Check if a nav link is active (matches current path or is a parent)
+	function isActive(href: string): boolean {
+		if (href === '/') return currentPath === '/';
+		return currentPath === href || currentPath.startsWith(href + '/');
 	}
 </script>
 
@@ -33,11 +33,10 @@
 
 			<!-- Desktop Nav -->
 			<div class="nav-links desktop-nav" role="navigation" aria-label="Main navigation">
-				<a href="/about" class="nav-link">About</a>
-				<a href="/paper" class="nav-link nav-link-highlight">Paper</a>
-				<a href="/demos" class="nav-link">Demos</a>
-				<a href="/docs" class="nav-link">Docs</a>
-				<a href="/playground" class="nav-link">Playground</a>
+				<a href="/about" class="nav-link" class:active={isActive('/about')}>About</a>
+				<a href="/demos" class="nav-link" class:active={isActive('/demos') || isActive('/professional') || isActive('/personal') || isActive('/sharing') || isActive('/coordination') || isActive('/self-modeling') || isActive('/adaptation') || isActive('/psychosecurity')}>Demos</a>
+				<a href="/docs" class="nav-link" class:active={isActive('/docs')}>Docs</a>
+				<a href="/playground" class="nav-link" class:active={isActive('/playground')}>Playground</a>
 				<span class="nav-divider" aria-hidden="true"></span>
 				<a
 					href="https://creed.space"
@@ -75,19 +74,16 @@
 				role="navigation"
 				aria-label="Mobile navigation"
 			>
-				<a href="/about" class="mobile-nav-link" onclick={() => (mobileMenuOpen = false)}>
+				<a href="/about" class="mobile-nav-link" class:active={isActive('/about')} onclick={() => (mobileMenuOpen = false)}>
 					About VCP
 				</a>
-				<a href="/paper" class="mobile-nav-link mobile-nav-highlight" onclick={() => (mobileMenuOpen = false)}>
-					<i class="fa-solid fa-file-lines"></i> Research Paper
-				</a>
-				<a href="/demos" class="mobile-nav-link" onclick={() => (mobileMenuOpen = false)}>
+				<a href="/demos" class="mobile-nav-link" class:active={isActive('/demos')} onclick={() => (mobileMenuOpen = false)}>
 					Interactive Demos
 				</a>
-				<a href="/docs" class="mobile-nav-link" onclick={() => (mobileMenuOpen = false)}>
+				<a href="/docs" class="mobile-nav-link" class:active={isActive('/docs')} onclick={() => (mobileMenuOpen = false)}>
 					Documentation
 				</a>
-				<a href="/playground" class="mobile-nav-link" onclick={() => (mobileMenuOpen = false)}>
+				<a href="/playground" class="mobile-nav-link" class:active={isActive('/playground')} onclick={() => (mobileMenuOpen = false)}>
 					Playground
 				</a>
 				<hr class="mobile-nav-divider" />
@@ -105,20 +101,7 @@
 	</header>
 
 	<main id="main-content" tabindex="-1">
-		{#if error}
-			<div class="error-boundary container" role="alert">
-				<div class="error-content">
-					<span class="error-icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span>
-					<h2>Something went wrong</h2>
-					<p class="text-muted">{error.message || 'An unexpected error occurred'}</p>
-					<button class="btn btn-primary" onclick={clearError}>
-						Try Again
-					</button>
-				</div>
-			</div>
-		{:else}
-			{@render children()}
-		{/if}
+		{@render children()}
 	</main>
 
 	<footer class="app-footer">
@@ -134,18 +117,20 @@
 
 				<div class="footer-links">
 					<div class="footer-section">
-						<h4>Demos</h4>
-						<a href="/sharing">Sharing</a>
-						<a href="/coordination">Coordination</a>
-						<a href="/self-modeling">Self-Modeling</a>
-						<a href="/adaptation">Adaptation</a>
-						<a href="/psychosecurity">Psychosecurity</a>
+						<h4>Explore</h4>
+						<a href="/about">About VCP</a>
+						<a href="/demos">All Demos</a>
+						<a href="/playground">Playground</a>
+						<a href="/docs">Documentation</a>
+					</div>
+					<div class="footer-section">
+						<h4>Featured Demos</h4>
+						<a href="/professional">Professional</a>
+						<a href="/personal">Personal Growth</a>
+						<a href="/demos/self-modeling/interiora">Interiora</a>
 					</div>
 					<div class="footer-section">
 						<h4>Learn More</h4>
-						<a href="/Value Context Protocol Paper I1D1.pdf" target="_blank" rel="noopener noreferrer">
-							<i class="fa-solid fa-file-pdf"></i> Whitepaper (PDF)
-						</a>
 						<a href="https://creed.space" target="_blank" rel="noopener noreferrer">
 							Creed Space
 						</a>
@@ -258,17 +243,6 @@
 		background: rgba(255, 255, 255, 0.2);
 	}
 
-	.nav-link-highlight {
-		color: var(--color-primary) !important;
-		background: var(--color-primary-muted);
-		border-radius: var(--radius-md);
-	}
-
-	.nav-link-highlight:hover {
-		background: var(--color-primary);
-		color: var(--color-bg) !important;
-	}
-
 	.nav-link-brand {
 		display: flex;
 		align-items: center;
@@ -302,28 +276,48 @@
 	.hamburger {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
-		width: 20px;
+		gap: 5px;
+		width: 22px;
+		height: 18px;
+		position: relative;
 	}
 
 	.hamburger span {
 		display: block;
 		height: 2px;
+		width: 100%;
 		background: var(--color-text);
-		border-radius: 1px;
-		transition: all var(--transition-fast);
+		border-radius: 2px;
+		transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+		position: absolute;
+		left: 0;
+	}
+
+	.hamburger span:nth-child(1) {
+		top: 0;
+	}
+
+	.hamburger span:nth-child(2) {
+		top: 8px;
+	}
+
+	.hamburger span:nth-child(3) {
+		top: 16px;
 	}
 
 	.hamburger.open span:nth-child(1) {
-		transform: rotate(45deg) translate(4px, 4px);
+		transform: rotate(45deg);
+		top: 8px;
 	}
 
 	.hamburger.open span:nth-child(2) {
 		opacity: 0;
+		transform: translateX(-10px);
 	}
 
 	.hamburger.open span:nth-child(3) {
-		transform: rotate(-45deg) translate(4px, -4px);
+		transform: rotate(-45deg);
+		top: 8px;
 	}
 
 	/* Mobile Nav */
@@ -333,6 +327,18 @@
 		padding: var(--space-md);
 		background: var(--color-bg-card);
 		border-top: 1px solid rgba(255, 255, 255, 0.1);
+		animation: slideDown 0.3s ease;
+	}
+
+	@keyframes slideDown {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	.mobile-nav-link {
@@ -352,11 +358,6 @@
 		text-decoration: none;
 	}
 
-	.mobile-nav-highlight {
-		color: var(--color-primary);
-		background: var(--color-primary-muted);
-	}
-
 	.mobile-nav-brand {
 		color: var(--color-primary);
 	}
@@ -373,34 +374,6 @@
 
 	main {
 		flex: 1;
-	}
-
-	/* Error Boundary */
-	.error-boundary {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 400px;
-		padding: var(--space-2xl);
-	}
-
-	.error-content {
-		text-align: center;
-		max-width: 400px;
-	}
-
-	.error-icon {
-		font-size: 3rem;
-		display: block;
-		margin-bottom: var(--space-lg);
-	}
-
-	.error-content h2 {
-		margin-bottom: var(--space-sm);
-	}
-
-	.error-content p {
-		margin-bottom: var(--space-lg);
 	}
 
 	/* ============================================
@@ -513,7 +486,9 @@
 
 		.footer-links {
 			width: 100%;
-			justify-content: space-between;
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: var(--space-lg);
 		}
 
 		.footer-bottom {
@@ -521,12 +496,21 @@
 			gap: var(--space-sm);
 			text-align: center;
 		}
+
+		.footer-brand {
+			text-align: center;
+			flex-direction: column;
+		}
 	}
 
 	@media (max-width: 480px) {
 		.footer-links {
-			flex-direction: column;
-			gap: var(--space-lg);
+			grid-template-columns: 1fr;
+			text-align: center;
+		}
+
+		.footer-section a {
+			display: inline-block;
 		}
 	}
 </style>
