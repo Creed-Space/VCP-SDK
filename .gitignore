@@ -63,3 +63,8 @@ logs/
 # Build artifacts
 *.so
 *.dylib
+
+# Rust
+rust/target/
+rust/vcp-wasm/pkg/
+*.wasm
