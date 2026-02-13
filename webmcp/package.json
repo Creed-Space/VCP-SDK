@@ -1,0 +1,46 @@
+{
+  "name": "@vcp/webmcp",
+  "version": "0.1.0",
+  "description": "Register VCP capabilities as discoverable tools for AI agents via the WebMCP API (navigator.modelContext)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./polyfill": {
+      "types": "./dist/polyfill.d.ts",
+      "import": "./dist/polyfill.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "vcp",
+    "webmcp",
+    "mcp",
+    "ai-agents",
+    "navigator-modelcontext",
+    "chrome-extensions",
+    "constitutional-ai"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Creed-Space/VCP-SDK.git",
+    "directory": "webmcp"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

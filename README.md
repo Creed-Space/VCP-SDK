@@ -40,6 +40,7 @@ VCP solves this through a **"Verify-then-Inject" pattern**:
 |----------|-----------|--------|----------|
 | **Python** | [`python/`](./python/) | Complete | Reference implementation, LLM integration, persona logic |
 | **Rust** | [`rust/`](./rust/) | In Progress | High-performance parsing, WASM/browser, embedded, CLI tooling |
+| **TypeScript (WebMCP)** | [`webmcp/`](./webmcp/) | Complete | Browser-side tool registration via `navigator.modelContext` (Chrome 145+) |
 
 ### Python SDK
 
@@ -65,6 +66,25 @@ cargo test
 - `vcp-core` — Identity, CSM-1, context, transport (core library)
 - `vcp-wasm` — Browser bindings via wasm-bindgen
 - `vcp-cli` — Command-line tool (`vcp parse`, `vcp encode`, `vcp verify`)
+
+### WebMCP SDK (`@vcp/webmcp`)
+
+TypeScript package for registering VCP tools with the browser's WebMCP API (`navigator.modelContext`). Enables AI agents to discover and call VCP capabilities on any website.
+
+```bash
+cd webmcp
+npm install
+npm run check  # typecheck
+npm run build  # compile to dist/
+```
+
+**Features**:
+- 5 tools: `vcp_chat`, `vcp_build_token`, `vcp_parse_token`, `vcp_transmission_summary`, `vcp_list_personas`
+- Agent activity indicator via `webmcp:tool-call` events
+- MCP-B polyfill support for non-Chrome browsers
+- Framework-agnostic with dependency injection for token encoding/parsing
+
+See [`webmcp/README.md`](./webmcp/README.md) for full documentation.
 
 ---
 
