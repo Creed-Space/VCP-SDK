@@ -43,6 +43,7 @@ export async function loadPolyfillIfRequested(): Promise<boolean> {
 			// This populates navigator.modelContext with the reference implementation.
 			await new Promise<void>((resolve, reject) => {
 				const script = document.createElement('script');
+				script.type = 'module';
 				script.src = 'https://cdn.jsdelivr.net/npm/@mcp-b/global/dist/index.js';
 				script.async = true;
 				script.onload = () => resolve();
