@@ -1,10 +1,10 @@
-# VCP Python SDK
+# VCP SDK
 
-**Version**: 1.0.0
-**Status**: Specification Complete
+**Version**: 1.1.0
+**Status**: Specification Complete | Python SDK Complete | Rust SDK In Progress
 **License**: MIT (pending)
 
-> **See also**: [VCP-Demo-Site](https://github.com/Creed-Space/VCP-Demo-Site) — Interactive demos and documentation website
+> **See also**: [VCP Demo Site](https://vcp-demo.onrender.com) — Interactive demos and documentation website
 
 ---
 
@@ -31,6 +31,40 @@ VCP solves this through a **"Verify-then-Inject" pattern**:
 │  (Signed Bundle)│     │  (Verify+Log)   │     │ (Receives Text) │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
+
+---
+
+## SDK Languages
+
+| Language | Directory | Status | Use Case |
+|----------|-----------|--------|----------|
+| **Python** | [`python/`](./python/) | Complete | Reference implementation, LLM integration, persona logic |
+| **Rust** | [`rust/`](./rust/) | In Progress | High-performance parsing, WASM/browser, embedded, CLI tooling |
+
+### Python SDK
+
+Full VCP implementation with identity resolution, CSM-1 encoding, context management, and LLM integration.
+
+```bash
+cd python
+pip install -r requirements.txt
+pytest tests/
+```
+
+### Rust SDK (`vcp-core`)
+
+Data-plane implementation for parsing, encoding, and verification. Targets `no_std` compatibility and WASM via `wasm-bindgen`.
+
+```bash
+cd rust
+cargo build
+cargo test
+```
+
+**Crates**:
+- `vcp-core` — Identity, CSM-1, context, transport (core library)
+- `vcp-wasm` — Browser bindings via wasm-bindgen
+- `vcp-cli` — Command-line tool (`vcp parse`, `vcp encode`, `vcp verify`)
 
 ---
 
@@ -63,44 +97,42 @@ VCP is a four-layer protocol stack—like OSI for AI values:
 ## Repository Structure
 
 ```
-VCP-Python-SDK/
+VCP-SDK/
 ├── README.md                    # This file
-├── specs/                       # Core specifications
+├── specs/                       # Core specifications (shared)
 │   ├── VCP_SPECIFICATION_v1.0.md
 │   ├── VCP_SPECIFICATION_v1.0_COMPLETE.md
 │   ├── VCP_SPECIFICATION_v1.1_AMENDMENTS.md
-│   ├── VCP_PAPER_OUTLINE.md
-│   └── value_context_protocols_paper_v1.md
-├── docs/                        # Documentation
-│   ├── VCP_OVERVIEW.md          # Start here
-│   ├── VCP_NEWCOMER_GUIDE.md    # Gentle introduction
+│   └── ...
+├── docs/                        # Documentation (shared)
+│   ├── VCP_OVERVIEW.md
+│   ├── VCP_NEWCOMER_GUIDE.md
 │   ├── VCP_IMPLEMENTATION_GUIDE.md
-│   ├── identity/                # VCP-Identity layer (5 docs)
-│   ├── semantics/               # VCP-Semantics layer (2 docs)
-│   ├── adaptation/              # VCP-Adaptation layer (1 doc)
+│   ├── identity/                # VCP-Identity layer
+│   ├── semantics/               # VCP-Semantics layer
+│   ├── adaptation/              # VCP-Adaptation layer
 │   ├── context/                 # Context specification
-│   ├── uvc/                     # Universal Value Codes (5 docs)
-│   ├── content/                 # CSM1 grammar specification
-│   └── openapi/                 # API specification (OpenAPI)
-├── src/                         # Reference implementation (Python)
-│   ├── vcp/                     # Core VCP library
-│   │   ├── identity/            # Identity layer implementation
-│   │   ├── semantics/           # Semantics layer implementation
-│   │   └── adaptation/          # Adaptation layer implementation
-│   ├── mcp/                     # MCP server for Claude Code
-│   └── api/                     # FastAPI router
-├── integrations/                # Example integrations
-│   └── safety_stack/            # PDP integration example
-├── schemas/                     # JSON schemas for validation
+│   ├── uvc/                     # Universal Value Codes
+│   ├── content/                 # CSM1 grammar + amendments
+│   └── openapi/                 # API specification
+├── schemas/                     # JSON schemas (shared)
 │   ├── vcp-manifest-v1.schema.json
 │   ├── vcp-identity-token.schema.json
 │   ├── vcp-semantics-csm1.schema.json
 │   └── vcp-adaptation-context.schema.json
-└── tests/                       # Test suite
-    ├── conftest.py              # Pytest fixtures
-    ├── vcp/                     # Core VCP tests
-    ├── unit/                    # Unit tests
-    └── integration/             # Integration tests
+├── python/                      # Python SDK
+│   ├── pyproject.toml
+│   ├── requirements.txt
+│   ├── src/vcp/                 # Core library
+│   └── tests/                   # Test suite
+├── rust/                        # Rust SDK
+│   ├── Cargo.toml               # Workspace root
+│   ├── vcp-core/                # Core parsing library
+│   ├── vcp-wasm/                # WASM bindings
+│   └── vcp-cli/                 # CLI tool
+├── integrations/                # Example integrations
+│   └── safety_stack/
+└── LICENSE
 ```
 
 ---
@@ -122,19 +154,6 @@ VCP-Python-SDK/
 | VCP-Semantics | `docs/semantics/VCP_SEMANTICS_CSM1.md` |
 | VCP-Adaptation | `docs/adaptation/VCP_ADAPTATION.md` |
 
-### Running the Reference Implementation
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Run tests
-pytest tests/
-
-# Start MCP server
-./src/mcp/run_vcp_server.sh
-```
-
 ---
 
 ## Key Concepts
@@ -151,17 +170,22 @@ family.safe.guide@1.2.0
 └──────────────────── Namespace
 ```
 
-### CSM1 Grammar
+### CSM-1 Token Format (v1.1)
 
-A compact semantic markup for persona traits:
+8-line compact state message:
 
 ```
-N5+F+E
-│ │ │ └── Scope: Education
-│ │ └──── Scope: Family
-│ └────── Adherence level: 5 (moderate)
-└──────── Persona: NANNY
+VCP:1.0:user-alice-daily
+C:family.safe.guide@1.2.0
+P:G:3
+G:learn_guitar:beginner:visual
+X:🔇:💰low:⚡var
+F:time_limited|noise_restricted
+S:🔒housing|🔒health
+R:🧠focused:4|💭calm:3|🔋low_energy:2
 ```
+
+Line 8 (R-line) is new in v1.1 — see `docs/content/CSM1_v1.1_AMENDMENT.md`.
 
 ### Signed Bundles
 

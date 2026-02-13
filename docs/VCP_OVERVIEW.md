@@ -15,6 +15,12 @@
 | **2** | VCP-Transport | ✅ Complete | Signed bundles, verification, audit |
 | **1** | VCP-Identity | ✅ Complete | Naming, namespaces, registry, encoding |
 
+**SDK Implementations:**
+| Language | Directory | Status | Scope |
+|----------|-----------|--------|-------|
+| Python | `python/` | ✅ Complete | Full stack: identity, semantics, adaptation, MCP server, API |
+| Rust | `rust/` | 🚧 In Progress | Data plane: parsing, encoding, verification, WASM, CLI |
+
 **Optional Components:**
 | Component | Status | Notes |
 |-----------|--------|-------|

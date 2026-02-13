@@ -1,0 +1,17 @@
+[package]
+name = "vcp-core"
+description = "Value Context Protocol (VCP) core types and parsing"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+thiserror = "2"
+unicode-normalization = "0.1"
+
+[dev-dependencies]
+pretty_assertions = "1"
