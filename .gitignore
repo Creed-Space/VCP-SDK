@@ -64,6 +64,10 @@ logs/
 *.so
 *.dylib
 
+# Node
+node_modules/
+.svelte-kit/
+
 # Rust
 rust/target/
 rust/vcp-wasm/pkg/
