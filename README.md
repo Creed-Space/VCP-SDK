@@ -4,6 +4,7 @@
 
 **The open standard for portable, adaptive, and verifiable AI context.**
 
+[![CI](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml)
 [![Specification](https://img.shields.io/badge/spec-v1.1-blue?style=flat-square)](./specs/VCP_SPECIFICATION_v1.0_COMPLETE.md)
 [![Python SDK](https://img.shields.io/badge/python-1.0.0-3776AB?style=flat-square&logo=python&logoColor=white)](./python/)
 [![Rust SDK](https://img.shields.io/badge/rust-0.1.0-DEA584?style=flat-square&logo=rust&logoColor=white)](./rust/)

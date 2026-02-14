@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/python"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "python"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "cargo"
+    directory: "/rust"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "rust"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "npm"
+    directory: "/webmcp"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "typescript"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "ci"]
+    open-pull-requests-limit: 3

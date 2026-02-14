@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python:
+    name: Python SDK
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        working-directory: python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e ".[dev]"
+
+      - name: Lint
+        working-directory: python
+        run: ruff check src/ tests/
+
+      - name: Type check
+        working-directory: python
+        run: mypy src/vcp/ --ignore-missing-imports
+
+      - name: Test
+        working-directory: python
+        run: pytest tests/ -v
+
+  rust:
+    name: Rust SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            rust/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('rust/Cargo.lock') }}
+
+      - name: Check formatting
+        working-directory: rust
+        run: cargo fmt -- --check
+
+      - name: Lint
+        working-directory: rust
+        run: cargo clippy -- -D warnings
+
+      - name: Build
+        working-directory: rust
+        run: cargo build
+
+      - name: Test
+        working-directory: rust
+        run: cargo test
+
+  typescript:
+    name: TypeScript / WebMCP SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: webmcp/package-lock.json
+
+      - name: Install dependencies
+        working-directory: webmcp
+        run: npm ci
+
+      - name: Type check
+        working-directory: webmcp
+        run: npm run check
+
+      - name: Build
+        working-directory: webmcp
+        run: npm run build
+
+  schemas:
+    name: Validate JSON Schemas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install ajv-cli
+        run: npm install -g ajv-cli
+
+      - name: Validate schemas
+        run: |
+          for schema in schemas/*.schema.json; do
+            echo "Validating $schema..."
+            ajv compile -s "$schema" --spec=draft2020 || ajv compile -s "$schema" --spec=draft7
+          done

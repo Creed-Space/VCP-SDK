@@ -1,0 +1,76 @@
+name: Specification Amendment
+description: Propose a change to the VCP specification
+title: "[Spec]: "
+labels: ["specification", "discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Specification changes follow a more rigorous process than code changes. Please provide thorough justification.
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Protocol Layer
+      description: Which layer of the VCP stack does this affect?
+      options:
+        - VCP/I — Identity
+        - VCP/T — Transport
+        - VCP/S — Semantics
+        - VCP/A — Adaptation
+        - Cross-cutting / multiple layers
+    validations:
+      required: true
+
+  - type: dropdown
+    id: change_type
+    attributes:
+      label: Change Type
+      description: What kind of specification change is this?
+      options:
+        - Addition — new capability
+        - Modification — change existing behavior
+        - Deprecation — phase out existing behavior
+        - Clarification — improve wording without behavioral change
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph summary of the proposed change
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this change needed? What problem does it solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Detailed Proposal
+      description: Describe the change in detail, including any new fields, formats, or behaviors
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Backward Compatibility
+      description: How does this affect existing implementations? Is it backward-compatible?
+    validations:
+      required: true
+
+  - type: textarea
+    id: sdk_impact
+    attributes:
+      label: SDK Impact
+      description: What changes would be needed in each SDK (Python, Rust, TypeScript)?
+    validations:
+      required: false
