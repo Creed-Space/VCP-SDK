@@ -1,6 +1,6 @@
 # Contributing to VCP-SDK
 
-Thank you for your interest in contributing to the Value-Context Protocol. This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to the Value-Context Protocol. This guide covers everything you need to get started.
 
 ## Table of Contents
 
@@ -171,6 +171,6 @@ Specification changes require approval from a core maintainer.
 
 ## Questions?
 
-If you have questions about contributing, please [open a discussion](https://github.com/Creed-Space/VCP-SDK/discussions) or reach out to the maintainers.
+Open a [discussion](https://github.com/Creed-Space/VCP-SDK/discussions) or reach out to the maintainers — we're happy to help.
 
 Thank you for helping build the future of portable AI context.

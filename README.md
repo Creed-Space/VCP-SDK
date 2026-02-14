@@ -10,21 +10,17 @@
 [![TypeScript SDK](https://img.shields.io/badge/typescript-0.1.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](./webmcp/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](./LICENSE)
 
-[Overview](#overview) · [Quick Start](#quick-start) · [Architecture](#architecture) · [SDKs](#sdks) · [Documentation](#documentation) · [Contributing](#contributing)
+[Website](https://www.valuecontextprotocol.org) · [Overview](#overview) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Documentation](#documentation) · [Contributing](#contributing)
 
 </div>
 
 ---
 
-> **See also:** [ValueContextProtocol.org](https://www.valuecontextprotocol.org) — Interactive demos, documentation, and playground
-
----
-
 ## Overview
 
-The **Value-Context Protocol (VCP)** is an open specification for transporting constitutional values, behavioral rules, and personal context from a repository to an AI system. It solves a fundamental problem: Large Language Models are **dumb receivers** — they accept text input but cannot resolve references, verify signatures, or check hashes.
+The **Value-Context Protocol (VCP)** is an open specification for transporting constitutional values, behavioral rules, and personal context to AI systems. It addresses a structural gap in how Large Language Models receive instructions: they accept text input but have no native ability to resolve references, verify signatures, or validate hashes.
 
-VCP provides a **signed envelope format** that enables verification at the orchestration layer while delivering complete, self-contained text to the model.
+VCP provides a **signed envelope format** that enables cryptographic verification at the orchestration layer while delivering complete, self-contained text to the model.
 
 ### The Problem
 
@@ -32,7 +28,7 @@ VCP provides a **signed envelope format** that enables verification at the orche
 |:---|:---|
 | **Full text injection** | Token-inefficient, no verification, no audit trail |
 | **Reference-based** | Requires universal resolution infrastructure that doesn't exist |
-| **Platform-specific** | Context locked to one service; users repeat preferences everywhere |
+| **Platform-specific** | Context locked to one service; users re-enter preferences everywhere |
 
 ### The VCP Solution
 
@@ -47,18 +43,18 @@ VCP introduces a **Verify-then-Inject** pattern:
 
 1. Constitutions are packaged as **signed bundles** with manifest, content, and cryptographic proofs
 2. The **orchestrator** fetches, verifies signatures and hashes, and logs the transaction
-3. The **LLM** receives verified full text with a compact header — no resolution needed
+3. The **LLM** receives verified full text with a compact header — no resolution required
 4. **Audit systems** can independently verify what values were applied, without LLM cooperation
 
-### Three Core Properties
+### Core Properties
 
 | Property | Description |
 |:---|:---|
-| **Portability** | Define context once — every compatible service receives it automatically |
-| **Adaptation** | Context profiles shift with situation: work mode at the office, personal mode at home |
+| **Portability** | Define your context once — every compatible service receives it automatically |
+| **Adaptation** | Context profiles shift by situation: work mode at the office, personal mode at home |
 | **Liveness** | Real-time personal state (energy, focus, urgency) modulates AI responses moment-to-moment |
 
-> **Design philosophy:** Share *influence* without sharing *information*. VCP shapes AI behavior through contextual flags while protecting the underlying personal data.
+> Share *influence* without sharing *information*. VCP shapes AI behavior through contextual flags while protecting the underlying personal data.
 
 ---
 
@@ -142,7 +138,7 @@ registerVCPTools({
 // vcp_parse_token, vcp_transmission_summary, vcp_list_personas
 ```
 
-Includes MCP-B polyfill support for non-Chrome browsers.
+Includes MCP-B polyfill for non-Chrome browsers.
 
 ---
 
@@ -174,7 +170,7 @@ VCP is a four-layer protocol stack — like OSI, but for AI values:
 
 ### Three-Timescale Context Model
 
-VCP operates across three temporal scales, each with distinct update frequency and enforcement characteristics:
+VCP operates across three temporal scales with distinct update frequencies:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -186,7 +182,7 @@ VCP operates across three temporal scales, each with distinct update frequency a
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Key invariant:** Personal state modulates *expression*, never safety boundaries. A user being stressed may change the AI's tone — it must never weaken constitutional rules.
+**Key invariant:** Personal state modulates *expression*, never safety boundaries. A stressed user may receive a gentler tone — but constitutional rules are never weakened.
 
 ### Privacy Architecture
 
@@ -214,7 +210,7 @@ family.safe.guide@1.2.0
 
 ### CSM-1 Token Format (v1.1)
 
-Compact State Message — an 8-line token encoding complete user context in approximately 200 bytes:
+Compact State Message — an 8-line token encoding complete user context in ~200 bytes:
 
 ```
 VCP:1.0:user-alice-daily          ← Protocol version + session ID
@@ -227,7 +223,7 @@ S:🔒housing|🔒health              ← Shielded (private) topics
 R:🧠focused:4|💭calm:3|🔋low:2   ← Real-time personal state (v1.1)
 ```
 
-Line 8 (R-line) is new in v1.1 — see [`docs/content/CSM1_v1.1_AMENDMENT.md`](./docs/content/CSM1_v1.1_AMENDMENT.md).
+The R-line (Line 8) is new in v1.1 — see [`docs/content/CSM1_v1.1_AMENDMENT.md`](./docs/content/CSM1_v1.1_AMENDMENT.md).
 
 ### Signed Bundles
 
@@ -245,7 +241,7 @@ Constitutions are packaged as cryptographically signed bundles:
 }
 ```
 
-The orchestrator verifies the signature and hash before injecting the content into the LLM's context window.
+The orchestrator verifies the signature and hash before injecting content into the model's context window.
 
 ### Personas
 
@@ -262,15 +258,13 @@ Six built-in personas define distinct interaction styles:
 
 ### Deterministic Hooks
 
-VCP 3.1 introduces rules at three enforcement tiers:
+Rules enforced at three tiers, providing deterministic reliability where probabilistic model behavior falls short:
 
 | Tier | Behavior | Override |
 |:---|:---|:---|
 | **Constitutional** | Hard rules, always enforced | Cannot be overridden |
 | **Situational** | Active in specific contexts | Context-dependent activation |
 | **Personal** | Advisory user preferences | Soft influence on behavior |
-
-Hooks provide **deterministic reliability** where probabilistic model behavior falls short.
 
 ---
 
@@ -282,7 +276,20 @@ Hooks provide **deterministic reliability** where probabilistic model behavior f
 | **Rust** | [`rust/`](./rust/) | 0.1.0 | Beta | High-performance parsing, WASM/browser, embedded, CLI |
 | **TypeScript** | [`webmcp/`](./webmcp/) | 0.1.0 | Beta | Browser-side tool registration via `navigator.modelContext` |
 
-All SDKs implement the same core protocol and pass shared conformance tests against the JSON schemas in [`schemas/`](./schemas/).
+All SDKs implement the same core protocol and validate against the shared JSON schemas in [`schemas/`](./schemas/).
+
+---
+
+## Integrations
+
+VCP works with existing infrastructure:
+
+| Integration | Status | Description |
+|:---|:---|:---|
+| **Model Context Protocol (MCP)** | Native | VCP tools register as MCP-compatible resources |
+| **WebMCP (Chrome 145+)** | Stable | Browser-native AI tool discovery via `navigator.modelContext` |
+| **REST API** | Stable | Standard HTTP endpoints for token exchange |
+| **OpenAI Actions** | Compatible | Export VCP artifacts as OpenAI-compatible actions |
 
 ---
 
@@ -304,7 +311,7 @@ All SDKs implement the same core protocol and pass shared conformance tests agai
 | [`docs/VCP_OVERVIEW.md`](./docs/VCP_OVERVIEW.md) | Technical overview |
 | [`docs/VCP_IMPLEMENTATION_GUIDE.md`](./docs/VCP_IMPLEMENTATION_GUIDE.md) | SDK implementors |
 
-### Layer Documentation
+### By Protocol Layer
 
 | Layer | Documentation |
 |:---|:---|
@@ -313,14 +320,14 @@ All SDKs implement the same core protocol and pass shared conformance tests agai
 | VCP/S — Semantics | [`docs/semantics/`](./docs/semantics/) |
 | VCP/A — Adaptation | [`docs/adaptation/`](./docs/adaptation/) |
 
-### Schemas
+### JSON Schemas
 
 | Schema | Validates |
 |:---|:---|
-| [`schemas/vcp-manifest-v1.schema.json`](./schemas/vcp-manifest-v1.schema.json) | Bundle manifests |
-| [`schemas/vcp-identity-token.schema.json`](./schemas/vcp-identity-token.schema.json) | Identity tokens |
-| [`schemas/vcp-semantics-csm1.schema.json`](./schemas/vcp-semantics-csm1.schema.json) | CSM-1 tokens |
-| [`schemas/vcp-adaptation-context.schema.json`](./schemas/vcp-adaptation-context.schema.json) | Adaptation context |
+| [`vcp-manifest-v1.schema.json`](./schemas/vcp-manifest-v1.schema.json) | Bundle manifests |
+| [`vcp-identity-token.schema.json`](./schemas/vcp-identity-token.schema.json) | Identity tokens |
+| [`vcp-semantics-csm1.schema.json`](./schemas/vcp-semantics-csm1.schema.json) | CSM-1 tokens |
+| [`vcp-adaptation-context.schema.json`](./schemas/vcp-adaptation-context.schema.json) | Adaptation context |
 
 ### API Reference
 
@@ -330,8 +337,8 @@ OpenAPI specification: [`docs/openapi/`](./docs/openapi/)
 
 ## Design Principles
 
-1. **Verify-then-Inject** — Verification happens at the orchestration layer, not in the LLM
-2. **Complete Delivery** — LLMs receive full text, not references they can't resolve
+1. **Verify-then-Inject** — Verification happens at the orchestration layer, not inside the model
+2. **Complete Delivery** — Models receive full text, not references they cannot resolve
 3. **Audit Trail** — Every application of values is logged and independently verifiable
 4. **Implementation Agnostic** — Works with any constitutional AI framework or model provider
 5. **Supply-Chain Security** — Draws on patterns from package signing (npm, PyPI, cargo) and Subresource Integrity
@@ -340,24 +347,11 @@ OpenAPI specification: [`docs/openapi/`](./docs/openapi/)
 
 ---
 
-## Integrations
-
-VCP is designed to work with existing infrastructure:
-
-| Integration | Status | Description |
-|:---|:---|:---|
-| **Model Context Protocol (MCP)** | Native | VCP tools register as MCP-compatible resources |
-| **WebMCP (Chrome 145+)** | Stable | Browser-native AI tool discovery via `navigator.modelContext` |
-| **REST API** | Stable | Standard HTTP endpoints for token exchange |
-| **GPT Actions** | Compatible | Export VCP artifacts as OpenAI-compatible actions |
-
----
-
 ## Demo
 
 Explore VCP interactively at **[ValueContextProtocol.org](https://www.valuecontextprotocol.org)** — build tokens, test personas, and see the protocol in action.
 
-The demo source lives in [`vcp-demo/`](./vcp-demo/).
+Source: [`vcp-demo/`](./vcp-demo/)
 
 ---
 
@@ -365,38 +359,35 @@ The demo source lives in [`vcp-demo/`](./vcp-demo/).
 
 ```
 VCP-SDK/
-├── specs/                 # Core protocol specifications
-│   ├── VCP_SPECIFICATION_v1.0.md
+├── specs/                 # Protocol specifications
 │   ├── VCP_SPECIFICATION_v1.0_COMPLETE.md
 │   ├── VCP_SPECIFICATION_v1.1_AMENDMENTS.md
 │   └── value_context_protocols_paper_v1.md
-├── docs/                  # Documentation and guides
-│   ├── VCP_OVERVIEW.md
+├── docs/                  # Guides and reference
 │   ├── VCP_NEWCOMER_GUIDE.md
+│   ├── VCP_OVERVIEW.md
 │   ├── VCP_IMPLEMENTATION_GUIDE.md
-│   ├── identity/          # VCP/I layer docs
-│   ├── semantics/         # VCP/S layer docs
-│   ├── adaptation/        # VCP/A layer docs
+│   ├── identity/          # VCP/I layer
+│   ├── semantics/         # VCP/S layer
+│   ├── adaptation/        # VCP/A layer
 │   ├── context/           # Context specification
 │   ├── uvc/               # Universal Value Codes
 │   ├── content/           # CSM-1 grammar + amendments
 │   └── openapi/           # API specification
 ├── schemas/               # JSON Schema definitions
 ├── python/                # Python SDK (stable)
-│   ├── src/vcp/           # Core library
-│   └── tests/             # Test suite
 ├── rust/                  # Rust SDK (beta)
-│   ├── vcp-core/          # Core parsing library
+│   ├── vcp-core/          # Core library
 │   ├── vcp-wasm/          # WASM bindings
 │   └── vcp-cli/           # CLI tool
 ├── webmcp/                # TypeScript/WebMCP SDK (beta)
-├── integrations/          # Example integrations
+├── integrations/          # Integration examples
 ├── vcp-demo/              # Interactive demo site
-├── website/               # Project website
-├── CONTRIBUTING.md        # Contribution guidelines
-├── CODE_OF_CONDUCT.md     # Community standards
-├── SECURITY.md            # Vulnerability disclosure
-└── LICENSE                # MIT License
+├── website/               # Project website source
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── SECURITY.md
+└── LICENSE
 ```
 
 ---
@@ -409,13 +400,13 @@ VCP draws on established patterns from:
 - **Web Integrity** — Subresource Integrity (SRI), Content Security Policy
 - **Distributed Systems** — Content-addressed storage (IPFS, git)
 - **Identity Systems** — Decentralized Identifiers (DIDs), URNs
-- **Constitutional AI** — Anthropic's Constitutional AI, OpenAI system prompts
+- **Constitutional AI** — Anthropic's Constitutional AI, system prompt architectures
 
 ---
 
 ## Contributing
 
-We welcome contributions. See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, coding standards, and pull request guidelines.
+We welcome contributions across all three SDKs, the specification, and documentation. See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, coding standards, and pull request guidelines.
 
 Please read our [Code of Conduct](./CODE_OF_CONDUCT.md) before participating.
 
@@ -435,16 +426,9 @@ This project is licensed under the [MIT License](./LICENSE).
 
 ## Authors
 
-- **Nell Watson** — Creator & Lead
-- **Elena Ajayi**
-- **Filip Alimpic**
-- **Awwab Mahdi**
-- **Blake Wells**
-- **Claude** (Anthropic)
+Nell Watson, Elena Ajayi, Filip Alimpic, Awwab Mahdi, Blake Wells, Claude (Anthropic)
 
-Built by **[Creed Space](https://creedspace.com)** — the platform for constitutional AI governance.
-
-Informed by a Junto Mastermind Consultation of 9 AI models (2026-01-10).
+A **[Creed Space](https://creedspace.com)** project.
 
 ---
 
