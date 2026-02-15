@@ -38,7 +38,7 @@ def get_sync_redis_client() -> redis.Redis | None:
         redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
         client = cast(
             "redis.Redis",
-            redis_sync.from_url(redis_url, decode_responses=True),
+            redis_sync.Redis.from_url(redis_url, decode_responses=True),
         )
         # Test connection
         client.ping()
