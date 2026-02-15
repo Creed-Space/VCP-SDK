@@ -1,1 +1,0 @@
-import{ar as o,as as t,q as c,u}from"./BXTPVpRI.js";function a(n){throw new Error("https://svelte.dev/e/lifecycle_outside_component")}function s(n){t===null&&a(),c&&t.l!==null?l(t).m.push(n):o(()=>{const e=u(n);if(typeof e=="function")return e})}function l(n){var e=n.l;return e.u??(e.u={a:[],b:[],m:[]})}export{s as o};
