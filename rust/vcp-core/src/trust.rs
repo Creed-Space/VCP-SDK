@@ -147,10 +147,7 @@ impl TrustAnchor {
             .and_then(|v| v.as_str())
             .ok_or_else(|| VcpError::ParseError("missing 'public_key' in trust anchor".into()))?;
 
-        let anchor_type_str = obj
-            .get("type")
-            .and_then(|v| v.as_str())
-            .unwrap_or("issuer");
+        let anchor_type_str = obj.get("type").and_then(|v| v.as_str()).unwrap_or("issuer");
         let anchor_type = match anchor_type_str {
             "auditor" => AnchorType::Auditor,
             _ => AnchorType::Issuer,
@@ -209,8 +206,7 @@ fn parse_datetime(s: &str) -> VcpResult<DateTime<Utc>> {
         .map(|dt| dt.with_timezone(&Utc))
         .or_else(|_| {
             // Try with Z suffix.
-            DateTime::parse_from_rfc3339(&format!("{trimmed}Z"))
-                .map(|dt| dt.with_timezone(&Utc))
+            DateTime::parse_from_rfc3339(&format!("{trimmed}Z")).map(|dt| dt.with_timezone(&Utc))
         })
         .map_err(|e| VcpError::ParseError(format!("invalid datetime '{s}': {e}")))
 }
@@ -255,11 +251,7 @@ impl TrustConfig {
     /// If `key_id` is `Some`, only anchors with that key ID are considered.
     /// Returns the first anchor that is currently valid (active/rotating and
     /// within its validity window).
-    pub fn get_issuer_key(
-        &self,
-        issuer_id: &str,
-        key_id: Option<&str>,
-    ) -> Option<&TrustAnchor> {
+    pub fn get_issuer_key(&self, issuer_id: &str, key_id: Option<&str>) -> Option<&TrustAnchor> {
         let anchors = self.issuers.get(issuer_id)?;
         let now = Utc::now();
         anchors.iter().find(|a| {
@@ -277,11 +269,7 @@ impl TrustConfig {
     /// If `key_id` is `Some`, only anchors with that key ID are considered.
     /// Returns the first anchor that is currently valid (active/rotating and
     /// within its validity window).
-    pub fn get_auditor_key(
-        &self,
-        auditor_id: &str,
-        key_id: Option<&str>,
-    ) -> Option<&TrustAnchor> {
+    pub fn get_auditor_key(&self, auditor_id: &str, key_id: Option<&str>) -> Option<&TrustAnchor> {
         let anchors = self.auditors.get(auditor_id)?;
         let now = Utc::now();
         anchors.iter().find(|a| {
@@ -465,43 +453,92 @@ mod tests {
 
     #[test]
     fn anchor_valid_active_within_window() {
-        let anchor = make_anchor("test", "k1", AnchorType::Issuer, AnchorState::Active, 1, 365);
+        let anchor = make_anchor(
+            "test",
+            "k1",
+            AnchorType::Issuer,
+            AnchorState::Active,
+            1,
+            365,
+        );
         assert!(anchor.is_valid(None));
     }
 
     #[test]
     fn anchor_valid_rotating_within_window() {
-        let anchor = make_anchor("test", "k1", AnchorType::Issuer, AnchorState::Rotating, 1, 365);
+        let anchor = make_anchor(
+            "test",
+            "k1",
+            AnchorType::Issuer,
+            AnchorState::Rotating,
+            1,
+            365,
+        );
         assert!(anchor.is_valid(None));
     }
 
     #[test]
     fn anchor_invalid_retired() {
-        let anchor = make_anchor("test", "k1", AnchorType::Issuer, AnchorState::Retired, 1, 365);
+        let anchor = make_anchor(
+            "test",
+            "k1",
+            AnchorType::Issuer,
+            AnchorState::Retired,
+            1,
+            365,
+        );
         assert!(!anchor.is_valid(None));
     }
 
     #[test]
     fn anchor_invalid_compromised() {
-        let anchor = make_anchor("test", "k1", AnchorType::Issuer, AnchorState::Compromised, 1, 365);
+        let anchor = make_anchor(
+            "test",
+            "k1",
+            AnchorType::Issuer,
+            AnchorState::Compromised,
+            1,
+            365,
+        );
         assert!(!anchor.is_valid(None));
     }
 
     #[test]
     fn anchor_invalid_expired() {
-        let anchor = make_anchor("test", "k1", AnchorType::Issuer, AnchorState::Active, 365, -1);
+        let anchor = make_anchor(
+            "test",
+            "k1",
+            AnchorType::Issuer,
+            AnchorState::Active,
+            365,
+            -1,
+        );
         assert!(!anchor.is_valid(None));
     }
 
     #[test]
     fn anchor_invalid_not_yet_valid() {
-        let anchor = make_anchor("test", "k1", AnchorType::Issuer, AnchorState::Active, -1, 365);
+        let anchor = make_anchor(
+            "test",
+            "k1",
+            AnchorType::Issuer,
+            AnchorState::Active,
+            -1,
+            365,
+        );
         assert!(!anchor.is_valid(None));
     }
 
     #[test]
     fn anchor_valid_at_specific_time() {
-        let anchor = make_anchor("test", "k1", AnchorType::Issuer, AnchorState::Active, 30, 30);
+        let anchor = make_anchor(
+            "test",
+            "k1",
+            AnchorType::Issuer,
+            AnchorState::Active,
+            30,
+            30,
+        );
         let past = Utc::now() - Duration::days(10);
         assert!(anchor.is_valid(Some(past)));
 
@@ -512,7 +549,14 @@ mod tests {
     #[test]
     fn config_add_and_get_issuer() {
         let mut config = TrustConfig::new();
-        let anchor = make_anchor("creed", "k1", AnchorType::Issuer, AnchorState::Active, 1, 365);
+        let anchor = make_anchor(
+            "creed",
+            "k1",
+            AnchorType::Issuer,
+            AnchorState::Active,
+            1,
+            365,
+        );
         config.add_issuer("creed", anchor);
 
         assert!(config.get_issuer_key("creed", None).is_some());
@@ -524,7 +568,14 @@ mod tests {
     #[test]
     fn config_add_and_get_auditor() {
         let mut config = TrustConfig::new();
-        let anchor = make_anchor("auditor-1", "k1", AnchorType::Auditor, AnchorState::Active, 1, 365);
+        let anchor = make_anchor(
+            "auditor-1",
+            "k1",
+            AnchorType::Auditor,
+            AnchorState::Active,
+            1,
+            365,
+        );
         config.add_auditor("auditor-1", anchor);
 
         assert!(config.get_auditor_key("auditor-1", None).is_some());
@@ -538,8 +589,22 @@ mod tests {
         let mut config = TrustConfig::new();
 
         // Add an expired anchor and a valid one.
-        let expired = make_anchor("creed", "old", AnchorType::Issuer, AnchorState::Active, 365, -1);
-        let valid = make_anchor("creed", "new", AnchorType::Issuer, AnchorState::Active, 1, 365);
+        let expired = make_anchor(
+            "creed",
+            "old",
+            AnchorType::Issuer,
+            AnchorState::Active,
+            365,
+            -1,
+        );
+        let valid = make_anchor(
+            "creed",
+            "new",
+            AnchorType::Issuer,
+            AnchorState::Active,
+            1,
+            365,
+        );
 
         config.add_issuer("creed", expired);
         config.add_issuer("creed", valid);
@@ -727,8 +792,22 @@ mod tests {
     #[test]
     fn config_multiple_keys_per_entity() {
         let mut config = TrustConfig::new();
-        let k1 = make_anchor("creed", "k1", AnchorType::Issuer, AnchorState::Active, 1, 365);
-        let k2 = make_anchor("creed", "k2", AnchorType::Issuer, AnchorState::Active, 1, 365);
+        let k1 = make_anchor(
+            "creed",
+            "k1",
+            AnchorType::Issuer,
+            AnchorState::Active,
+            1,
+            365,
+        );
+        let k2 = make_anchor(
+            "creed",
+            "k2",
+            AnchorType::Issuer,
+            AnchorState::Active,
+            1,
+            365,
+        );
 
         config.add_issuer("creed", k1);
         config.add_issuer("creed", k2);

@@ -27,7 +27,6 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 from .canonicalize import canonicalize_content, canonicalize_manifest
 from .trust import TrustConfig
 
-
 # ---------------------------------------------------------------------------
 # Frontmatter parsing
 # ---------------------------------------------------------------------------
@@ -403,14 +402,22 @@ def main(argv: list[str] | None = None) -> int:
     # -- sign -------------------------------------------------------------
     sign_parser = subparsers.add_parser("sign", help="Sign a skill directory")
     sign_parser.add_argument("skill_dir", type=Path, help="Path to skill directory")
-    sign_parser.add_argument("--key", type=Path, required=True, help="Path to Ed25519 signing key (PEM)")
-    sign_parser.add_argument("--issuer", default="creed.space", help="Issuer identifier (default: creed.space)")
-    sign_parser.add_argument("--expires", type=int, default=90, help="Days until expiration (default: 90)")
+    sign_parser.add_argument(
+        "--key", type=Path, required=True, help="Path to Ed25519 signing key (PEM)",
+    )
+    sign_parser.add_argument(
+        "--issuer", default="creed.space", help="Issuer identifier (default: creed.space)",
+    )
+    sign_parser.add_argument(
+        "--expires", type=int, default=90, help="Days until expiration (default: 90)",
+    )
 
     # -- verify -----------------------------------------------------------
     verify_parser = subparsers.add_parser("verify", help="Verify a signed skill directory")
     verify_parser.add_argument("skill_dir", type=Path, help="Path to skill directory")
-    verify_parser.add_argument("--trust-config", type=Path, default=None, help="Path to trust config JSON")
+    verify_parser.add_argument(
+        "--trust-config", type=Path, default=None, help="Path to trust config JSON",
+    )
 
     args = parser.parse_args(argv)
 
