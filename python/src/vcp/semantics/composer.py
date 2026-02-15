@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 from ..types import CompositionMode
 
 if TYPE_CHECKING:
-    pass
+    from ..hooks.executor import HookExecutor
 
 
 class CompositionConflictError(Exception):
@@ -82,7 +82,7 @@ CONFLICT_KEYWORDS = {
 class Composer:
     """Compose multiple constitutions according to mode."""
 
-    def __init__(self, hook_executor: object | None = None) -> None:
+    def __init__(self, hook_executor: HookExecutor | None = None) -> None:
         """Initialize composer.
 
         Args:

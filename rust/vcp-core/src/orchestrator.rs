@@ -76,7 +76,7 @@ const FORBIDDEN_CHARS: &[char] = &[
     '\u{202A}', '\u{202B}', '\u{202C}', '\u{202D}', '\u{202E}', // direction overrides
     '\u{2066}', '\u{2067}', '\u{2068}', '\u{2069}', // isolates
     '\u{200B}', '\u{200C}', '\u{200D}', '\u{FEFF}', // zero-width
-    '\0', // null
+    '\0',       // null
 ];
 
 // ── Verification context ─────────────────────────────────────
@@ -450,7 +450,11 @@ impl Orchestrator {
             .and_then(Value::as_f64)
             .unwrap_or(0.25);
 
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss)]
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            clippy::cast_precision_loss
+        )]
         let max_tokens = (ctx.model_context_limit as f64 * max_share) as u64;
 
         if token_count > max_tokens {
@@ -507,9 +511,7 @@ impl Orchestrator {
         if code.is_valid() {
             Ok(())
         } else {
-            Err(VcpError::ParseError(format!(
-                "verification failed: {code}"
-            )))
+            Err(VcpError::ParseError(format!("verification failed: {code}")))
         }
     }
 
@@ -740,10 +742,7 @@ mod tests {
 
         // Zero-width space.
         let findings = orch.scan_for_injection("text\u{200B}hidden");
-        assert!(
-            !findings.is_empty(),
-            "should detect zero-width space"
-        );
+        assert!(!findings.is_empty(), "should detect zero-width space");
 
         // Null byte.
         let findings = orch.scan_for_injection("text\0hidden");
@@ -803,7 +802,10 @@ mod tests {
     fn verification_code_display_and_debug() {
         assert_eq!(format!("{}", VerificationCode::Valid), "valid");
         assert_eq!(format!("{}", VerificationCode::Expired), "expired");
-        assert_eq!(format!("{}", VerificationCode::ReplayDetected), "replay_detected");
+        assert_eq!(
+            format!("{}", VerificationCode::ReplayDetected),
+            "replay_detected"
+        );
         assert_eq!(
             format!("{:?}", VerificationCode::SizeExceeded),
             "SizeExceeded"

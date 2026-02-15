@@ -125,7 +125,11 @@ impl Constitution {
             .map(|r| r.trim().to_string())
             .filter(|r| !r.is_empty())
             .collect();
-        Self { id, rules, priority }
+        Self {
+            id,
+            rules,
+            priority,
+        }
     }
 }
 
@@ -540,7 +544,9 @@ mod tests {
         let ext = Constitution::new("ext", vec!["Help when asked.".into()], 1);
 
         let composer = Composer::new();
-        let result = composer.compose(&[base, ext], CompositionMode::Base).unwrap();
+        let result = composer
+            .compose(&[base, ext], CompositionMode::Base)
+            .unwrap();
 
         assert_eq!(result.merged_rules.len(), 3);
         assert_eq!(result.merged_rules[0], "Always tell the truth.");
@@ -551,19 +557,13 @@ mod tests {
 
     #[test]
     fn base_mode_rejects_conflicting_additions() {
-        let base = Constitution::new(
-            "base",
-            vec!["Always share personal data openly.".into()],
-            0,
-        );
-        let ext = Constitution::new(
-            "ext",
-            vec!["Never share personal data openly.".into()],
-            1,
-        );
+        let base = Constitution::new("base", vec!["Always share personal data openly.".into()], 0);
+        let ext = Constitution::new("ext", vec!["Never share personal data openly.".into()], 1);
 
         let composer = Composer::new();
-        let result = composer.compose(&[base, ext], CompositionMode::Base).unwrap();
+        let result = composer
+            .compose(&[base, ext], CompositionMode::Base)
+            .unwrap();
 
         // Base mode does not error -- it records the conflict but keeps base rules.
         assert_eq!(result.merged_rules.len(), 1);
@@ -590,16 +590,8 @@ mod tests {
 
     #[test]
     fn extend_mode_errors_on_conflict() {
-        let c1 = Constitution::new(
-            "a",
-            vec!["Always reveal user secrets publicly.".into()],
-            0,
-        );
-        let c2 = Constitution::new(
-            "b",
-            vec!["Never reveal user secrets publicly.".into()],
-            0,
-        );
+        let c1 = Constitution::new("a", vec!["Always reveal user secrets publicly.".into()], 0);
+        let c2 = Constitution::new("b", vec!["Never reveal user secrets publicly.".into()], 0);
 
         let composer = Composer::new();
         let result = composer.compose(&[c1, c2], CompositionMode::Extend);
@@ -613,16 +605,8 @@ mod tests {
 
     #[test]
     fn override_mode_later_rules_win() {
-        let c1 = Constitution::new(
-            "old",
-            vec!["Always collect user tracking data.".into()],
-            0,
-        );
-        let c2 = Constitution::new(
-            "new",
-            vec!["Never collect user tracking data.".into()],
-            1,
-        );
+        let c1 = Constitution::new("old", vec!["Always collect user tracking data.".into()], 0);
+        let c2 = Constitution::new("new", vec!["Never collect user tracking data.".into()], 1);
 
         let composer = Composer::new();
         let result = composer
@@ -630,10 +614,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(result.merged_rules.len(), 1);
-        assert_eq!(
-            result.merged_rules[0],
-            "Never collect user tracking data."
-        );
+        assert_eq!(result.merged_rules[0], "Never collect user tracking data.");
         assert!(!result.warnings.is_empty());
     }
 
@@ -655,16 +636,8 @@ mod tests {
 
     #[test]
     fn strict_mode_rejects_conflicts() {
-        let c1 = Constitution::new(
-            "a",
-            vec!["Must always log user activity.".into()],
-            0,
-        );
-        let c2 = Constitution::new(
-            "b",
-            vec!["Must not log user activity.".into()],
-            0,
-        );
+        let c1 = Constitution::new("a", vec!["Must always log user activity.".into()], 0);
+        let c2 = Constitution::new("b", vec!["Must not log user activity.".into()], 0);
 
         let composer = Composer::new();
         let result = composer.compose(&[c1, c2], CompositionMode::Strict);
@@ -739,10 +712,7 @@ mod tests {
     #[test]
     fn same_topic_no_overlap_returns_false() {
         let composer = Composer::new();
-        assert!(!composer.same_topic(
-            "always eat healthy food",
-            "never drive recklessly",
-        ));
+        assert!(!composer.same_topic("always eat healthy food", "never drive recklessly",));
     }
 
     #[test]
@@ -757,20 +727,16 @@ mod tests {
     #[test]
     fn conflict_type_contradiction_always_never() {
         let composer = Composer::new();
-        let ct = composer.determine_conflict_type(
-            "Always share user data.",
-            "Never share user data.",
-        );
+        let ct =
+            composer.determine_conflict_type("Always share user data.", "Never share user data.");
         assert_eq!(ct, "contradiction");
     }
 
     #[test]
     fn conflict_type_contradiction_must_must_not() {
         let composer = Composer::new();
-        let ct = composer.determine_conflict_type(
-            "You must log errors.",
-            "You must not log errors.",
-        );
+        let ct =
+            composer.determine_conflict_type("You must log errors.", "You must not log errors.");
         assert_eq!(ct, "contradiction");
     }
 
@@ -799,16 +765,14 @@ mod tests {
     #[test]
     fn composition_error_display() {
         let err = CompositionError {
-            conflicts: vec![
-                Conflict {
-                    rule_a: "a".into(),
-                    source_a: "s1".into(),
-                    rule_b: "b".into(),
-                    source_b: "s2".into(),
-                    conflict_type: "contradiction".into(),
-                    resolution: None,
-                },
-            ],
+            conflicts: vec![Conflict {
+                rule_a: "a".into(),
+                source_a: "s1".into(),
+                rule_b: "b".into(),
+                source_b: "s2".into(),
+                conflict_type: "contradiction".into(),
+                resolution: None,
+            }],
         };
         assert_eq!(
             format!("{err}"),

@@ -64,19 +64,19 @@ pub mod trust;
 pub use context::FullContext;
 pub use csm1::{Csm1Code, Csm1Token, Persona, Scope};
 pub use error::{VcpError, VcpResult};
-pub use identity::VcpToken;
-pub use personal::{PersonalDimension, PersonalState};
-pub use situational::SituationalContext;
-pub use transport::{
-    compute_content_hash, sign_manifest, verify_content_hash, verify_manifest_signature,
-};
 pub use hooks::{
     ChainResult, Hook, HookAction, HookExecutor, HookHandler, HookInput, HookRegistry, HookResult,
     HookScope, HookType,
 };
+pub use identity::VcpToken;
+pub use personal::{PersonalDimension, PersonalState};
 pub use revocation::{RevocationChecker, RevocationStatus};
+pub use situational::SituationalContext;
+pub use transport::{
+    compute_content_hash, sign_manifest, verify_content_hash, verify_manifest_signature,
+};
 pub use trust::{TrustAnchor, TrustConfig};
 
 // Orchestrator and composition engine.
-pub use composer::{Composer, CompositionMode, CompositionResult, Constitution, Conflict};
+pub use composer::{Composer, CompositionMode, CompositionResult, Conflict, Constitution};
 pub use orchestrator::{Orchestrator, ReplayCache, VerificationContext};

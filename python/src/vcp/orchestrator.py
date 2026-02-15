@@ -17,7 +17,12 @@ from .bundle import Bundle
 from .canonicalize import canonicalize_manifest, verify_content_hash
 from .revocation import RevocationChecker
 from .trust import TrustConfig
+from typing import TYPE_CHECKING
+
 from .types import VerificationResult
+
+if TYPE_CHECKING:
+    from .hooks.executor import HookExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +119,7 @@ class Orchestrator:
         replay_cache: ReplayCache | None = None,
         verify_signature: Callable[..., bool] | None = None,
         revocation_checker: RevocationChecker | None = None,
-        hook_executor: object | None = None,
+        hook_executor: HookExecutor | None = None,
     ):
         """
         Initialize orchestrator.

@@ -290,10 +290,7 @@ impl HookRegistry {
 
         match scope {
             HookScope::Deployment => {
-                let hooks = self
-                    .deployment_hooks
-                    .entry(hook.hook_type)
-                    .or_default();
+                let hooks = self.deployment_hooks.entry(hook.hook_type).or_default();
 
                 if hooks.iter().any(|h| h.name == hook.name) {
                     return Err(VcpError::HookError(format!(
@@ -308,15 +305,10 @@ impl HookRegistry {
             }
             HookScope::Session => {
                 let sid = session_id.ok_or_else(|| {
-                    VcpError::HookError(
-                        "session_id is required for session-scoped hooks".into(),
-                    )
+                    VcpError::HookError("session_id is required for session-scoped hooks".into())
                 })?;
 
-                let session_map = self
-                    .session_hooks
-                    .entry(sid.to_string())
-                    .or_default();
+                let session_map = self.session_hooks.entry(sid.to_string()).or_default();
 
                 let hooks = session_map.entry(hook.hook_type).or_default();
 
@@ -612,7 +604,12 @@ mod tests {
         }
     }
 
-    fn make_hook(name: &str, hook_type: HookType, priority: u8, handler: Box<dyn HookHandler>) -> Hook {
+    fn make_hook(
+        name: &str,
+        hook_type: HookType,
+        priority: u8,
+        handler: Box<dyn HookHandler>,
+    ) -> Hook {
         Hook {
             name: name.to_string(),
             hook_type,
@@ -670,12 +667,20 @@ mod tests {
     fn invalid_name_rejected() {
         let mut reg = HookRegistry::new();
         let result = reg.register(
-            make_hook("INVALID_UPPER", HookType::PreInject, 50, Box::new(ContinueHandler)),
+            make_hook(
+                "INVALID_UPPER",
+                HookType::PreInject,
+                50,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Deployment,
             None,
         );
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("invalid hook name"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("invalid hook name"));
     }
 
     #[test]
@@ -694,7 +699,12 @@ mod tests {
         let mut reg = HookRegistry::new();
         let long_name = "a".repeat(65);
         let result = reg.register(
-            make_hook(&long_name, HookType::PreInject, 50, Box::new(ContinueHandler)),
+            make_hook(
+                &long_name,
+                HookType::PreInject,
+                50,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Deployment,
             None,
         );
@@ -705,7 +715,12 @@ mod tests {
     fn name_with_special_chars_rejected() {
         let mut reg = HookRegistry::new();
         let result = reg.register(
-            make_hook("hook.with.dots", HookType::PreInject, 50, Box::new(ContinueHandler)),
+            make_hook(
+                "hook.with.dots",
+                HookType::PreInject,
+                50,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Deployment,
             None,
         );
@@ -744,13 +759,23 @@ mod tests {
     fn deployment_before_session_at_same_priority() {
         let mut reg = HookRegistry::new();
         reg.register(
-            make_hook("session-hook", HookType::PreInject, 50, Box::new(ContinueHandler)),
+            make_hook(
+                "session-hook",
+                HookType::PreInject,
+                50,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Session,
             Some("sess-1"),
         )
         .unwrap();
         reg.register(
-            make_hook("deploy-hook", HookType::PreInject, 50, Box::new(ContinueHandler)),
+            make_hook(
+                "deploy-hook",
+                HookType::PreInject,
+                50,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Deployment,
             None,
         )
@@ -804,7 +829,12 @@ mod tests {
         )
         .unwrap();
         reg.register(
-            make_hook("should-not-run", HookType::PreInject, 10, Box::new(ContinueHandler)),
+            make_hook(
+                "should-not-run",
+                HookType::PreInject,
+                10,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Deployment,
             None,
         )
@@ -858,9 +888,14 @@ mod tests {
     #[test]
     fn disabled_hooks_skipped() {
         let mut reg = HookRegistry::new();
-        let mut hook = make_hook("disabled", HookType::PreInject, 50, Box::new(AbortHandler {
-            reason: "should not run".into(),
-        }));
+        let mut hook = make_hook(
+            "disabled",
+            HookType::PreInject,
+            50,
+            Box::new(AbortHandler {
+                reason: "should not run".into(),
+            }),
+        );
         hook.enabled = false;
         reg.register(hook, HookScope::Deployment, None).unwrap();
 
@@ -899,14 +934,22 @@ mod tests {
             None,
         );
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("already registered"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("already registered"));
     }
 
     #[test]
     fn priority_above_100_rejected() {
         let mut reg = HookRegistry::new();
         let result = reg.register(
-            make_hook("too-high", HookType::PreInject, 101, Box::new(ContinueHandler)),
+            make_hook(
+                "too-high",
+                HookType::PreInject,
+                101,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Deployment,
             None,
         );
@@ -917,7 +960,12 @@ mod tests {
     #[test]
     fn timeout_zero_rejected() {
         let mut reg = HookRegistry::new();
-        let mut hook = make_hook("zero-timeout", HookType::PreInject, 50, Box::new(ContinueHandler));
+        let mut hook = make_hook(
+            "zero-timeout",
+            HookType::PreInject,
+            50,
+            Box::new(ContinueHandler),
+        );
         hook.timeout = Duration::ZERO;
         let result = reg.register(hook, HookScope::Deployment, None);
         assert!(result.is_err());
@@ -927,7 +975,12 @@ mod tests {
     #[test]
     fn timeout_over_30000ms_rejected() {
         let mut reg = HookRegistry::new();
-        let mut hook = make_hook("long-timeout", HookType::PreInject, 50, Box::new(ContinueHandler));
+        let mut hook = make_hook(
+            "long-timeout",
+            HookType::PreInject,
+            50,
+            Box::new(ContinueHandler),
+        );
         hook.timeout = Duration::from_millis(30001);
         let result = reg.register(hook, HookScope::Deployment, None);
         assert!(result.is_err());
@@ -944,7 +997,12 @@ mod tests {
         )
         .unwrap();
         reg.register(
-            make_hook("after-panic", HookType::PreInject, 10, Box::new(ContinueHandler)),
+            make_hook(
+                "after-panic",
+                HookType::PreInject,
+                10,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Deployment,
             None,
         )
@@ -964,7 +1022,12 @@ mod tests {
     fn session_scope_requires_session_id() {
         let mut reg = HookRegistry::new();
         let result = reg.register(
-            make_hook("sess-hook", HookType::PreInject, 50, Box::new(ContinueHandler)),
+            make_hook(
+                "sess-hook",
+                HookType::PreInject,
+                50,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Session,
             None, // Missing session_id
         );
@@ -976,7 +1039,12 @@ mod tests {
     fn different_sessions_isolated() {
         let mut reg = HookRegistry::new();
         reg.register(
-            make_hook("sess1-hook", HookType::PreInject, 50, Box::new(ContinueHandler)),
+            make_hook(
+                "sess1-hook",
+                HookType::PreInject,
+                50,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Session,
             Some("sess-1"),
         )
@@ -1052,7 +1120,12 @@ mod tests {
     fn deregister_session_hook() {
         let mut reg = HookRegistry::new();
         reg.register(
-            make_hook("sess-hook", HookType::PreInject, 50, Box::new(ContinueHandler)),
+            make_hook(
+                "sess-hook",
+                HookType::PreInject,
+                50,
+                Box::new(ContinueHandler),
+            ),
             HookScope::Session,
             Some("sess-1"),
         )

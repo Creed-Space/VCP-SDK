@@ -141,7 +141,7 @@ def validate_uri(uri: str, allowed_ports: set[int] | None = None) -> tuple[bool,
 
     # Check ALL resolved IPs -- reject if ANY is private
     for family, _type, _proto, _canonname, sockaddr in addrinfo:
-        ip_str = sockaddr[0]
+        ip_str = str(sockaddr[0])
         if _is_private_ip(ip_str):
             return False, f"Resolved IP {ip_str} is in a private/reserved range"
 
@@ -308,7 +308,7 @@ class RevocationChecker:
         cache_key = f"online:{uri}:{jti}"
         cached = self._get_cached(cache_key)
         if cached is not None:
-            return cached  # type: ignore[return-value]
+            return cached
 
         # SSRF validation
         is_safe, reason = validate_uri(uri, self._allowed_ports)
@@ -413,7 +413,7 @@ class RevocationChecker:
         """Retrieve a non-expired cache entry."""
         entry = self._cache.get(key)
         if entry and entry.expires_at > time.monotonic():
-            return entry.value  # type: ignore[return-value]
+            return entry.value  # type: ignore[no-any-return]
         if entry:
             del self._cache[key]
         return None
@@ -429,7 +429,7 @@ class RevocationChecker:
         """Retrieve a non-expired CRL cache entry."""
         entry = self._crl_cache.get(key)
         if entry and entry.expires_at > time.monotonic():
-            return entry.value  # type: ignore[return-value]
+            return entry.value  # type: ignore[no-any-return]
         if entry:
             del self._crl_cache[key]
         return None

@@ -699,10 +699,7 @@ mod tests {
 
     #[test]
     fn checker_returns_not_revoked_by_default() {
-        let mut checker = RevocationChecker::new(
-            Duration::from_secs(300),
-            Duration::from_secs(5),
-        );
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         let status = checker.check("some-jti", None, None);
         assert!(!status.revoked);
@@ -710,10 +707,7 @@ mod tests {
 
     #[test]
     fn checker_crl_cache_lookup() {
-        let mut checker = RevocationChecker::new(
-            Duration::from_secs(300),
-            Duration::from_secs(5),
-        );
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         let crl = Crl {
             issuer: "test".into(),
@@ -748,10 +742,7 @@ mod tests {
 
     #[test]
     fn checker_caches_results() {
-        let mut checker = RevocationChecker::new(
-            Duration::from_secs(300),
-            Duration::from_secs(5),
-        );
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         let crl = Crl {
             issuer: "test".into(),
@@ -766,11 +757,7 @@ mod tests {
         checker.insert_crl("https://example.com/crl.json", crl);
 
         // First check populates cache.
-        let status = checker.check(
-            "cached-jti",
-            None,
-            Some("https://example.com/crl.json"),
-        );
+        let status = checker.check("cached-jti", None, Some("https://example.com/crl.json"));
         assert!(status.revoked);
 
         // Second check hits cache (even without CRL URI).
@@ -780,10 +767,7 @@ mod tests {
 
     #[test]
     fn checker_clear_cache() {
-        let mut checker = RevocationChecker::new(
-            Duration::from_secs(300),
-            Duration::from_secs(5),
-        );
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         let crl = Crl {
             issuer: "test".into(),
@@ -798,11 +782,7 @@ mod tests {
         checker.insert_crl("https://example.com/crl.json", crl);
 
         // Populate cache.
-        let status = checker.check(
-            "cleared-jti",
-            None,
-            Some("https://example.com/crl.json"),
-        );
+        let status = checker.check("cleared-jti", None, Some("https://example.com/crl.json"));
         assert!(status.revoked);
 
         // Clear and verify cache is empty.
@@ -813,34 +793,20 @@ mod tests {
 
     #[test]
     fn checker_rejects_unsafe_crl_uri() {
-        let mut checker = RevocationChecker::new(
-            Duration::from_secs(300),
-            Duration::from_secs(5),
-        );
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         // Private IP CRL URI should fail SSRF validation, returning not-revoked.
-        let status = checker.check(
-            "some-jti",
-            None,
-            Some("https://192.168.1.1/crl.json"),
-        );
+        let status = checker.check("some-jti", None, Some("https://192.168.1.1/crl.json"));
         assert!(!status.revoked);
     }
 
     #[test]
     fn checker_rejects_unsafe_check_uri() {
-        let mut checker = RevocationChecker::new(
-            Duration::from_secs(300),
-            Duration::from_secs(5),
-        );
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         // Online check with private IP should return None (indeterminate),
         // falling through to not-revoked.
-        let status = checker.check(
-            "some-jti",
-            Some("https://10.0.0.1/revoked"),
-            None,
-        );
+        let status = checker.check("some-jti", Some("https://10.0.0.1/revoked"), None);
         assert!(!status.revoked);
     }
 }

@@ -11,7 +11,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
+from typing import TYPE_CHECKING
+
 from .context import Dimension, VCPContext
+
+if TYPE_CHECKING:
+    from ..hooks.executor import HookExecutor
 
 
 class TransitionSeverity(Enum):
@@ -61,7 +66,7 @@ class StateTracker:
     def __init__(
         self,
         max_history: int = 100,
-        hook_executor: object | None = None,
+        hook_executor: HookExecutor | None = None,
     ):
         """Initialize state tracker.
 
