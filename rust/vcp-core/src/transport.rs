@@ -236,9 +236,8 @@ pub fn verify_manifest_signature(
         ))
     })?;
 
-    let verifying_key = VerifyingKey::from_bytes(&key_bytes).map_err(|e| {
-        VcpError::SignatureError(format!("invalid Ed25519 public key: {e}"))
-    })?;
+    let verifying_key = VerifyingKey::from_bytes(&key_bytes)
+        .map_err(|e| VcpError::SignatureError(format!("invalid Ed25519 public key: {e}")))?;
 
     // Strip optional "base64:" prefix (matches Python SDK convention).
     let raw_b64 = signature_b64
@@ -249,9 +248,9 @@ pub fn verify_manifest_signature(
         .decode(raw_b64)
         .map_err(|e| VcpError::SignatureError(format!("invalid base64 signature: {e}")))?;
 
-    let sig_array: [u8; 64] = sig_bytes.try_into().map_err(|_| {
-        VcpError::SignatureError("signature must be exactly 64 bytes".into())
-    })?;
+    let sig_array: [u8; 64] = sig_bytes
+        .try_into()
+        .map_err(|_| VcpError::SignatureError("signature must be exactly 64 bytes".into()))?;
 
     let signature = ed25519_dalek::Signature::from_bytes(&sig_array);
     let canonical = canonicalize_manifest(manifest)?;
@@ -620,7 +619,10 @@ mod tests {
             "signature": {"algorithm": "ed25519", "value": sig.clone()}
         });
         let valid = verify_manifest_signature(&manifest_with_sig, &vk.to_bytes(), &sig).unwrap();
-        assert!(valid, "signature field should be excluded during verification");
+        assert!(
+            valid,
+            "signature field should be excluded during verification"
+        );
     }
 
     #[test]
@@ -673,6 +675,9 @@ mod tests {
 
         let sig1 = sign_manifest(&manifest, &sk.to_bytes()).unwrap();
         let sig2 = sign_manifest(&manifest, &sk.to_bytes()).unwrap();
-        assert_eq!(sig1, sig2, "Ed25519 signing should be deterministic for same input");
+        assert_eq!(
+            sig1, sig2,
+            "Ed25519 signing should be deterministic for same input"
+        );
     }
 }
