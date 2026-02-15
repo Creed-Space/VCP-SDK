@@ -352,7 +352,7 @@ OpenAPI specification: [`docs/openapi/`](./docs/openapi/)
 
 Explore VCP interactively at **[ValueContextProtocol.org](https://www.valuecontextprotocol.org)** — build tokens, test personas, and see the protocol in action.
 
-Source: [`vcp-demo/`](./vcp-demo/)
+Source: [Creed-Space/VCP-Demo-Site](https://github.com/Creed-Space/VCP-Demo-Site)
 
 ---
 
@@ -383,8 +383,6 @@ VCP-SDK/
 │   └── vcp-cli/           # CLI tool
 ├── webmcp/                # TypeScript/WebMCP SDK (beta)
 ├── integrations/          # Integration examples
-├── vcp-demo/              # Interactive demo site
-├── website/               # Project website source
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
 ├── SECURITY.md

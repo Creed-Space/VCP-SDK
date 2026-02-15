@@ -1,1 +1,0 @@
-export { default as component } from "../../../../src/routes/demos/multi-agent/policy-design/+page.svelte";

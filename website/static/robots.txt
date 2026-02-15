@@ -1,8 +1,0 @@
-# VCP Demo - Value Context Protocol
-# https://valuecontextprotocol.org
-
-User-agent: *
-Allow: /
-
-# Sitemap location
-Sitemap: https://valuecontextprotocol.org/sitemap.xml
