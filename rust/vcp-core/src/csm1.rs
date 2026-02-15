@@ -32,7 +32,7 @@ use crate::personal::PersonalState;
 
 // ── Persona ─────────────────────────────────────────────────
 
-/// The eight archetypal personas for constitutional profiles.
+/// The 6+1 archetypal personas for constitutional profiles (NZGAMDC).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Persona {
     /// N -- Child safety specialist.
@@ -45,10 +45,8 @@ pub enum Persona {
     Ambassador,
     /// M -- Creativity enabler.
     Muse,
-    /// R -- Factual accuracy enforcer.
-    Anchor,
-    /// H -- Minimal constraints (expert mode).
-    HotRod,
+    /// D -- Fair resolution and balanced mediation.
+    Mediator,
     /// C -- User-defined persona.
     Custom,
 }
@@ -62,8 +60,7 @@ impl Persona {
             Self::Godparent => 'G',
             Self::Ambassador => 'A',
             Self::Muse => 'M',
-            Self::Anchor => 'R',
-            Self::HotRod => 'H',
+            Self::Mediator => 'D',
             Self::Custom => 'C',
         }
     }
@@ -81,8 +78,7 @@ impl Persona {
             'G' => Ok(Self::Godparent),
             'A' => Ok(Self::Ambassador),
             'M' => Ok(Self::Muse),
-            'R' => Ok(Self::Anchor),
-            'H' => Ok(Self::HotRod),
+            'D' => Ok(Self::Mediator),
             'C' => Ok(Self::Custom),
             _ => Err(VcpError::InvalidPersona(c)),
         }
@@ -96,8 +92,7 @@ impl Persona {
             Self::Godparent => "Ethical guidance counselor",
             Self::Ambassador => "Professional conduct advisor",
             Self::Muse => "Creativity enabler",
-            Self::Anchor => "Factual accuracy enforcer",
-            Self::HotRod => "Minimal constraints (expert mode)",
+            Self::Mediator => "Fair resolution and balanced mediation",
             Self::Custom => "User-defined persona",
         }
     }
@@ -110,8 +105,7 @@ impl Persona {
             Self::Godparent,
             Self::Ambassador,
             Self::Muse,
-            Self::Anchor,
-            Self::HotRod,
+            Self::Mediator,
             Self::Custom,
         ]
     }
@@ -682,8 +676,7 @@ mod tests {
             ('G', Persona::Godparent),
             ('A', Persona::Ambassador),
             ('M', Persona::Muse),
-            ('R', Persona::Anchor),
-            ('H', Persona::HotRod),
+            ('D', Persona::Mediator),
             ('C', Persona::Custom),
         ];
         for (ch, expected) in &cases {
