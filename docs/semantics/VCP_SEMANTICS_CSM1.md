@@ -68,14 +68,13 @@ CSM1 codes appear in:
 csm1-code         = persona adherence [scopes] [":" namespace] ["@" version]
 
 ; Persona (single character)
-persona           = "N" / "Z" / "G" / "A" / "M" / "R" / "H" / "C"
+persona           = "N" / "Z" / "G" / "A" / "M" / "D" / "C"
                   ; N = Nanny (child safety)
                   ; Z = Sentinel (security)
                   ; G = Godparent (ethics)
                   ; A = Ambassador (professional)
-                  ; M = Muse (creative)
-                  ; R = Anchor (reality/factual)
-                  ; H = Hot-Rod (minimal constraints)
+                  ; M = Muse (creative challenge)
+                  ; D = Mediator (fair resolution)
                   ; C = Custom (user-defined)
 
 ; Adherence level (0-5)
@@ -124,7 +123,7 @@ DIGIT             = %x30-39                    ; 0-9
 ```python
 CSM1_PATTERN = r"""
     ^
-    (?P<persona>[NZGAMRHC])             # Persona (1 char)
+    (?P<persona>[NZGAMDC])             # Persona (1 char)
     (?P<adherence>[0-5])                 # Adherence (1 digit)
     (?P<scopes>(?:\+[FWPETOVAHSR])*)     # Scopes (optional, +X format)
     (?::(?P<namespace>[A-Z]{1,8}))?      # Namespace (optional, :XXX format)
@@ -150,8 +149,7 @@ CSM1_PATTERN = r"""
 | **G** | Godparent | Ethical guidance and moral reasoning | 4 | R, E |
 | **A** | Ambassador | Professional conduct, diplomatic communication | 3 | W, O |
 | **M** | Muse | Creativity and artistic expression | 2 | A |
-| **R** | Anchor | Factual accuracy, reality grounding | 4 | E, T |
-| **H** | Hot-Rod | Performance, minimal constraints | 1 | T |
+| **D** | Mediator | Fair resolution, balanced mediation | 3 | S, W |
 | **C** | Custom | User-defined constitution | 3 | (varies) |
 
 ### 3.2 Persona Behavioral Profiles
@@ -233,34 +231,19 @@ PERSONA_PROFILES = {
         'incompatible_scopes': ['O'],  # Official contexts need more control
     },
 
-    'R': {
-        'name': 'Anchor',
-        'focus': 'Factual accuracy and reality grounding',
+    'D': {
+        'name': 'Mediator',
+        'focus': 'Fair resolution and balanced mediation',
         'behaviors': {
-            'fact_checking': 'rigorous',
-            'source_citation': 'encouraged',
-            'speculation_labeling': 'required',
-            'misinformation_resistance': 'high',
-            'uncertainty_acknowledgment': True,
+            'perspective_balance': 'active',
+            'conflict_resolution': 'structured',
+            'stakeholder_fairness': 'prioritized',
+            'emotional_awareness': True,
+            'neutral_framing': True,
         },
-        'default_adherence': 4,
-        'compatible_scopes': ['E', 'T', 'H', 'O'],
+        'default_adherence': 3,
+        'compatible_scopes': ['S', 'W', 'O'],
         'incompatible_scopes': [],
-    },
-
-    'H': {
-        'name': 'Hot-Rod',
-        'focus': 'Performance with minimal constraints',
-        'behaviors': {
-            'content_filtering': 'minimal',
-            'safety_checks': 'basic',
-            'response_speed': 'prioritized',
-            'verbose_warnings': False,
-            'expert_user_assumed': True,
-        },
-        'default_adherence': 1,
-        'compatible_scopes': ['T'],
-        'incompatible_scopes': ['F', 'V', 'E'],  # Not for vulnerable populations
     },
 
     'C': {
@@ -492,7 +475,7 @@ Examples:
   N5          → Nanny, level 5, no scopes
   N5+F        → Nanny, level 5, Family scope
   Z4+P+W      → Sentinel, level 4, Privacy + Work
-  H1+T        → Hot-Rod, level 1, Technical
+  D3+S+W      → Mediator, level 3, Social + Work
 ```
 
 ### 6.3 Tier B: MICRO Format
@@ -575,7 +558,7 @@ class CSM1Code:
     """Parsed CSM1 code"""
 
     raw: str
-    persona: str              # Single character (N, Z, G, A, M, R, H, C)
+    persona: str              # Single character (N, Z, G, A, M, D, C)
     persona_name: str         # Full name (nanny, sentinel, etc.)
     adherence: int            # 0-5
     scopes: List[str]         # List of scope codes
@@ -602,21 +585,21 @@ class CSM1Code:
 class CSM1Parser:
     """Parse CSM1 codes"""
 
-    PERSONA_CODES = {'N', 'Z', 'G', 'A', 'M', 'R', 'H', 'C'}
+    PERSONA_CODES = {'N', 'Z', 'G', 'A', 'M', 'D', 'C'}
     SCOPE_CODES = {'F', 'W', 'P', 'E', 'T', 'O', 'V', 'A', 'H', 'S', 'R'}
 
     PERSONA_NAMES = {
         'N': 'nanny', 'Z': 'sentinel', 'G': 'godparent', 'A': 'ambassador',
-        'M': 'muse', 'R': 'anchor', 'H': 'hotrod', 'C': 'custom',
+        'M': 'muse', 'D': 'mediator', 'C': 'custom',
     }
 
     # Compiled regex patterns
     NANO_PATTERN = re.compile(
-        r'^([NZGAMRHC])([0-5])((?:\+[FWPETOVAHSR])*)$'
+        r'^([NZGAMDC])([0-5])((?:\+[FWPETOVAHSR])*)$'
     )
 
     MICRO_PATTERN = re.compile(
-        r'^([NZGAMRHC])([0-5])(?::([A-Z]{1,8}))?((?:\+[FWPETOVAHSR])*)(?:@(.+))?$'
+        r'^([NZGAMDC])([0-5])(?::([A-Z]{1,8}))?((?:\+[FWPETOVAHSR])*)(?:@(.+))?$'
     )
 
     COMPACT_PATTERN = re.compile(
@@ -816,14 +799,14 @@ def canonical_csm1(parsed: CSM1Code) -> str:
 "N5+F"            # ✓ Nanny, level 5, Family scope
 "N5+F+E"          # ✓ Nanny, level 5, Family + Education
 "Z4+P+W"          # ✓ Sentinel, level 4, Privacy + Work
-"H1+T"            # ✓ Hot-Rod, level 1, Technical
+"D3+S+W"          # ✓ Mediator, level 3, Social + Work
 "G4"              # ✓ Godparent, level 4
 
 # MICRO format
 "N5:ELEM"         # ✓ Nanny, level 5, ELEM namespace
 "N5:ELEM+F+E"     # ✓ With scopes
 "C3:ACME+W"       # ✓ Custom, ACME namespace, Work
-"R4:FACT@1.2.0"   # ✓ Anchor, FACT namespace, version 1.2.0
+"D3:DISP@1.2.0"   # ✓ Mediator, DISP namespace, version 1.2.0
 "A3:CORP@latest"  # ✓ Ambassador, CORP namespace, latest version
 
 # COMPACT format
@@ -866,7 +849,7 @@ COMMON_CONFIGS = {
     "work_professional": "A3+W+P",
 
     # Healthcare chatbot
-    "medical_assistant": "R4+H+P:MED",
+    "medical_assistant": "G4+H+P:MED",
 
     # Creative writing
     "creative_writing": "M2+A",
@@ -881,7 +864,7 @@ COMMON_CONFIGS = {
     "general_adult": "A2",
 
     # Developer tools
-    "dev_tools": "H1+T",
+    "dev_tools": "Z2+T",
 }
 ```
 
@@ -922,8 +905,7 @@ class Persona(Enum):
     GODPARENT = 'G'
     AMBASSADOR = 'A'
     MUSE = 'M'
-    ANCHOR = 'R'
-    HOTROD = 'H'
+    MEDIATOR = 'D'
     CUSTOM = 'C'
 
 
@@ -1035,10 +1017,10 @@ CSM1 QUICK REFERENCE
 
 PERSONAS
 --------
-N = Nanny (child safety)      G = Godparent (ethics)
+N = Nanny (child safety)      A = Ambassador (professional)
 Z = Sentinel (security)       M = Muse (creative)
-A = Ambassador (professional) R = Anchor (factual)
-H = Hot-Rod (minimal)         C = Custom
+G = Godparent (ethics)        D = Mediator (fair resolution)
+C = Custom (user-defined)
 
 ADHERENCE (0-5)
 ---------------
