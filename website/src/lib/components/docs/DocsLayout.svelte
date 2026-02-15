@@ -3,19 +3,14 @@
 	 * DocsLayout - Documentation page layout with sidebar navigation
 	 */
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
-	import DocsSearch from '$lib/components/DocsSearch.svelte';
 
 	interface Props {
 		title: string;
 		description?: string;
-		editPath?: string;
 		children: import('svelte').Snippet;
 	}
 
-	let { title, description, editPath, children }: Props = $props();
-
-	const repoBase = 'https://github.com/Creed-Space/Value-Context-Protocol/edit/main/website';
+	let { title, description, children }: Props = $props();
 
 	const navSections = [
 		{
@@ -30,15 +25,6 @@
 			items: [
 				{ href: '/docs/csm1-specification', label: 'CSM-1 Format', time: '15 min' },
 				{ href: '/docs/api-reference', label: 'API Reference', time: 'Ref' }
-			]
-		},
-		{
-			title: 'Advanced',
-			items: [
-				{ href: '/docs/constitutional-ai', label: 'Constitutional AI', time: '12 min' },
-				{ href: '/docs/privacy-architecture', label: 'Privacy Architecture', time: '8 min' },
-				{ href: '/docs/interiora', label: 'Interiora Spec', time: '20 min' },
-				{ href: '/docs/multi-agent', label: 'Multi-Agent Patterns', time: '15 min' }
 			]
 		}
 	];
@@ -55,25 +41,15 @@
 		aria-expanded={sidebarOpen}
 		aria-controls="docs-sidebar"
 	>
-		<span class="toggle-icon">
-			{#if sidebarOpen}
-				<i class="fa-solid fa-xmark" aria-hidden="true"></i>
-			{:else}
-				<i class="fa-solid fa-bars" aria-hidden="true"></i>
-			{/if}
-		</span>
+		<span class="toggle-icon">{sidebarOpen ? '✕' : '☰'}</span>
 		<span class="toggle-text">Menu</span>
 	</button>
 
 	<!-- Sidebar -->
 	<aside id="docs-sidebar" class="sidebar" class:open={sidebarOpen}>
 		<nav class="sidebar-nav" aria-label="Documentation navigation">
-			<div class="sidebar-search">
-				<DocsSearch onSelect={(path) => { sidebarOpen = false; goto(path); }} />
-			</div>
-
 			<a href="/docs" class="sidebar-home" class:active={currentPath === '/docs'}>
-				<span class="home-icon"><i class="fa-solid fa-book" aria-hidden="true"></i></span>
+				<span class="home-icon">📚</span>
 				Documentation Home
 			</a>
 
@@ -111,12 +87,6 @@
 			<h1>{title}</h1>
 			{#if description}
 				<p class="docs-description">{description}</p>
-			{/if}
-			{#if editPath}
-				<a href="{repoBase}{editPath}" target="_blank" rel="noopener noreferrer" class="edit-link">
-					<i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-					Edit this page on GitHub
-				</a>
 			{/if}
 		</header>
 
@@ -167,10 +137,6 @@
 		top: 60px;
 		height: calc(100vh - 60px);
 		overflow-y: auto;
-	}
-
-	.sidebar-search {
-		margin-bottom: var(--space-lg);
 	}
 
 	.sidebar-home {
@@ -265,25 +231,6 @@
 		margin-bottom: var(--space-2xl);
 		padding-bottom: var(--space-xl);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-	}
-
-	.edit-link {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-xs);
-		font-size: 0.8125rem;
-		color: var(--color-text-subtle);
-		text-decoration: none;
-		margin-top: var(--space-md);
-		padding: var(--space-xs) var(--space-sm);
-		border-radius: var(--radius-sm);
-		transition: all var(--transition-fast);
-	}
-
-	.edit-link:hover {
-		color: var(--color-primary);
-		background: var(--color-primary-muted);
-		text-decoration: none;
 	}
 
 	.breadcrumbs {

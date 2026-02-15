@@ -45,7 +45,7 @@
 					class:active={tokenInspectorOpen}
 					onclick={() => (tokenInspectorOpen = !tokenInspectorOpen)}
 				>
-					<span class="control-icon"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
+					<span class="control-icon">🔍</span>
 					<span>Token</span>
 				</button>
 			{/if}
@@ -56,7 +56,7 @@
 					class:active={auditTrailOpen}
 					onclick={() => (auditTrailOpen = !auditTrailOpen)}
 				>
-					<span class="control-icon"><i class="fa-solid fa-clipboard" aria-hidden="true"></i></span>
+					<span class="control-icon">📋</span>
 					<span>Audit</span>
 				</button>
 			{/if}

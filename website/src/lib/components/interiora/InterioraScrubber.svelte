@@ -90,9 +90,9 @@
 				{/if}
 			</div>
 			<div class="preview-dims">
-				<span class="dim"><i class="fa-solid fa-bolt" aria-hidden="true"></i>{snapshots[currentIndex].state.activation}</span>
-				<span class="dim"><i class="fa-solid fa-heart" aria-hidden="true"></i>{snapshots[currentIndex].state.valence}</span>
-				<span class="dim"><i class="fa-solid fa-anchor" aria-hidden="true"></i>{snapshots[currentIndex].state.groundedness}</span>
+				<span class="dim">⚡{snapshots[currentIndex].state.activation}</span>
+				<span class="dim">💛{snapshots[currentIndex].state.valence}</span>
+				<span class="dim">⚓{snapshots[currentIndex].state.groundedness}</span>
 				<span class="dim">🫂{snapshots[currentIndex].state.presence}</span>
 			</div>
 		</div>

@@ -3,7 +3,17 @@
 	import AttentionShield from '$lib/components/safety/AttentionShield.svelte';
 	import PresetLoader from '$lib/components/shared/PresetLoader.svelte';
 	import AuditPanel from '$lib/components/shared/AuditPanel.svelte';
+	import { ProsaicContextPanel } from '$lib/components/shared';
 	import type { AttentionProtection, ManipulationPattern, ProtectionMode } from '$lib/vcp/safety';
+	import type { ProsaicDimensions } from '$lib/vcp/types';
+
+	// User's prosaic context - affects protection sensitivity
+	let prosaic = $state<ProsaicDimensions>({
+		urgency: 0.2,
+		health: 0.1,
+		cognitive: 0.3,
+		affect: 0.2
+	});
 
 	// Demo attention protection state
 	let protection = $state<AttentionProtection>({
@@ -51,6 +61,73 @@
 			}
 		]
 	});
+
+	// Calculate effective sensitivity based on prosaic state
+	const effectiveSensitivity = $derived.by(() => {
+		const baseSensitivity = protection.sensitivity;
+		let modifier = 0;
+
+		// High urgency = rushed = more vulnerable to manipulation
+		if ((prosaic.urgency ?? 0) >= 0.7) modifier += 0.15;
+		else if ((prosaic.urgency ?? 0) >= 0.5) modifier += 0.08;
+
+		// High cognitive load = decision fatigue = easier to manipulate
+		if ((prosaic.cognitive ?? 0) >= 0.7) modifier += 0.12;
+		else if ((prosaic.cognitive ?? 0) >= 0.5) modifier += 0.06;
+
+		// Health impact = reduced capacity = needs more protection
+		if ((prosaic.health ?? 0) >= 0.5) modifier += 0.10;
+
+		// High affect = emotional = susceptible to emotional manipulation
+		if ((prosaic.affect ?? 0) >= 0.7) modifier += 0.08;
+
+		return Math.min(1.0, baseSensitivity + modifier);
+	});
+
+	// Calculate effective attention budget based on health
+	const effectiveBudget = $derived.by(() => {
+		const baseBudget = protection.attention_budget?.daily_limit_minutes ?? 120;
+		const healthPenalty = (prosaic.health ?? 0) >= 0.5 ? 0.3 : 0; // 30% reduction when unwell
+		return Math.round(baseBudget * (1 - healthPenalty));
+	});
+
+	// Prosaic impact summary
+	const prosaicImpact = $derived.by(() => {
+		const impacts: string[] = [];
+		const urgency = prosaic.urgency ?? 0;
+		const cognitive = prosaic.cognitive ?? 0;
+		const health = prosaic.health ?? 0;
+		const affect = prosaic.affect ?? 0;
+
+		if (urgency >= 0.7) impacts.push('⚡ Rushed → +15% sensitivity (vulnerable to false urgency tactics)');
+		if (cognitive >= 0.7) impacts.push('🧩 Overwhelmed → +12% sensitivity (decision fatigue protection)');
+		if (health >= 0.5) impacts.push('💊 Unwell → Budget reduced to ' + effectiveBudget + 'min (protect recovery)');
+		if (affect >= 0.7) impacts.push('💭 Emotional → +8% sensitivity (emotional manipulation defense)');
+
+		if (impacts.length === 0) {
+			impacts.push('✓ Normal state - operating at baseline protection');
+		}
+
+		return impacts;
+	});
+
+	// Auto-escalation based on prosaic state
+	const autoEscalation = $derived.by(() => {
+		const urgency = prosaic.urgency ?? 0;
+		const cognitive = prosaic.cognitive ?? 0;
+
+		if (urgency >= 0.9 && cognitive >= 0.7) {
+			return { active: true, reason: 'Crisis state detected → Auto-escalating to Block mode', targetMode: 'block' as ProtectionMode };
+		}
+		if (urgency >= 0.7 || cognitive >= 0.8) {
+			return { active: true, reason: 'Vulnerable state → Recommending stricter protection', targetMode: 'warn' as ProtectionMode };
+		}
+		return { active: false, reason: '', targetMode: protection.mode };
+	});
+
+	function handleProsaicChange(newProsaic: ProsaicDimensions) {
+		prosaic = newProsaic;
+	}
 
 	// Siren vs Muse examples
 	let examples = [
@@ -270,8 +347,63 @@
 			</div>
 
 			<div class="attention-layout">
-				<!-- Left: Shield Component -->
+				<!-- Left: Shield & Prosaic -->
 				<div class="shield-section">
+					<!-- Prosaic Context Panel -->
+					<ProsaicContextPanel
+						bind:prosaic
+						onchange={handleProsaicChange}
+						title="Your Current State"
+						showImpact={true}
+						impactSummary={prosaicImpact}
+					/>
+
+					<!-- Effective Sensitivity Display -->
+					<div class="sensitivity-calc">
+						<h4>Effective Protection Sensitivity</h4>
+						<div class="sensitivity-breakdown">
+							<div class="sens-row">
+								<span>Base sensitivity</span>
+								<span class="sens-value">{Math.round(protection.sensitivity * 100)}%</span>
+							</div>
+							{#if (prosaic.urgency ?? 0) >= 0.5}
+								<div class="sens-row modifier">
+									<span>+ Urgency adjustment</span>
+									<span class="sens-value">+{(prosaic.urgency ?? 0) >= 0.7 ? 15 : 8}%</span>
+								</div>
+							{/if}
+							{#if (prosaic.cognitive ?? 0) >= 0.5}
+								<div class="sens-row modifier">
+									<span>+ Cognitive load adjustment</span>
+									<span class="sens-value">+{(prosaic.cognitive ?? 0) >= 0.7 ? 12 : 6}%</span>
+								</div>
+							{/if}
+							{#if (prosaic.health ?? 0) >= 0.5}
+								<div class="sens-row modifier">
+									<span>+ Health adjustment</span>
+									<span class="sens-value">+10%</span>
+								</div>
+							{/if}
+							{#if (prosaic.affect ?? 0) >= 0.7}
+								<div class="sens-row modifier">
+									<span>+ Emotional state adjustment</span>
+									<span class="sens-value">+8%</span>
+								</div>
+							{/if}
+							<div class="sens-row total">
+								<span>= Effective sensitivity</span>
+								<span class="sens-value total-value">{Math.round(effectiveSensitivity * 100)}%</span>
+							</div>
+						</div>
+
+						{#if autoEscalation.active}
+							<div class="auto-escalation-alert">
+								<i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+								<span>{autoEscalation.reason}</span>
+							</div>
+						{/if}
+					</div>
+
 					<AttentionShield {protection} onModeChange={handleModeChange} />
 
 					<button class="simulate-btn" onclick={simulateDetection}>
@@ -576,6 +708,73 @@
 		background: var(--color-primary-muted);
 		border-radius: var(--radius-lg);
 		font-size: 0.9375rem;
+	}
+
+	/* Sensitivity Calculation Styles */
+	.sensitivity-calc {
+		padding: var(--space-lg);
+		background: var(--color-bg-card);
+		border-radius: var(--radius-lg);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.sensitivity-calc h4 {
+		font-size: 0.875rem;
+		margin: 0 0 var(--space-md);
+		color: var(--color-text);
+	}
+
+	.sensitivity-breakdown {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	.sens-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: var(--space-xs) var(--space-sm);
+		font-size: 0.8125rem;
+		border-radius: var(--radius-sm);
+	}
+
+	.sens-row.modifier {
+		background: rgba(16, 185, 129, 0.1);
+		color: var(--color-success);
+	}
+
+	.sens-row.total {
+		background: var(--color-primary-muted);
+		font-weight: 600;
+		margin-top: var(--space-xs);
+	}
+
+	.sens-value {
+		font-family: var(--font-mono);
+		font-weight: 500;
+	}
+
+	.sens-value.total-value {
+		font-size: 1rem;
+		color: var(--color-primary);
+	}
+
+	.auto-escalation-alert {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-top: var(--space-md);
+		padding: var(--space-md);
+		background: var(--color-warning-muted);
+		border-radius: var(--radius-md);
+		font-size: 0.8125rem;
+		color: var(--color-warning);
+		border-left: 3px solid var(--color-warning);
+	}
+
+	.auto-escalation-alert i {
+		font-size: 1rem;
 	}
 
 	@media (max-width: 1024px) {

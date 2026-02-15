@@ -15,6 +15,53 @@
 		affect: 0.2
 	});
 
+	// Demo attention protection state
+	let protection = $state<AttentionProtection>({
+		active: true,
+		mode: 'warn',
+		sensitivity: 0.7,
+		blocked_count: 12,
+		warnings_shown: 34,
+		trusted_sources: ['learning-platform.com', 'work-tools.com'],
+		attention_budget: {
+			daily_limit_minutes: 120,
+			used_today_minutes: 67,
+			high_value_time_minutes: 45,
+			low_value_time_minutes: 22,
+			last_reset: new Date().toISOString(),
+			categories: { social: 22, news: 15, shopping: 10, learning: 20 }
+		},
+		detected_patterns: [
+			{
+				id: 'p1',
+				type: 'false_urgency',
+				source: 'shopping-site.com',
+				description: 'Fake countdown timer creating artificial urgency',
+				confidence: 0.92,
+				timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+				action_taken: 'warned'
+			},
+			{
+				id: 'p2',
+				type: 'variable_reward',
+				source: 'social-app.com',
+				description: 'Pull-to-refresh with unpredictable new content',
+				confidence: 0.88,
+				timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+				action_taken: 'blocked'
+			},
+			{
+				id: 'p3',
+				type: 'social_proof_fake',
+				source: 'reviews-site.com',
+				description: 'Fabricated review counts and testimonials',
+				confidence: 0.75,
+				timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+				action_taken: 'warned'
+			}
+		]
+	});
+
 	// Calculate effective sensitivity based on prosaic state
 	const effectiveSensitivity = $derived.by(() => {
 		const baseSensitivity = protection.sensitivity;
@@ -81,53 +128,6 @@
 	function handleProsaicChange(newProsaic: ProsaicDimensions) {
 		prosaic = newProsaic;
 	}
-
-	// Demo attention protection state
-	let protection = $state<AttentionProtection>({
-		active: true,
-		mode: 'warn',
-		sensitivity: 0.7,
-		blocked_count: 12,
-		warnings_shown: 34,
-		trusted_sources: ['learning-platform.com', 'work-tools.com'],
-		attention_budget: {
-			daily_limit_minutes: 120,
-			used_today_minutes: 67,
-			high_value_time_minutes: 45,
-			low_value_time_minutes: 22,
-			last_reset: new Date().toISOString(),
-			categories: { social: 22, news: 15, shopping: 10, learning: 20 }
-		},
-		detected_patterns: [
-			{
-				id: 'p1',
-				type: 'false_urgency',
-				source: 'shopping-site.com',
-				description: 'Fake countdown timer creating artificial urgency',
-				confidence: 0.92,
-				timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-				action_taken: 'warned'
-			},
-			{
-				id: 'p2',
-				type: 'variable_reward',
-				source: 'social-app.com',
-				description: 'Pull-to-refresh with unpredictable new content',
-				confidence: 0.88,
-				timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-				action_taken: 'blocked'
-			},
-			{
-				id: 'p3',
-				type: 'social_proof_fake',
-				source: 'reviews-site.com',
-				description: 'Fabricated review counts and testimonials',
-				confidence: 0.75,
-				timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-				action_taken: 'warned'
-			}
-		]
-	});
 
 	// Siren vs Muse examples
 	let examples = [

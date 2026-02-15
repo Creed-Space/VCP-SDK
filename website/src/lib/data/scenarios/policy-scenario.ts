@@ -12,7 +12,7 @@ export const policyAgents: AgentIdentity[] = [
 		agent_id: 'parent_rep',
 		display_name: 'Maria',
 		role: 'voter',
-		avatar: '<i class="fa-solid fa-people-group" aria-hidden="true"></i>',
+		avatar: '👨‍👩‍👧',
 		color: '#e74c3c',
 		constitution: {
 			id: 'family-advocate',
@@ -25,7 +25,7 @@ export const policyAgents: AgentIdentity[] = [
 		agent_id: 'elder_rep',
 		display_name: 'Harold',
 		role: 'voter',
-		avatar: '<i class="fa-solid fa-person-cane" aria-hidden="true"></i>',
+		avatar: '🧓',
 		color: '#3498db',
 		constitution: {
 			id: 'accessibility-first',
@@ -38,7 +38,7 @@ export const policyAgents: AgentIdentity[] = [
 		agent_id: 'youth_rep',
 		display_name: 'Jordan',
 		role: 'voter',
-		avatar: '<i class="fa-solid fa-person-running" aria-hidden="true"></i>',
+		avatar: '🏃',
 		color: '#2ecc71',
 		constitution: {
 			id: 'active-lifestyle',
@@ -51,7 +51,7 @@ export const policyAgents: AgentIdentity[] = [
 		agent_id: 'nature_rep',
 		display_name: 'Sage',
 		role: 'voter',
-		avatar: '<i class="fa-solid fa-tree" aria-hidden="true"></i>',
+		avatar: '🌳',
 		color: '#27ae60',
 		constitution: {
 			id: 'environmental-steward',
@@ -64,7 +64,7 @@ export const policyAgents: AgentIdentity[] = [
 		agent_id: 'moderator',
 		display_name: 'Council Chair',
 		role: 'mediator',
-		avatar: '<i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>',
+		avatar: '⚖️',
 		color: '#9b59b6',
 		constitution: {
 			id: 'fair-process',

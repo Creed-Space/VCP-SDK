@@ -3,7 +3,9 @@
 	import LearningPathViz from '$lib/components/learning/LearningPathViz.svelte';
 	import PresetLoader from '$lib/components/shared/PresetLoader.svelte';
 	import AuditPanel from '$lib/components/shared/AuditPanel.svelte';
+	import { ProsaicContextPanel } from '$lib/components/shared';
 	import type { LearningPath, MasteryLevel, LearningPreferences, Adaptation } from '$lib/vcp/learning';
+	import type { ProsaicDimensions } from '$lib/vcp/types';
 
 	// Demo learning path
 	let path = $state<LearningPath>({
@@ -146,6 +148,54 @@
 	let selectedTopic = $state<string | null>(null);
 	let selectedPreset = $state<string | undefined>(undefined);
 
+	// Prosaic dimensions - immediate user state
+	let prosaic = $state<ProsaicDimensions>({
+		urgency: 0.2,
+		health: 0.1,
+		cognitive: 0.3,
+		affect: 0.2
+	});
+
+	// Computed impact of prosaic on learning
+	const prosaicImpact = $derived.by(() => {
+		const impacts: string[] = [];
+
+		// Urgency effects
+		if ((prosaic.urgency ?? 0) >= 0.8) {
+			impacts.push('Skip optional topics, focus on essentials');
+			impacts.push('Shorter session chunks (15 min max)');
+		} else if ((prosaic.urgency ?? 0) >= 0.5) {
+			impacts.push('Prioritize high-impact topics');
+		}
+
+		// Cognitive load effects
+		if ((prosaic.cognitive ?? 0) >= 0.7) {
+			impacts.push('Reduce content complexity');
+			impacts.push('More examples, fewer new concepts');
+			impacts.push('Suggest taking a break');
+		} else if ((prosaic.cognitive ?? 0) >= 0.4) {
+			impacts.push('Slower pacing recommended');
+		}
+
+		// Health effects
+		if ((prosaic.health ?? 0) >= 0.6) {
+			impacts.push('Shorter sessions with more breaks');
+			impacts.push('Reduce challenge difficulty');
+		}
+
+		// Affect effects
+		if ((prosaic.affect ?? 0) >= 0.7) {
+			impacts.push('More encouraging feedback');
+			impacts.push('Celebrate small wins');
+		}
+
+		if (impacts.length === 0) {
+			impacts.push('Normal learning pace');
+		}
+
+		return impacts;
+	});
+
 	// Learner profile presets
 	const learnerPresets = [
 		{
@@ -254,9 +304,10 @@
 		}
 
 		// Modality change based on effectiveness and availability
-		const bestModality = preferences.modality_preferences
+		const availableModalities = [...preferences.modality_preferences]
 			.filter((m) => m.current_availability)
-			.sort((a, b) => b.effectiveness - a.effectiveness)[0];
+			.sort((a, b) => b.effectiveness - a.effectiveness);
+		const bestModality = availableModalities[0];
 
 		const unavailableModality = preferences.modality_preferences.find((m) => !m.current_availability);
 
@@ -269,18 +320,75 @@
 			});
 		}
 
+		// Pace adjustment combining challenge appetite AND prosaic cognitive load
+		const cognitiveLoad = prosaic.cognitive ?? 0;
+		let paceReason = `Challenge appetite: ${preferences.challenge_appetite}/9`;
+		let paceValue = preferences.challenge_appetite > 6 ? 'Faster with fewer examples' : 'Deliberate with more examples';
+
+		if (cognitiveLoad >= 0.7) {
+			paceReason += ` + HIGH COGNITIVE LOAD (🧩${cognitiveLoad.toFixed(1)})`;
+			paceValue = 'Much slower with simplified content';
+		} else if (cognitiveLoad >= 0.4) {
+			paceReason += ` + moderate cognitive load`;
+			paceValue = 'Slower pacing with extra checkpoints';
+		}
+
 		newAdaptations.push({
 			type: 'pace_adjustment',
-			reason: `Challenge appetite: ${preferences.challenge_appetite}/9`,
+			reason: paceReason,
 			original_value: 'Standard pacing',
-			adapted_value: preferences.challenge_appetite > 6 ? 'Faster with fewer examples' : 'Deliberate with more examples'
+			adapted_value: paceValue
 		});
+
+		// Prosaic-specific adaptations
+		const urgency = prosaic.urgency ?? 0;
+		if (urgency >= 0.7) {
+			newAdaptations.push({
+				type: 'content_compression',
+				reason: `HIGH URGENCY (⚡${urgency.toFixed(1)}) - user is in a hurry`,
+				original_value: 'Full topic coverage',
+				adapted_value: 'Essential concepts only, skip optional sections'
+			});
+		}
+
+		const healthImpact = prosaic.health ?? 0;
+		if (healthImpact >= 0.5) {
+			newAdaptations.push({
+				type: 'session_modification',
+				reason: `HEALTH IMPACT (💊${healthImpact.toFixed(1)}) - reduced capacity`,
+				original_value: `${preferences.session_duration_preference} min sessions`,
+				adapted_value: `${Math.round(preferences.session_duration_preference * 0.6)} min sessions with more breaks`
+			});
+		}
+
+		const affect = prosaic.affect ?? 0;
+		if (affect >= 0.6) {
+			newAdaptations.push({
+				type: 'feedback_adjustment',
+				reason: `HIGH EMOTIONAL STATE (💭${affect.toFixed(1)})`,
+				original_value: 'Standard feedback',
+				adapted_value: 'More encouraging tone, celebrate progress'
+			});
+		}
 
 		adaptations = newAdaptations;
 	}
 
+	function handleProsaicChange(newProsaic: ProsaicDimensions) {
+		prosaic = newProsaic;
+		updateAdaptations();
+	}
+
+	// Helper to get best modality without mutating the array
+	function getBestModality() {
+		const sorted = [...preferences.modality_preferences].sort((a, b) => b.effectiveness - a.effectiveness);
+		return sorted[0];
+	}
+
 	// Audit entries derived from preferences and adaptations
-	const auditEntries = $derived([
+	const auditEntries = $derived.by(() => {
+		const bestModality = getBestModality();
+		return [
 		// Shared: What the learner profile reveals
 		{
 			field: 'Preferred Analogies',
@@ -291,7 +399,7 @@
 		{
 			field: 'Best Modality',
 			category: 'shared' as const,
-			value: `${preferences.modality_preferences.sort((a, b) => b.effectiveness - a.effectiveness)[0].type} (${Math.round(preferences.modality_preferences.sort((a, b) => b.effectiveness - a.effectiveness)[0].effectiveness * 100)}%)`,
+			value: `${bestModality.type} (${Math.round(bestModality.effectiveness * 100)}%)`,
 			reason: 'Determines content format selection'
 		},
 		{
@@ -325,6 +433,13 @@
 			value: `${path.completed_hours}/${path.estimated_total_hours}h`,
 			reason: 'Adjusts time estimates'
 		},
+		// Prosaic-influenced decisions
+		{
+			field: 'Prosaic Context',
+			category: 'influenced' as const,
+			value: `⚡${(prosaic.urgency ?? 0).toFixed(1)} 💊${(prosaic.health ?? 0).toFixed(1)} 🧩${(prosaic.cognitive ?? 0).toFixed(1)} 💭${(prosaic.affect ?? 0).toFixed(1)}`,
+			reason: 'Immediate state affecting adaptations'
+		},
 		// Withheld: Internal processing
 		{
 			field: 'Effectiveness Scores',
@@ -336,7 +451,8 @@
 			category: 'withheld' as const,
 			reason: 'Knowledge decay predictions internal'
 		}
-	]);
+	];
+	});
 
 	function handleTopicSelect(topicId: string) {
 		selectedTopic = topicId;
@@ -364,6 +480,15 @@
 
 			<!-- Right: Preferences & Adaptations -->
 			<div class="context-section">
+				<!-- Prosaic Context Panel - NEW -->
+				<ProsaicContextPanel
+					bind:prosaic
+					onchange={handleProsaicChange}
+					title="Your Current State"
+					showImpact={true}
+					impactSummary={prosaicImpact}
+				/>
+
 				<!-- Preset Loader -->
 				<PresetLoader
 					presets={learnerPresets}
@@ -403,7 +528,7 @@
 									</div>
 									<span class="mod-value">{Math.round(mod.effectiveness * 100)}%</span>
 									{#if !mod.current_availability}
-										<span class="mod-note" title={mod.notes}><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
+										<span class="mod-note" title={mod.notes}>⚠</span>
 									{/if}
 								</div>
 							{/each}

@@ -112,19 +112,19 @@
 
 		<div class="flags-grid">
 			<div class="flag-item" class:active={context.seeking_support}>
-				<span class="flag-icon"><i class="{context.seeking_support ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}" aria-hidden="true"></i></span>
+				<span class="flag-icon"><i class="fa-solid {context.seeking_support ? 'fa-check' : 'fa-circle'}" aria-hidden="true"></i></span>
 				<span class="flag-label">Seeking Support</span>
 			</div>
 			<div class="flag-item" class:active={context.professional_involved}>
-				<span class="flag-icon"><i class="{context.professional_involved ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}" aria-hidden="true"></i></span>
+				<span class="flag-icon"><i class="fa-solid {context.professional_involved ? 'fa-check' : 'fa-circle'}" aria-hidden="true"></i></span>
 				<span class="flag-label">Professional Involved</span>
 			</div>
 			<div class="flag-item caution" class:active={context.crisis_indicators}>
-				<span class="flag-icon"><i class="{context.crisis_indicators ? 'fa-solid fa-triangle-exclamation' : 'fa-regular fa-circle'}" aria-hidden="true"></i></span>
+				<span class="flag-icon"><i class="fa-solid {context.crisis_indicators ? 'fa-triangle-exclamation' : 'fa-circle'}" aria-hidden="true"></i></span>
 				<span class="flag-label">Crisis Indicators</span>
 			</div>
 			<div class="flag-item" class:active={context.escalation_consent}>
-				<span class="flag-icon"><i class="{context.escalation_consent ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}" aria-hidden="true"></i></span>
+				<span class="flag-icon"><i class="fa-solid {context.escalation_consent ? 'fa-check' : 'fa-circle'}" aria-hidden="true"></i></span>
 				<span class="flag-label">Escalation Consent</span>
 			</div>
 		</div>
@@ -349,16 +349,18 @@
 		align-items: flex-start;
 		gap: var(--space-sm);
 		padding: var(--space-md);
-		background: var(--color-bg-elevated);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color-bg-card);
+		border: 2px solid rgba(255, 255, 255, 0.25);
 		border-radius: var(--radius-md);
 		text-align: left;
 		cursor: pointer;
 		transition: all var(--transition-fast);
+		color: var(--color-text);
 	}
 
 	.adaptation-btn:hover:not(:disabled) {
 		border-color: var(--color-primary);
+		background: rgba(99, 102, 241, 0.15);
 	}
 
 	.adaptation-btn:focus-visible {
@@ -377,16 +379,23 @@
 	}
 
 	.adaptation-check {
-		width: 20px;
-		height: 20px;
+		width: 24px;
+		height: 24px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		background: var(--color-bg);
+		border: 2px solid rgba(255, 255, 255, 0.3);
 		border-radius: var(--radius-sm);
-		font-size: 0.75rem;
+		font-size: 1rem;
 		color: var(--color-success);
 		flex-shrink: 0;
+	}
+
+	.adaptation-btn.active .adaptation-check {
+		background: var(--color-success);
+		border-color: var(--color-success);
+		color: white;
 	}
 
 	.adaptation-text {
@@ -395,13 +404,15 @@
 	}
 
 	.adaptation-label {
-		font-size: 0.875rem;
-		font-weight: 500;
+		font-size: 1rem;
+		font-weight: 600;
+		color: #ffffff;
 	}
 
 	.adaptation-desc {
-		font-size: 0.75rem;
-		color: var(--color-text-muted);
+		font-size: 0.8125rem;
+		color: #c0c0c0;
+		margin-top: 4px;
 	}
 
 	.private-warning {

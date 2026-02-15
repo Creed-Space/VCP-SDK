@@ -322,7 +322,7 @@
 			<!-- Votes (shown after deliberation) -->
 			{#if showVotes}
 				<div class="votes-section">
-					<h3><i class="fa-solid fa-box-ballot" aria-hidden="true"></i> Final Vote: Integrated Park Design</h3>
+					<h3>🗳️ Final Vote: Integrated Park Design</h3>
 					<p class="vote-subtitle">Unanimous approval achieved through deliberation</p>
 					<div class="votes-grid">
 						{#each finalVotes as vote}
@@ -331,14 +331,14 @@
 								<div class="vote-header">
 									<span class="vote-avatar">{agent?.avatar}</span>
 									<span class="vote-name" style="color: {agent?.color}">{agent?.display_name}</span>
-									<span class="vote-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+									<span class="vote-icon">✓</span>
 								</div>
 								<div class="vote-public">
 									<span class="vote-label">Public Rationale</span>
 									<p>{vote.public_rationale}</p>
 								</div>
 								<div class="vote-private">
-									<span class="vote-label"><i class="fa-solid fa-lock" aria-hidden="true"></i> Private (never shared)</span>
+									<span class="vote-label">🔒 Private (never shared)</span>
 									<p>{vote.private_rationale}</p>
 								</div>
 							</div>
@@ -361,7 +361,7 @@
 			<!-- Learning Points -->
 			{#if showVotes}
 				<div class="learning-section">
-					<h3><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i> What VCP Protected</h3>
+					<h3>🎓 What VCP Protected</h3>
 					<ul class="learning-points">
 						{#each learningPoints as point}
 							<li>{point}</li>
@@ -583,7 +583,7 @@
 	}
 
 	.learning-points li::before {
-		content: '<i class="fa-solid fa-check" aria-hidden="true"></i>';
+		content: '✓';
 		position: absolute;
 		left: 0;
 		color: var(--color-success);

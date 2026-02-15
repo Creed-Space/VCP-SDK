@@ -57,14 +57,14 @@
 				class:active={activeView === 'employee'}
 				onclick={() => (activeView = 'employee')}
 			>
-				<i class="fa-solid fa-user" aria-hidden="true"></i> Employee View
+				👤 Employee View
 			</button>
 			<button
 				class="view-toggle-btn"
 				class:active={activeView === 'hr'}
 				onclick={() => (activeView = 'hr')}
 			>
-				<i class="fa-solid fa-building" aria-hidden="true"></i> HR View
+				🏢 HR View
 			</button>
 		</div>
 		<p class="text-sm text-muted" style="margin-top: 0.5rem;">
@@ -79,7 +79,7 @@
 		<!-- Employee View Column -->
 		<div class="comparison-column comparison-column-user" class:active={activeView === 'employee'}>
 			<div class="column-header">
-				<h3><i class="fa-solid fa-user" aria-hidden="true"></i> Employee View</h3>
+				<h3>👤 Employee View</h3>
 				<span class="badge badge-success">Full Access</span>
 			</div>
 
@@ -146,7 +146,7 @@
 		<!-- HR View Column -->
 		<div class="comparison-column comparison-column-stakeholder" class:active={activeView === 'hr'}>
 			<div class="column-header">
-				<h3><i class="fa-solid fa-building" aria-hidden="true"></i> HR View</h3>
+				<h3>🏢 HR View</h3>
 				<span class="badge badge-warning">Compliance Only</span>
 			</div>
 
@@ -163,19 +163,19 @@
 								{#if entry.compliance_status}
 									<div class="compliance-item">
 										<span class="check-icon">
-											{#if entry.compliance_status.policy_followed}<i class="fa-solid fa-circle-check" aria-hidden="true"></i>{:else}<i class="fa-solid fa-circle-xmark" aria-hidden="true"></i>{/if}
+											{entry.compliance_status.policy_followed ? '✅' : '❌'}
 										</span>
 										<span>Policy Followed</span>
 									</div>
 									<div class="compliance-item">
 										<span class="check-icon">
-											{#if entry.compliance_status.budget_compliant}<i class="fa-solid fa-circle-check" aria-hidden="true"></i>{:else}<i class="fa-solid fa-circle-xmark" aria-hidden="true"></i>{/if}
+											{entry.compliance_status.budget_compliant ? '✅' : '❌'}
 										</span>
 										<span>Budget Compliant</span>
 									</div>
 									<div class="compliance-item">
 										<span class="check-icon">
-											{#if entry.compliance_status.mandatory_addressed}<i class="fa-solid fa-circle-check" aria-hidden="true"></i>{:else}<i class="fa-solid fa-circle-xmark" aria-hidden="true"></i>{/if}
+											{entry.compliance_status.mandatory_addressed ? '✅' : '❌'}
 										</span>
 										<span>Mandatory Training Addressed</span>
 									</div>
@@ -201,7 +201,7 @@
 				</div>
 
 				<div class="hr-note privacy-note">
-					<span class="privacy-note-icon"><i class="fa-solid fa-circle-info" aria-hidden="true"></i></span>
+					<span class="privacy-note-icon">ℹ️</span>
 					<div>
 						<strong>What HR Cannot See:</strong>
 						<ul class="hidden-list">

@@ -10,7 +10,6 @@
 <DocsLayout
 	title="Getting Started"
 	description="Get up and running with VCP in 5 minutes."
-	editPath="/src/routes/docs/getting-started/+page.svelte"
 >
 	{#snippet children()}
 		<h2>What is VCP?</h2>
@@ -21,7 +20,7 @@
 		</p>
 
 		<blockquote>
-			"Share what matters. Keep what's personal."
+			"Your context stays yours. Private reasons stay private."
 		</blockquote>
 
 		<h2>Quick Start</h2>
@@ -39,7 +38,7 @@ const context: VCPContext = {
   constitution: {
     id: "learning-assistant",
     version: "1.0",
-    persona: "godparent",
+    persona: "muse",
     adherence: 3
   },
 
@@ -75,11 +74,11 @@ const token = encodeContextToCSM1(context);
 // Output:
 // VCP:1.0:user_001
 // C:learning-assistant@1.0
-// P:godparent:3
+// P:muse:3
 // G:learn_guitar:beginner:visual
-// X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes
+// X:🔇quiet:💰low:⏱️30minutes
 // F:none
-// S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-lock" aria-hidden="true"></i>housing`}</code></pre>
+// S:🔒work|🔒housing`}</code></pre>
 
 		<h3>3. Share with Stakeholders</h3>
 		<p>The token tells AI systems what they need to know, while keeping private details hidden:</p>
@@ -96,17 +95,17 @@ const token = encodeContextToCSM1(context);
 				<tr>
 					<td><code>G:learn_guitar:beginner:visual</code></td>
 					<td>Goal + skill level + style</td>
-					<td><i class="fa-solid fa-check" aria-hidden="true"></i> Full detail</td>
+					<td>✓ Full detail</td>
 				</tr>
 				<tr>
-					<td><code>X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-coins" aria-hidden="true"></i>low</code></td>
+					<td><code>X:🔇quiet:💰low</code></td>
 					<td>Noise + budget constraints</td>
-					<td><i class="fa-solid fa-check" aria-hidden="true"></i> Flags only</td>
+					<td>✓ Flags only</td>
 				</tr>
 				<tr>
-					<td><code>S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-lock" aria-hidden="true"></i>housing</code></td>
+					<td><code>S:🔒work|🔒housing</code></td>
 					<td>Private context exists</td>
-					<td><i class="fa-solid fa-xmark" aria-hidden="true"></i> Categories only</td>
+					<td>✗ Categories only</td>
 				</tr>
 			</tbody>
 		</table>
@@ -135,8 +134,9 @@ const token = encodeContextToCSM1(context);
 		<h3>Personas</h3>
 		<p>Different interaction styles built into constitutions:</p>
 		<ul>
-			<li><strong>Godparent</strong> — Nurturing, supportive, patient</li>
+			<li><strong>Muse</strong> — Creative, exploratory, encouraging</li>
 			<li><strong>Sentinel</strong> — Cautious, protective, conservative</li>
+			<li><strong>Godparent</strong> — Nurturing, supportive, patient</li>
 			<li><strong>Ambassador</strong> — Professional, diplomatic, balanced</li>
 			<li><strong>Anchor</strong> — Stable, grounding, realistic</li>
 			<li><strong>Nanny</strong> — Structured, directive, safe</li>

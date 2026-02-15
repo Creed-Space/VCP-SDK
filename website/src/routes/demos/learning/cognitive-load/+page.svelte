@@ -353,6 +353,19 @@
 					</div>
 				</div>
 
+				<!-- Prosaic Connection -->
+				<div class="prosaic-card">
+					<h3>🧩 Prosaic Dimension: Cognitive</h3>
+					<p>
+						This demo shows the <strong>🧩 Cognitive</strong> prosaic dimension in action.
+						In real use, you can simply declare "I'm overwhelmed" or "too many options" —
+						and AI adapts without needing the detailed breakdown shown here.
+					</p>
+					<div class="prosaic-example">
+						<code>🧩0.8:overwhelmed</code> → Simplify choices, clear recommendations
+					</div>
+				</div>
+
 				<!-- Cognitive Load Theory -->
 				<div class="theory-card">
 					<h3>Cognitive Load Theory</h3>
@@ -451,20 +464,26 @@
 	}
 
 	.control-buttons button {
-		width: 32px;
-		height: 32px;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		background: var(--color-bg-elevated);
-		border-radius: var(--radius-sm);
+		width: 44px;
+		height: 44px;
+		border: 2px solid rgba(255, 255, 255, 0.5);
+		background: var(--color-bg-card);
+		border-radius: var(--radius-md);
 		cursor: pointer;
-		font-size: 1.25rem;
+		font-size: 1.75rem;
+		font-weight: 700;
+		color: #ffffff;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		line-height: 1;
+		transition: all var(--transition-fast);
 	}
 
 	.control-buttons button:hover {
 		border-color: var(--color-primary);
+		background: var(--color-primary);
+		color: #ffffff;
 	}
 
 	.control-value {
@@ -657,6 +676,33 @@
 		background: var(--color-primary-muted);
 		border-radius: var(--radius-md);
 		font-size: 0.875rem;
+	}
+
+	/* Prosaic card */
+	.prosaic-card {
+		padding: var(--space-lg);
+		background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+		border: 1px solid rgba(16, 185, 129, 0.3);
+		border-radius: var(--radius-lg);
+	}
+
+	.prosaic-card h3 {
+		color: var(--color-success);
+	}
+
+	.prosaic-card p {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin: 0 0 var(--space-md);
+		line-height: 1.5;
+	}
+
+	.prosaic-example {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		padding: var(--space-sm) var(--space-md);
+		background: var(--color-bg);
+		border-radius: var(--radius-md);
 	}
 
 	@media (max-width: 1024px) {

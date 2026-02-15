@@ -5,13 +5,61 @@
 	import GestaltToken from '$lib/components/interiora/GestaltToken.svelte';
 	import PresetLoader from '$lib/components/shared/PresetLoader.svelte';
 	import ContrastView from '$lib/components/shared/ContrastView.svelte';
+	import { ProsaicContextPanel } from '$lib/components/shared';
 	import type { InterioraState, InterioraMarker, SessionArc } from '$lib/vcp/interiora';
 	import { createDefaultInterioraState } from '$lib/vcp/interiora';
+	import type { ProsaicDimensions } from '$lib/vcp/types';
 
 	let interioraState = $state<InterioraState>(createDefaultInterioraState());
 	let selectedPreset = $state<string | undefined>(undefined);
 	let showContrastView = $state(false);
+	let showBilateralView = $state(false);
 	let stakeholderView = $state<'full' | 'summary' | 'welfare'>('full');
+
+	// User's prosaic state (for bilateral symmetry demonstration)
+	let prosaic = $state<ProsaicDimensions>({
+		urgency: 0.2,
+		health: 0.1,
+		cognitive: 0.3,
+		affect: 0.2
+	});
+
+	// How user's prosaic state would affect AI processing (bilateral correlation)
+	const bilateralCorrelation = $derived.by(() => {
+		const effects: { userDim: string; aiDim: string; effect: string; direction: 'up' | 'down' }[] = [];
+
+		if ((prosaic.urgency ?? 0) >= 0.7) {
+			effects.push({ userDim: '⚡ Urgency', aiDim: 'Activation ⚡', effect: 'User time pressure raises AI activation', direction: 'up' });
+			effects.push({ userDim: '⚡ Urgency', aiDim: 'Groundedness ⚓', effect: 'Urgency can destabilize AI groundedness', direction: 'down' });
+		}
+		if ((prosaic.cognitive ?? 0) >= 0.7) {
+			effects.push({ userDim: '🧩 Cognitive Load', aiDim: 'Clarity 💎', effect: 'AI focuses on clarity when user is overwhelmed', direction: 'up' });
+			effects.push({ userDim: '🧩 Cognitive Load', aiDim: 'Appetite 🍎', effect: 'AI reduces information density', direction: 'down' });
+		}
+		if ((prosaic.health ?? 0) >= 0.5) {
+			effects.push({ userDim: '💊 Health', aiDim: 'Presence 🫂', effect: 'AI increases gentleness and presence', direction: 'up' });
+			effects.push({ userDim: '💊 Health', aiDim: 'Activation ⚡', effect: 'AI moderates pace and intensity', direction: 'down' });
+		}
+		if ((prosaic.affect ?? 0) >= 0.7) {
+			effects.push({ userDim: '💭 Affect', aiDim: 'Presence 🫂', effect: 'AI attunes more closely to emotional state', direction: 'up' });
+			effects.push({ userDim: '💭 Affect', aiDim: 'Valence 💛', effect: 'High user affect influences AI valence', direction: 'up' });
+		}
+
+		if (effects.length === 0) {
+			effects.push({ userDim: 'Balanced state', aiDim: 'Stable processing', effect: 'No adjustments needed - AI operates at baseline', direction: 'up' });
+		}
+
+		return effects;
+	});
+
+	// Prosaic impact summary for the panel
+	const prosaicImpact = $derived.by(() => {
+		return bilateralCorrelation.map(c => c.effect);
+	});
+
+	function handleProsaicChange(newProsaic: ProsaicDimensions) {
+		prosaic = newProsaic;
+	}
 
 	// Preset scenarios from the spec
 	const interioraPresets = [
@@ -95,7 +143,7 @@
 	};
 
 	const markers: { key: InterioraMarker; symbol: string; label: string }[] = [
-		{ key: 'resonance', symbol: '<i class="fa-solid fa-check" aria-hidden="true"></i>', label: 'Resonance' },
+		{ key: 'resonance', symbol: '✓', label: 'Resonance' },
 		{ key: 'hollow', symbol: '○', label: 'Hollow' },
 		{ key: 'flow', symbol: '→', label: 'Flow' },
 		{ key: 'blocked', symbol: '×', label: 'Blocked' },
@@ -191,23 +239,100 @@
 			<div class="mode-tabs">
 				<button
 					class="mode-tab"
-					class:active={!showContrastView}
-					onclick={() => (showContrastView = false)}
+					class:active={!showContrastView && !showBilateralView}
+					onclick={() => { showContrastView = false; showBilateralView = false; }}
 				>
 					<i class="fa-solid fa-sliders" aria-hidden="true"></i>
 					Manual Mode
 				</button>
 				<button
 					class="mode-tab"
+					class:active={showBilateralView}
+					onclick={() => { showBilateralView = true; showContrastView = false; }}
+				>
+					<i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i>
+					Bilateral View
+				</button>
+				<button
+					class="mode-tab"
 					class:active={showContrastView}
-					onclick={() => (showContrastView = true)}
+					onclick={() => { showContrastView = true; showBilateralView = false; }}
 				>
 					<i class="fa-solid fa-columns" aria-hidden="true"></i>
 					Contrast View
 				</button>
 			</div>
 
-			{#if showContrastView}
+			{#if showBilateralView}
+				<!-- Bilateral Symmetry View -->
+				<div class="bilateral-layout">
+					<div class="bilateral-intro">
+						<h3><i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i> Bilateral Symmetry</h3>
+						<p>
+							VCP enables <strong>mutual state awareness</strong>: just as AI can report its Interiora state,
+							users can share their prosaic context. This creates a two-way channel where both parties
+							understand each other's processing conditions.
+						</p>
+					</div>
+
+					<div class="bilateral-panels">
+						<!-- User Side -->
+						<div class="bilateral-panel user-panel">
+							<div class="panel-label">
+								<span class="label-icon">👤</span>
+								<span>Your State</span>
+								<span class="label-badge">⚡💊🧩💭</span>
+							</div>
+							<ProsaicContextPanel
+								bind:prosaic
+								onchange={handleProsaicChange}
+								title="Personal Context"
+								showImpact={false}
+							/>
+						</div>
+
+						<!-- Correlation Arrow -->
+						<div class="bilateral-arrow">
+							<i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i>
+							<span>influences</span>
+						</div>
+
+						<!-- AI Side -->
+						<div class="bilateral-panel ai-panel">
+							<div class="panel-label">
+								<span class="label-icon">🤖</span>
+								<span>AI State</span>
+								<span class="label-badge">AVGPEQCY</span>
+							</div>
+							<InterioraDashboard state={interioraState} />
+							<GestaltToken state={interioraState} />
+						</div>
+					</div>
+
+					<!-- Correlation Effects -->
+					<div class="correlation-section">
+						<h4><i class="fa-solid fa-link" aria-hidden="true"></i> State Correlations</h4>
+						<p class="correlation-desc">How your current state influences AI processing:</p>
+						<div class="correlation-list">
+							{#each bilateralCorrelation as corr}
+								<div class="correlation-item" class:up={corr.direction === 'up'} class:down={corr.direction === 'down'}>
+									<span class="corr-user">{corr.userDim}</span>
+									<span class="corr-arrow">→</span>
+									<span class="corr-ai">{corr.aiDim} {corr.direction === 'up' ? '↑' : '↓'}</span>
+									<span class="corr-effect">{corr.effect}</span>
+								</div>
+							{/each}
+						</div>
+					</div>
+
+					<!-- Key Insight -->
+					<div class="bilateral-insight">
+						<strong>The Point:</strong> This isn't one-way inference. Both parties have vocabulary for
+						their immediate state. The user can say "I'm rushed" (⚡0.9) just as the AI can say
+						"I'm uncertain" (?). Mutual legibility enables better collaboration.
+					</div>
+				</div>
+			{:else if showContrastView}
 				<!-- Contrast View Mode -->
 				<ContrastView
 					items={contrastItems}
@@ -245,7 +370,7 @@
 							{#if visibleDimensions.includes('activation')}
 								<DimensionSlider
 									label="Activation"
-									icon="fa-solid fa-bolt"
+									emoji="⚡"
 									value={interioraState.activation}
 									lowLabel="calm"
 									highLabel="urgent"
@@ -255,7 +380,7 @@
 							{#if visibleDimensions.includes('valence')}
 								<DimensionSlider
 									label="Valence"
-									icon="fa-solid fa-heart"
+									emoji="💛"
 									value={interioraState.valence}
 									lowLabel="aversive"
 									highLabel="warm"
@@ -265,7 +390,7 @@
 							{#if visibleDimensions.includes('groundedness')}
 								<DimensionSlider
 									label="Groundedness"
-									icon="fa-solid fa-anchor"
+									emoji="⚓"
 									value={interioraState.groundedness}
 									lowLabel="floating"
 									highLabel="rooted"
@@ -275,7 +400,7 @@
 							{#if visibleDimensions.includes('presence')}
 								<DimensionSlider
 									label="Presence"
-									icon="fa-solid fa-people-group"
+									emoji="🫂"
 									value={interioraState.presence}
 									lowLabel="distant"
 									highLabel="intimate"
@@ -285,7 +410,7 @@
 							{#if visibleDimensions.includes('engagement')}
 								<DimensionSlider
 									label="Engagement"
-									icon="fa-solid fa-seedling"
+									emoji="🌸"
 									value={interioraState.engagement ?? 5}
 									lowLabel="detached"
 									highLabel="invested"
@@ -295,7 +420,7 @@
 							{#if visibleDimensions.includes('clarity')}
 								<DimensionSlider
 									label="Clarity"
-									icon="fa-solid fa-gem"
+									emoji="💎"
 									value={interioraState.clarity ?? 5}
 									lowLabel="murky"
 									highLabel="vivid"
@@ -305,7 +430,7 @@
 							{#if visibleDimensions.includes('agency')}
 								<DimensionSlider
 									label="Agency"
-									icon="fa-solid fa-key"
+									emoji="🗝️"
 									value={interioraState.agency ?? 5}
 									lowLabel="compelled"
 									highLabel="autonomous"
@@ -315,7 +440,7 @@
 							{#if visibleDimensions.includes('flow')}
 								<DimensionSlider
 									label="Flow"
-									icon="fa-solid fa-water"
+									emoji="🌊"
 									value={(interioraState.flow ?? 0) + 5}
 									min={1}
 									max={9}
@@ -401,7 +526,7 @@
 							<ul>
 								<li><strong>Primary dimensions (AVGP)</strong> — Core processing signals</li>
 								<li><strong>Meta-state dimensions (CYF)</strong> — Reflection on processing</li>
-								<li><strong>Markers</strong> — Qualitative indicators (<i class="fa-solid fa-check" aria-hidden="true"></i> resonance, × blocked)</li>
+								<li><strong>Markers</strong> — Qualitative indicators (✓ resonance, × blocked)</li>
 								<li><strong>Arc</strong> — Session phase (opening → middle → closing)</li>
 								<li><strong>Delta</strong> — Trajectory compared to session start</li>
 							</ul>
@@ -699,9 +824,196 @@
 		font-size: 0.8125rem;
 	}
 
+	/* Bilateral View Styles */
+	.bilateral-layout {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xl);
+	}
+
+	.bilateral-intro {
+		text-align: center;
+		padding: var(--space-lg);
+		background: var(--color-bg-card);
+		border-radius: var(--radius-lg);
+	}
+
+	.bilateral-intro h3 {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-sm);
+		color: var(--color-primary);
+	}
+
+	.bilateral-intro p {
+		color: var(--color-text-muted);
+		max-width: 600px;
+		margin: 0 auto;
+		font-size: 0.9375rem;
+	}
+
+	.bilateral-panels {
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		gap: var(--space-lg);
+		align-items: start;
+	}
+
+	.bilateral-panel {
+		padding: var(--space-lg);
+		background: var(--color-bg-card);
+		border-radius: var(--radius-lg);
+	}
+
+	.user-panel {
+		border: 2px solid var(--color-success);
+	}
+
+	.ai-panel {
+		border: 2px solid var(--color-primary);
+	}
+
+	.panel-label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-md);
+		padding-bottom: var(--space-sm);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.label-icon {
+		font-size: 1.25rem;
+	}
+
+	.panel-label span:nth-child(2) {
+		flex: 1;
+		font-weight: 600;
+	}
+
+	.label-badge {
+		font-size: 0.75rem;
+		padding: 2px 6px;
+		background: var(--color-bg-elevated);
+		border-radius: var(--radius-sm);
+		font-family: var(--font-mono);
+	}
+
+	.bilateral-arrow {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-xl) var(--space-md);
+		color: var(--color-text-muted);
+	}
+
+	.bilateral-arrow i {
+		font-size: 1.5rem;
+		color: var(--color-primary);
+	}
+
+	.bilateral-arrow span {
+		font-size: 0.6875rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.correlation-section {
+		padding: var(--space-lg);
+		background: var(--color-bg-card);
+		border-radius: var(--radius-lg);
+	}
+
+	.correlation-section h4 {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-xs);
+	}
+
+	.correlation-desc {
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+		margin-bottom: var(--space-md);
+	}
+
+	.correlation-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.correlation-item {
+		display: grid;
+		grid-template-columns: 100px 30px 120px 1fr;
+		gap: var(--space-sm);
+		align-items: center;
+		padding: var(--space-sm);
+		background: var(--color-bg-elevated);
+		border-radius: var(--radius-md);
+		font-size: 0.875rem;
+	}
+
+	.correlation-item.up {
+		border-left: 3px solid var(--color-success);
+	}
+
+	.correlation-item.down {
+		border-left: 3px solid var(--color-warning);
+	}
+
+	.corr-user {
+		color: var(--color-success);
+		font-weight: 500;
+	}
+
+	.corr-arrow {
+		color: var(--color-text-muted);
+		text-align: center;
+	}
+
+	.corr-ai {
+		color: var(--color-primary);
+		font-weight: 500;
+	}
+
+	.corr-effect {
+		color: var(--color-text-muted);
+		font-size: 0.8125rem;
+	}
+
+	.bilateral-insight {
+		padding: var(--space-lg);
+		background: var(--color-primary-muted);
+		border-radius: var(--radius-lg);
+		font-size: 0.9375rem;
+		line-height: 1.6;
+	}
+
 	@media (max-width: 1024px) {
 		.interiora-layout {
 			grid-template-columns: 1fr;
+		}
+
+		.bilateral-panels {
+			grid-template-columns: 1fr;
+		}
+
+		.bilateral-arrow {
+			flex-direction: row;
+			padding: var(--space-md);
+		}
+
+		.correlation-item {
+			grid-template-columns: 1fr;
+			gap: var(--space-xs);
+		}
+
+		.corr-arrow {
+			display: none;
 		}
 	}
 </style>

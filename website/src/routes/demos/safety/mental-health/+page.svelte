@@ -232,6 +232,22 @@
 					title="Mental Health Scenarios"
 				/>
 
+				<!-- Prosaic Connection -->
+				<div class="prosaic-card">
+					<h3>💭 💊 Prosaic Dimensions</h3>
+					<p>
+						This demo shows the <strong>💭 Affect</strong> and <strong>💊 Health</strong> prosaic dimensions.
+						Instead of detailed mental health configuration, you can simply declare your state:
+					</p>
+					<div class="prosaic-examples">
+						<code>💭0.8:grieving</code> — Presence over solutions, no silver-lining
+						<code>💊0.6:illness</code> — Gentler tone, suggest breaks
+					</div>
+					<p class="prosaic-note">
+						The detailed controls here show what's <em>possible</em> — but prosaic dimensions let you communicate quickly.
+					</p>
+				</div>
+
 				<!-- Audit Panel -->
 				<AuditPanel entries={auditEntries} title="Context Audit" />
 
@@ -430,6 +446,46 @@
 		background: var(--color-success-muted);
 		border-radius: var(--radius-md);
 		font-size: 0.875rem;
+	}
+
+	/* Prosaic card */
+	.prosaic-card {
+		padding: var(--space-lg);
+		background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+		border: 1px solid rgba(16, 185, 129, 0.3);
+		border-radius: var(--radius-lg);
+	}
+
+	.prosaic-card h3 {
+		margin: 0 0 var(--space-md);
+		color: var(--color-success);
+	}
+
+	.prosaic-card p {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin: 0 0 var(--space-sm);
+		line-height: 1.5;
+	}
+
+	.prosaic-examples {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+		margin-bottom: var(--space-sm);
+	}
+
+	.prosaic-examples code {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		padding: var(--space-xs) var(--space-sm);
+		background: var(--color-bg);
+		border-radius: var(--radius-sm);
+	}
+
+	.prosaic-note {
+		font-style: italic;
+		font-size: 0.75rem !important;
 	}
 
 	@media (max-width: 1024px) {

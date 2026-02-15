@@ -14,30 +14,29 @@
 	let { state, compact = false, showMarkers = true, showArc = true }: Props = $props();
 
 	const dimensions = [
-		{ key: 'activation', icon: 'fa-solid fa-bolt', label: 'Activation' },
-		{ key: 'valence', icon: 'fa-solid fa-heart', label: 'Valence' },
-		{ key: 'groundedness', icon: 'fa-solid fa-anchor', label: 'Groundedness' },
-		{ key: 'presence', icon: 'fa-solid fa-people-group', label: 'Presence' },
-		{ key: 'engagement', icon: 'fa-solid fa-seedling', label: 'Engagement' },
-		{ key: 'appetite', icon: 'fa-solid fa-apple-whole', label: 'Appetite' },
-		{ key: 'clarity', icon: 'fa-solid fa-gem', label: 'Clarity' },
-		{ key: 'agency', icon: 'fa-solid fa-key', label: 'Agency' }
+		{ key: 'activation', emoji: '⚡', label: 'Activation' },
+		{ key: 'valence', emoji: '💛', label: 'Valence' },
+		{ key: 'groundedness', emoji: '⚓', label: 'Groundedness' },
+		{ key: 'presence', emoji: '🫂', label: 'Presence' },
+		{ key: 'engagement', emoji: '🌸', label: 'Engagement' },
+		{ key: 'appetite', emoji: '🍎', label: 'Appetite' },
+		{ key: 'clarity', emoji: '💎', label: 'Clarity' },
+		{ key: 'agency', emoji: '🗝️', label: 'Agency' }
 	] as const;
 
-	// Marker symbols - using text/unicode to avoid @html XSS risks
-	const markerSymbols: Record<InterioraMarker, { type: 'icon' | 'text'; value: string }> = {
-		resonance: { type: 'icon', value: 'fa-solid fa-check' },
-		hollow: { type: 'text', value: '○' },
-		na: { type: 'text', value: '∅' },
-		flow: { type: 'text', value: '→' },
-		blocked: { type: 'text', value: '×' },
-		dancing: { type: 'text', value: '∿' },
-		reaching: { type: 'text', value: '>' },
-		resistance: { type: 'text', value: '<' },
-		urgent: { type: 'text', value: '!' },
-		uncertain: { type: 'text', value: '?' },
-		significant: { type: 'text', value: '*' },
-		grateful: { type: 'text', value: '+' }
+	const markerSymbols: Record<InterioraMarker, string> = {
+		resonance: '✓',
+		hollow: '○',
+		na: '∅',
+		flow: '→',
+		blocked: '×',
+		dancing: '∿',
+		reaching: '>',
+		resistance: '<',
+		urgent: '!',
+		uncertain: '?',
+		significant: '*',
+		grateful: '+'
 	};
 
 	const arcSymbols: Record<SessionArc, string> = {
@@ -46,10 +45,10 @@
 		closing: '◈'
 	};
 
-	function getStarCounts(value: number | undefined): { filled: number; empty: number } {
-		if (value === undefined) return { filled: 0, empty: 0 };
+	function getStars(value: number | undefined): string {
+		if (value === undefined) return '—';
 		const filled = Math.round((value / 9) * 5);
-		return { filled, empty: 5 - filled };
+		return '★'.repeat(filled) + '☆'.repeat(5 - filled);
 	}
 
 	function getFlowIndicator(flow: number | undefined): string {
@@ -87,13 +86,7 @@
 		{/if}
 		{#if showMarkers && state.markers && state.markers.length > 0}
 			<span class="markers">
-				{#each state.markers as marker}
-					{#if markerSymbols[marker].type === 'icon'}
-						<i class={markerSymbols[marker].value} aria-hidden="true"></i>
-					{:else}
-						<span>{markerSymbols[marker].value}</span>
-					{/if}
-				{/each}
+				{state.markers.map((m) => markerSymbols[m]).join('')}
 			</span>
 		{/if}
 	</div>
@@ -101,18 +94,10 @@
 	<div class="dimensions-grid">
 		{#each dimensions as dim}
 			{@const value = state[dim.key as keyof InterioraState] as number | undefined}
-			{@const stars = getStarCounts(value)}
 			{#if value !== undefined}
 				<div class="dimension">
-					<span class="dim-icon"><i class={dim.icon} aria-hidden="true"></i></span>
-					<span class="dim-stars" role="img" aria-label="{stars.filled} of 5 stars">
-						{#each Array(stars.filled) as _}
-							<i class="fa-solid fa-star" aria-hidden="true"></i>
-						{/each}
-						{#each Array(stars.empty) as _}
-							<i class="fa-regular fa-star" aria-hidden="true"></i>
-						{/each}
-					</span>
+					<span class="dim-emoji">{dim.emoji}</span>
+					<span class="dim-stars">{getStars(value)}</span>
 				</div>
 			{/if}
 		{/each}

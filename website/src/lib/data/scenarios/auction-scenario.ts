@@ -12,7 +12,7 @@ export const auctionAgents: AgentIdentity[] = [
 		agent_id: 'collector_1',
 		display_name: 'Alexandra',
 		role: 'bidder',
-		avatar: '<i class="fa-solid fa-palette" aria-hidden="true"></i>',
+		avatar: '🎨',
 		color: '#e74c3c',
 		constitution: {
 			id: 'art-collector',
@@ -25,7 +25,7 @@ export const auctionAgents: AgentIdentity[] = [
 		agent_id: 'collector_2',
 		display_name: 'Benjamin',
 		role: 'bidder',
-		avatar: '<i class="fa-solid fa-landmark" aria-hidden="true"></i>',
+		avatar: '🏛️',
 		color: '#3498db',
 		constitution: {
 			id: 'museum-curator',
@@ -38,7 +38,7 @@ export const auctionAgents: AgentIdentity[] = [
 		agent_id: 'collector_3',
 		display_name: 'Carla',
 		role: 'bidder',
-		avatar: '<i class="fa-solid fa-briefcase" aria-hidden="true"></i>',
+		avatar: '💼',
 		color: '#2ecc71',
 		constitution: {
 			id: 'investment-advisor',
@@ -51,7 +51,7 @@ export const auctionAgents: AgentIdentity[] = [
 		agent_id: 'auctioneer',
 		display_name: 'David',
 		role: 'auctioneer',
-		avatar: '<i class="fa-solid fa-gavel" aria-hidden="true"></i>',
+		avatar: '🔨',
 		color: '#9b59b6',
 		constitution: {
 			id: 'fair-auction',

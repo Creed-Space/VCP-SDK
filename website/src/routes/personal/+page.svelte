@@ -24,7 +24,7 @@
 
 <div class="container-narrow">
 	<div class="breadcrumb">
-		<a href="/">← Back to demos</a>
+		<a href="/demos"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All Demos</a>
 	</div>
 
 	<header class="demo-header">
@@ -33,15 +33,17 @@
 		</div>
 		<h1>Meet Gentian</h1>
 		<p class="demo-intro">
-			Factory worker learning guitar for stress relief.
-			Has constraints (shift work, apartment living) that should stay private from the community.
+			Gentian works factory shifts in Barcelona and is learning guitar for stress relief.
+			He practices across multiple platforms — JustinGuitar for lessons, Yousician for exercises,
+			and a local community challenge. Each platform adapts to his constraints (shift work schedule,
+			thin-walled apartment, limited budget) without knowing the reasons behind them.
 		</p>
 	</header>
 
 	{#if ctx}
 		<section class="profile-card card">
 			<div class="profile-header">
-				<div class="profile-avatar"><i class="fa-solid fa-guitar" aria-hidden="true"></i></div>
+				<div class="profile-avatar">🎸</div>
 				<div class="profile-info">
 					<h2>{ctx.public_profile.display_name}</h2>
 					<p class="text-muted">{ctx.public_profile.goal?.replace(/_/g, ' ')}</p>
@@ -79,16 +81,23 @@
 			</div>
 
 			<div class="constitution-info">
-				<span class="text-subtle text-sm">Active Constitution:</span>
+				<span class="text-subtle text-sm">
+					Active <span class="has-tooltip" data-tooltip="A constitution defines values and behavioral guidelines that shape how AI interacts with you">Constitution</span>:
+				</span>
 				<span class="badge badge-primary">{ctx.constitution.id}@{ctx.constitution.version}</span>
+				<span class="constitution-persona">
+					<span class="has-tooltip" data-tooltip="Muse: AI persona focused on creative growth, inspiration, and gentle encouragement">
+						<i class="fa-solid fa-palette" aria-hidden="true"></i> Muse
+					</span>
+				</span>
 			</div>
 		</section>
 
 		<section class="constraints-preview card">
 			<h3>Private Context (What VCP Knows)</h3>
-			<p class="text-muted text-sm" style="margin-bottom: 1rem;">
+			<p class="text-muted text-sm constraints-intro">
 				These constraints affect recommendations and community participation,
-				but are NEVER exposed to platforms or other users.
+				but are <strong>never</strong> exposed to platforms or other users.
 			</p>
 
 			<div class="constraint-flags">
@@ -129,10 +138,10 @@
 				{/if}
 			</div>
 
-			<div class="privacy-note" style="margin-top: 1rem;">
-				<span class="privacy-note-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
+			<div class="privacy-note">
+				<span class="privacy-note-icon">🔒</span>
 				<span>
-					Community members see "18/21 (3 adjusted)" - they don't know WHY days were adjusted.
+					Community members see "18/21 (3 adjusted)" — they don't know <em>why</em> days were adjusted.
 					Gentian's work schedule and living situation stay private.
 				</span>
 			</div>
@@ -154,29 +163,41 @@
 					<span class="stat-label">Current Streak</span>
 				</div>
 			</div>
-			<div class="progress" style="margin-top: 1rem;">
+			<div class="progress challenge-progress">
 				<div
 					class="progress-bar progress-bar-success"
 					style="width: {(progress.days_completed / progress.total_days) * 100}%"
 				></div>
 			</div>
-			<p class="text-sm text-muted text-center" style="margin-top: 0.5rem;">
+			<p class="text-sm text-muted text-center challenge-rank">
 				{progress.days_completed}/{progress.total_days} days • Rank #3 in community
 			</p>
 		</section>
 
 		<section class="demo-paths">
 			<h2>Choose Your Path</h2>
-			<div class="grid grid-2 gap-lg">
+			<div class="grid grid-3 gap-md">
 				<a href="/personal/platforms/justinguitar" class="card card-hover path-card">
-					<div class="path-icon"><i class="fa-solid fa-mobile" aria-hidden="true"></i></div>
+					<div class="path-icon"><i class="fa-solid fa-mobile-screen" aria-hidden="true"></i></div>
 					<h3>Portability Demo</h3>
 					<p class="text-muted text-sm">
-						See how the same profile works across JustinGuitar and Yousician -
+						Same profile across JustinGuitar and Yousician —
 						configure once, use everywhere.
 					</p>
-					<span class="btn btn-secondary" style="margin-top: auto;">
-						Try Platforms →
+					<span class="btn btn-secondary btn-sm path-btn">
+						Try Platforms <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+					</span>
+				</a>
+
+				<a href="/personal/platforms/musicshop" class="card card-hover path-card path-card-shop">
+					<div class="path-icon"><i class="fa-solid fa-store" aria-hidden="true"></i></div>
+					<h3>Physical Retail</h3>
+					<p class="text-muted text-sm">
+						VCP at a Barcelona guitar shop —
+						scan QR code, get personalized gear recs.
+					</p>
+					<span class="btn btn-secondary btn-sm path-btn">
+						Visit Shop <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
 					</span>
 				</a>
 
@@ -184,14 +205,29 @@
 					<div class="path-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
 					<h3>Privacy Demo</h3>
 					<p class="text-muted text-sm">
-						See how community challenges work with adjusted days -
+						Community challenges with adjusted days —
 						participate without exposing personal life.
 					</p>
-					<span class="btn btn-secondary" style="margin-top: auto;">
-						View Community →
+					<span class="btn btn-secondary btn-sm path-btn">
+						View Community <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
 					</span>
 				</a>
 			</div>
+
+			<!-- Coach & Audit Links -->
+			<div class="extra-links">
+				<a href="/personal/coach" class="btn btn-ghost">
+					<i class="fa-solid fa-user-tie" aria-hidden="true"></i>
+					Connect with Coach
+				</a>
+				<a href="/personal/audit" class="btn btn-ghost">
+					<i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
+					Unified Audit Trail
+				</a>
+			</div>
+			<p class="text-xs text-muted text-center extra-note">
+				See tiered data sharing with a coach, or view all platform data flow
+			</p>
 		</section>
 	{:else}
 		<div class="loading">Loading profile...</div>
@@ -199,16 +235,6 @@
 </div>
 
 <style>
-	.breadcrumb {
-		margin-bottom: var(--space-lg);
-	}
-
-	.breadcrumb a {
-		color: var(--color-text-muted);
-		text-decoration: none;
-		font-size: 0.875rem;
-	}
-
 	.demo-header {
 		text-align: center;
 		margin-bottom: var(--space-xl);
@@ -220,8 +246,9 @@
 
 	.demo-intro {
 		color: var(--color-text-muted);
-		max-width: 500px;
+		max-width: 600px;
 		margin: var(--space-md) auto 0;
+		line-height: 1.6;
 	}
 
 	.profile-card {
@@ -302,10 +329,20 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-sm);
+		flex-wrap: wrap;
+	}
+
+	.constitution-persona {
+		font-size: 0.75rem;
+		color: var(--color-primary);
 	}
 
 	.constraints-preview {
 		margin-bottom: var(--space-lg);
+	}
+
+	.constraints-intro {
+		margin-bottom: var(--space-md);
 	}
 
 	.constraint-flags {
@@ -340,8 +377,18 @@
 		margin-left: auto;
 	}
 
+	.privacy-note {
+		margin-top: var(--space-md);
+	}
+
 	.challenge-preview {
 		margin-bottom: var(--space-xl);
+	}
+
+	.challenge-preview h3 {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
 	}
 
 	.challenge-stats {
@@ -369,6 +416,14 @@
 		color: var(--color-text-muted);
 	}
 
+	.challenge-progress {
+		margin-top: var(--space-md);
+	}
+
+	.challenge-rank {
+		margin-top: var(--space-sm);
+	}
+
 	.demo-paths {
 		margin-bottom: var(--space-xl);
 	}
@@ -392,10 +447,27 @@
 	.path-icon {
 		font-size: 2.5rem;
 		margin-bottom: var(--space-md);
+		color: var(--color-primary);
 	}
 
 	.path-card h3 {
 		margin-bottom: var(--space-sm);
+	}
+
+	.path-btn {
+		margin-top: auto;
+	}
+
+	.extra-links {
+		margin-top: var(--space-lg);
+		display: flex;
+		gap: var(--space-md);
+		justify-content: center;
+		flex-wrap: wrap;
+	}
+
+	.extra-note {
+		margin-top: var(--space-sm);
 	}
 
 	.loading {
@@ -413,6 +485,11 @@
 		.profile-details,
 		.challenge-stats {
 			grid-template-columns: 1fr;
+		}
+
+		.extra-links {
+			flex-direction: column;
+			align-items: stretch;
 		}
 	}
 </style>

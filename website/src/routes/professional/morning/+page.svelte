@@ -197,21 +197,21 @@
 
 				<div class="course-meta">
 					<span class="meta-item">
-						<span class="meta-icon"><i class="fa-solid fa-stopwatch" aria-hidden="true"></i></span>
+						<span class="meta-icon">⏱️</span>
 						{formatDuration(course)}
 					</span>
 					<span class="meta-item">
-						<span class="meta-icon"><i class="fa-solid fa-euro-sign" aria-hidden="true"></i></span>
+						<span class="meta-icon">💶</span>
 						€{course.price_eur}
 					</span>
 					<span class="meta-item">
-						<span class="meta-icon"><i class="fa-solid fa-book" aria-hidden="true"></i></span>
+						<span class="meta-icon">📚</span>
 						{course.format.replace(/_/g, ' ')}
 					</span>
 				</div>
 
 				<div class="course-reasoning">
-					<span class="reasoning-icon"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i></span>
+					<span class="reasoning-icon">💡</span>
 					<span>{course.reasoning}</span>
 				</div>
 
@@ -224,7 +224,7 @@
 
 				{#if course.deadline}
 					<div class="deadline-note">
-						<span class="deadline-icon"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></span>
+						<span class="deadline-icon">⚠️</span>
 						<span>Deadline: {new Date(course.deadline).toLocaleDateString()}</span>
 					</div>
 				{/if}
@@ -234,7 +234,7 @@
 
 	<!-- Privacy Note -->
 	<section class="privacy-note">
-		<span class="privacy-note-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
+		<span class="privacy-note-icon">🔒</span>
 		<div>
 			<strong>What stays private:</strong>
 			<p class="text-sm" style="margin-top: 0.25rem;">

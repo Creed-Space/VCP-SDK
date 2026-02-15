@@ -10,7 +10,6 @@
 <DocsLayout
 	title="API Reference"
 	description="Complete reference for all VCP library types and functions."
-	editPath="/src/routes/docs/api-reference/+page.svelte"
 >
 	{#snippet children()}
 		<h2>Installation</h2>
@@ -34,6 +33,7 @@
   availability?: Availability;
   sharing_settings?: SharingSettings;
   private_context?: PrivateContext;
+  prosaic?: ProsaicDimensions;   // Immediate user state (⚡💊🧩💭)
 }`}</code></pre>
 
 		<h3>ConstitutionReference</h3>
@@ -88,6 +88,45 @@
   [key: string]: unknown; // Any private values
 }`}</code></pre>
 
+		<h3>ProsaicDimensions</h3>
+		<p>Immediate user state dimensions (Extended Enneagram Protocol). All values 0.0-1.0.</p>
+		<pre><code>{`interface ProsaicDimensions {
+  urgency?: number;     // ⚡ Time pressure, brevity preference
+  health?: number;      // 💊 Physical wellness, fatigue, pain
+  cognitive?: number;   // 🧩 Mental bandwidth, cognitive load
+  affect?: number;      // 💭 Emotional intensity, stress
+  sub_signals?: ProsaicSubSignals;
+}`}</code></pre>
+
+		<h3>ProsaicSubSignals</h3>
+		<p>Optional sub-signals for greater specificity.</p>
+		<pre><code>{`interface ProsaicSubSignals {
+  // Urgency sub-signals
+  deadline_horizon?: string; // ISO 8601 duration (e.g., "PT5M")
+  brevity_preference?: number;
+
+  // Health sub-signals
+  fatigue_level?: number;
+  pain_level?: number;
+  physical_need?: 'bathroom' | 'hunger' | 'thirst' | 'movement' | 'rest' | 'sensory_break';
+  condition?: 'illness' | 'migraine' | 'chronic_pain' | 'pregnancy' | 'flare_up' | 'insomnia';
+
+  // Cognitive sub-signals
+  cognitive_state?: 'overwhelmed' | 'overstimulated' | 'scattered' | 'brain_fog'
+    | 'exec_dysfunction' | 'shutdown' | 'hyperfocused';
+  decision_fatigue?: number;
+
+  // Affect sub-signals
+  emotional_state?: 'grieving' | 'anxious' | 'frustrated' | 'stressed'
+    | 'triggered' | 'dysregulated' | 'joyful' | 'excited';
+  valence?: number; // -1.0 to 1.0
+}`}</code></pre>
+
+		<h4>Wire Format</h4>
+		<p>Prosaic dimensions in CSM-1 token format:</p>
+		<pre><code>{`R:⚡0.8|💊0.2|🧩0.6|💭0.3
+R:⚡0.9:PT5M|💊0.6:migraine|🧩0.7:overwhelmed|💭0.8:grieving`}</code></pre>
+
 		<h2>Encoding Functions</h2>
 
 		<h3>encodeContextToCSM1</h3>
@@ -98,7 +137,7 @@ const token = encodeContextToCSM1(context);
 // Returns:
 // VCP:1.0:user_001
 // C:learning-assistant@1.0
-// P:godparent:3
+// P:muse:3
 // ...`}</code></pre>
 
 		<h4>Parameters</h4>
@@ -147,8 +186,8 @@ const parsed = parseCSM1Token(token);
 const legend = getEmojiLegend();
 // Returns:
 // [
-//   { emoji: '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>', meaning: 'quiet mode' },
-//   { emoji: '<i class="fa-solid fa-coins" aria-hidden="true"></i>', meaning: 'budget tier' },
+//   { emoji: '🔇', meaning: 'quiet mode' },
+//   { emoji: '💰', meaning: 'budget tier' },
 //   ...
 // ]`}</code></pre>
 
@@ -169,23 +208,32 @@ const summary = getTransmissionSummary(context);
 		<h3>CONSTRAINT_EMOJI</h3>
 		<p>Mapping of constraint flags to emoji shortcodes.</p>
 		<pre><code>{`const CONSTRAINT_EMOJI = {
-  noise_restricted: '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>',
-  budget_limited: '<i class="fa-solid fa-coins" aria-hidden="true"></i>',
-  energy_variable: '<i class="fa-solid fa-bolt" aria-hidden="true"></i>',
+  noise_restricted: '🔇',
+  budget_limited: '💰',
+  energy_variable: '⚡',
   time_limited: '⏰',
-  schedule_irregular: '<i class="fa-solid fa-calendar" aria-hidden="true"></i>',
-  mobility_limited: '<i class="fa-solid fa-person-walking" aria-hidden="true"></i>',
-  health_considerations: '<i class="fa-solid fa-pills" aria-hidden="true"></i>'
+  schedule_irregular: '📅',
+  mobility_limited: '🚶',
+  health_considerations: '💊'
+}`}</code></pre>
+
+		<h3>PROSAIC_EMOJI</h3>
+		<p>Mapping of prosaic dimensions to emoji shortcodes.</p>
+		<pre><code>{`const PROSAIC_EMOJI = {
+  urgency: '⚡',
+  health: '💊',
+  cognitive: '🧩',
+  affect: '💭'
 }`}</code></pre>
 
 		<h3>PRIVATE_MARKER / SHARED_MARKER</h3>
-		<pre><code>{`const PRIVATE_MARKER = '<i class="fa-solid fa-lock" aria-hidden="true"></i>';
-const SHARED_MARKER = '<i class="fa-solid fa-check" aria-hidden="true"></i>';`}</code></pre>
+		<pre><code>{`const PRIVATE_MARKER = '🔒';
+const SHARED_MARKER = '✓';`}</code></pre>
 
 		<h2>Enums</h2>
 
 		<h3>PersonaType</h3>
-		<pre><code>type PersonaType = 'godparent' | 'sentinel' | 'ambassador' | 'anchor' | 'nanny';</code></pre>
+		<pre><code>type PersonaType = 'muse' | 'ambassador' | 'godparent' | 'sentinel' | 'anchor' | 'nanny';</code></pre>
 
 		<h3>ExperienceLevel</h3>
 		<pre><code>type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';</code></pre>

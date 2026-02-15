@@ -12,7 +12,7 @@
 	let { protection, onModeChange }: Props = $props();
 
 	const modes: { value: ProtectionMode; label: string; icon: string; desc: string }[] = [
-		{ value: 'off', label: 'Off', icon: 'fa-power-off', desc: 'No protection' },
+		{ value: 'off', label: 'Off', icon: 'fa-circle', desc: 'No protection' },
 		{ value: 'monitor', label: 'Monitor', icon: 'fa-eye', desc: 'Track only' },
 		{ value: 'warn', label: 'Warn', icon: 'fa-triangle-exclamation', desc: 'Show warnings' },
 		{ value: 'block', label: 'Block', icon: 'fa-shield-halved', desc: 'Block detected' },
@@ -51,7 +51,7 @@
 	<!-- Protection Status -->
 	<div class="status-header" class:active={protection.active}>
 		<div class="status-icon">
-			<i class="{protection.active ? 'fa-solid fa-shield-halved' : 'fa-regular fa-circle'}" aria-hidden="true"></i>
+			<i class="fa-solid {protection.active ? 'fa-shield-halved' : 'fa-circle'}" aria-hidden="true"></i>
 		</div>
 		<div class="status-info">
 			<h3>Attention Shield</h3>
@@ -264,17 +264,21 @@
 		align-items: center;
 		gap: var(--space-xs);
 		padding: var(--space-md);
-		min-height: 44px;
-		min-width: 44px;
-		background: var(--color-bg-elevated);
-		border: 2px solid rgba(255, 255, 255, 0.1);
+		min-height: 70px;
+		min-width: 60px;
+		background: var(--color-bg-card);
+		border: 2px solid rgba(255, 255, 255, 0.3);
 		border-radius: var(--radius-md);
 		cursor: pointer;
 		transition: all var(--transition-fast);
+		color: #e0e0e0;
 	}
 
 	.mode-btn:hover {
 		border-color: var(--color-primary);
+		background: rgba(99, 102, 241, 0.15);
+		color: #ffffff;
+		transform: translateY(-2px);
 	}
 
 	.mode-btn:focus-visible {
@@ -283,16 +287,29 @@
 	}
 
 	.mode-btn.active {
-		background: var(--color-primary-muted);
+		background: var(--color-primary);
 		border-color: var(--color-primary);
+		color: white;
+		box-shadow: 0 0 16px rgba(99, 102, 241, 0.6);
+		transform: translateY(-2px);
+	}
+
+	.mode-btn.active .mode-icon {
+		color: white;
+	}
+
+	.mode-btn.active .mode-label {
+		color: white;
+		font-weight: 700;
 	}
 
 	.mode-icon {
-		font-size: 1.25rem;
+		font-size: 1.75rem;
 	}
 
 	.mode-label {
-		font-size: 0.75rem;
+		font-size: 0.875rem;
+		font-weight: 600;
 	}
 
 	.sensitivity-header {

@@ -43,7 +43,7 @@
 			onclick={() => navigator.clipboard.writeText(encoded)}
 			title="Copy token"
 		>
-			<i class="fa-solid fa-clipboard" aria-hidden="true"></i>
+			📋
 		</button>
 	</div>
 

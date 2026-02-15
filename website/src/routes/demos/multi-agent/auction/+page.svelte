@@ -104,7 +104,7 @@
 			id: 'slow',
 			name: 'Slow',
 			description: 'Careful analysis of each bid',
-			icon: 'fa-turtle',
+			icon: 'fa-clock',
 			data: { speed: 4000 },
 			tags: ['educational']
 		},
@@ -120,7 +120,7 @@
 			id: 'fast',
 			name: 'Fast',
 			description: 'Quick overview of auction',
-			icon: 'fa-forward',
+			icon: 'fa-forward-fast',
 			data: { speed: 1200 },
 			tags: ['quick']
 		}
@@ -272,7 +272,7 @@
 
 			<!-- Item Card -->
 			<div class="item-card">
-				<div class="item-image"><i class="fa-solid fa-image" aria-hidden="true"></i></div>
+				<div class="item-image">🖼️</div>
 				<div class="item-details">
 					<h3>{auctionItem.name}</h3>
 					<p class="item-description">{auctionItem.description}</p>
@@ -330,7 +330,7 @@
 			<!-- Learning Points (shown after completion) -->
 			{#if currentStep >= auctionScenario.length}
 				<div class="learning-section">
-					<h3><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i> What VCP Protected</h3>
+					<h3>🎓 What VCP Protected</h3>
 					<ul class="learning-points">
 						{#each learningPoints as point}
 							<li>{point}</li>
@@ -500,7 +500,7 @@
 	}
 
 	.learning-points li::before {
-		content: '<i class="fa-solid fa-check" aria-hidden="true"></i>';
+		content: '✓';
 		position: absolute;
 		left: 0;
 		color: var(--color-success);

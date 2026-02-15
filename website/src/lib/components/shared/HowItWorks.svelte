@@ -4,23 +4,43 @@
 	 * Visual explanation of VCP data flow for landing page
 	 */
 
-	// Example token for display
-	const exampleToken = `VCP:1.0:gentian-bcn-2026
-C:personal.growth.creative@1.0.0
-P:godparent:3
-G:learn_guitar:beginner:hands_on
-X:<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i>quiet:<i class="fa-solid fa-stopwatch" aria-hidden="true"></i>30minutes:<i class="fa-solid fa-coins" aria-hidden="true"></i>low:<i class="fa-solid fa-bolt" aria-hidden="true"></i>var
-F:time_limited|noise_restricted
-S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-lock" aria-hidden="true"></i>housing|<i class="fa-solid fa-lock" aria-hidden="true"></i>schedule`;
+	// Example token for display - more readable format
+	const exampleToken = `VCP:1.0:gentian
+C:personal.growth@1.0
+P:muse:3
+G:guitar:beginner
+X:🔇quiet:💰low
+F:time|noise
+S:🔒work|🔒housing`;
+
+	// Animate steps on scroll
+	let visible = $state(false);
+
+	function handleIntersect(entries: IntersectionObserverEntry[]) {
+		if (entries[0].isIntersecting) {
+			visible = true;
+		}
+	}
+
+	$effect(() => {
+		if (typeof IntersectionObserver !== 'undefined') {
+			const observer = new IntersectionObserver(handleIntersect, {
+				threshold: 0.2
+			});
+			const el = document.querySelector('.flow-diagram');
+			if (el) observer.observe(el);
+			return () => observer.disconnect();
+		}
+	});
 </script>
 
 <section class="how-it-works">
-	<h2 class="section-title">How VCP Works</h2>
+	<h2 class="section-title">How It Works</h2>
 	<p class="section-description">
-		Your context becomes a compact token. Private details stay with you—only flags travel.
+		Your private details become simple flags. Platforms adapt without knowing your story.
 	</p>
 
-	<div class="flow-diagram">
+	<div class="flow-diagram" class:visible>
 		<!-- Step 1: Your Context -->
 		<div class="flow-step">
 			<div class="step-header">
@@ -171,24 +191,51 @@ S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-
 		max-width: 600px;
 		margin-left: auto;
 		margin-right: auto;
+		line-height: var(--leading-relaxed);
 	}
 
 	.flow-diagram {
 		display: flex;
 		align-items: stretch;
 		justify-content: center;
-		gap: var(--space-md);
+		gap: var(--space-lg);
 		margin-bottom: var(--space-xl);
 		padding: var(--space-lg) 0;
 	}
 
 	.flow-step {
 		flex: 1;
-		max-width: 280px;
+		max-width: 300px;
 		background: var(--color-bg-card);
 		border-radius: var(--radius-lg);
 		overflow: hidden;
 		border: 1px solid rgba(255, 255, 255, 0.1);
+		opacity: 0;
+		transform: translateY(20px);
+		transition: opacity 0.5s ease, transform 0.5s ease;
+	}
+
+	/* Staggered animation */
+	.flow-diagram.visible .flow-step:nth-child(1) {
+		opacity: 1;
+		transform: translateY(0);
+		transition-delay: 0s;
+	}
+
+	.flow-diagram.visible .flow-step:nth-child(3) {
+		opacity: 1;
+		transform: translateY(0);
+		transition-delay: 0.2s;
+	}
+
+	.flow-diagram.visible .flow-step:nth-child(5) {
+		opacity: 1;
+		transform: translateY(0);
+		transition-delay: 0.4s;
+	}
+
+	.flow-diagram.visible .flow-arrow {
+		opacity: 1;
 	}
 
 	.step-header {
@@ -262,42 +309,47 @@ S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: var(--space-xs);
-		padding: 0 var(--space-sm);
+		gap: var(--space-sm);
+		padding: 0 var(--space-md);
+		opacity: 0;
+		transition: opacity 0.5s ease 0.1s;
 	}
 
 	.arrow-line {
-		width: 40px;
-		height: 2px;
+		width: 50px;
+		height: 3px;
 		background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
 		position: relative;
+		border-radius: 2px;
 	}
 
 	.arrow-line::after {
 		content: '';
 		position: absolute;
-		right: -4px;
-		top: -4px;
-		border: 5px solid transparent;
+		right: -6px;
+		top: -5px;
+		border: 7px solid transparent;
 		border-left-color: var(--color-primary-hover);
 	}
 
 	.arrow-label {
-		font-size: 0.625rem;
+		font-size: var(--text-xs);
 		text-transform: uppercase;
-		color: var(--color-text-muted);
-		letter-spacing: 0.05em;
+		color: var(--color-primary);
+		letter-spacing: 0.1em;
+		font-weight: 500;
 	}
 
 	.token-preview {
 		font-family: var(--font-mono);
-		font-size: 0.625rem;
-		line-height: 1.5;
+		font-size: var(--text-xs);
+		line-height: 1.6;
 		background: var(--color-bg);
-		padding: var(--space-sm);
-		border-radius: var(--radius-sm);
+		padding: var(--space-md);
+		border-radius: var(--radius-md);
 		margin: 0;
 		overflow-x: auto;
+		white-space: pre;
 	}
 
 	.token-note {
@@ -440,6 +492,7 @@ S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-
 		.flow-diagram {
 			flex-direction: column;
 			align-items: center;
+			gap: var(--space-sm);
 		}
 
 		.flow-step {
@@ -447,19 +500,32 @@ S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-
 			width: 100%;
 		}
 
+		/* Remove stagger delay on mobile */
+		.flow-diagram.visible .flow-step {
+			opacity: 1;
+			transform: translateY(0);
+			transition-delay: 0s;
+		}
+
+		.flow-diagram.visible .flow-arrow {
+			opacity: 1;
+		}
+
 		.flow-arrow {
-			padding: var(--space-md);
+			padding: var(--space-sm);
+			flex-direction: row;
 		}
 
 		.arrow-line {
-			width: 2px;
+			width: 3px;
 			height: 30px;
 		}
 
 		.arrow-line::after {
-			right: -4px;
+			right: auto;
+			left: -5px;
 			top: auto;
-			bottom: -10px;
+			bottom: -8px;
 			border-left-color: transparent;
 			border-top-color: var(--color-primary-hover);
 		}
@@ -479,6 +545,20 @@ S:<i class="fa-solid fa-lock" aria-hidden="true"></i>work|<i class="fa-solid fa-
 
 		.example-key {
 			min-width: auto;
+		}
+
+		.token-preview {
+			font-size: 0.6875rem;
+		}
+	}
+
+	/* Reduced motion preference */
+	@media (prefers-reduced-motion: reduce) {
+		.flow-step,
+		.flow-arrow {
+			opacity: 1;
+			transform: none;
+			transition: none;
 		}
 	}
 </style>

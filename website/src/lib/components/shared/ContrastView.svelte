@@ -29,29 +29,36 @@
 		baseline
 	}: Props = $props();
 
-	// Track selected items - initialized via $effect to handle prop changes properly
-	let selectedItems = $state<string[]>([]);
-	let showBaseline = $state(false);
-	let initialized = $state(false);
+	// Default selection derived from props - recomputes when items/columns change
+	const defaultSelection = $derived(items.slice(0, columns).map((i) => i.id));
 
-	// Initialize selection on first render (intentionally one-time)
-	$effect(() => {
-		if (!initialized && items.length > 0) {
-			selectedItems = items.slice(0, columns).map((i) => i.id);
-			initialized = true;
+	// Track user's manual selection separately
+	let userSelection = $state<string[] | null>(null);
+
+	// Final selected items: user selection if valid, otherwise default
+	const selectedItems = $derived.by(() => {
+		if (userSelection === null) {
+			return defaultSelection;
 		}
+		// Filter out any invalid IDs if items changed
+		const validIds = new Set(items.map((i) => i.id));
+		const validSelection = userSelection.filter((id) => validIds.has(id));
+		return validSelection.length > 0 ? validSelection : defaultSelection;
 	});
 
+	let showBaseline = $state(false);
+
 	function toggleItem(id: string) {
-		if (selectedItems.includes(id)) {
-			if (selectedItems.length > 1) {
-				selectedItems = selectedItems.filter((i) => i !== id);
+		const current = selectedItems;
+		if (current.includes(id)) {
+			if (current.length > 1) {
+				userSelection = current.filter((i) => i !== id);
 			}
 		} else {
-			if (selectedItems.length >= columns) {
-				selectedItems = [...selectedItems.slice(1), id];
+			if (current.length >= columns) {
+				userSelection = [...current.slice(1), id];
 			} else {
-				selectedItems = [...selectedItems, id];
+				userSelection = [...current, id];
 			}
 		}
 	}
