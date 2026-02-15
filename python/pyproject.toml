@@ -66,6 +66,11 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 
+[[tool.mypy.overrides]]
+module = "vcp.adaptation.redis_state"
+disallow_untyped_calls = false
+warn_return_any = false
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
