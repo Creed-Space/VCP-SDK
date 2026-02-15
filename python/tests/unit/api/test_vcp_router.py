@@ -6,6 +6,10 @@ Comprehensive test coverage for VCP API router.
 
 from __future__ import annotations
 
+import pytest
+
+pytest.importorskip("api_routers", reason="Requires full Creed Space API routers")
+
 # =============================================================================
 # Pydantic Model Tests
 # =============================================================================
