@@ -36,6 +36,7 @@ from .injection import (  # noqa: F401
     format_multi_constitution_injection,
 )
 from .orchestrator import Orchestrator, VerificationContext, VerificationError  # noqa: F401
+from .revocation import RevocationChecker, RevocationError, RevocationStatus  # noqa: F401
 
 # VCP/S (Semantics Layer)
 from .semantics import (  # noqa: F401
@@ -113,4 +114,8 @@ __all__ = [
     "StateTracker",
     "Transition",
     "TransitionSeverity",
+    # Revocation
+    "RevocationChecker",
+    "RevocationStatus",
+    "RevocationError",
 ]
