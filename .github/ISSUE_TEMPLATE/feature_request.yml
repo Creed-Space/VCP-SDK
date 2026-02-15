@@ -9,14 +9,15 @@ body:
         Thank you for suggesting a feature. Please describe what you'd like and why.
 
   - type: dropdown
-    id: component
+    id: sdk
     attributes:
-      label: Component
-      description: Which part of the project does this affect?
+      label: Affected SDK
+      description: Which SDK does this feature apply to?
       options:
-        - Python SDK
-        - Rust SDK
-        - TypeScript / WebMCP SDK
+        - Python
+        - Rust
+        - TypeScript / WebMCP
+        - All SDKs
         - Specification
         - Schemas
         - Documentation
@@ -26,9 +27,17 @@ body:
       required: true
 
   - type: textarea
-    id: problem
+    id: description
     attributes:
-      label: Problem Statement
+      label: Description
+      description: A clear description of the feature you'd like to see
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation / Use Case
       description: What problem does this feature solve? What use case does it enable?
       placeholder: "I'm trying to... but currently..."
     validations:
@@ -38,9 +47,9 @@ body:
     id: solution
     attributes:
       label: Proposed Solution
-      description: How would you like this to work?
+      description: How would you like this to work? (optional -- feel free to leave blank if unsure)
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: alternatives

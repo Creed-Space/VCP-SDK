@@ -1,45 +1,24 @@
-name: Specification Amendment
+name: VCP Enhancement Proposal (VEP)
 description: Propose a change to the VCP specification
-title: "[Spec]: "
-labels: ["specification", "discussion"]
+title: "VEP: "
+labels: ["specification", "vep", "discussion"]
 body:
   - type: markdown
     attributes:
       value: |
-        Specification changes follow a more rigorous process than code changes. Please provide thorough justification.
+        VCP Enhancement Proposals (VEPs) follow a structured process. See [GOVERNANCE.md](https://github.com/Creed-Space/vcp-sdk/blob/main/GOVERNANCE.md#vcp-enhancement-proposals-veps) for the full lifecycle. A maintainer will assign a VEP number after triage.
 
   - type: dropdown
     id: layer
     attributes:
-      label: Protocol Layer
+      label: Layer Affected
       description: Which layer of the VCP stack does this affect?
       options:
-        - VCP/I — Identity
-        - VCP/T — Transport
-        - VCP/S — Semantics
-        - VCP/A — Adaptation
+        - VCP/I -- Identity
+        - VCP/T -- Transport
+        - VCP/S -- Semantics
+        - VCP/A -- Adaptation
         - Cross-cutting / multiple layers
-    validations:
-      required: true
-
-  - type: dropdown
-    id: change_type
-    attributes:
-      label: Change Type
-      description: What kind of specification change is this?
-      options:
-        - Addition — new capability
-        - Modification — change existing behavior
-        - Deprecation — phase out existing behavior
-        - Clarification — improve wording without behavioral change
-    validations:
-      required: true
-
-  - type: textarea
-    id: summary
-    attributes:
-      label: Summary
-      description: One-paragraph summary of the proposed change
     validations:
       required: true
 
@@ -47,14 +26,14 @@ body:
     id: motivation
     attributes:
       label: Motivation
-      description: Why is this change needed? What problem does it solve?
+      description: Why is this change needed? What problem does it solve or what capability does it enable?
     validations:
       required: true
 
   - type: textarea
     id: proposal
     attributes:
-      label: Detailed Proposal
+      label: Proposed Change
       description: Describe the change in detail, including any new fields, formats, or behaviors
     validations:
       required: true
@@ -62,8 +41,19 @@ body:
   - type: textarea
     id: compatibility
     attributes:
-      label: Backward Compatibility
-      description: How does this affect existing implementations? Is it backward-compatible?
+      label: Backward Compatibility Impact
+      description: How does this affect existing implementations? What migration path is needed?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking Change?
+      description: Does this change break existing implementations?
+      options:
+        - "No"
+        - "Yes"
     validations:
       required: true
 
@@ -72,5 +62,13 @@ body:
     attributes:
       label: SDK Impact
       description: What changes would be needed in each SDK (Python, Rust, TypeScript)?
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: References, prior art, related VEPs, or other relevant information
     validations:
       required: false

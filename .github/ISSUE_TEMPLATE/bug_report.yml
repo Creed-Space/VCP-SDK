@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for taking the time to report a bug. Please fill in the details below.
+        Thank you for taking the time to report a bug. Please fill in the details below to help us diagnose the issue quickly.
 
   - type: dropdown
     id: sdk
@@ -35,8 +35,7 @@ body:
     id: description
     attributes:
       label: Description
-      description: A clear description of the bug
-      placeholder: What happened? What did you expect to happen?
+      description: A clear, concise description of the bug
     validations:
       required: true
 
@@ -46,7 +45,7 @@ body:
       label: Steps to Reproduce
       description: Minimal steps to reproduce the behavior
       placeholder: |
-        1. Install the SDK...
+        1. Install the SDK with `pip install vcp-python`
         2. Run this code...
         3. See error...
     validations:
@@ -56,7 +55,15 @@ body:
     id: expected
     attributes:
       label: Expected Behavior
-      description: What should have happened instead?
+      description: What you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened (include error messages, tracebacks, or unexpected output)
     validations:
       required: true
 
@@ -66,7 +73,7 @@ body:
       label: Environment
       description: Runtime details
       placeholder: |
-        - OS: macOS 15.2
+        - OS: macOS 15.2 / Ubuntu 24.04 / Windows 11
         - Python: 3.12.1
         - Rust: 1.77.0
         - Node: 20.11.0
