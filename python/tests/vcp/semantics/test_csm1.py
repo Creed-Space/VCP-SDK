@@ -20,8 +20,7 @@ class TestPersona:
         assert Persona.from_char("G") == Persona.GODPARENT
         assert Persona.from_char("A") == Persona.AMBASSADOR
         assert Persona.from_char("M") == Persona.MUSE
-        assert Persona.from_char("R") == Persona.ANCHOR
-        assert Persona.from_char("H") == Persona.HOTROD
+        assert Persona.from_char("D") == Persona.MEDIATOR
         assert Persona.from_char("C") == Persona.CUSTOM
 
     def test_from_char_lowercase(self):
