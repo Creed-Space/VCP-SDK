@@ -672,7 +672,7 @@ def detect_format(encoded: str) -> str:
             return 'obfuscated'
 
     # CSM1 format
-    if re.match(r'^[NZGAMRHC][0-5]', encoded):
+    if re.match(r'^[NZGAMDC][0-5]', encoded):
         return 'csm1'
 
     # Phonetic format

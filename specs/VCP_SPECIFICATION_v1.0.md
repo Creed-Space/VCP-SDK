@@ -973,7 +973,7 @@ hash-value = 64*128HEXDIG
 
 ; CSM1 (compact reference)
 csm1 = persona adherence [scopes] [":" namespace] ["@" version]
-persona = "N" / "Z" / "G" / "A" / "M" / "R" / "H" / "C"
+persona = "N" / "Z" / "G" / "A" / "M" / "D" / "C"
 adherence = 1*DIGIT
 scopes = 1*("+" scope-code)
 scope-code = "F" / "W" / "P" / "E" / "T" / "O" / "V" / "A"

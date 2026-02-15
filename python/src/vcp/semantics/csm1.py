@@ -5,7 +5,7 @@ CSM1 (Constitutional Semantics Mark 1) is a compact encoding for constitutional 
 
 Format (ABNF):
     code = persona level *("+" scope) [":" namespace] ["@" version]
-    persona = "N" / "Z" / "G" / "A" / "M" / "R" / "H" / "C"
+    persona = "N" / "Z" / "G" / "A" / "M" / "D" / "C"
     level = "0" / "1" / "2" / "3" / "4" / "5"
     scope = "F" / "W" / "E" / "H" / "I" / "L" / "P" / "S" / "A" / "V" / "G"
     namespace = UPALPHA *(UPALPHA / DIGIT)
@@ -26,15 +26,14 @@ from enum import Enum
 
 
 class Persona(Enum):
-    """8 archetypal personas for constitutional profiles."""
+    """6+1 archetypal personas for constitutional profiles."""
 
     NANNY = "N"  # Child safety specialist
     SENTINEL = "Z"  # Security/privacy guardian
     GODPARENT = "G"  # Ethical guidance counselor
     AMBASSADOR = "A"  # Professional conduct advisor
-    MUSE = "M"  # Creativity enabler
-    ANCHOR = "R"  # Factual accuracy enforcer
-    HOTROD = "H"  # Minimal constraints (expert mode)
+    MUSE = "M"  # Creative challenge and provocation
+    MEDIATOR = "D"  # Fair resolution and balanced governance
     CUSTOM = "C"  # User-defined persona
 
     @classmethod
@@ -53,9 +52,8 @@ class Persona(Enum):
             Persona.SENTINEL: "Security and privacy guardian",
             Persona.GODPARENT: "Ethical guidance counselor",
             Persona.AMBASSADOR: "Professional conduct advisor",
-            Persona.MUSE: "Creativity enabler",
-            Persona.ANCHOR: "Factual accuracy enforcer",
-            Persona.HOTROD: "Minimal constraints (expert mode)",
+            Persona.MUSE: "Creative challenge and provocation",
+            Persona.MEDIATOR: "Fair resolution and balanced governance",
             Persona.CUSTOM: "User-defined persona",
         }
         return descriptions[self]
@@ -115,7 +113,7 @@ class CSM1Code:
 
     # ABNF-derived regex pattern
     PATTERN = re.compile(
-        r"^(?P<persona>[NZGAMRHC])"
+        r"^(?P<persona>[NZGAMDC])"
         r"(?P<level>[0-5])"
         r"(?P<scopes>(?:\+[FWEHILPSAVG])*)"
         r"(?::(?P<namespace>[A-Z][A-Z0-9]*))?"

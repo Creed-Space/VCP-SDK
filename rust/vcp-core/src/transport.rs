@@ -15,6 +15,9 @@
 //! - No whitespace between tokens
 //! - UTF-8 encoding
 
+use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::Engine as _;
+use ed25519_dalek::{Signer, SigningKey, Verifier, VerifyingKey};
 use sha2::{Digest, Sha256};
 use unicode_normalization::UnicodeNormalization;
 
@@ -133,6 +136,130 @@ pub fn canonicalize_manifest(manifest: &serde_json::Value) -> VcpResult<Vec<u8>>
         .map_err(|e| VcpError::JsonError(e.to_string()))?;
 
     Ok(canonical.into_bytes())
+}
+
+// ── Ed25519 signature operations ────────────────────────────
+
+/// Sign a manifest with an Ed25519 secret key.
+///
+/// Canonicalizes the manifest (excluding the `"signature"` field), signs
+/// the canonical bytes with the provided 32-byte Ed25519 secret key, and
+/// returns the signature as a standard base64-encoded string.
+///
+/// # Arguments
+///
+/// * `manifest` - A JSON manifest value (must be an object).
+/// * `secret_key` - A 32-byte Ed25519 secret key (seed).
+///
+/// # Errors
+///
+/// Returns [`VcpError::SignatureError`] if the secret key is not exactly
+/// 32 bytes, or [`VcpError::ParseError`] if canonicalization fails.
+///
+/// # Examples
+///
+/// ```
+/// use vcp_core::transport::{sign_manifest, verify_manifest_signature};
+/// use ed25519_dalek::SigningKey;
+///
+/// let signing_key = SigningKey::from_bytes(&[1u8; 32]);
+/// let public_key = signing_key.verifying_key().to_bytes();
+///
+/// let manifest = serde_json::json!({
+///     "vcp_version": "1.0",
+///     "bundle": {"id": "test", "content_hash": "sha256:abc"}
+/// });
+///
+/// let sig = sign_manifest(&manifest, &signing_key.to_bytes()).unwrap();
+/// assert!(verify_manifest_signature(&manifest, &public_key, &sig).unwrap());
+/// ```
+pub fn sign_manifest(manifest: &serde_json::Value, secret_key: &[u8]) -> VcpResult<String> {
+    let key_bytes: [u8; 32] = secret_key.try_into().map_err(|_| {
+        VcpError::SignatureError(format!(
+            "secret key must be exactly 32 bytes, got {}",
+            secret_key.len()
+        ))
+    })?;
+
+    let signing_key = SigningKey::from_bytes(&key_bytes);
+    let canonical = canonicalize_manifest(manifest)?;
+    let signature = signing_key.sign(&canonical);
+
+    Ok(BASE64.encode(signature.to_bytes()))
+}
+
+/// Verify an Ed25519 signature against a manifest and public key.
+///
+/// Canonicalizes the manifest (excluding the `"signature"` field) and
+/// verifies the base64-encoded signature against the provided 32-byte
+/// Ed25519 public key.
+///
+/// # Arguments
+///
+/// * `manifest` - A JSON manifest value (must be an object).
+/// * `public_key` - A 32-byte Ed25519 public key.
+/// * `signature_b64` - Base64-encoded Ed25519 signature (64 bytes decoded).
+///
+/// # Errors
+///
+/// Returns [`VcpError::SignatureError`] if the public key or signature
+/// bytes are malformed, or [`VcpError::ParseError`] if canonicalization
+/// fails.
+///
+/// # Examples
+///
+/// ```
+/// use vcp_core::transport::{sign_manifest, verify_manifest_signature};
+/// use ed25519_dalek::SigningKey;
+///
+/// let signing_key = SigningKey::from_bytes(&[42u8; 32]);
+/// let public_key = signing_key.verifying_key().to_bytes();
+///
+/// let manifest = serde_json::json!({"bundle": {"id": "abc"}});
+///
+/// let sig = sign_manifest(&manifest, &signing_key.to_bytes()).unwrap();
+/// assert!(verify_manifest_signature(&manifest, &public_key, &sig).unwrap());
+///
+/// // Wrong key fails verification.
+/// let wrong_key = [0u8; 32];
+/// assert!(!verify_manifest_signature(&manifest, &wrong_key, &sig).unwrap_or(false));
+/// ```
+pub fn verify_manifest_signature(
+    manifest: &serde_json::Value,
+    public_key: &[u8],
+    signature_b64: &str,
+) -> VcpResult<bool> {
+    let key_bytes: [u8; 32] = public_key.try_into().map_err(|_| {
+        VcpError::SignatureError(format!(
+            "public key must be exactly 32 bytes, got {}",
+            public_key.len()
+        ))
+    })?;
+
+    let verifying_key = VerifyingKey::from_bytes(&key_bytes).map_err(|e| {
+        VcpError::SignatureError(format!("invalid Ed25519 public key: {e}"))
+    })?;
+
+    // Strip optional "base64:" prefix (matches Python SDK convention).
+    let raw_b64 = signature_b64
+        .strip_prefix("base64:")
+        .unwrap_or(signature_b64);
+
+    let sig_bytes = BASE64
+        .decode(raw_b64)
+        .map_err(|e| VcpError::SignatureError(format!("invalid base64 signature: {e}")))?;
+
+    let sig_array: [u8; 64] = sig_bytes.try_into().map_err(|_| {
+        VcpError::SignatureError("signature must be exactly 64 bytes".into())
+    })?;
+
+    let signature = ed25519_dalek::Signature::from_bytes(&sig_array);
+    let canonical = canonicalize_manifest(manifest)?;
+
+    match verifying_key.verify(&canonical, &signature) {
+        Ok(()) => Ok(true),
+        Err(_) => Ok(false),
+    }
 }
 
 // ── Bundle verification ─────────────────────────────────────
@@ -428,5 +555,124 @@ mod tests {
         .unwrap();
         assert!(!result.is_valid());
         assert_eq!(result.code, VerificationCode::HashMismatch);
+    }
+
+    // ── Ed25519 signing tests ───────────────────────────────
+
+    /// Helper: generate a deterministic Ed25519 keypair from a seed byte.
+    fn test_keypair(seed: u8) -> (SigningKey, VerifyingKey) {
+        let signing_key = SigningKey::from_bytes(&[seed; 32]);
+        let verifying_key = signing_key.verifying_key();
+        (signing_key, verifying_key)
+    }
+
+    #[test]
+    fn sign_and_verify_manifest_roundtrip() {
+        let (sk, vk) = test_keypair(1);
+        let manifest = serde_json::json!({
+            "vcp_version": "1.0",
+            "bundle": {"id": "test-bundle", "content_hash": "sha256:abc123"}
+        });
+
+        let sig = sign_manifest(&manifest, &sk.to_bytes()).unwrap();
+        let valid = verify_manifest_signature(&manifest, &vk.to_bytes(), &sig).unwrap();
+        assert!(valid, "signature should verify against correct public key");
+    }
+
+    #[test]
+    fn verify_rejects_wrong_public_key() {
+        let (sk, _vk) = test_keypair(1);
+        let (_sk2, wrong_vk) = test_keypair(2);
+        let manifest = serde_json::json!({"bundle": {"id": "test"}});
+
+        let sig = sign_manifest(&manifest, &sk.to_bytes()).unwrap();
+        let valid = verify_manifest_signature(&manifest, &wrong_vk.to_bytes(), &sig).unwrap();
+        assert!(!valid, "signature should not verify with wrong public key");
+    }
+
+    #[test]
+    fn verify_rejects_tampered_manifest() {
+        let (sk, vk) = test_keypair(3);
+        let manifest = serde_json::json!({"bundle": {"id": "original"}});
+        let sig = sign_manifest(&manifest, &sk.to_bytes()).unwrap();
+
+        let tampered = serde_json::json!({"bundle": {"id": "tampered"}});
+        let valid = verify_manifest_signature(&tampered, &vk.to_bytes(), &sig).unwrap();
+        assert!(!valid, "signature should fail on tampered manifest");
+    }
+
+    #[test]
+    fn sign_excludes_signature_field() {
+        let (sk, vk) = test_keypair(4);
+
+        // Sign manifest without signature field.
+        let manifest_no_sig = serde_json::json!({
+            "vcp_version": "1.0",
+            "bundle": {"id": "test"}
+        });
+        let sig = sign_manifest(&manifest_no_sig, &sk.to_bytes()).unwrap();
+
+        // Verification should pass even if the manifest now contains a signature field,
+        // because canonicalize_manifest strips it.
+        let manifest_with_sig = serde_json::json!({
+            "vcp_version": "1.0",
+            "bundle": {"id": "test"},
+            "signature": {"algorithm": "ed25519", "value": sig.clone()}
+        });
+        let valid = verify_manifest_signature(&manifest_with_sig, &vk.to_bytes(), &sig).unwrap();
+        assert!(valid, "signature field should be excluded during verification");
+    }
+
+    #[test]
+    fn verify_accepts_base64_prefix() {
+        let (sk, vk) = test_keypair(5);
+        let manifest = serde_json::json!({"bundle": {"id": "prefix-test"}});
+        let sig = sign_manifest(&manifest, &sk.to_bytes()).unwrap();
+
+        // Verify with "base64:" prefix (Python SDK convention).
+        let prefixed = format!("base64:{sig}");
+        let valid = verify_manifest_signature(&manifest, &vk.to_bytes(), &prefixed).unwrap();
+        assert!(valid, "should accept base64: prefixed signature");
+    }
+
+    #[test]
+    fn sign_rejects_wrong_key_length() {
+        let manifest = serde_json::json!({"bundle": {"id": "test"}});
+        let short_key = [0u8; 16];
+        let result = sign_manifest(&manifest, &short_key);
+        assert!(result.is_err());
+        assert!(
+            result.unwrap_err().to_string().contains("32 bytes"),
+            "error should mention expected key length"
+        );
+    }
+
+    #[test]
+    fn verify_rejects_wrong_key_length() {
+        let manifest = serde_json::json!({"bundle": {"id": "test"}});
+        let short_key = [0u8; 16];
+        let result = verify_manifest_signature(&manifest, &short_key, "AAAA");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn verify_rejects_invalid_base64() {
+        let manifest = serde_json::json!({"bundle": {"id": "test"}});
+        let key = [0u8; 32];
+        let result = verify_manifest_signature(&manifest, &key, "not-valid-base64!!!");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn sign_deterministic_for_same_key_and_manifest() {
+        let (sk, _vk) = test_keypair(6);
+        let manifest = serde_json::json!({
+            "vcp_version": "1.0",
+            "bundle": {"id": "deterministic-test", "version": "1.0.0"}
+        });
+
+        let sig1 = sign_manifest(&manifest, &sk.to_bytes()).unwrap();
+        let sig2 = sign_manifest(&manifest, &sk.to_bytes()).unwrap();
+        assert_eq!(sig1, sig2, "Ed25519 signing should be deterministic for same input");
     }
 }

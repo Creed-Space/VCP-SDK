@@ -341,8 +341,7 @@ class Persona(Enum):
     GODPARENT = "G"
     AMBASSADOR = "A"
     MUSE = "M"
-    ANCHOR = "R"
-    HOTROD = "H"
+    MEDIATOR = "D"
     CUSTOM = "C"
 
 @dataclass

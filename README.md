@@ -296,43 +296,19 @@ VCP works with existing infrastructure:
 
 ## Documentation
 
-### Specifications
+### Protocol Specification
 
-| Document | Description |
-|:---|:---|
-| [`specs/VCP_SPECIFICATION_v1.0_COMPLETE.md`](./specs/VCP_SPECIFICATION_v1.0_COMPLETE.md) | Full protocol specification |
-| [`specs/VCP_SPECIFICATION_v1.1_AMENDMENTS.md`](./specs/VCP_SPECIFICATION_v1.1_AMENDMENTS.md) | v1.1 amendments (R-line, personal state) |
-| [`specs/value_context_protocols_paper_v1.md`](./specs/value_context_protocols_paper_v1.md) | Academic paper |
+The VCP protocol specification, JSON schemas, and protocol-layer documentation live in their own repository:
 
-### Guides
+**[Creed-Space/VCP-Spec](https://github.com/Creed-Space/VCP-Spec)** -- Specification, schemas, governance, and protocol docs.
+
+### SDK Guides
 
 | Document | Audience |
 |:---|:---|
-| [`docs/VCP_NEWCOMER_GUIDE.md`](./docs/VCP_NEWCOMER_GUIDE.md) | New to VCP — start here |
-| [`docs/VCP_OVERVIEW.md`](./docs/VCP_OVERVIEW.md) | Technical overview |
 | [`docs/VCP_IMPLEMENTATION_GUIDE.md`](./docs/VCP_IMPLEMENTATION_GUIDE.md) | SDK implementors |
-
-### By Protocol Layer
-
-| Layer | Documentation |
-|:---|:---|
-| VCP/I — Identity | [`docs/identity/`](./docs/identity/) |
-| VCP/T — Transport | [`specs/VCP_SPECIFICATION_v1.0.md`](./specs/VCP_SPECIFICATION_v1.0.md) §6 |
-| VCP/S — Semantics | [`docs/semantics/`](./docs/semantics/) |
-| VCP/A — Adaptation | [`docs/adaptation/`](./docs/adaptation/) |
-
-### JSON Schemas
-
-| Schema | Validates |
-|:---|:---|
-| [`vcp-manifest-v1.schema.json`](./schemas/vcp-manifest-v1.schema.json) | Bundle manifests |
-| [`vcp-identity-token.schema.json`](./schemas/vcp-identity-token.schema.json) | Identity tokens |
-| [`vcp-semantics-csm1.schema.json`](./schemas/vcp-semantics-csm1.schema.json) | CSM-1 tokens |
-| [`vcp-adaptation-context.schema.json`](./schemas/vcp-adaptation-context.schema.json) | Adaptation context |
-
-### API Reference
-
-OpenAPI specification: [`docs/openapi/`](./docs/openapi/)
+| [`docs/VCP_INTEGRATION.md`](./docs/VCP_INTEGRATION.md) | Integration guide |
+| [`docs/CROSS_PROJECT_VCP_BRIDGE.md`](./docs/CROSS_PROJECT_VCP_BRIDGE.md) | Cross-project bridging |
 
 ---
 
@@ -406,6 +382,8 @@ VCP draws on established patterns from:
 ## Contributing
 
 We welcome contributions across all three SDKs, the specification, and documentation. See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, coding standards, and pull request guidelines.
+
+For specification changes, see [GOVERNANCE.md](./GOVERNANCE.md) for the VCP Enhancement Proposal (VEP) process.
 
 Please read our [Code of Conduct](./CODE_OF_CONDUCT.md) before participating.
 

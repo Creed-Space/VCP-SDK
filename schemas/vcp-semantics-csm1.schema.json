@@ -9,7 +9,7 @@
     "code": {
       "type": "string",
       "description": "The CSM1 code string",
-      "pattern": "^[NZGAMRHC][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?(?:@(?:[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}|latest|canary))?$",
+      "pattern": "^[NZGAMDC][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?(?:@(?:[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}|latest|canary))?$",
       "minLength": 2,
       "maxLength": 50,
       "examples": [

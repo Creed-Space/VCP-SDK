@@ -1200,7 +1200,7 @@ semver = major "." minor "." patch ["-" prerelease]
 content-hash = "sha256:" 64HEXDIG
 
 csm1 = persona adherence [scopes] [":" namespace] ["@" version]
-persona = "N" / "Z" / "G" / "A" / "M" / "R" / "H" / "C"
+persona = "N" / "Z" / "G" / "A" / "M" / "D" / "C"
 adherence = 1*DIGIT
 scopes = 1*("+" scope-code)
 scope-code = "F" / "W" / "P" / "E" / "T" / "O" / "V" / "A"

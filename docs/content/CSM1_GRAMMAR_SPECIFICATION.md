@@ -66,14 +66,13 @@ CSM1 codes appear in:
 csm1-code         = persona adherence [scopes] [":" namespace] ["@" version]
 
 ; Persona (single character)
-persona           = "N" / "Z" / "G" / "A" / "M" / "R" / "H" / "C"
+persona           = "N" / "Z" / "G" / "A" / "M" / "D" / "C"
                   ; N = Nanny (child safety)
                   ; Z = Sentinel (security)
                   ; G = Godparent (ethics)
                   ; A = Ambassador (professional)
-                  ; M = Muse (creative)
-                  ; R = Anchor (reality/factual)
-                  ; H = Hot-Rod (minimal constraints)
+                  ; M = Muse (creative challenge)
+                  ; D = Mediator (fair resolution)
                   ; C = Custom (user-defined)
 
 ; Adherence level (0-5)
@@ -122,7 +121,7 @@ DIGIT             = %x30-39                    ; 0-9
 ```python
 CSM1_PATTERN = r"""
     ^
-    (?P<persona>[NZGAMRHC])             # Persona (1 char)
+    (?P<persona>[NZGAMDC])             # Persona (1 char)
     (?P<adherence>[0-5])                 # Adherence (1 digit)
     (?P<scopes>(?:\+[FWPETOVAHSR])*)     # Scopes (optional, +X format)
     (?::(?P<namespace>[A-Z]{1,8}))?      # Namespace (optional, :XXX format)
@@ -600,21 +599,21 @@ class CSM1Code:
 class CSM1Parser:
     """Parse CSM1 codes"""
 
-    PERSONA_CODES = {'N', 'Z', 'G', 'A', 'M', 'R', 'H', 'C'}
+    PERSONA_CODES = {'N', 'Z', 'G', 'A', 'M', 'D', 'C'}
     SCOPE_CODES = {'F', 'W', 'P', 'E', 'T', 'O', 'V', 'A', 'H', 'S', 'R'}
 
     PERSONA_NAMES = {
         'N': 'nanny', 'Z': 'sentinel', 'G': 'godparent', 'A': 'ambassador',
-        'M': 'muse', 'R': 'anchor', 'H': 'hotrod', 'C': 'custom',
+        'M': 'muse', 'D': 'mediator', 'C': 'custom',
     }
 
     # Compiled regex patterns
     NANO_PATTERN = re.compile(
-        r'^([NZGAMRHC])([0-5])((?:\+[FWPETOVAHSR])*)$'
+        r'^([NZGAMDC])([0-5])((?:\+[FWPETOVAHSR])*)$'
     )
 
     MICRO_PATTERN = re.compile(
-        r'^([NZGAMRHC])([0-5])(?::([A-Z]{1,8}))?((?:\+[FWPETOVAHSR])*)(?:@(.+))?$'
+        r'^([NZGAMDC])([0-5])(?::([A-Z]{1,8}))?((?:\+[FWPETOVAHSR])*)(?:@(.+))?$'
     )
 
     COMPACT_PATTERN = re.compile(

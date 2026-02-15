@@ -15,7 +15,8 @@
 //! | [`personal`] | Personal state dimensions (cognitive, emotional, ...) |
 //! | [`situational`] | Situational context (time, space, company, ...) |
 //! | [`context`] | Full context wire format (situational + personal) |
-//! | [`transport`] | Content hashing, canonicalization, bundle verification |
+//! | [`transport`] | Content hashing, canonicalization, signing, bundle verification |
+//! | [`trust`] | Trust anchor management for issuers and auditors |
 //! | [`error`] | Error types and verification codes |
 //!
 //! ## Quick Start
@@ -51,6 +52,7 @@ pub mod identity;
 pub mod personal;
 pub mod situational;
 pub mod transport;
+pub mod trust;
 
 // Re-export commonly used types at crate root.
 pub use context::FullContext;
@@ -59,4 +61,7 @@ pub use error::{VcpError, VcpResult};
 pub use identity::VcpToken;
 pub use personal::{PersonalDimension, PersonalState};
 pub use situational::SituationalContext;
-pub use transport::{compute_content_hash, verify_content_hash};
+pub use transport::{
+    compute_content_hash, sign_manifest, verify_content_hash, verify_manifest_signature,
+};
+pub use trust::{TrustAnchor, TrustConfig};

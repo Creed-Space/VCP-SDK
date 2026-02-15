@@ -329,7 +329,7 @@
         },
         "csm1": {
           "type": "string",
-          "pattern": "^[NZGAMRHC][0-9]+(\\+[FWPETOVA])*(:[A-Za-z0-9]+)?(@[0-9.]+)?$",
+          "pattern": "^[NZGAMDC][0-9]+(\\+[FWPETOVA])*(:[A-Za-z0-9]+)?(@[0-9.]+)?$",
           "description": "CSM1 compact code",
           "examples": ["N5+F:ELEM@1.2.0"]
         }
