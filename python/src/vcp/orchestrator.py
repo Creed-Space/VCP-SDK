@@ -12,13 +12,12 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
 from .bundle import Bundle
 from .canonicalize import canonicalize_manifest, verify_content_hash
 from .revocation import RevocationChecker
 from .trust import TrustConfig
-from typing import TYPE_CHECKING
-
 from .types import VerificationResult
 
 if TYPE_CHECKING:
