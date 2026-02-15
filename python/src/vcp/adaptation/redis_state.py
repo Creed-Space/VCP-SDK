@@ -13,7 +13,7 @@ import json
 import logging
 from collections.abc import Callable
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from .context import Dimension, VCPContext
 from .state import EMERGENCY_VALUES, MAJOR_DIMENSIONS, StateTracker, Transition, TransitionSeverity
@@ -36,7 +36,10 @@ def get_sync_redis_client() -> redis.Redis | None:
         import redis as redis_sync
 
         redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-        client = redis_sync.from_url(redis_url, decode_responses=True)
+        client = cast(
+            "redis.Redis",
+            redis_sync.from_url(redis_url, decode_responses=True),
+        )
         # Test connection
         client.ping()
         return client
@@ -154,7 +157,7 @@ class RedisStateTracker:
             List of {timestamp, context} dicts
         """
         try:
-            data = self._redis.get(self._history_key)
+            data = cast("str | None", self._redis.get(self._history_key))
             if data:
                 result: list[dict[str, Any]] = json.loads(data)
                 return result
