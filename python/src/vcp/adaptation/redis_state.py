@@ -156,7 +156,8 @@ class RedisStateTracker:
         try:
             data = self._redis.get(self._history_key)
             if data:
-                return json.loads(data)
+                result: list[dict[str, Any]] = json.loads(data)
+                return result
         except Exception as e:
             logger.warning(f"VCP Redis history read error: {e}")
         return []

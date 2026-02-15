@@ -106,7 +106,7 @@ class Orchestrator:
         self,
         trust_config: TrustConfig,
         replay_cache: ReplayCache | None = None,
-        verify_signature: Callable | None = None,
+        verify_signature: Callable[..., bool] | None = None,
     ):
         """
         Initialize orchestrator.

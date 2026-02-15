@@ -45,21 +45,23 @@ class AuditEntry:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for logging."""
-        result = {
+        verification: dict[str, Any] = {
+            "result": self.verification_result,
+            "checks_passed": self.checks_passed,
+        }
+        bundle_ref: dict[str, Any] = {
+            "id_hash": self.bundle_id_hash,
+            "content_hash": self.content_hash,
+            "issuer_hash": self.issuer_hash,
+            "version": self.version,
+        }
+        result: dict[str, Any] = {
             "vcp_audit_version": "1.0",
             "audit_level": self.audit_level.value,
             "timestamp": self.timestamp.isoformat() + "Z",
             "session_id_hash": self.session_id_hash,
-            "verification": {
-                "result": self.verification_result,
-                "checks_passed": self.checks_passed,
-            },
-            "bundle_ref": {
-                "id_hash": self.bundle_id_hash,
-                "content_hash": self.content_hash,
-                "issuer_hash": self.issuer_hash,
-                "version": self.version,
-            },
+            "verification": verification,
+            "bundle_ref": bundle_ref,
             "manifest_signature": self.manifest_signature,
         }
 
@@ -68,12 +70,12 @@ class AuditEntry:
 
         if self.audit_level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC):
             if self.duration_ms is not None:
-                result["verification"]["duration_ms"] = self.duration_ms
+                verification["duration_ms"] = self.duration_ms
             if self.token_count is not None:
-                result["bundle_ref"]["token_count"] = self.token_count
+                bundle_ref["token_count"] = self.token_count
 
         if self.audit_level == AuditLevel.DIAGNOSTIC and self.content_preview:
-            result["bundle_ref"]["content_preview"] = self.content_preview
+            bundle_ref["content_preview"] = self.content_preview
 
         return result
 
@@ -93,7 +95,7 @@ class AuditLogger:
     def __init__(
         self,
         level: AuditLevel = AuditLevel.STANDARD,
-        log_callback: Callable | None = None,
+        log_callback: Callable[[AuditEntry], None] | None = None,
     ):
         """
         Initialize audit logger.

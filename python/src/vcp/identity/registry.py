@@ -44,11 +44,11 @@ import hashlib
 import hmac
 import secrets
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .token import Token
@@ -84,7 +84,7 @@ class RegistryEntry:
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     metadata_encrypted: bytes | None = None  # E(pubkey, metadata)
-    metadata_public: dict = field(default_factory=dict)
+    metadata_public: dict[str, object] = field(default_factory=dict)
 
     # Pseudonymous support
     pseudonym_salt: bytes | None = None  # For hash-based lookups
@@ -189,7 +189,7 @@ class PrefixTree:
         entries: list[RegistryEntry] = field(default_factory=list)
         privacy_tier: PrivacyTier = PrivacyTier.PUBLIC
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.root = self.Node(segment="")
 
     def insert(self, entry: RegistryEntry) -> None:
@@ -381,7 +381,7 @@ class Registry(ABC):
         token: Token,
         privacy_tier: PrivacyTier = PrivacyTier.PUBLIC,
         owner_id: str | None = None,
-        metadata: dict | None = None,
+        metadata: dict[str, object] | None = None,
     ) -> RegistryEntry:
         """Register a new token."""
         ...
@@ -420,7 +420,7 @@ class Registry(ABC):
         self,
         pattern: str,
         auth: AuthorizationContext,
-        callback: callable,
+        callback: Callable[..., Any],
     ) -> str:
         """Subscribe to changes matching pattern. Returns subscription ID."""
         ...
@@ -436,12 +436,12 @@ class LocalRegistry(Registry):
     - Kafka for change subscriptions
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._tree = PrefixTree()
         self._bloom = BloomFilter()
         self._entries: dict[str, RegistryEntry] = {}
         self._subscriptions: dict[
-            str, tuple[str, AuthorizationContext, callable]
+            str, tuple[str, AuthorizationContext, Callable[..., Any]]
         ] = {}
 
     def register(
@@ -449,7 +449,7 @@ class LocalRegistry(Registry):
         token: Token,
         privacy_tier: PrivacyTier = PrivacyTier.PUBLIC,
         owner_id: str | None = None,
-        metadata: dict | None = None,
+        metadata: dict[str, object] | None = None,
     ) -> RegistryEntry:
         """Register a new token."""
         entry = RegistryEntry(
@@ -550,9 +550,9 @@ class LocalRegistry(Registry):
 
         else:
             # Exact match
-            entry = self.resolve(Token.parse(pattern))
-            if entry:
-                tokens.append(entry.token)
+            resolved = self.resolve(Token.parse(pattern))
+            if resolved:
+                tokens.append(resolved.token)
 
         return QueryResult(
             tokens=tokens,
@@ -566,7 +566,7 @@ class LocalRegistry(Registry):
         self,
         pattern: str,
         auth: AuthorizationContext,
-        callback: callable,
+        callback: Callable[..., Any],
     ) -> str:
         """Subscribe to changes matching pattern."""
         sub_id = secrets.token_hex(16)

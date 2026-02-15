@@ -69,6 +69,11 @@ impl Persona {
     }
 
     /// Parse from a single character.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::InvalidPersona`] if the character does not
+    /// correspond to a known persona.
     pub fn from_char(c: char) -> VcpResult<Self> {
         match c.to_ascii_uppercase() {
             'N' => Ok(Self::Nanny),
@@ -155,6 +160,11 @@ impl Scope {
     }
 
     /// Parse from a single character.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::InvalidScope`] if the character does not
+    /// correspond to a known scope.
     pub fn from_char(c: char) -> VcpResult<Self> {
         match c.to_ascii_uppercase() {
             'F' => Ok(Self::Family),
@@ -214,6 +224,12 @@ pub struct Csm1Code {
 impl Csm1Code {
     /// Parse a compact CSM-1 code string.
     ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] if the code is empty, too short,
+    /// or contains invalid persona, level, scope, namespace, or version
+    /// components.
+    ///
     /// # Examples
     ///
     /// ```
@@ -243,9 +259,13 @@ impl Csm1Code {
         let level_char = chars[1];
         let adherence_level = level_char
             .to_digit(10)
-            .and_then(|d| if d <= 5 { Some(d as u8) } else { None })
+            .and_then(|d| u8::try_from(d).ok())
+            .filter(|&d| d <= 5)
             .ok_or(VcpError::InvalidAdherence(
-                level_char.to_digit(10).unwrap_or(255) as u8,
+                level_char
+                    .to_digit(10)
+                    .and_then(|d| u8::try_from(d).ok())
+                    .unwrap_or(255),
             ))?;
 
         // Remaining string after persona + level.
@@ -270,7 +290,7 @@ impl Csm1Code {
         // Extract namespace if present.
         let (before_ns, namespace) = if let Some(colon_idx) = before_version.find(':') {
             let n = &before_version[colon_idx + 1..];
-            if n.is_empty() || !n.chars().next().unwrap().is_ascii_uppercase() {
+            if n.is_empty() || !n.as_bytes().first().is_some_and(u8::is_ascii_uppercase) {
                 return Err(VcpError::ParseError(format!("invalid namespace: {n}")));
             }
             (&before_version[..colon_idx], Some(n.to_string()))
@@ -289,8 +309,9 @@ impl Csm1Code {
                         "invalid scope token: {scope_str}"
                     )));
                 }
-                let scope_char = scope_str.chars().next().unwrap();
-                scopes.push(Scope::from_char(scope_char)?);
+                if let Some(scope_char) = scope_str.chars().next() {
+                    scopes.push(Scope::from_char(scope_char)?);
+                }
             }
         }
 
@@ -340,6 +361,7 @@ impl Csm1Code {
     }
 
     /// Returns a new code with the given scopes.
+    #[must_use]
     pub fn with_scopes(&self, scopes: Vec<Scope>) -> Self {
         Csm1Code {
             persona: self.persona,
@@ -351,6 +373,10 @@ impl Csm1Code {
     }
 
     /// Returns a new code with the given adherence level.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::InvalidAdherence`] if `level` is greater than 5.
     pub fn with_level(&self, level: u8) -> VcpResult<Self> {
         if level > 5 {
             return Err(VcpError::InvalidAdherence(level));
@@ -442,32 +468,49 @@ pub struct Csm1Token {
 
 impl Csm1Token {
     /// Parse an 8-line CSM-1 token string.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] if the token has fewer than 7 lines,
+    /// if any line is missing its required prefix, or if the persona,
+    /// adherence, goal, constraint, flag, or personal-state fields are
+    /// malformed.
+    #[allow(clippy::too_many_lines)]
     pub fn parse(raw: &str) -> VcpResult<Self> {
-        let lines: Vec<&str> = raw.lines().collect();
+        let token_lines: Vec<&str> = raw.lines().collect();
 
-        if lines.len() < 7 {
+        if token_lines.len() < 7 {
             return Err(VcpError::ParseError(format!(
                 "CSM1 token requires at least 7 lines, got {}",
-                lines.len()
+                token_lines.len()
             )));
         }
 
         // Line 1: VCP:<version>:<profile-id>
-        let line1 = Self::strip_and_validate(lines[0], "VCP:")?;
-        let (version, profile_id) = line1.split_once(':').ok_or_else(|| {
-            VcpError::ParseError(format!("line 1 missing profile-id separator: {}", lines[0]))
+        let vcp_header = Self::strip_and_validate(token_lines[0], "VCP:")?;
+        let (version, profile_id) = vcp_header.split_once(':').ok_or_else(|| {
+            VcpError::ParseError(format!(
+                "line 1 missing profile-id separator: {}",
+                token_lines[0]
+            ))
         })?;
 
         // Line 2: C:<constitution>@<version>
-        let line2 = Self::strip_and_validate(lines[1], "C:")?;
-        let (const_id, const_ver) = line2.split_once('@').ok_or_else(|| {
-            VcpError::ParseError(format!("line 2 missing version separator: {}", lines[1]))
+        let const_line = Self::strip_and_validate(token_lines[1], "C:")?;
+        let (const_id, const_ver) = const_line.split_once('@').ok_or_else(|| {
+            VcpError::ParseError(format!(
+                "line 2 missing version separator: {}",
+                token_lines[1]
+            ))
         })?;
 
         // Line 3: P:<persona>:<adherence>
-        let line3 = Self::strip_and_validate(lines[2], "P:")?;
-        let (persona_str, adherence_str) = line3.split_once(':').ok_or_else(|| {
-            VcpError::ParseError(format!("line 3 missing adherence separator: {}", lines[2]))
+        let persona_line = Self::strip_and_validate(token_lines[2], "P:")?;
+        let (persona_str, adherence_str) = persona_line.split_once(':').ok_or_else(|| {
+            VcpError::ParseError(format!(
+                "line 3 missing adherence separator: {}",
+                token_lines[2]
+            ))
         })?;
         let persona_char = persona_str
             .chars()
@@ -482,11 +525,11 @@ impl Csm1Token {
         }
 
         // Line 4: G:<goal>:<experience>:<style>
-        let line4 = Self::strip_and_validate(lines[3], "G:")?;
-        let goal = if line4.is_empty() {
+        let goal_line = Self::strip_and_validate(token_lines[3], "G:")?;
+        let goal = if goal_line.is_empty() {
             None
         } else {
-            let parts: Vec<&str> = line4.splitn(3, ':').collect();
+            let parts: Vec<&str> = goal_line.splitn(3, ':').collect();
             if parts.len() == 3 {
                 Some(GoalContext {
                     goal: parts[0].to_string(),
@@ -504,39 +547,45 @@ impl Csm1Token {
         };
 
         // Line 5: X:<constraints>
-        let line5 = Self::strip_and_validate(lines[4], "X:")?;
-        let constraints = if line5.is_empty() {
+        let constraint_line = Self::strip_and_validate(token_lines[4], "X:")?;
+        let constraints = if constraint_line.is_empty() {
             Vec::new()
         } else {
-            line5
+            constraint_line
                 .split(',')
                 .map(|s| ConstraintFlag(s.trim().to_string()))
                 .collect()
         };
 
         // Line 6: F:<flags>
-        let line6 = Self::strip_and_validate(lines[5], "F:")?;
-        let flags = if line6.is_empty() {
+        let flags_line = Self::strip_and_validate(token_lines[5], "F:")?;
+        let flags = if flags_line.is_empty() {
             Vec::new()
         } else {
-            line6.split(',').map(|s| s.trim().to_string()).collect()
+            flags_line
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect()
         };
 
         // Line 7: S:<private-markers>
-        let line7 = Self::strip_and_validate(lines[6], "S:")?;
-        let private_markers = if line7.is_empty() {
+        let markers_line = Self::strip_and_validate(token_lines[6], "S:")?;
+        let private_markers = if markers_line.is_empty() {
             Vec::new()
         } else {
-            line7.split(',').map(|s| s.trim().to_string()).collect()
+            markers_line
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect()
         };
 
         // Line 8 (optional): R:<personal-state>
-        let personal_state = if lines.len() > 7 {
-            let line8 = Self::strip_and_validate(lines[7], "R:")?;
-            if line8.is_empty() {
+        let personal_state = if token_lines.len() > 7 {
+            let state_line = Self::strip_and_validate(token_lines[7], "R:")?;
+            if state_line.is_empty() {
                 None
             } else {
-                Some(PersonalState::from_wire(line8)?)
+                Some(PersonalState::from_wire(state_line)?)
             }
         } else {
             None

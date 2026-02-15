@@ -34,6 +34,11 @@ const FORBIDDEN_CODEPOINTS: &[char] = &[
 /// Canonicalize constitution content to deterministic UTF-8 bytes.
 ///
 /// Follows the same six-step process as the Python implementation.
+///
+/// # Errors
+///
+/// Returns [`VcpError::ParseError`] if the content contains illegal
+/// control characters or forbidden Unicode codepoints.
 pub fn canonicalize_content(text: &str) -> VcpResult<Vec<u8>> {
     // 1. Unicode NFC normalization.
     let text: String = text.nfc().collect();
@@ -49,7 +54,7 @@ pub fn canonicalize_content(text: &str) -> VcpResult<Vec<u8>> {
 
     // 4. Remove trailing empty lines, ensure single trailing newline.
     let mut lines = lines;
-    while lines.last().map_or(false, |l| l.is_empty()) {
+    while lines.last().is_some_and(|l| l.is_empty()) {
         lines.pop();
     }
     let mut text = lines.join("\n");
@@ -76,15 +81,23 @@ pub fn canonicalize_content(text: &str) -> VcpResult<Vec<u8>> {
 }
 
 /// Compute `sha256:<hex>` hash of canonical content.
+///
+/// # Errors
+///
+/// Returns [`VcpError::ParseError`] if the content fails canonicalization.
 pub fn compute_content_hash(content: &str) -> VcpResult<String> {
     let canonical = canonicalize_content(content)?;
     let mut hasher = Sha256::new();
     hasher.update(&canonical);
     let digest = hasher.finalize();
-    Ok(format!("sha256:{:x}", digest))
+    Ok(format!("sha256:{digest:x}"))
 }
 
 /// Verify that content matches an expected hash string.
+///
+/// # Errors
+///
+/// Returns [`VcpError::ParseError`] if the content fails canonicalization.
 pub fn verify_content_hash(content: &str, expected: &str) -> VcpResult<bool> {
     let computed = compute_content_hash(content)?;
     Ok(computed == expected)
@@ -98,6 +111,11 @@ pub fn verify_content_hash(content: &str, expected: &str) -> VcpResult<bool> {
 /// - Keys sorted lexicographically
 /// - No whitespace between tokens
 /// - The `"signature"` field is excluded from canonicalization.
+///
+/// # Errors
+///
+/// Returns [`VcpError::ParseError`] if the manifest is not a JSON object,
+/// or [`VcpError::JsonError`] if serialization fails.
 pub fn canonicalize_manifest(manifest: &serde_json::Value) -> VcpResult<Vec<u8>> {
     let obj = manifest
         .as_object()
@@ -128,6 +146,7 @@ pub struct VerificationResult {
 
 impl VerificationResult {
     /// Create a successful verification result.
+    #[must_use]
     pub fn valid() -> Self {
         Self {
             code: VerificationCode::Valid,
@@ -136,6 +155,7 @@ impl VerificationResult {
     }
 
     /// Create a failed result with a specific code.
+    #[must_use]
     pub fn fail(code: VerificationCode, message: impl Into<String>) -> Self {
         Self {
             code,
@@ -228,6 +248,11 @@ pub fn verify_bundle_content(content: &str, expected_hash: &str) -> Verification
 /// Checks:
 /// 1. Content hash matches `bundle.content_hash`.
 /// 2. Manifest is well-formed JSON with required fields.
+///
+/// # Errors
+///
+/// Returns [`VcpError::JsonError`] if `manifest_json` is not valid JSON,
+/// or [`VcpError::ParseError`] if the manifest is missing required fields.
 pub fn verify_bundle(manifest_json: &str, content: &str) -> VcpResult<VerificationResult> {
     let manifest: serde_json::Value = serde_json::from_str(manifest_json)?;
 

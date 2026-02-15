@@ -76,12 +76,18 @@ class Manifest:
                 "attestation_type": self.safety_attestation.attestation_type.value,
                 "signature": self.safety_attestation.signature,
             },
-            "signature": {
-                "algorithm": self.signature.algorithm,
-                "value": self.signature.value,
-                "signed_fields": self.signature.signed_fields,
-            },
         }
+
+        sig_dict: dict[str, Any] = {
+            "algorithm": self.signature.algorithm,
+            "value": self.signature.value,
+            "signed_fields": self.signature.signed_fields,
+        }
+        if self.signature.threshold:
+            sig_dict["threshold"] = self.signature.threshold
+        if self.signature.signers:
+            sig_dict["signers"] = self.signature.signers
+        result["signature"] = sig_dict
 
         if self.scope:
             result["scope"] = {
@@ -109,11 +115,6 @@ class Manifest:
 
         if self.metadata:
             result["metadata"] = self.metadata
-
-        if self.signature.threshold:
-            result["signature"]["threshold"] = self.signature.threshold
-        if self.signature.signers:
-            result["signature"]["signers"] = self.signature.signers
 
         return result
 
@@ -313,9 +314,9 @@ class BundleBuilder:
 
     def build(
         self,
-        sign_manifest: Callable,  # (manifest_bytes) -> str
-        sign_attestation: Callable,  # (attestation_bytes) -> str
-        count_tokens: Callable | None = None,  # (content, tokenizer) -> int
+        sign_manifest: Callable[..., str],  # (manifest_bytes) -> str
+        sign_attestation: Callable[..., str],  # (attestation_bytes) -> str
+        count_tokens: Callable[..., int] | None = None,  # (content, tokenizer) -> int
     ) -> Bundle:
         """
         Build the bundle with signatures.

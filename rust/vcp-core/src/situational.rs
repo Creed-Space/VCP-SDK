@@ -174,6 +174,11 @@ impl SituationalContext {
     /// Parse from wire format.
     ///
     /// The wire format is `<symbol><tags>|<symbol><tags>|...`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] if a segment contains an
+    /// unrecognised dimension symbol.
     pub fn from_wire(wire: &str) -> VcpResult<Self> {
         let mut ctx = SituationalContext::default();
 
@@ -256,17 +261,6 @@ impl fmt::Display for SituationalContext {
 /// Environment uses a two-codepoint emoji (\u{1F321}\u{FE0F}), so we
 /// must check for it before single-codepoint symbols.
 fn split_situational_symbol(s: &str) -> VcpResult<(SituationalDimension, &str)> {
-    // Check two-codepoint Environment symbol first.
-    let env_sym = "\u{1F321}\u{FE0F}";
-    if let Some(rest) = s.strip_prefix(env_sym) {
-        return Ok((SituationalDimension::Environment, rest));
-    }
-    // Also accept bare thermometer without variation selector.
-    let env_bare = "\u{1F321}";
-    if let Some(rest) = s.strip_prefix(env_bare) {
-        return Ok((SituationalDimension::Environment, rest));
-    }
-
     // Known single-codepoint symbols in descending byte-length order.
     static SYMBOLS: &[(SituationalDimension, &str)] = &[
         (SituationalDimension::Space, "\u{1F4CD}"),
@@ -278,6 +272,17 @@ fn split_situational_symbol(s: &str) -> VcpResult<(SituationalDimension, &str)> 
         (SituationalDimension::SystemContext, "\u{1F4E1}"),
         (SituationalDimension::Time, "\u{23F0}"),
     ];
+
+    // Check two-codepoint Environment symbol first.
+    let env_sym = "\u{1F321}\u{FE0F}";
+    if let Some(rest) = s.strip_prefix(env_sym) {
+        return Ok((SituationalDimension::Environment, rest));
+    }
+    // Also accept bare thermometer without variation selector.
+    let env_bare = "\u{1F321}";
+    if let Some(rest) = s.strip_prefix(env_bare) {
+        return Ok((SituationalDimension::Environment, rest));
+    }
 
     for (dim, sym) in SYMBOLS {
         if let Some(rest) = s.strip_prefix(sym) {

@@ -92,6 +92,10 @@ pub struct PersonalDimension {
 
 impl PersonalDimension {
     /// Create with validation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::InvalidIntensity`] if `intensity` is not in 1..=5.
     pub fn new(value: impl Into<String>, intensity: u8) -> VcpResult<Self> {
         if !(1..=5).contains(&intensity) {
             return Err(VcpError::InvalidIntensity(intensity));
@@ -104,6 +108,10 @@ impl PersonalDimension {
     }
 
     /// Create with an extended sub-signal.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::InvalidIntensity`] if `intensity` is not in 1..=5.
     pub fn with_extended(
         value: impl Into<String>,
         intensity: u8,
@@ -131,6 +139,11 @@ impl PersonalDimension {
     }
 
     /// Parse from wire-format segment: `value:intensity` or `value:intensity[ext]`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] if the wire format is malformed,
+    /// or [`VcpError::InvalidIntensity`] if the intensity is out of range.
     pub fn from_wire(wire: &str) -> VcpResult<Self> {
         // Check for extended: value:intensity[ext]
         let (main, extended) = if let Some(bracket_start) = wire.find('[') {
@@ -188,10 +201,10 @@ pub struct PersonalState {
     /// Emotional tone (calm / tense / frustrated / neutral / uplifted).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub emotional: Option<PersonalDimension>,
-    /// Energy level (rested / low_energy / fatigued / wired / depleted).
+    /// Energy level (rested / `low_energy` / fatigued / wired / depleted).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub energy: Option<PersonalDimension>,
-    /// Perceived urgency (unhurried / time_aware / pressured / critical).
+    /// Perceived urgency (unhurried / `time_aware` / pressured / critical).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub urgency: Option<PersonalDimension>,
     /// Body signals (neutral / discomfort / pain / unwell / recovering).
@@ -233,6 +246,11 @@ impl PersonalState {
     }
 
     /// Parse personal state from wire format (the part after `\u{2016}`).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] if a segment contains an
+    /// unrecognised dimension symbol or malformed dimension data.
     pub fn from_wire(wire: &str) -> VcpResult<Self> {
         let mut state = PersonalState::default();
 

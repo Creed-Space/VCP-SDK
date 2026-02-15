@@ -49,6 +49,11 @@ pub struct SemVer {
 
 impl SemVer {
     /// Parse a `"X.Y.Z"` string.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] if the string does not contain
+    /// exactly three dot-separated numeric components.
     pub fn parse(s: &str) -> VcpResult<Self> {
         let parts: Vec<&str> = s.split('.').collect();
         if parts.len() != 3 {
@@ -100,6 +105,13 @@ impl VcpToken {
     /// Parse and validate a raw VCP/I token string.
     ///
     /// Accepts the format: `seg1.seg2.seg3[.segN...][@version][:namespace]`
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::MalformedToken`] if the token is empty, exceeds
+    /// the maximum length, has too few or too many segments, or contains
+    /// invalid characters. Returns [`VcpError::ParseError`] if the version
+    /// string is malformed.
     pub fn parse(raw: &str) -> VcpResult<Self> {
         if raw.is_empty() {
             return Err(VcpError::MalformedToken("token cannot be empty".into()));
@@ -224,6 +236,7 @@ impl VcpToken {
     // ── Builders ────────────────────────────────────────────
 
     /// Return a new token with the given version.
+    #[must_use]
     pub fn with_version(&self, version: SemVer) -> Self {
         VcpToken {
             segments: self.segments.clone(),
@@ -233,6 +246,12 @@ impl VcpToken {
     }
 
     /// Return a new token with the given namespace.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::MalformedToken`] if the namespace is empty,
+    /// does not start with an uppercase letter, or contains invalid
+    /// characters.
     pub fn with_namespace(&self, namespace: &str) -> VcpResult<Self> {
         Self::validate_namespace(namespace)?;
         Ok(VcpToken {
@@ -255,6 +274,11 @@ impl VcpToken {
     }
 
     /// Return a child token with an appended segment.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::MalformedToken`] if the segment is invalid or
+    /// the token is already at maximum depth.
     pub fn child(&self, segment: &str) -> VcpResult<Self> {
         Self::validate_segment(segment, self.segments.len())?;
         if self.segments.len() >= MAX_SEGMENTS {

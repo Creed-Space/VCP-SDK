@@ -61,7 +61,7 @@ class Constitution:
     rules: list[str]
     priority: int = 0  # Higher = more precedence
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # Normalize rules (strip whitespace)
         self.rules = [r.strip() for r in self.rules if r.strip()]
 

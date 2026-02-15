@@ -70,6 +70,11 @@ impl FullContext {
     }
 
     /// Parse from the full wire format.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] if the situational or personal
+    /// portion of the wire format is malformed.
     pub fn from_wire(wire: &str) -> VcpResult<Self> {
         if wire.is_empty() {
             return Ok(Self::default());
