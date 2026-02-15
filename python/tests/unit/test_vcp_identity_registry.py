@@ -23,7 +23,7 @@ class TestPrivacyTier:
 
     def test_privacy_tier_enum_values(self) -> None:
         """Test all privacy tier values exist."""
-        from services.vcp.identity.registry import PrivacyTier
+        from vcp.identity.registry import PrivacyTier
 
         assert PrivacyTier.PUBLIC.value == "public"
         assert PrivacyTier.ORGANIZATIONAL.value == "organizational"
@@ -33,7 +33,7 @@ class TestPrivacyTier:
 
     def test_privacy_tier_count(self) -> None:
         """Test we have exactly 5 privacy tiers."""
-        from services.vcp.identity.registry import PrivacyTier
+        from vcp.identity.registry import PrivacyTier
 
         assert len(PrivacyTier) == 5
 
@@ -48,7 +48,7 @@ class TestQueryScope:
 
     def test_query_scope_values(self) -> None:
         """Test all query scope values exist."""
-        from services.vcp.identity.registry import QueryScope
+        from vcp.identity.registry import QueryScope
 
         assert QueryScope.EXACT.value == "exact"
         assert QueryScope.PREFIX.value == "prefix"
@@ -66,8 +66,8 @@ class TestRegistryEntry:
 
     def test_registry_entry_creation(self) -> None:
         """Test basic registry entry creation."""
-        from services.vcp.identity.registry import PrivacyTier, RegistryEntry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrivacyTier, RegistryEntry
+        from vcp.identity.token import Token
 
         token = Token.parse("family.safe.guide")
         entry = RegistryEntry(
@@ -84,8 +84,8 @@ class TestRegistryEntry:
 
     def test_registry_entry_with_owner(self) -> None:
         """Test registry entry with owner information."""
-        from services.vcp.identity.registry import PrivacyTier, RegistryEntry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrivacyTier, RegistryEntry
+        from vcp.identity.token import Token
 
         token = Token.parse("user.alice.personal")
         entry = RegistryEntry(
@@ -100,8 +100,8 @@ class TestRegistryEntry:
 
     def test_registry_entry_with_encrypted_metadata(self) -> None:
         """Test registry entry with encrypted metadata."""
-        from services.vcp.identity.registry import PrivacyTier, RegistryEntry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrivacyTier, RegistryEntry
+        from vcp.identity.token import Token
 
         token = Token.parse("pseudo.abc123.private")
         encrypted = b"encrypted_data_bytes"
@@ -127,8 +127,8 @@ class TestQueryResult:
 
     def test_query_result_creation(self) -> None:
         """Test query result creation."""
-        from services.vcp.identity.registry import QueryResult
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import QueryResult
+        from vcp.identity.token import Token
 
         tokens = [Token.parse("family.safe.guide")]
         result = QueryResult(
@@ -146,7 +146,7 @@ class TestQueryResult:
 
     def test_query_result_with_redaction(self) -> None:
         """Test query result with redacted entries."""
-        from services.vcp.identity.registry import QueryResult
+        from vcp.identity.registry import QueryResult
 
         result = QueryResult(
             tokens=[],
@@ -170,7 +170,7 @@ class TestAuthorizationContext:
 
     def test_authorization_context_defaults(self) -> None:
         """Test authorization context default values."""
-        from services.vcp.identity.registry import AuthorizationContext
+        from vcp.identity.registry import AuthorizationContext
 
         auth = AuthorizationContext()
 
@@ -183,7 +183,7 @@ class TestAuthorizationContext:
 
     def test_authorization_context_with_memberships(self) -> None:
         """Test authorization context with memberships."""
-        from services.vcp.identity.registry import AuthorizationContext
+        from vcp.identity.registry import AuthorizationContext
 
         auth = AuthorizationContext(
             requester_id="alice",
@@ -200,7 +200,7 @@ class TestAuthorizationContext:
 
     def test_authorization_context_admin(self) -> None:
         """Test admin authorization context."""
-        from services.vcp.identity.registry import AuthorizationContext
+        from vcp.identity.registry import AuthorizationContext
 
         auth = AuthorizationContext(is_admin=True)
 
@@ -217,7 +217,7 @@ class TestBloomFilter:
 
     def test_bloom_filter_creation(self) -> None:
         """Test bloom filter creation with defaults."""
-        from services.vcp.identity.registry import BloomFilter
+        from vcp.identity.registry import BloomFilter
 
         bloom = BloomFilter()
 
@@ -227,7 +227,7 @@ class TestBloomFilter:
 
     def test_bloom_filter_add_and_check(self) -> None:
         """Test adding and checking items in bloom filter."""
-        from services.vcp.identity.registry import BloomFilter
+        from vcp.identity.registry import BloomFilter
 
         bloom = BloomFilter()
         bloom.add("family.safe.guide")
@@ -237,7 +237,7 @@ class TestBloomFilter:
 
     def test_bloom_filter_no_false_negatives(self) -> None:
         """Test that bloom filter never has false negatives."""
-        from services.vcp.identity.registry import BloomFilter
+        from vcp.identity.registry import BloomFilter
 
         bloom = BloomFilter(expected_items=100)
 
@@ -251,7 +251,7 @@ class TestBloomFilter:
 
     def test_bloom_filter_definitely_not_present(self) -> None:
         """Test that bloom filter correctly identifies items not present."""
-        from services.vcp.identity.registry import BloomFilter
+        from vcp.identity.registry import BloomFilter
 
         bloom = BloomFilter()
         bloom.add("family.safe.guide")
@@ -265,7 +265,7 @@ class TestBloomFilter:
 
     def test_bloom_filter_custom_parameters(self) -> None:
         """Test bloom filter with custom parameters."""
-        from services.vcp.identity.registry import BloomFilter
+        from vcp.identity.registry import BloomFilter
 
         bloom = BloomFilter(expected_items=1000, false_positive_rate=0.001)
 
@@ -283,7 +283,7 @@ class TestPrefixTree:
 
     def test_prefix_tree_creation(self) -> None:
         """Test prefix tree creation."""
-        from services.vcp.identity.registry import PrefixTree
+        from vcp.identity.registry import PrefixTree
 
         tree = PrefixTree()
 
@@ -292,8 +292,8 @@ class TestPrefixTree:
 
     def test_prefix_tree_insert(self) -> None:
         """Test inserting entries into prefix tree."""
-        from services.vcp.identity.registry import PrefixTree, PrivacyTier, RegistryEntry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrefixTree, PrivacyTier, RegistryEntry
+        from vcp.identity.token import Token
 
         tree = PrefixTree()
         token = Token.parse("family.safe.guide")
@@ -308,8 +308,8 @@ class TestPrefixTree:
 
     def test_prefix_tree_find_exact(self) -> None:
         """Test exact lookup in prefix tree."""
-        from services.vcp.identity.registry import PrefixTree, PrivacyTier, RegistryEntry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrefixTree, PrivacyTier, RegistryEntry
+        from vcp.identity.token import Token
 
         tree = PrefixTree()
         token1 = Token.parse("family.safe.guide")
@@ -328,8 +328,8 @@ class TestPrefixTree:
 
     def test_prefix_tree_find_exact_not_found(self) -> None:
         """Test exact lookup for non-existent token."""
-        from services.vcp.identity.registry import PrefixTree, PrivacyTier, RegistryEntry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrefixTree, PrivacyTier, RegistryEntry
+        from vcp.identity.token import Token
 
         tree = PrefixTree()
         token1 = Token.parse("family.safe.guide")
@@ -342,13 +342,13 @@ class TestPrefixTree:
 
     def test_prefix_tree_find_prefix_public(self) -> None:
         """Test prefix query for public entries."""
-        from services.vcp.identity.registry import (
+        from vcp.identity.registry import (
             AuthorizationContext,
             PrefixTree,
             PrivacyTier,
             RegistryEntry,
         )
-        from services.vcp.identity.token import Token
+        from vcp.identity.token import Token
 
         tree = PrefixTree()
         tokens = [
@@ -368,13 +368,13 @@ class TestPrefixTree:
 
     def test_prefix_tree_find_prefix_organizational(self) -> None:
         """Test prefix query for organizational entries with membership."""
-        from services.vcp.identity.registry import (
+        from vcp.identity.registry import (
             AuthorizationContext,
             PrefixTree,
             PrivacyTier,
             RegistryEntry,
         )
-        from services.vcp.identity.token import Token
+        from vcp.identity.token import Token
 
         tree = PrefixTree()
         token = Token.parse("company.acme.legal.compliance")
@@ -394,13 +394,13 @@ class TestPrefixTree:
 
     def test_prefix_tree_find_prefix_personal(self) -> None:
         """Test prefix query for personal entries."""
-        from services.vcp.identity.registry import (
+        from vcp.identity.registry import (
             AuthorizationContext,
             PrefixTree,
             PrivacyTier,
             RegistryEntry,
         )
-        from services.vcp.identity.token import Token
+        from vcp.identity.token import Token
 
         tree = PrefixTree()
         token = Token.parse("user.alice.personal")
@@ -420,13 +420,13 @@ class TestPrefixTree:
 
     def test_prefix_tree_admin_access(self) -> None:
         """Test that admin can access all entries."""
-        from services.vcp.identity.registry import (
+        from vcp.identity.registry import (
             AuthorizationContext,
             PrefixTree,
             PrivacyTier,
             RegistryEntry,
         )
-        from services.vcp.identity.token import Token
+        from vcp.identity.token import Token
 
         tree = PrefixTree()
         token = Token.parse("user.alice.personal")
@@ -440,13 +440,13 @@ class TestPrefixTree:
 
     def test_prefix_tree_community_access(self) -> None:
         """Test community tier access."""
-        from services.vcp.identity.registry import (
+        from vcp.identity.registry import (
             AuthorizationContext,
             PrefixTree,
             PrivacyTier,
             RegistryEntry,
         )
-        from services.vcp.identity.token import Token
+        from vcp.identity.token import Token
 
         tree = PrefixTree()
         token = Token.parse("religion.buddhist.mindfulness")
@@ -473,7 +473,7 @@ class TestLocalRegistry:
 
     def test_local_registry_creation(self) -> None:
         """Test local registry creation."""
-        from services.vcp.identity.registry import LocalRegistry
+        from vcp.identity.registry import LocalRegistry
 
         registry = LocalRegistry()
 
@@ -481,8 +481,8 @@ class TestLocalRegistry:
 
     def test_register_public_token(self) -> None:
         """Test registering a public token."""
-        from services.vcp.identity.registry import LocalRegistry, PrivacyTier
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import LocalRegistry, PrivacyTier
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         token = Token.parse("family.safe.guide")
@@ -494,8 +494,8 @@ class TestLocalRegistry:
 
     def test_register_with_metadata(self) -> None:
         """Test registering token with metadata."""
-        from services.vcp.identity.registry import LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         token = Token.parse("family.safe.guide")
@@ -507,8 +507,8 @@ class TestLocalRegistry:
 
     def test_resolve_existing_token(self) -> None:
         """Test resolving an existing token."""
-        from services.vcp.identity.registry import LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         token = Token.parse("family.safe.guide")
@@ -521,8 +521,8 @@ class TestLocalRegistry:
 
     def test_resolve_nonexistent_token(self) -> None:
         """Test resolving a token that doesn't exist."""
-        from services.vcp.identity.registry import LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         token = Token.parse("nonexistent.token.here")
@@ -533,8 +533,8 @@ class TestLocalRegistry:
 
     def test_exists_with_bloom_filter(self) -> None:
         """Test existence check using bloom filter."""
-        from services.vcp.identity.registry import LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         token = Token.parse("family.safe.guide")
@@ -544,8 +544,8 @@ class TestLocalRegistry:
 
     def test_exists_nonexistent_token(self) -> None:
         """Test existence check for non-existent token."""
-        from services.vcp.identity.registry import LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         token = Token.parse("nonexistent.token.here")
@@ -554,8 +554,8 @@ class TestLocalRegistry:
 
     def test_find_prefix_pattern(self) -> None:
         """Test finding tokens by prefix pattern."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         tokens = [
@@ -576,8 +576,8 @@ class TestLocalRegistry:
 
     def test_find_suffix_pattern(self) -> None:
         """Test finding tokens by suffix pattern."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         tokens = [
@@ -596,8 +596,8 @@ class TestLocalRegistry:
 
     def test_find_wildcard_pattern(self) -> None:
         """Test finding tokens with single-segment wildcard."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         tokens = [
@@ -616,8 +616,8 @@ class TestLocalRegistry:
 
     def test_find_exact_match(self) -> None:
         """Test finding token by exact match."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         token = Token.parse("family.safe.guide")
@@ -631,8 +631,8 @@ class TestLocalRegistry:
 
     def test_find_mixed_pattern(self) -> None:
         """Test finding tokens with mixed prefix/suffix pattern."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         tokens = [
@@ -651,8 +651,8 @@ class TestLocalRegistry:
 
     def test_find_with_max_results(self) -> None:
         """Test find respects max_results limit."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         for i in range(10):
@@ -666,7 +666,7 @@ class TestLocalRegistry:
 
     def test_subscribe_and_unsubscribe(self) -> None:
         """Test subscription and unsubscription."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
 
         registry = LocalRegistry()
         auth = AuthorizationContext()
@@ -687,8 +687,8 @@ class TestLocalRegistry:
 
     def test_subscription_notification(self) -> None:
         """Test that subscribers are notified on registration."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         auth = AuthorizationContext()
@@ -702,8 +702,8 @@ class TestLocalRegistry:
 
     def test_subscription_notification_respects_pattern(self) -> None:
         """Test that subscribers only get matching notifications."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         auth = AuthorizationContext()
@@ -720,8 +720,8 @@ class TestLocalRegistry:
 
     def test_subscription_callback_error_handling(self) -> None:
         """Test that callback errors don't break registry."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         auth = AuthorizationContext()
@@ -749,7 +749,7 @@ class TestPseudonymousRegistry:
 
     def test_pseudonymous_registry_creation(self) -> None:
         """Test pseudonymous registry creation."""
-        from services.vcp.identity.registry import LocalRegistry, PseudonymousRegistry
+        from vcp.identity.registry import LocalRegistry, PseudonymousRegistry
 
         base = LocalRegistry()
         pseudo = PseudonymousRegistry(base)
@@ -758,7 +758,7 @@ class TestPseudonymousRegistry:
 
     def test_generate_pseudonym(self) -> None:
         """Test pseudonym generation."""
-        from services.vcp.identity.registry import LocalRegistry, PseudonymousRegistry
+        from vcp.identity.registry import LocalRegistry, PseudonymousRegistry
 
         base = LocalRegistry()
         pseudo = PseudonymousRegistry(base)
@@ -771,7 +771,7 @@ class TestPseudonymousRegistry:
 
     def test_pseudonym_uniqueness(self) -> None:
         """Test that different inputs generate different pseudonyms."""
-        from services.vcp.identity.registry import LocalRegistry, PseudonymousRegistry
+        from vcp.identity.registry import LocalRegistry, PseudonymousRegistry
 
         base = LocalRegistry()
         pseudo = PseudonymousRegistry(base)
@@ -784,12 +784,12 @@ class TestPseudonymousRegistry:
 
     def test_register_pseudonymous(self) -> None:
         """Test registering a pseudonymous token."""
-        from services.vcp.identity.registry import (
+        from vcp.identity.registry import (
             LocalRegistry,
             PrivacyTier,
             PseudonymousRegistry,
         )
-        from services.vcp.identity.token import Token
+        from vcp.identity.token import Token
 
         base = LocalRegistry()
         pseudo = PseudonymousRegistry(base)
@@ -807,8 +807,8 @@ class TestPseudonymousRegistry:
 
     def test_prove_and_verify_ownership(self) -> None:
         """Test ownership proof generation and verification."""
-        from services.vcp.identity.registry import LocalRegistry, PseudonymousRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import LocalRegistry, PseudonymousRegistry
+        from vcp.identity.token import Token
 
         base = LocalRegistry()
         pseudo = PseudonymousRegistry(base)
@@ -827,8 +827,8 @@ class TestPseudonymousRegistry:
 
     def test_invalid_proof_fails_verification(self) -> None:
         """Test that invalid proof fails verification."""
-        from services.vcp.identity.registry import LocalRegistry, PseudonymousRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import LocalRegistry, PseudonymousRegistry
+        from vcp.identity.token import Token
 
         base = LocalRegistry()
         pseudo = PseudonymousRegistry(base)
@@ -857,8 +857,8 @@ class TestConvenienceFunctions:
 
     def test_infer_privacy_tier_public(self) -> None:
         """Test inferring public privacy tier."""
-        from services.vcp.identity.registry import PrivacyTier, infer_privacy_tier
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrivacyTier, infer_privacy_tier
+        from vcp.identity.token import Token
 
         public_domains = ["family", "work", "secure", "creative", "reality", "education", "health"]
         for domain in public_domains:
@@ -868,8 +868,8 @@ class TestConvenienceFunctions:
 
     def test_infer_privacy_tier_organizational(self) -> None:
         """Test inferring organizational privacy tier."""
-        from services.vcp.identity.registry import PrivacyTier, infer_privacy_tier
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrivacyTier, infer_privacy_tier
+        from vcp.identity.token import Token
 
         org_domains = ["company", "school", "ngo", "org"]
         for domain in org_domains:
@@ -879,8 +879,8 @@ class TestConvenienceFunctions:
 
     def test_infer_privacy_tier_community(self) -> None:
         """Test inferring community privacy tier."""
-        from services.vcp.identity.registry import PrivacyTier, infer_privacy_tier
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrivacyTier, infer_privacy_tier
+        from vcp.identity.token import Token
 
         community_domains = ["religion", "culture", "community"]
         for domain in community_domains:
@@ -890,8 +890,8 @@ class TestConvenienceFunctions:
 
     def test_infer_privacy_tier_personal(self) -> None:
         """Test inferring personal privacy tier."""
-        from services.vcp.identity.registry import PrivacyTier, infer_privacy_tier
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrivacyTier, infer_privacy_tier
+        from vcp.identity.token import Token
 
         token = Token.parse("user.alice.personal")
         tier = infer_privacy_tier(token)
@@ -899,8 +899,8 @@ class TestConvenienceFunctions:
 
     def test_infer_privacy_tier_pseudonymous(self) -> None:
         """Test inferring pseudonymous privacy tier."""
-        from services.vcp.identity.registry import PrivacyTier, infer_privacy_tier
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrivacyTier, infer_privacy_tier
+        from vcp.identity.token import Token
 
         for domain in ["anon", "pseudo"]:
             token = Token.parse(f"{domain}.abc123.private")
@@ -909,8 +909,8 @@ class TestConvenienceFunctions:
 
     def test_infer_privacy_tier_unknown_defaults_to_organizational(self) -> None:
         """Test that unknown domains default to organizational."""
-        from services.vcp.identity.registry import PrivacyTier, infer_privacy_tier
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import PrivacyTier, infer_privacy_tier
+        from vcp.identity.token import Token
 
         token = Token.parse("unknown.custom.creed")
         tier = infer_privacy_tier(token)
@@ -918,7 +918,7 @@ class TestConvenienceFunctions:
 
     def test_create_authorization(self) -> None:
         """Test authorization context creation helper."""
-        from services.vcp.identity.registry import create_authorization
+        from vcp.identity.registry import create_authorization
 
         auth = create_authorization(
             requester_id="alice",
@@ -936,7 +936,7 @@ class TestConvenienceFunctions:
 
     def test_create_authorization_defaults(self) -> None:
         """Test authorization context creation with defaults."""
-        from services.vcp.identity.registry import create_authorization
+        from vcp.identity.registry import create_authorization
 
         auth = create_authorization()
 
@@ -957,8 +957,8 @@ class TestVersionMatching:
 
     def test_find_exact_with_version(self) -> None:
         """Test that version is considered in exact lookups."""
-        from services.vcp.identity.registry import LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         token_v1 = Token.parse("family.safe.guide@1.0.0")
@@ -986,8 +986,8 @@ class TestEdgeCases:
 
     def test_empty_pattern_returns_empty(self) -> None:
         """Test that empty pattern handling."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
         registry.register(Token.parse("family.safe.guide"))
@@ -999,7 +999,7 @@ class TestEdgeCases:
 
     def test_find_with_no_entries(self) -> None:
         """Test find on empty registry."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
 
         registry = LocalRegistry()
         auth = AuthorizationContext()
@@ -1011,12 +1011,12 @@ class TestEdgeCases:
 
     def test_privacy_tier_inheritance(self) -> None:
         """Test that child nodes inherit stricter privacy tiers."""
-        from services.vcp.identity.registry import (
+        from vcp.identity.registry import (
             AuthorizationContext,
             LocalRegistry,
             PrivacyTier,
         )
-        from services.vcp.identity.token import Token
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
 
@@ -1041,8 +1041,8 @@ class TestEdgeCases:
 
     def test_max_history_entries(self) -> None:
         """Test that prefix queries respect max_results."""
-        from services.vcp.identity.registry import AuthorizationContext, LocalRegistry
-        from services.vcp.identity.token import Token
+        from vcp.identity.registry import AuthorizationContext, LocalRegistry
+        from vcp.identity.token import Token
 
         registry = LocalRegistry()
 

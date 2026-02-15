@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import pytest
 
+pytest.importorskip("services", reason="Requires full Creed Space services")
+pytest.importorskip("api_routers", reason="Requires full Creed Space API routers")
+
 # =============================================================================
 # VCP Core Integration Tests
 # =============================================================================
@@ -19,37 +22,37 @@ class TestVCPCoreIntegration:
 
     def test_vcp_exports_token(self) -> None:
         """Test VCP exports Token class."""
-        from services.vcp import Token
+        from vcp import Token
 
         assert Token is not None
 
     def test_vcp_exports_csm1code(self) -> None:
         """Test VCP exports CSM1Code class."""
-        from services.vcp import CSM1Code
+        from vcp import CSM1Code
 
         assert CSM1Code is not None
 
     def test_vcp_exports_context_encoder(self) -> None:
         """Test VCP exports ContextEncoder class."""
-        from services.vcp import ContextEncoder
+        from vcp import ContextEncoder
 
         assert ContextEncoder is not None
 
     def test_vcp_exports_state_tracker(self) -> None:
         """Test VCP exports StateTracker class."""
-        from services.vcp import StateTracker
+        from vcp import StateTracker
 
         assert StateTracker is not None
 
     def test_vcp_exports_persona(self) -> None:
         """Test VCP exports Persona enum."""
-        from services.vcp import Persona
+        from vcp import Persona
 
         assert Persona is not None
 
     def test_vcp_exports_dimension(self) -> None:
         """Test VCP exports Dimension enum."""
-        from services.vcp import Dimension
+        from vcp import Dimension
 
         assert Dimension is not None
 
@@ -64,7 +67,7 @@ class TestTokenCSM1Integration:
 
     def test_token_parse_and_csm1_parse(self) -> None:
         """Test both Token and CSM1Code can parse valid inputs."""
-        from services.vcp import CSM1Code, Token
+        from vcp import CSM1Code, Token
 
         # Parse token
         token = Token.parse("family.safe.guide@1.0.0")
@@ -78,7 +81,7 @@ class TestTokenCSM1Integration:
 
     def test_persona_mapping_consistency(self) -> None:
         """Test CSM1 personas map to expected values."""
-        from services.vcp import CSM1Code, Persona
+        from vcp import CSM1Code, Persona
 
         # Each persona should have a corresponding CSM1 code
         persona_codes = {
@@ -107,7 +110,7 @@ class TestContextTrackerIntegration:
 
     def test_encode_and_track(self) -> None:
         """Test encoding context and tracking state."""
-        from services.vcp import ContextEncoder, StateTracker
+        from vcp import ContextEncoder, StateTracker
 
         encoder = ContextEncoder()
         tracker = StateTracker()
@@ -125,7 +128,7 @@ class TestContextTrackerIntegration:
 
     def test_emergency_detection(self) -> None:
         """Test emergency transition detection."""
-        from services.vcp import ContextEncoder, StateTracker, TransitionSeverity
+        from vcp import ContextEncoder, StateTracker, TransitionSeverity
 
         encoder = ContextEncoder()
         tracker = StateTracker()
@@ -223,7 +226,8 @@ class TestVCPPDPIntegration:
     def test_plugin_uses_vcp_components(self) -> None:
         """Test plugin uses VCP components correctly."""
         from services.safety_stack.plugins import VCPAdaptationPlugin
-        from services.vcp import ContextEncoder, StateTracker
+
+        from vcp import ContextEncoder, StateTracker
 
         plugin = VCPAdaptationPlugin()
 

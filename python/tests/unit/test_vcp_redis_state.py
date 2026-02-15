@@ -31,7 +31,7 @@ class TestGetSyncRedisClient:
 
         with patch.dict("os.environ", {"REDIS_URL": "redis://localhost:6379/0"}):
             with patch("redis.from_url", return_value=mock_client):
-                from services.vcp.adaptation.redis_state import get_sync_redis_client
+                from vcp.adaptation.redis_state import get_sync_redis_client
 
                 client = get_sync_redis_client()
 
@@ -42,7 +42,7 @@ class TestGetSyncRedisClient:
         """Test Redis client returns None on connection failure."""
         with patch.dict("os.environ", {"REDIS_URL": "redis://localhost:6379/0"}):
             with patch("redis.from_url", side_effect=ConnectionError("Connection refused")):
-                from services.vcp.adaptation.redis_state import get_sync_redis_client
+                from vcp.adaptation.redis_state import get_sync_redis_client
 
                 client = get_sync_redis_client()
 
@@ -55,7 +55,7 @@ class TestGetSyncRedisClient:
 
         with patch.dict("os.environ", {"REDIS_URL": "redis://localhost:6379/0"}):
             with patch("redis.from_url", return_value=mock_client):
-                from services.vcp.adaptation.redis_state import get_sync_redis_client
+                from vcp.adaptation.redis_state import get_sync_redis_client
 
                 client = get_sync_redis_client()
 
@@ -78,7 +78,7 @@ class TestRedisStateTracker:
     @pytest.fixture
     def tracker(self, mock_redis: MagicMock) -> Any:
         """Create a RedisStateTracker with mock Redis."""
-        from services.vcp.adaptation.redis_state import RedisStateTracker
+        from vcp.adaptation.redis_state import RedisStateTracker
 
         return RedisStateTracker(
             session_id="test-session-123",
@@ -89,7 +89,7 @@ class TestRedisStateTracker:
 
     def test_tracker_creation(self, mock_redis: MagicMock) -> None:
         """Test RedisStateTracker creation."""
-        from services.vcp.adaptation.redis_state import RedisStateTracker
+        from vcp.adaptation.redis_state import RedisStateTracker
 
         tracker = RedisStateTracker(
             session_id="test-session",
@@ -106,7 +106,7 @@ class TestRedisStateTracker:
 
     def test_record_first_context(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test recording first context state."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.context import Dimension, VCPContext
 
         mock_redis.get.return_value = None  # No existing history
 
@@ -124,8 +124,8 @@ class TestRedisStateTracker:
 
     def test_record_detects_minor_transition(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test recording detects minor transition."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.state import TransitionSeverity
 
         # Set up existing history
         existing_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
@@ -143,8 +143,8 @@ class TestRedisStateTracker:
 
     def test_record_detects_major_transition(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test recording detects major transition."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.state import TransitionSeverity
 
         # Set up existing history
         existing_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
@@ -161,7 +161,7 @@ class TestRedisStateTracker:
 
     def test_record_detects_emergency_transition(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test recording detects emergency transition."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.context import Dimension, VCPContext
 
         # Set up existing history
         existing_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
@@ -179,7 +179,7 @@ class TestRedisStateTracker:
 
     def test_record_handles_redis_write_error(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test recording handles Redis write errors gracefully."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.context import Dimension, VCPContext
 
         mock_redis.get.return_value = None
         mock_redis.setex.side_effect = Exception("Redis write failed")
@@ -192,7 +192,7 @@ class TestRedisStateTracker:
 
     def test_record_trims_history(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test that history is trimmed to max_history."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.context import Dimension, VCPContext
 
         # Create history at max capacity
         history = [
@@ -214,7 +214,7 @@ class TestRedisStateTracker:
 
     def test_register_handler(self, tracker: Any) -> None:
         """Test registering transition handler."""
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.state import TransitionSeverity
 
         handler = MagicMock()
         tracker.register_handler(TransitionSeverity.MINOR, handler)
@@ -223,8 +223,8 @@ class TestRedisStateTracker:
 
     def test_handler_invoked_on_transition(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test that handlers are invoked on transitions."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.state import TransitionSeverity
 
         handler = MagicMock()
         tracker.register_handler(TransitionSeverity.MINOR, handler)
@@ -245,8 +245,8 @@ class TestRedisStateTracker:
 
     def test_handler_error_does_not_break_record(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test that handler errors don't break recording."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.state import TransitionSeverity
 
         def failing_handler(transition):
             raise ValueError("Handler failed")
@@ -267,7 +267,7 @@ class TestRedisStateTracker:
 
     def test_current_returns_latest_context(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test getting current context."""
-        from services.vcp.adaptation.context import Dimension
+        from vcp.adaptation.context import Dimension
 
         context_data = {"time": ["morning"], "space": ["home"]}
         mock_redis.get.return_value = json.dumps(
@@ -344,7 +344,7 @@ class TestHybridStateTracker:
 
     def test_hybrid_tracker_creation_with_redis(self, mock_redis: MagicMock) -> None:
         """Test HybridStateTracker creation with Redis."""
-        from services.vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.redis_state import HybridStateTracker
 
         tracker = HybridStateTracker(
             session_id="test-session",
@@ -356,7 +356,7 @@ class TestHybridStateTracker:
 
     def test_hybrid_tracker_creation_without_redis(self) -> None:
         """Test HybridStateTracker creation without Redis."""
-        from services.vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.redis_state import HybridStateTracker
 
         tracker = HybridStateTracker(
             session_id="test-session",
@@ -368,8 +368,8 @@ class TestHybridStateTracker:
 
     def test_hybrid_record_uses_redis_when_available(self, mock_redis: MagicMock) -> None:
         """Test record uses Redis when available."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
 
         mock_redis.get.return_value = None  # No history
 
@@ -386,8 +386,8 @@ class TestHybridStateTracker:
 
     def test_hybrid_record_falls_back_to_memory(self, mock_redis: MagicMock) -> None:
         """Test record falls back to memory on Redis failure."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
 
         mock_redis.get.side_effect = Exception("Redis failed")
 
@@ -405,8 +405,8 @@ class TestHybridStateTracker:
 
     def test_hybrid_record_without_redis(self) -> None:
         """Test record works without Redis."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
 
         tracker = HybridStateTracker(
             session_id="test-session",
@@ -421,8 +421,8 @@ class TestHybridStateTracker:
 
     def test_hybrid_register_handler_on_both(self, mock_redis: MagicMock) -> None:
         """Test handler registration on both trackers."""
-        from services.vcp.adaptation.redis_state import HybridStateTracker
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.state import TransitionSeverity
 
         mock_redis.get.return_value = None
 
@@ -439,8 +439,8 @@ class TestHybridStateTracker:
 
     def test_hybrid_current_prefers_redis(self, mock_redis: MagicMock) -> None:
         """Test current prefers Redis when available."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
 
         context_data = {"time": ["evening"]}
         mock_redis.get.return_value = json.dumps(
@@ -469,8 +469,8 @@ class TestHybridStateTracker:
         and returns empty list, so for fallback to memory to occur, we need
         to test when Redis tracker itself is not available.
         """
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
 
         # Create tracker without Redis to test memory-only path
         tracker = HybridStateTracker(
@@ -489,7 +489,7 @@ class TestHybridStateTracker:
 
     def test_hybrid_history_count_prefers_redis(self, mock_redis: MagicMock) -> None:
         """Test history_count prefers Redis."""
-        from services.vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.redis_state import HybridStateTracker
 
         history = [
             {
@@ -513,8 +513,8 @@ class TestHybridStateTracker:
         Note: The RedisStateTracker._get_history() method catches exceptions
         and returns empty list rather than bubbling up, so we test with no Redis.
         """
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
 
         # Create tracker without Redis
         tracker = HybridStateTracker(
@@ -531,9 +531,9 @@ class TestHybridStateTracker:
 
     def test_hybrid_find_transitions_uses_memory(self, mock_redis: MagicMock) -> None:
         """Test find_transitions uses memory tracker."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import HybridStateTracker
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.state import TransitionSeverity
 
         mock_redis.get.return_value = None
 
@@ -569,7 +569,7 @@ class TestTransitionDetection:
     @pytest.fixture
     def tracker(self, mock_redis: MagicMock) -> Any:
         """Create a RedisStateTracker with mock Redis."""
-        from services.vcp.adaptation.redis_state import RedisStateTracker
+        from vcp.adaptation.redis_state import RedisStateTracker
 
         return RedisStateTracker(
             session_id="test-session",
@@ -578,8 +578,8 @@ class TestTransitionDetection:
 
     def test_detect_no_change(self, tracker: Any) -> None:
         """Test detection of no change."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.state import TransitionSeverity
 
         context1 = VCPContext(dimensions={Dimension.TIME: ["morning"]})
         context2 = VCPContext(dimensions={Dimension.TIME: ["morning"]})
@@ -591,8 +591,8 @@ class TestTransitionDetection:
 
     def test_detect_single_dimension_change(self, tracker: Any) -> None:
         """Test detection of single dimension change."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.state import TransitionSeverity
 
         context1 = VCPContext(dimensions={Dimension.TIME: ["morning"]})
         context2 = VCPContext(dimensions={Dimension.TIME: ["evening"]})
@@ -604,8 +604,8 @@ class TestTransitionDetection:
 
     def test_detect_multiple_dimension_changes(self, tracker: Any) -> None:
         """Test detection of multiple dimension changes triggers MAJOR."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.state import TransitionSeverity
 
         context1 = VCPContext(
             dimensions={
@@ -629,8 +629,8 @@ class TestTransitionDetection:
 
     def test_detect_major_dimension_change(self, tracker: Any) -> None:
         """Test that AGENCY change triggers MAJOR severity."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.state import TransitionSeverity
 
         context1 = VCPContext(dimensions={Dimension.AGENCY: ["peer"]})
         context2 = VCPContext(dimensions={Dimension.AGENCY: ["leader"]})
@@ -641,8 +641,8 @@ class TestTransitionDetection:
 
     def test_detect_emergency_values(self, tracker: Any) -> None:
         """Test detection of emergency values."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.state import EMERGENCY_VALUES, TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.state import EMERGENCY_VALUES, TransitionSeverity
 
         context1 = VCPContext(dimensions={Dimension.OCCASION: ["normal"]})
         # Use actual emergency emoji
@@ -655,7 +655,7 @@ class TestTransitionDetection:
 
     def test_transition_has_previous_and_current(self, tracker: Any) -> None:
         """Test that transition contains previous and current contexts."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.context import Dimension, VCPContext
 
         context1 = VCPContext(dimensions={Dimension.TIME: ["morning"]})
         context2 = VCPContext(dimensions={Dimension.TIME: ["evening"]})
@@ -682,8 +682,8 @@ class TestEdgeCases:
 
     def test_empty_context_handling(self, mock_redis: MagicMock) -> None:
         """Test handling of empty contexts."""
-        from services.vcp.adaptation.context import VCPContext
-        from services.vcp.adaptation.redis_state import RedisStateTracker
+        from vcp.adaptation.context import VCPContext
+        from vcp.adaptation.redis_state import RedisStateTracker
 
         mock_redis.get.return_value = None
 
@@ -699,7 +699,7 @@ class TestEdgeCases:
 
     def test_malformed_history_json(self, mock_redis: MagicMock) -> None:
         """Test handling of malformed JSON in history."""
-        from services.vcp.adaptation.redis_state import RedisStateTracker
+        from vcp.adaptation.redis_state import RedisStateTracker
 
         mock_redis.get.return_value = "not valid json"
 
@@ -714,8 +714,8 @@ class TestEdgeCases:
 
     def test_custom_ttl_and_max_history(self, mock_redis: MagicMock) -> None:
         """Test custom TTL and max_history settings."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import RedisStateTracker
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import RedisStateTracker
 
         mock_redis.get.return_value = None
 
@@ -735,7 +735,7 @@ class TestEdgeCases:
 
     def test_session_id_in_key(self, mock_redis: MagicMock) -> None:
         """Test that session ID is correctly included in Redis key."""
-        from services.vcp.adaptation.redis_state import RedisStateTracker
+        from vcp.adaptation.redis_state import RedisStateTracker
 
         tracker = RedisStateTracker(
             session_id="unique-session-abc",
@@ -746,9 +746,9 @@ class TestEdgeCases:
 
     def test_multiple_handlers_same_severity(self, mock_redis: MagicMock) -> None:
         """Test multiple handlers for same severity."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import RedisStateTracker
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import RedisStateTracker
+        from vcp.adaptation.state import TransitionSeverity
 
         existing_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
         mock_redis.get.return_value = json.dumps(
@@ -804,9 +804,9 @@ class TestIntegration:
 
     def test_full_lifecycle(self, mock_redis: MagicMock) -> None:
         """Test full lifecycle: create, record, read, clear."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import RedisStateTracker
-        from services.vcp.adaptation.state import TransitionSeverity
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import RedisStateTracker
+        from vcp.adaptation.state import TransitionSeverity
 
         tracker = RedisStateTracker(
             session_id="lifecycle-test",
@@ -838,8 +838,8 @@ class TestIntegration:
 
     def test_hybrid_with_redis_failure_recovery(self, mock_redis: MagicMock) -> None:
         """Test hybrid tracker recovers from Redis failures."""
-        from services.vcp.adaptation.context import Dimension, VCPContext
-        from services.vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
 
         tracker = HybridStateTracker(
             session_id="failure-recovery",

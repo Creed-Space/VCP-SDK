@@ -1,1 +1,0 @@
-"""VCP Test Suite"""

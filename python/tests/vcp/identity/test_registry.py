@@ -1,7 +1,8 @@
 """Tests for VCP/I Registry with privacy-preserving wildcard queries."""
 
 import pytest
-from services.vcp.identity import (
+
+from vcp.identity import (
     BloomFilter,
     LocalRegistry,
     PrivacyTier,

@@ -1,7 +1,7 @@
 """Tests for VCP/I Namespace governance and validation."""
 
-from services.vcp.identity import NamespaceTier, Token, validate_namespace_access
-from services.vcp.identity.namespace import (
+from vcp.identity import NamespaceTier, Token, validate_namespace_access
+from vcp.identity.namespace import (
     CORE_DOMAINS,
     get_tier_config,
     infer_tier,

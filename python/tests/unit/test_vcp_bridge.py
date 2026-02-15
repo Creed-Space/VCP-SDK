@@ -8,6 +8,9 @@ alignment alert generation.
 from __future__ import annotations
 
 import pytest
+
+pytest.importorskip("services.safety_stack", reason="Requires full Creed Space services")
+
 from services.safety_stack.interoceptive_plugin import reset_interoceptive
 from services.safety_stack.interoceptive_types import (
     AgencyLevel,

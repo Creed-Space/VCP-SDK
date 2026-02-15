@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from services.vcp.types import CompositionMode
+from ..types import CompositionMode
 
 if TYPE_CHECKING:
     pass

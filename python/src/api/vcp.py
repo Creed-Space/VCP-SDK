@@ -16,9 +16,20 @@ from api_routers.auth_dependencies import get_current_user
 from core.config.logging_config import get_logger
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
-from services.feature_flags import is_feature_enabled
-from services.persona_manager import SessionToken
-from services.vcp import ContextEncoder, CSM1Code, Dimension, Persona, Token
+
+try:
+    from services.feature_flags import is_feature_enabled
+except ImportError:
+    def is_feature_enabled(flag: str) -> bool:  # type: ignore[misc]
+        """Stub: feature flags unavailable outside Creed Space."""
+        return False
+
+try:
+    from services.persona_manager import SessionToken
+except ImportError:
+    SessionToken = None  # type: ignore[assignment,misc]
+
+from vcp import ContextEncoder, CSM1Code, Dimension, Persona, Token
 
 logger = get_logger(__name__)
 

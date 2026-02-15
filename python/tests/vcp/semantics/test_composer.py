@@ -1,13 +1,14 @@
 """Tests for VCP/S Constitution Composer."""
 
 import pytest
-from services.vcp.semantics import (
+
+from vcp.semantics import (
     Composer,
     CompositionConflictError,
     Conflict,
 )
-from services.vcp.semantics.composer import Constitution
-from services.vcp.types import CompositionMode
+from vcp.semantics.composer import Constitution
+from vcp.types import CompositionMode
 
 
 @pytest.fixture

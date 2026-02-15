@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytest.importorskip("services.safety_stack", reason="Requires full Creed Space services")
+
 # =============================================================================
 # VCPAdaptationPlugin Class Tests
 # =============================================================================

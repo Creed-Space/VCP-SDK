@@ -167,7 +167,7 @@ async def _handle_validate_token(arguments: dict):
     """Handle vcp_validate_token tool call."""
     import json
 
-    from services.vcp import Token
+    from vcp import Token
 
     token_str = arguments.get("token", "")
 
@@ -193,7 +193,7 @@ async def _handle_parse_csm1(arguments: dict):
     """Handle vcp_parse_csm1 tool call."""
     import json
 
-    from services.vcp import CSM1Code
+    from vcp import CSM1Code
 
     code_str = arguments.get("code", "")
 
@@ -219,7 +219,7 @@ async def _handle_encode_context(arguments: dict):
     """Handle vcp_encode_context tool call."""
     import json
 
-    from services.vcp import ContextEncoder
+    from vcp import ContextEncoder
 
     encoder = ContextEncoder()
     context = encoder.encode(
@@ -247,7 +247,11 @@ async def _handle_status(arguments: dict):
     """Handle vcp_status tool call."""
     import json
 
-    from services.feature_flags import is_feature_enabled
+    try:
+        from services.feature_flags import is_feature_enabled
+    except ImportError:
+        def is_feature_enabled(flag: str) -> bool:  # type: ignore[misc]
+            return True
 
     result = {
         "vcp_identity_enabled": is_feature_enabled("vcp_identity_enabled"),
