@@ -18,7 +18,7 @@ import base64
 import json
 import re
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
@@ -272,8 +272,8 @@ def verify_message(msg: VcpMessage, public_key: bytes) -> bool:
     if not msg.signature:
         return False
 
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
     to_verify = message_to_dict(msg)
     to_verify.pop("signature", None)

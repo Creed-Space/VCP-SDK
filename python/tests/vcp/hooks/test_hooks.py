@@ -11,7 +11,6 @@ import time
 import pytest
 
 from vcp.hooks import (
-    ChainResult,
     DuplicateHookError,
     Hook,
     HookExecutor,
@@ -29,7 +28,6 @@ from vcp.hooks import (
     persona_select_hook,
     scope_filter_hook,
 )
-
 
 # --- Fixtures ---
 
@@ -57,7 +55,9 @@ def _make_hook(
 ) -> Hook:
     """Helper to create a hook with defaults."""
     if action is None:
-        action = lambda inp: HookResult(status=ResultStatus.CONTINUE)
+
+        def action(inp: object) -> HookResult:
+            return HookResult(status=ResultStatus.CONTINUE)
     return Hook(
         name=name,
         type=hook_type,

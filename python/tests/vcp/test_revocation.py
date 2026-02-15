@@ -7,11 +7,10 @@ caching, timeout handling, malformed responses, and orchestrator integration.
 
 from __future__ import annotations
 
-import json
 import socket
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -22,11 +21,9 @@ from vcp.revocation import (
     RevocationChecker,
     RevocationError,
     RevocationStatus,
-    _fetch_json,
     _is_private_ip,
     validate_uri,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers: minimal Manifest stub for testing
@@ -375,7 +372,8 @@ class TestFallbackBehaviour:
             # CRL fetch
             return _crl_response(
                 revoked_entries=[
-                    {"jti": target_jti, "revoked_at": "2026-02-14T08:00:00Z", "reason": "superseded"}
+                    {"jti": target_jti, "revoked_at": "2026-02-14T08:00:00Z",
+                     "reason": "superseded"}
                 ]
             )
 
@@ -605,10 +603,10 @@ class TestOrchestratorIntegration:
 
     def test_revocation_exports(self) -> None:
         """RevocationChecker and RevocationStatus should be importable from vcp."""
-        from vcp import RevocationChecker as RC
-        from vcp import RevocationError as RE
-        from vcp import RevocationStatus as RS
+        from vcp import RevocationChecker as RChecker
+        from vcp import RevocationError as RError
+        from vcp import RevocationStatus as RStatus
 
-        assert RC is RevocationChecker
-        assert RS is RevocationStatus
-        assert RE is RevocationError
+        assert RChecker is RevocationChecker
+        assert RStatus is RevocationStatus
+        assert RError is RevocationError

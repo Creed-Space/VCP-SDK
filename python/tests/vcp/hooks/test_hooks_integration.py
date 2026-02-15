@@ -6,13 +6,12 @@ opt-in semantics work correctly (no hooks = no change in behaviour).
 
 from __future__ import annotations
 
-import base64
 import uuid
 from datetime import datetime, timedelta
 
 import pytest
 
-from vcp.adaptation.context import ContextEncoder, Dimension, VCPContext
+from vcp.adaptation.context import ContextEncoder
 from vcp.adaptation.state import StateTracker, TransitionSeverity
 from vcp.bundle import Bundle, Manifest
 from vcp.hooks import (
@@ -27,7 +26,7 @@ from vcp.hooks import (
     ResultStatus,
     TransitionEvent,
 )
-from vcp.orchestrator import Orchestrator, ReplayCache, VerificationContext
+from vcp.orchestrator import Orchestrator
 from vcp.semantics.composer import Composer, CompositionConflictError, Constitution
 from vcp.trust import TrustAnchor, TrustConfig
 from vcp.types import (
@@ -37,12 +36,10 @@ from vcp.types import (
     CompositionMode,
     Issuer,
     SafetyAttestation,
-    Scope,
     Signature,
     Timestamps,
     VerificationResult,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -111,7 +108,10 @@ def _make_valid_bundle(content: str = "Be helpful and harmless.") -> Bundle:
         signature=Signature(
             algorithm="ed25519",
             value="base64:AAAA",
-            signed_fields=["vcp_version", "bundle", "issuer", "timestamps", "budget", "safety_attestation"],
+            signed_fields=[
+                "vcp_version", "bundle", "issuer",
+                "timestamps", "budget", "safety_attestation",
+            ],
         ),
     )
     return Bundle(manifest=manifest, content=content)

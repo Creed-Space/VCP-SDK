@@ -16,7 +16,6 @@ from vcp.messaging import (
     validate_message,
 )
 
-
 # ── Fixtures ──────────────────────────────────────────────
 
 
@@ -284,6 +283,7 @@ class TestSigning:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import (
             Ed25519PrivateKey,
         )
+
         from vcp.messaging import sign_message, verify_message
 
         secret, _ = ed25519_keypair
