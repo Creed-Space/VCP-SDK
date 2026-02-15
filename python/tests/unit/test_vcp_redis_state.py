@@ -30,7 +30,7 @@ class TestGetSyncRedisClient:
         mock_client.ping.return_value = True
 
         with patch.dict("os.environ", {"REDIS_URL": "redis://localhost:6379/0"}):
-            with patch("redis.from_url", return_value=mock_client):
+            with patch("redis.Redis.from_url", return_value=mock_client):
                 from vcp.adaptation.redis_state import get_sync_redis_client
 
                 client = get_sync_redis_client()
@@ -41,7 +41,7 @@ class TestGetSyncRedisClient:
     def test_get_sync_redis_client_connection_failure(self) -> None:
         """Test Redis client returns None on connection failure."""
         with patch.dict("os.environ", {"REDIS_URL": "redis://localhost:6379/0"}):
-            with patch("redis.from_url", side_effect=ConnectionError("Connection refused")):
+            with patch("redis.Redis.from_url", side_effect=ConnectionError("Connection refused")):
                 from vcp.adaptation.redis_state import get_sync_redis_client
 
                 client = get_sync_redis_client()
@@ -54,7 +54,7 @@ class TestGetSyncRedisClient:
         mock_client.ping.side_effect = Exception("Ping failed")
 
         with patch.dict("os.environ", {"REDIS_URL": "redis://localhost:6379/0"}):
-            with patch("redis.from_url", return_value=mock_client):
+            with patch("redis.Redis.from_url", return_value=mock_client):
                 from vcp.adaptation.redis_state import get_sync_redis_client
 
                 client = get_sync_redis_client()
