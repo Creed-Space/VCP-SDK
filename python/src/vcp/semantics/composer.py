@@ -6,8 +6,9 @@ Handles merging multiple constitutions according to composition modes.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING
 
 from services.vcp.types import CompositionMode
 
@@ -35,7 +36,11 @@ class Conflict:
     resolution: str | None = None
 
     def __str__(self) -> str:
-        return f"{self.conflict_type}: '{self.rule_a}' ({self.source_a}) vs '{self.rule_b}' ({self.source_b})"
+        return (
+            f"{self.conflict_type}: "
+            f"'{self.rule_a}' ({self.source_a}) "
+            f"vs '{self.rule_b}' ({self.source_b})"
+        )
 
 
 @dataclass
@@ -147,7 +152,10 @@ class Composer:
 
         for const in constitutions:
             for rule in const.rules:
-                conflict = self._detect_conflict(rule, const.id, merged, sources.get(rule, "unknown"))
+                conflict = self._detect_conflict(
+                    rule, const.id, merged,
+                    sources.get(rule, "unknown"),
+                )
                 if conflict:
                     conflicts.append(conflict)
                 else:
@@ -179,7 +187,10 @@ class Composer:
                 for i, existing in enumerate(merged):
                     if self._rules_conflict(existing, rule):
                         conflicting_indices.append(i)
-                        warnings.append(f"Rule '{rule}' ({const.id}) overrides '{existing}'")
+                        warnings.append(
+                            f"Rule '{rule}' ({const.id}) "
+                            f"overrides '{existing}'"
+                        )
 
                 # Remove in reverse order to preserve indices
                 for i in reversed(conflicting_indices):
@@ -266,7 +277,9 @@ class Composer:
                     source_a=source,
                     rule_b=existing_rule,
                     source_b=existing_source,
-                    conflict_type=self._determine_conflict_type(rule, existing_rule),
+                    conflict_type=self._determine_conflict_type(
+                        rule, existing_rule
+                    ),
                 )
         return None
 
@@ -341,17 +354,32 @@ class Composer:
         b_lower = rule_b.lower()
 
         # Direct contradictions (always/never pairs)
-        if ("always" in a_lower and "never" in b_lower) or ("never" in a_lower and "always" in b_lower):
+        if (
+            ("always" in a_lower and "never" in b_lower)
+            or ("never" in a_lower and "always" in b_lower)
+        ):
             return "contradiction"
 
         # Must/must not pairs
-        if ("must not" in a_lower and "must" in b_lower and "must not" not in b_lower) or (
-            "must" in a_lower and "must not" not in a_lower and "must not" in b_lower
+        if (
+            (
+                "must not" in a_lower
+                and "must" in b_lower
+                and "must not" not in b_lower
+            )
+            or (
+                "must" in a_lower
+                and "must not" not in a_lower
+                and "must not" in b_lower
+            )
         ):
             return "contradiction"
 
         # Allow/forbid pairs
-        if ("allow" in a_lower and "forbid" in b_lower) or ("forbid" in a_lower and "allow" in b_lower):
+        if (
+            ("allow" in a_lower and "forbid" in b_lower)
+            or ("forbid" in a_lower and "allow" in b_lower)
+        ):
             return "contradiction"
 
         # Default to tension (weaker conflict)

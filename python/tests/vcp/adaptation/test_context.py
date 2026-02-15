@@ -1,7 +1,6 @@
 """Tests for VCP/A Context Encoder."""
 
 import pytest
-
 from services.vcp.adaptation import ContextEncoder, Dimension, VCPContext
 
 

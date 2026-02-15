@@ -195,7 +195,13 @@ class TestRedisStateTracker:
         from services.vcp.adaptation.context import Dimension, VCPContext
 
         # Create history at max capacity
-        history = [{"timestamp": datetime.utcnow().isoformat(), "context": {"time": ["morning"]}} for _ in range(100)]
+        history = [
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "context": {"time": ["morning"]},
+            }
+            for _ in range(100)
+        ]
         mock_redis.get.return_value = json.dumps(history)
 
         new_context = VCPContext(dimensions={Dimension.TIME: ["evening"]})
@@ -282,7 +288,13 @@ class TestRedisStateTracker:
 
     def test_history_count(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test getting history count."""
-        history = [{"timestamp": datetime.utcnow().isoformat(), "context": {"time": ["morning"]}} for _ in range(5)]
+        history = [
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "context": {"time": ["morning"]},
+            }
+            for _ in range(5)
+        ]
         mock_redis.get.return_value = json.dumps(history)
 
         assert tracker.history_count == 5
@@ -479,7 +491,13 @@ class TestHybridStateTracker:
         """Test history_count prefers Redis."""
         from services.vcp.adaptation.redis_state import HybridStateTracker
 
-        history = [{"timestamp": datetime.utcnow().isoformat(), "context": {"time": ["morning"]}} for _ in range(10)]
+        history = [
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "context": {"time": ["morning"]},
+            }
+            for _ in range(10)
+        ]
         mock_redis.get.return_value = json.dumps(history)
 
         tracker = HybridStateTracker(

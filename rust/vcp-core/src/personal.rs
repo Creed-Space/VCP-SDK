@@ -33,8 +33,8 @@ impl PersonalDimensionKind {
             Self::CognitiveState => "\u{1F9E0}",  // brain
             Self::EmotionalTone => "\u{1F4AD}",   // thought balloon
             Self::EnergyLevel => "\u{1F50B}",     // battery
-            Self::PerceivedUrgency => "\u{26A1}",  // high voltage
-            Self::BodySignals => "\u{1FA7A}",      // stethoscope
+            Self::PerceivedUrgency => "\u{26A1}", // high voltage
+            Self::BodySignals => "\u{1FA7A}",     // stethoscope
         }
     }
 
@@ -283,11 +283,11 @@ impl fmt::Display for PersonalState {
 fn split_leading_emoji(s: &str) -> VcpResult<(&str, &str)> {
     // Known symbols in descending byte-length order for greedy matching.
     static SYMBOLS: &[&str] = &[
-        "\u{1F9E0}",  // brain (4 bytes)
-        "\u{1F4AD}",  // thought balloon (4 bytes)
-        "\u{1F50B}",  // battery (4 bytes)
-        "\u{1FA7A}",  // stethoscope (4 bytes)
-        "\u{26A1}",   // high voltage (3 bytes)
+        "\u{1F9E0}", // brain (4 bytes)
+        "\u{1F4AD}", // thought balloon (4 bytes)
+        "\u{1F50B}", // battery (4 bytes)
+        "\u{1FA7A}", // stethoscope (4 bytes)
+        "\u{26A1}",  // high voltage (3 bytes)
     ];
 
     for sym in SYMBOLS {

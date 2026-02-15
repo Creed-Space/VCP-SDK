@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from .context import Dimension, VCPContext
 from .state import EMERGENCY_VALUES, MAJOR_DIMENSIONS, StateTracker, Transition, TransitionSeverity
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def get_sync_redis_client() -> "redis.Redis | None":
+def get_sync_redis_client() -> redis.Redis | None:
     """Get sync Redis client for VCP state persistence.
 
     Returns:
@@ -61,7 +62,7 @@ class RedisStateTracker:
     def __init__(
         self,
         session_id: str,
-        redis_client: "redis.Redis",
+        redis_client: redis.Redis,
         max_history: int = 100,
         ttl_seconds: int = 3600,
     ):
@@ -253,7 +254,7 @@ class HybridStateTracker:
     def __init__(
         self,
         session_id: str,
-        redis_client: "redis.Redis | None" = None,
+        redis_client: redis.Redis | None = None,
         max_history: int = 100,
         ttl_seconds: int = 3600,
     ):
@@ -325,7 +326,8 @@ class HybridStateTracker:
                 return self._redis_tracker.current
             except Exception as e:
                 logger.warning(
-                    f"Failed to get current context from Redis: {type(e).__name__}: {e}. Using memory fallback."
+                    "Failed to get current context from Redis: "
+                    f"{type(e).__name__}: {e}. Using memory fallback."
                 )
         return self._memory_tracker.current
 
@@ -337,7 +339,8 @@ class HybridStateTracker:
                 return self._redis_tracker.history_count
             except Exception as e:
                 logger.warning(
-                    f"Failed to get history count from Redis: {type(e).__name__}: {e}. Using memory fallback."
+                    "Failed to get history count from Redis: "
+                    f"{type(e).__name__}: {e}. Using memory fallback."
                 )
         return self._memory_tracker.history_count
 

@@ -6,10 +6,10 @@ Tracks context state over time and detects transitions.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Callable
 
 from .context import Dimension, VCPContext
 

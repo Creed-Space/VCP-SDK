@@ -37,10 +37,7 @@ pub enum VcpError {
 
     /// A content hash did not match its expected value.
     #[error("hash mismatch: expected {expected}, got {actual}")]
-    HashMismatch {
-        expected: String,
-        actual: String,
-    },
+    HashMismatch { expected: String, actual: String },
 
     /// A cryptographic signature could not be verified.
     #[error("signature error: {0}")]

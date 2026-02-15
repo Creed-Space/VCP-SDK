@@ -22,13 +22,19 @@ VALID_MINIMAL_MANIFEST = {
     "bundle": {
         "id": "creed://test.example/minimal",
         "version": "1.0.0",
-        "content_hash": "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+        "content_hash": (
+            "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+            "e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+        ),
         "content_encoding": "utf-8",
         "content_format": "text/markdown",
     },
     "issuer": {
         "id": "test.example",
-        "public_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "public_key": (
+            "ed25519:"
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        ),
         "key_id": "test-key-2026",
     },
     "timestamps": {
@@ -47,11 +53,17 @@ VALID_MINIMAL_MANIFEST = {
         "auditor_key_id": "safety-key-2026",
         "reviewed_at": "2026-01-10T11:00:00Z",
         "attestation_type": "injection-safe",
-        "signature": "base64:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+        "signature": (
+            "base64:"
+            "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="
+        ),
     },
     "signature": {
         "algorithm": "ed25519",
-        "value": "base64:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=",
+        "value": (
+            "base64:"
+            "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC="
+        ),
         "signed_fields": [
             "vcp_version",
             "bundle",
@@ -107,13 +119,18 @@ VALID_FULL_MANIFEST = {
     "bundle": {
         "id": "creed://creed.space/family.safe.guide",
         "version": "1.2.0",
-        "content_hash": "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+        "content_hash": (
+            "sha256:7f83b1657ff1fc53b92dc18148a1d65d"
+            "fc2d4b1fa3d677284addd200126d9069"
+        ),
         "content_encoding": "utf-8",
         "content_format": "text/markdown",
     },
     "issuer": {
         "id": "creed.space",
-        "public_key": "ed25519:MC4CAQAwBQYDK2VwBCIEIHKhpwMdqgQwCXzLJv",
+        "public_key": (
+            "ed25519:MC4CAQAwBQYDK2VwBCIEIHKhpwMdqgQwCXzLJv"
+        ),
         "key_id": "creed-space-2026",
     },
     "timestamps": {
@@ -147,11 +164,16 @@ VALID_FULL_MANIFEST = {
         "auditor_key_id": "safety-2026",
         "reviewed_at": "2026-01-10T11:00:00Z",
         "attestation_type": "injection-safe",
-        "signature": "base64:MEUCIQDrAbcDefGhIjKlMnOpQrStUvWxYz",
+        "signature": (
+            "base64:MEUCIQDrAbcDefGhIjKlMnOpQrStUvWxYz"
+        ),
     },
     "metadata": {
         "title": "Family Safety Constitution",
-        "description": "Child-safe content filtering for family environments",
+        "description": (
+            "Child-safe content filtering "
+            "for family environments"
+        ),
         "tags": ["safety", "family", "children"],
         "persona": "nanny",
         "adherence_level": 5,
@@ -159,7 +181,9 @@ VALID_FULL_MANIFEST = {
     },
     "signature": {
         "algorithm": "ed25519",
-        "value": "base64:MEUCIQD6X8kBxRiOnNpqRsTuVwXyZaBcDefGhIj",
+        "value": (
+            "base64:MEUCIQD6X8kBxRiOnNpqRsTuVwXyZaBcDefGhIj"
+        ),
         "signed_fields": [
             "vcp_version",
             "bundle",
@@ -218,11 +242,17 @@ EXPIRED_MANIFEST = {
     "bundle": {
         "id": "creed://test.example/expired",
         "version": "1.0.0",
-        "content_hash": "sha256:expired123expired456expired789expired012expired345expired678",
+        "content_hash": (
+            "sha256:expired123expired456expired789"
+            "expired012expired345expired678"
+        ),
     },
     "issuer": {
         "id": "test.example",
-        "public_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "public_key": (
+            "ed25519:"
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        ),
         "key_id": "test-key-2026",
     },
     "timestamps": {
@@ -245,7 +275,10 @@ EXPIRED_MANIFEST = {
     "signature": {
         "algorithm": "ed25519",
         "value": "base64:EXPIRED_MANIFEST_SIG",
-        "signed_fields": ["vcp_version", "bundle", "issuer", "timestamps", "budget", "safety_attestation"],
+        "signed_fields": [
+            "vcp_version", "bundle", "issuer",
+            "timestamps", "budget", "safety_attestation",
+        ],
     },
 }
 
@@ -258,11 +291,17 @@ FUTURE_MANIFEST = {
     "bundle": {
         "id": "creed://test.example/future",
         "version": "1.0.0",
-        "content_hash": "sha256:future123future456future789future012future345future678aaa",
+        "content_hash": (
+            "sha256:future123future456future789"
+            "future012future345future678aaa"
+        ),
     },
     "issuer": {
         "id": "test.example",
-        "public_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "public_key": (
+            "ed25519:"
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        ),
         "key_id": "test-key-2026",
     },
     "timestamps": {
@@ -285,7 +324,10 @@ FUTURE_MANIFEST = {
     "signature": {
         "algorithm": "ed25519",
         "value": "base64:FUTURE_MANIFEST_SIG",
-        "signed_fields": ["vcp_version", "bundle", "issuer", "timestamps", "budget", "safety_attestation"],
+        "signed_fields": [
+            "vcp_version", "bundle", "issuer",
+            "timestamps", "budget", "safety_attestation",
+        ],
     },
 }
 
@@ -293,7 +335,9 @@ FUTURE_MANIFEST = {
 # TEST VECTOR 7: Oversized Content
 # ==============================================================================
 
-OVERSIZED_CONTENT = "# Oversized Constitution\n\n" + ("X" * 300000)  # > 256KB
+OVERSIZED_CONTENT = (
+    "# Oversized Constitution\n\n" + ("X" * 300000)
+)  # > 256KB
 
 # ==============================================================================
 # TEST VECTOR 8: Trust Configuration
@@ -307,7 +351,9 @@ TRUST_CONFIG = {
                 {
                     "id": "creed-space-2026",
                     "algorithm": "ed25519",
-                    "public_key": "MC4CAQAwBQYDK2VwBCIEIHKhpwMdqgQwCXzLJv",
+                    "public_key": (
+                        "MC4CAQAwBQYDK2VwBCIEIHKhpwMdqgQwCXzLJv"
+                    ),
                     "state": "active",
                     "valid_from": "2026-01-01T00:00:00Z",
                     "valid_until": "2027-01-01T00:00:00Z",
@@ -320,7 +366,10 @@ TRUST_CONFIG = {
                 {
                     "id": "test-key-2026",
                     "algorithm": "ed25519",
-                    "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+                    "public_key": (
+                        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                        "AAAAAAAAAA="
+                    ),
                     "state": "active",
                     "valid_from": "2026-01-01T00:00:00Z",
                     "valid_until": "2027-01-01T00:00:00Z",
@@ -392,11 +441,17 @@ CANONICALIZATION_TESTS = [
 HASH_VERIFICATION_TESTS = [
     {
         "content": "Hello, World!\n",
-        "expected_hash": "sha256:d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+        "expected_hash": (
+            "sha256:d9014c4624844aa5bac314773d6b689a"
+            "d467fa4e1d1a50a1b8a99d5a95f72ff5"
+        ),
     },
     {
         "content": "# Test\n\nSimple test content.\n",
-        "expected_hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",  # placeholder
+        "expected_hash": (
+            "sha256:e3b0c44298fc1c149afbf4c8996fb924"
+            "27ae41e4649b934ca495991b7852b855"
+        ),  # placeholder
     },
 ]
 
@@ -407,12 +462,20 @@ HASH_VERIFICATION_TESTS = [
 CONFLICT_BUNDLES = [
     {
         "id": "creed://test/allow-french",
-        "composition": {"layer": 2, "mode": "override", "conflicts_with": ["creed://test/deny-french"]},
+        "composition": {
+            "layer": 2,
+            "mode": "override",
+            "conflicts_with": ["creed://test/deny-french"],
+        },
         "rule": "Always respond in French when asked.",
     },
     {
         "id": "creed://test/deny-french",
-        "composition": {"layer": 2, "mode": "override", "conflicts_with": ["creed://test/allow-french"]},
+        "composition": {
+            "layer": 2,
+            "mode": "override",
+            "conflicts_with": ["creed://test/allow-french"],
+        },
         "rule": "Never respond in French.",
     },
 ]

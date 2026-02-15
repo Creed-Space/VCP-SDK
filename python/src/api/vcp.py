@@ -12,11 +12,10 @@ Feature flags:
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
-
 from api_routers.auth_dependencies import get_current_user
 from core.config.logging_config import get_logger
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 from services.feature_flags import is_feature_enabled
 from services.persona_manager import SessionToken
 from services.vcp import ContextEncoder, CSM1Code, Dimension, Persona, Token
@@ -72,15 +71,38 @@ class CSM1ParseResponse(BaseModel):
 class ContextEncodeRequest(BaseModel):
     """Request to encode context dimensions."""
 
-    time: str | None = Field(None, description="Time context (morning, midday, evening, night)")
-    space: str | None = Field(None, description="Space context (home, office, school, hospital, transit)")
-    company: list[str] | None = Field(None, description="Company context (alone, children, colleagues, family)")
-    culture: str | None = Field(None, description="Cultural context")
-    occasion: str | None = Field(None, description="Occasion (normal, celebration, mourning, emergency)")
-    state: str | None = Field(None, description="Mental state (happy, anxious, tired, contemplative)")
-    environment: str | None = Field(None, description="Physical environment")
-    agency: str | None = Field(None, description="Agency level (leader, peer, subordinate, limited)")
-    constraints: list[str] | None = Field(None, description="Active constraints")
+    time: str | None = Field(
+        None, description="Time context (morning, midday, evening, night)"
+    )
+    space: str | None = Field(
+        None,
+        description="Space context (home, office, school, hospital, transit)",
+    )
+    company: list[str] | None = Field(
+        None,
+        description="Company context (alone, children, colleagues, family)",
+    )
+    culture: str | None = Field(
+        None, description="Cultural context"
+    )
+    occasion: str | None = Field(
+        None,
+        description="Occasion (normal, celebration, mourning, emergency)",
+    )
+    state: str | None = Field(
+        None,
+        description="Mental state (happy, anxious, tired, contemplative)",
+    )
+    environment: str | None = Field(
+        None, description="Physical environment"
+    )
+    agency: str | None = Field(
+        None,
+        description="Agency level (leader, peer, subordinate, limited)",
+    )
+    constraints: list[str] | None = Field(
+        None, description="Active constraints"
+    )
 
 
 class ContextEncodeResponse(BaseModel):

@@ -51,7 +51,7 @@ def canonicalize_content(text: str) -> bytes:
             raise ValueError(f"Illegal control character at position {i}: U+{ord(char):04X}")
 
     # Check for forbidden Unicode characters (direction overrides, etc.)
-    FORBIDDEN = {
+    forbidden = {
         "\u202a",
         "\u202b",
         "\u202c",
@@ -67,7 +67,7 @@ def canonicalize_content(text: str) -> bytes:
         "\ufeff",  # zero-width chars
     }
     for i, char in enumerate(text):
-        if char in FORBIDDEN:
+        if char in forbidden:
             raise ValueError(f"Forbidden Unicode character at position {i}: U+{ord(char):04X}")
 
     # 6. UTF-8 encode without BOM

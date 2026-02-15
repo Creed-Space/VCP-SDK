@@ -6,10 +6,11 @@ Privacy-preserving audit logging for VCP operations.
 
 import hashlib
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 
 class AuditLevel(Enum):
@@ -127,13 +128,13 @@ class AuditLogger:
         Returns:
             Created audit entry
         """
-        from .types import VerificationResult as VR
+        from .types import VerificationResult
 
         manifest = bundle.manifest
 
         # Determine checks passed
         checks = []
-        if result == VR.VALID:
+        if result == VerificationResult.VALID:
             checks = [
                 "size",
                 "schema",
@@ -186,10 +187,24 @@ class AuditLogger:
             version=manifest.bundle.version,
             manifest_signature=sig_truncated,
             audit_level=self.level,
-            request_id=_hash_for_privacy(request_id) if request_id else None,
-            duration_ms=duration_ms if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC) else None,
-            token_count=manifest.budget.token_count if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC) else None,
-            content_preview=bundle.content[:100] if self.level == AuditLevel.DIAGNOSTIC else None,
+            request_id=(
+                _hash_for_privacy(request_id) if request_id else None
+            ),
+            duration_ms=(
+                duration_ms
+                if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC)
+                else None
+            ),
+            token_count=(
+                manifest.budget.token_count
+                if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC)
+                else None
+            ),
+            content_preview=(
+                bundle.content[:100]
+                if self.level == AuditLevel.DIAGNOSTIC
+                else None
+            ),
         )
 
         self._entries.append(entry)

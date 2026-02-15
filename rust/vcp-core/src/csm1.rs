@@ -271,9 +271,7 @@ impl Csm1Code {
         let (before_ns, namespace) = if let Some(colon_idx) = before_version.find(':') {
             let n = &before_version[colon_idx + 1..];
             if n.is_empty() || !n.chars().next().unwrap().is_ascii_uppercase() {
-                return Err(VcpError::ParseError(format!(
-                    "invalid namespace: {n}"
-                )));
+                return Err(VcpError::ParseError(format!("invalid namespace: {n}")));
             }
             (&before_version[..colon_idx], Some(n.to_string()))
         } else {
@@ -469,10 +467,7 @@ impl Csm1Token {
         // Line 3: P:<persona>:<adherence>
         let line3 = Self::strip_and_validate(lines[2], "P:")?;
         let (persona_str, adherence_str) = line3.split_once(':').ok_or_else(|| {
-            VcpError::ParseError(format!(
-                "line 3 missing adherence separator: {}",
-                lines[2]
-            ))
+            VcpError::ParseError(format!("line 3 missing adherence separator: {}", lines[2]))
         })?;
         let persona_char = persona_str
             .chars()
@@ -524,10 +519,7 @@ impl Csm1Token {
         let flags = if line6.is_empty() {
             Vec::new()
         } else {
-            line6
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect()
+            line6.split(',').map(|s| s.trim().to_string()).collect()
         };
 
         // Line 7: S:<private-markers>
@@ -535,10 +527,7 @@ impl Csm1Token {
         let private_markers = if line7.is_empty() {
             Vec::new()
         } else {
-            line7
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect()
+            line7.split(',').map(|s| s.trim().to_string()).collect()
         };
 
         // Line 8 (optional): R:<personal-state>

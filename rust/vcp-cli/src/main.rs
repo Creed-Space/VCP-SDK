@@ -123,7 +123,11 @@ fn cmd_parse_csm1(raw: &str) -> Result<(), String> {
     let json = serde_json::to_string_pretty(&code).map_err(|e| e.to_string())?;
     println!("{json}");
     println!();
-    println!("persona:   {} ({})", code.persona, code.persona.description());
+    println!(
+        "persona:   {} ({})",
+        code.persona,
+        code.persona.description()
+    );
     println!("level:     {}", code.adherence_level);
     if !code.scopes.is_empty() {
         let scope_strs: Vec<String> = code

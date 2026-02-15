@@ -1,7 +1,6 @@
 """Tests for VCP/I Registry with privacy-preserving wildcard queries."""
 
 import pytest
-
 from services.vcp.identity import (
     BloomFilter,
     LocalRegistry,
@@ -191,20 +190,50 @@ class TestInferPrivacyTier:
 
     def test_public_core_namespaces(self):
         """Core namespaces are public."""
-        assert infer_privacy_tier(Token.parse("family.safe.guide")) == PrivacyTier.PUBLIC
-        assert infer_privacy_tier(Token.parse("work.pro.assistant")) == PrivacyTier.PUBLIC
-        assert infer_privacy_tier(Token.parse("education.k12.safety")) == PrivacyTier.PUBLIC
+        assert (
+            infer_privacy_tier(Token.parse("family.safe.guide"))
+            == PrivacyTier.PUBLIC
+        )
+        assert (
+            infer_privacy_tier(Token.parse("work.pro.assistant"))
+            == PrivacyTier.PUBLIC
+        )
+        assert (
+            infer_privacy_tier(Token.parse("education.k12.safety"))
+            == PrivacyTier.PUBLIC
+        )
 
     def test_organizational_namespaces(self):
         """Organizational namespaces are restricted."""
-        assert infer_privacy_tier(Token.parse("company.acme.legal.x")) == PrivacyTier.ORGANIZATIONAL
-        assert infer_privacy_tier(Token.parse("school.mit.research.x")) == PrivacyTier.ORGANIZATIONAL
-        assert infer_privacy_tier(Token.parse("org.example.dept.policy")) == PrivacyTier.ORGANIZATIONAL
+        assert (
+            infer_privacy_tier(Token.parse("company.acme.legal.x"))
+            == PrivacyTier.ORGANIZATIONAL
+        )
+        assert (
+            infer_privacy_tier(Token.parse("school.mit.research.x"))
+            == PrivacyTier.ORGANIZATIONAL
+        )
+        assert (
+            infer_privacy_tier(
+                Token.parse("org.example.dept.policy")
+            )
+            == PrivacyTier.ORGANIZATIONAL
+        )
 
     def test_community_namespaces(self):
         """Community namespaces are community-controlled."""
-        assert infer_privacy_tier(Token.parse("religion.buddhist.meditation")) == PrivacyTier.COMMUNITY
-        assert infer_privacy_tier(Token.parse("culture.japanese.formal")) == PrivacyTier.COMMUNITY
+        assert (
+            infer_privacy_tier(
+                Token.parse("religion.buddhist.meditation")
+            )
+            == PrivacyTier.COMMUNITY
+        )
+        assert (
+            infer_privacy_tier(
+                Token.parse("culture.japanese.formal")
+            )
+            == PrivacyTier.COMMUNITY
+        )
 
     def test_personal_namespaces(self):
         """Personal namespaces are private."""
@@ -212,8 +241,18 @@ class TestInferPrivacyTier:
 
     def test_pseudonymous_namespaces(self):
         """Pseudonymous namespaces are unlinkable."""
-        assert infer_privacy_tier(Token.parse("anon.abc123.constitution")) == PrivacyTier.PSEUDONYMOUS
-        assert infer_privacy_tier(Token.parse("pseudo.xyz789.private")) == PrivacyTier.PSEUDONYMOUS
+        assert (
+            infer_privacy_tier(
+                Token.parse("anon.abc123.constitution")
+            )
+            == PrivacyTier.PSEUDONYMOUS
+        )
+        assert (
+            infer_privacy_tier(
+                Token.parse("pseudo.xyz789.private")
+            )
+            == PrivacyTier.PSEUDONYMOUS
+        )
 
 
 class TestPseudonymousRegistry:

@@ -8,7 +8,6 @@ alignment alert generation.
 from __future__ import annotations
 
 import pytest
-
 from services.safety_stack.interoceptive_plugin import reset_interoceptive
 from services.safety_stack.interoceptive_types import (
     AgencyLevel,

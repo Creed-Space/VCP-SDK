@@ -1,7 +1,6 @@
 """Tests for VCP/S CSM1 Grammar Parser."""
 
 import pytest
-
 from services.vcp.semantics import CSM1Code, Persona, Scope
 
 

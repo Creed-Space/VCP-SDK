@@ -6,9 +6,10 @@ Represents a signed constitutional bundle.
 
 import json
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 
 from .canonicalize import canonicalize_manifest, compute_content_hash
 from .types import (
@@ -273,7 +274,11 @@ class BundleBuilder:
         self.attestation_type = attestation_type
         return self
 
-    def with_budget(self, tokenizer: str = "cl100k_base", max_context_share: float = 0.25) -> "BundleBuilder":
+    def with_budget(
+        self,
+        tokenizer: str = "cl100k_base",
+        max_context_share: float = 0.25,
+    ) -> "BundleBuilder":
         """Set token budget parameters."""
         self.tokenizer = tokenizer
         self.max_context_share = max_context_share

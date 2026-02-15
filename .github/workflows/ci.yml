@@ -114,11 +114,11 @@ jobs:
           node-version: '20'
 
       - name: Install ajv-cli
-        run: npm install -g ajv-cli
+        run: npm install -g ajv-cli ajv-formats
 
       - name: Validate schemas
         run: |
           for schema in schemas/*.schema.json; do
             echo "Validating $schema..."
-            ajv compile -s "$schema" --spec=draft2020 || ajv compile -s "$schema" --spec=draft7
+            ajv compile -s "$schema" --spec=draft2020 -c ajv-formats || ajv compile -s "$schema" --spec=draft7 -c ajv-formats
           done

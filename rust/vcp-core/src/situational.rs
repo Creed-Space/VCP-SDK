@@ -30,15 +30,15 @@ impl SituationalDimension {
     /// Emoji symbol used as the wire-format prefix.
     pub fn symbol(self) -> &'static str {
         match self {
-            Self::Time => "\u{23F0}",        // alarm clock
-            Self::Space => "\u{1F4CD}",      // round pushpin
-            Self::Company => "\u{1F465}",    // busts in silhouette
-            Self::Culture => "\u{1F30D}",    // globe showing Europe-Africa
-            Self::Occasion => "\u{1F3AD}",   // performing arts
+            Self::Time => "\u{23F0}",                 // alarm clock
+            Self::Space => "\u{1F4CD}",               // round pushpin
+            Self::Company => "\u{1F465}",             // busts in silhouette
+            Self::Culture => "\u{1F30D}",             // globe showing Europe-Africa
+            Self::Occasion => "\u{1F3AD}",            // performing arts
             Self::Environment => "\u{1F321}\u{FE0F}", // thermometer
-            Self::Agency => "\u{1F537}",     // large blue diamond
-            Self::Constraints => "\u{1F536}", // large orange diamond
-            Self::SystemContext => "\u{1F4E1}", // satellite antenna
+            Self::Agency => "\u{1F537}",              // large blue diamond
+            Self::Constraints => "\u{1F536}",         // large orange diamond
+            Self::SystemContext => "\u{1F4E1}",       // satellite antenna
         }
     }
 

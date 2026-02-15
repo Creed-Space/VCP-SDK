@@ -1,7 +1,6 @@
 """Tests for VCP/I Token parsing and validation."""
 
 import pytest
-
 from services.vcp.identity import Token
 
 

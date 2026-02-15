@@ -357,9 +357,7 @@ impl VcpToken {
 
     fn validate_namespace(ns: &str) -> VcpResult<()> {
         if ns.is_empty() {
-            return Err(VcpError::MalformedToken(
-                "namespace cannot be empty".into(),
-            ));
+            return Err(VcpError::MalformedToken("namespace cannot be empty".into()));
         }
         let mut chars = ns.chars();
         let first = chars.next().unwrap();
@@ -499,7 +497,10 @@ mod tests {
 
     #[test]
     fn too_many_segments() {
-        let raw = (1..=11).map(|i| format!("s{i}")).collect::<Vec<_>>().join(".");
+        let raw = (1..=11)
+            .map(|i| format!("s{i}"))
+            .collect::<Vec<_>>()
+            .join(".");
         assert!(VcpToken::parse(&raw).is_err());
     }
 

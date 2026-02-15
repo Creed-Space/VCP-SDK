@@ -61,9 +61,15 @@ class Token:
     def __post_init__(self) -> None:
         """Validate token after construction."""
         if len(self.segments) < self.MIN_SEGMENTS:
-            raise ValueError(f"Token requires at least {self.MIN_SEGMENTS} segments, got {len(self.segments)}")
+            raise ValueError(
+                f"Token requires at least {self.MIN_SEGMENTS} "
+                f"segments, got {len(self.segments)}"
+            )
         if len(self.segments) > self.MAX_SEGMENTS:
-            raise ValueError(f"Token exceeds maximum {self.MAX_SEGMENTS} segments, got {len(self.segments)}")
+            raise ValueError(
+                f"Token exceeds maximum {self.MAX_SEGMENTS} "
+                f"segments, got {len(self.segments)}"
+            )
 
     @classmethod
     def parse(cls, raw: str) -> Self:
@@ -82,7 +88,10 @@ class Token:
             raise ValueError("Token cannot be empty")
 
         if len(raw) > cls.MAX_LENGTH:
-            raise ValueError(f"Token exceeds max length {cls.MAX_LENGTH}: {len(raw)}")
+            raise ValueError(
+                f"Token exceeds max length {cls.MAX_LENGTH}: "
+                f"{len(raw)}"
+            )
 
         match = cls.TOKEN_PATTERN.match(raw)
         if not match:
@@ -94,12 +103,18 @@ class Token:
 
         # Validate segment count
         if len(segments) < cls.MIN_SEGMENTS:
-            raise ValueError(f"Token requires at least {cls.MIN_SEGMENTS} segments, got {len(segments)}")
+            raise ValueError(
+                f"Token requires at least {cls.MIN_SEGMENTS} "
+                f"segments, got {len(segments)}"
+            )
 
         # Validate individual segment lengths
         for i, seg in enumerate(segments):
             if len(seg) > cls.MAX_SEGMENT:
-                raise ValueError(f"Segment {i + 1} exceeds max length {cls.MAX_SEGMENT}: {seg}")
+                raise ValueError(
+                    f"Segment {i + 1} exceeds max length "
+                    f"{cls.MAX_SEGMENT}: {seg}"
+                )
 
         return cls(
             segments=segments,

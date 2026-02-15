@@ -6,9 +6,9 @@ Handles bundle verification and injection.
 
 import json
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Callable
 
 from .bundle import Bundle
 from .canonicalize import canonicalize_manifest, verify_content_hash
@@ -225,7 +225,10 @@ class Orchestrator:
             if scope.model_families:
                 import fnmatch
 
-                if not any(fnmatch.fnmatch(context.model_family, pattern) for pattern in scope.model_families):
+                if not any(
+                    fnmatch.fnmatch(context.model_family, pattern)
+                    for pattern in scope.model_families
+                ):
                     return VerificationResult.SCOPE_MISMATCH
 
             # Purpose check

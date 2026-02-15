@@ -1,7 +1,6 @@
 """Tests for VCP/A State Tracker."""
 
 import pytest
-
 from services.vcp.adaptation import (
     ContextEncoder,
     Dimension,

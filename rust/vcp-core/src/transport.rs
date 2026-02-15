@@ -42,7 +42,10 @@ pub fn canonicalize_content(text: &str) -> VcpResult<Vec<u8>> {
     let text = text.replace("\r\n", "\n").replace('\r', "\n");
 
     // 3. Strip trailing whitespace from each line.
-    let lines: Vec<&str> = text.split('\n').map(|l| l.trim_end_matches([' ', '\t'])).collect();
+    let lines: Vec<&str> = text
+        .split('\n')
+        .map(|l| l.trim_end_matches([' ', '\t']))
+        .collect();
 
     // 4. Remove trailing empty lines, ensure single trailing newline.
     let mut lines = lines;
@@ -201,10 +204,7 @@ impl<'de> Deserialize<'de> for VerificationCode {
 }
 
 /// Verify that the content hash in a bundle matches the actual content.
-pub fn verify_bundle_content(
-    content: &str,
-    expected_hash: &str,
-) -> VerificationResult {
+pub fn verify_bundle_content(content: &str, expected_hash: &str) -> VerificationResult {
     match compute_content_hash(content) {
         Ok(computed) => {
             if computed == expected_hash {
@@ -382,8 +382,7 @@ mod tests {
             }
         });
 
-        let result =
-            verify_bundle(&serde_json::to_string(&manifest).unwrap(), content).unwrap();
+        let result = verify_bundle(&serde_json::to_string(&manifest).unwrap(), content).unwrap();
         assert!(result.is_valid());
     }
 

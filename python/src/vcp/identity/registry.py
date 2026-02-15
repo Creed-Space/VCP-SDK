@@ -44,10 +44,11 @@ import hashlib
 import hmac
 import secrets
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .token import Token
@@ -107,9 +108,15 @@ class AuthorizationContext:
 
     requester_id: str | None = None
     requester_pubkey: bytes | None = None
-    org_memberships: set[str] = field(default_factory=set)  # e.g., {"acme", "mit"}
-    community_memberships: set[str] = field(default_factory=set)
-    owned_prefixes: set[str] = field(default_factory=set)  # e.g., {"user.alice"}
+    org_memberships: set[str] = field(
+        default_factory=set
+    )  # e.g., {"acme", "mit"}
+    community_memberships: set[str] = field(
+        default_factory=set
+    )
+    owned_prefixes: set[str] = field(
+        default_factory=set
+    )  # e.g., {"user.alice"}
     is_admin: bool = False
 
 
@@ -123,11 +130,21 @@ class BloomFilter:
     - Cannot enumerate members (privacy-preserving)
     """
 
-    def __init__(self, expected_items: int = 10000, false_positive_rate: float = 0.01):
+    def __init__(
+        self,
+        expected_items: int = 10000,
+        false_positive_rate: float = 0.01,
+    ):
         import math
 
-        self.size = int(-expected_items * math.log(false_positive_rate) / (math.log(2) ** 2))
-        self.num_hashes = int(self.size / expected_items * math.log(2))
+        self.size = int(
+            -expected_items
+            * math.log(false_positive_rate)
+            / (math.log(2) ** 2)
+        )
+        self.num_hashes = int(
+            self.size / expected_items * math.log(2)
+        )
         self.bit_array = bytearray(self.size // 8 + 1)
         self._count = 0
 
@@ -146,7 +163,10 @@ class BloomFilter:
 
     def might_contain(self, item: str) -> bool:
         """Check if item might be in the filter."""
-        return all(self.bit_array[pos // 8] & (1 << (pos % 8)) for pos in self._hashes(item))
+        return all(
+            self.bit_array[pos // 8] & (1 << (pos % 8))
+            for pos in self._hashes(item)
+        )
 
     def __len__(self) -> int:
         return self._count
@@ -165,7 +185,7 @@ class PrefixTree:
     @dataclass
     class Node:
         segment: str
-        children: dict[str, "PrefixTree.Node"] = field(default_factory=dict)
+        children: dict[str, PrefixTree.Node] = field(default_factory=dict)
         entries: list[RegistryEntry] = field(default_factory=list)
         privacy_tier: PrivacyTier = PrivacyTier.PUBLIC
 
@@ -184,7 +204,7 @@ class PrefixTree:
                 node.privacy_tier = entry.privacy_tier
         node.entries.append(entry)
 
-    def find_exact(self, token: "Token") -> RegistryEntry | None:
+    def find_exact(self, token: Token) -> RegistryEntry | None:
         """Find exact token match."""
         node = self.root
         for segment in token.segments:
@@ -225,7 +245,7 @@ class PrefixTree:
         # Collect entries with redaction tracking
         return self._collect_entries(node, auth, max_results)
 
-    def _count_entries(self, node: "PrefixTree.Node") -> int:
+    def _count_entries(self, node: PrefixTree.Node) -> int:
         """Count all entries under a node (for redaction tracking)."""
         count = len(node.entries)
         for child in node.children.values():
@@ -234,7 +254,7 @@ class PrefixTree:
 
     def _can_enumerate(
         self,
-        node: "PrefixTree.Node",
+        node: PrefixTree.Node,
         prefix: str,
         auth: AuthorizationContext,
     ) -> bool:
@@ -271,7 +291,7 @@ class PrefixTree:
 
     def _collect_entries(
         self,
-        node: "PrefixTree.Node",
+        node: PrefixTree.Node,
         auth: AuthorizationContext,
         max_results: int,
     ) -> tuple[list[RegistryEntry], int]:
@@ -288,7 +308,7 @@ class PrefixTree:
 
     def _collect_entries_recursive(
         self,
-        node: "PrefixTree.Node",
+        node: PrefixTree.Node,
         auth: AuthorizationContext,
         max_results: int,
         entries: list[RegistryEntry],
@@ -308,7 +328,9 @@ class PrefixTree:
                 return
             self._collect_entries_recursive(child, auth, max_results, entries, redacted_holder)
 
-    def _can_access_entry(self, entry: RegistryEntry, auth: AuthorizationContext) -> bool:
+    def _can_access_entry(
+        self, entry: RegistryEntry, auth: AuthorizationContext
+    ) -> bool:
         """Check if requester can access this entry."""
         if entry.privacy_tier == PrivacyTier.PUBLIC:
             return True
@@ -321,7 +343,9 @@ class PrefixTree:
         if entry.privacy_tier == PrivacyTier.ORGANIZATIONAL:
             # Extract org name from token (second segment for company.acme.*)
             segments = entry.token.segments
-            if len(segments) >= 2 and segments[0] in ("company", "school", "ngo", "org"):
+            if len(segments) >= 2 and segments[0] in (
+                "company", "school", "ngo", "org"
+            ):
                 org_name = segments[1]
                 if org_name in auth.org_memberships:
                     return True
@@ -329,13 +353,17 @@ class PrefixTree:
         # Check community membership
         if entry.privacy_tier == PrivacyTier.COMMUNITY:
             segments = entry.token.segments
-            if len(segments) >= 2 and segments[0] in ("religion", "culture", "community"):
+            if len(segments) >= 2 and segments[0] in (
+                "religion", "culture", "community"
+            ):
                 community_name = segments[1]
                 if community_name in auth.community_memberships:
                     return True
 
         # Check owned prefixes for personal/pseudonymous
-        if entry.privacy_tier in (PrivacyTier.PERSONAL, PrivacyTier.PSEUDONYMOUS):
+        if entry.privacy_tier in (
+            PrivacyTier.PERSONAL, PrivacyTier.PSEUDONYMOUS
+        ):
             canonical = entry.token.canonical
             for prefix in auth.owned_prefixes:
                 if canonical.startswith(prefix):
@@ -350,7 +378,7 @@ class Registry(ABC):
     @abstractmethod
     def register(
         self,
-        token: "Token",
+        token: Token,
         privacy_tier: PrivacyTier = PrivacyTier.PUBLIC,
         owner_id: str | None = None,
         metadata: dict | None = None,
@@ -359,12 +387,12 @@ class Registry(ABC):
         ...
 
     @abstractmethod
-    def resolve(self, token: "Token") -> RegistryEntry | None:
+    def resolve(self, token: Token) -> RegistryEntry | None:
         """Resolve a token to its entry (exact lookup, always allowed)."""
         ...
 
     @abstractmethod
-    def exists(self, token: "Token") -> bool:
+    def exists(self, token: Token) -> bool:
         """Check if token exists (uses bloom filter, no enumeration)."""
         ...
 
@@ -411,12 +439,14 @@ class LocalRegistry(Registry):
     def __init__(self):
         self._tree = PrefixTree()
         self._bloom = BloomFilter()
-        self._entries: dict[str, RegistryEntry] = {}  # canonical -> entry
-        self._subscriptions: dict[str, tuple[str, AuthorizationContext, callable]] = {}
+        self._entries: dict[str, RegistryEntry] = {}
+        self._subscriptions: dict[
+            str, tuple[str, AuthorizationContext, callable]
+        ] = {}
 
     def register(
         self,
-        token: "Token",
+        token: Token,
         privacy_tier: PrivacyTier = PrivacyTier.PUBLIC,
         owner_id: str | None = None,
         metadata: dict | None = None,
@@ -439,11 +469,11 @@ class LocalRegistry(Registry):
 
         return entry
 
-    def resolve(self, token: "Token") -> RegistryEntry | None:
+    def resolve(self, token: Token) -> RegistryEntry | None:
         """Resolve exact token (always allowed, reveals nothing about siblings)."""
         return self._entries.get(token.canonical)
 
-    def exists(self, token: "Token") -> bool:
+    def exists(self, token: Token) -> bool:
         """Check existence via bloom filter (no enumeration possible)."""
         if not self._bloom.might_contain(token.canonical):
             return False  # Definitely not present
@@ -469,7 +499,9 @@ class LocalRegistry(Registry):
                 prefix = pattern[:-3]
                 prefix_segments = tuple(prefix.split("."))
 
-                entries, prefix_redacted = self._tree.find_prefix(prefix_segments, auth, max_results)
+                entries, prefix_redacted = self._tree.find_prefix(
+                    prefix_segments, auth, max_results
+                )
                 tokens = [entry.token for entry in entries]
                 redacted += prefix_redacted
 
@@ -494,7 +526,9 @@ class LocalRegistry(Registry):
 
                 prefix_segments = tuple(prefix.split(".")) if prefix else ()
 
-                entries, prefix_redacted = self._tree.find_prefix(prefix_segments, auth, max_results * 2)
+                entries, prefix_redacted = self._tree.find_prefix(
+                    prefix_segments, auth, max_results * 2
+                )
                 redacted += prefix_redacted
                 for entry in entries:
                     if suffix and not entry.token.canonical.endswith(suffix):
@@ -546,9 +580,13 @@ class LocalRegistry(Registry):
             return True
         return False
 
-    def _notify_subscribers(self, token: "Token", event: str) -> None:
+    def _notify_subscribers(
+        self, token: Token, event: str
+    ) -> None:
         """Notify subscribers of a change."""
-        for sub_id, (pattern, auth, callback) in list(self._subscriptions.items()):
+        for sub_id, (pattern, auth, callback) in list(
+            self._subscriptions.items()
+        ):
             # Check if token matches the subscription pattern
             if not token.matches_pattern(pattern):
                 continue
@@ -561,7 +599,9 @@ class LocalRegistry(Registry):
             else:
                 prefix = pattern
 
-            prefix_segments = tuple(prefix.split(".")) if prefix else ()
+            prefix_segments = (
+                tuple(prefix.split(".")) if prefix else ()
+            )
 
             # Navigate to the prefix node for authorization check
             node = self._tree.root
@@ -571,10 +611,13 @@ class LocalRegistry(Registry):
                 else:
                     break
 
+            prefix_str = (
+                ".".join(prefix_segments)
+                if prefix_segments
+                else ""
+            )
             if self._tree._can_enumerate(
-                node,
-                ".".join(prefix_segments) if prefix_segments else "",
-                auth,
+                node, prefix_str, auth
             ):
                 try:
                     callback(token, event)
@@ -583,8 +626,10 @@ class LocalRegistry(Registry):
                     import logging
 
                     logging.getLogger(__name__).warning(
-                        f"Registry callback error (token={token}, event={event}): "
-                        f"{type(callback_err).__name__}: {callback_err}"
+                        "Registry callback error "
+                        f"(token={token}, event={event}): "
+                        f"{type(callback_err).__name__}: "
+                        f"{callback_err}"
                     )
 
 
@@ -616,7 +661,7 @@ class PseudonymousRegistry:
 
     def register_pseudonymous(
         self,
-        token: "Token",
+        token: Token,
         pseudonym: str,
         encrypted_metadata: bytes,
     ) -> RegistryEntry:
@@ -630,7 +675,7 @@ class PseudonymousRegistry:
 
     def prove_ownership(
         self,
-        token: "Token",
+        token: Token,
         pseudonym: str,
         secret: bytes,
     ) -> bytes:
@@ -646,7 +691,7 @@ class PseudonymousRegistry:
 
     def verify_ownership(
         self,
-        token: "Token",
+        token: Token,
         pseudonym: str,
         proof: bytes,
         secret: bytes,
@@ -659,7 +704,7 @@ class PseudonymousRegistry:
 # Convenience functions
 
 
-def infer_privacy_tier(token: "Token") -> PrivacyTier:
+def infer_privacy_tier(token: Token) -> PrivacyTier:
     """Infer privacy tier from token's first segment."""
     domain = token.domain
 

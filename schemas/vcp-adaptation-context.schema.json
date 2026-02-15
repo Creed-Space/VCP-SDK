@@ -168,10 +168,9 @@
           "type": "object",
           "additionalProperties": {
             "type": "array",
-            "items": [
-              { "type": "array" },
-              { "type": "array" }
-            ]
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "array" }
           }
         },
         "timestamp": {
