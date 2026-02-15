@@ -1,0 +1,253 @@
+{
+  "suite": "identity/token_parsing",
+  "version": "1.0.0",
+  "description": "Test vectors for VCP/I identity token parsing. Extracted from Rust vcp-core identity.rs tests and VCP specification.",
+  "vectors": [
+    {
+      "id": "token-001",
+      "description": "Minimal 3-segment token",
+      "input": "family.safe.guide",
+      "expected": {
+        "valid": true,
+        "domain": "family",
+        "approach": "safe",
+        "role": "guide",
+        "version": null,
+        "namespace": null,
+        "path": [],
+        "depth": 3
+      }
+    },
+    {
+      "id": "token-002",
+      "description": "Token with semver version",
+      "input": "family.safe.guide@1.2.0",
+      "expected": {
+        "valid": true,
+        "domain": "family",
+        "approach": "safe",
+        "role": "guide",
+        "version": "1.2.0",
+        "version_major": 1,
+        "version_minor": 2,
+        "version_patch": 0,
+        "namespace": null,
+        "depth": 3
+      }
+    },
+    {
+      "id": "token-003",
+      "description": "Token with namespace (4 segments)",
+      "input": "company.acme.legal.compliance:SEC",
+      "expected": {
+        "valid": true,
+        "domain": "company",
+        "approach": "acme",
+        "role": "compliance",
+        "namespace": "SEC",
+        "version": null,
+        "depth": 4
+      }
+    },
+    {
+      "id": "token-004",
+      "description": "Token with version and namespace (5 segments)",
+      "input": "org.example.dept.team.policy@1.0.0:GOV",
+      "expected": {
+        "valid": true,
+        "domain": "org",
+        "depth": 5,
+        "version": "1.0.0",
+        "version_major": 1,
+        "version_minor": 0,
+        "version_patch": 0,
+        "namespace": "GOV"
+      }
+    },
+    {
+      "id": "token-005",
+      "description": "Token with hyphens in segments",
+      "input": "my-org.safe-net.web-guard",
+      "expected": {
+        "valid": true,
+        "domain": "my-org",
+        "approach": "safe-net",
+        "role": "web-guard",
+        "version": null,
+        "namespace": null,
+        "depth": 3
+      }
+    },
+    {
+      "id": "token-006",
+      "description": "Roundtrip display test: full token with version and namespace",
+      "input": "company.acme.legal.compliance@2.1.0:SEC",
+      "expected": {
+        "valid": true,
+        "canonical_display": "company.acme.legal.compliance@2.1.0:SEC",
+        "domain": "company",
+        "namespace": "SEC",
+        "version": "2.1.0",
+        "depth": 4
+      }
+    },
+    {
+      "id": "token-007",
+      "description": "Simple roundtrip: 3-segment token displays as itself",
+      "input": "family.safe.guide",
+      "expected": {
+        "valid": true,
+        "canonical_display": "family.safe.guide"
+      }
+    },
+    {
+      "id": "token-008",
+      "description": "4-segment token with hierarchy: parent is 3-segment",
+      "input": "company.acme.legal.compliance",
+      "expected": {
+        "valid": true,
+        "depth": 4,
+        "parent_canonical": "company.acme.legal",
+        "has_parent": true
+      }
+    },
+    {
+      "id": "token-009",
+      "description": "3-segment token has no parent (at minimum depth)",
+      "input": "a.b.c",
+      "expected": {
+        "valid": true,
+        "depth": 3,
+        "has_parent": false
+      }
+    },
+    {
+      "id": "token-010",
+      "description": "URI generation with default registry",
+      "input": "family.safe.guide@1.0.0",
+      "expected": {
+        "valid": true,
+        "uri_with_registry_creed_space": "creed://creed.space/family.safe.guide@1.0.0"
+      }
+    },
+    {
+      "id": "token-err-001",
+      "description": "Empty string is invalid",
+      "input": "",
+      "expected": {
+        "valid": false,
+        "error": "empty_token"
+      }
+    },
+    {
+      "id": "token-err-002",
+      "description": "Only 2 segments (too few, minimum is 3)",
+      "input": "one.two",
+      "expected": {
+        "valid": false,
+        "error": "too_few_segments"
+      }
+    },
+    {
+      "id": "token-err-003",
+      "description": "Uppercase letter in segment",
+      "input": "Family.safe.guide",
+      "expected": {
+        "valid": false,
+        "error": "invalid_segment"
+      }
+    },
+    {
+      "id": "token-err-004",
+      "description": "Incomplete semver version (missing patch)",
+      "input": "a.b.c@1.2",
+      "expected": {
+        "valid": false,
+        "error": "invalid_version"
+      }
+    },
+    {
+      "id": "token-err-005",
+      "description": "Lowercase namespace (must be uppercase)",
+      "input": "a.b.c:sec",
+      "expected": {
+        "valid": false,
+        "error": "invalid_namespace"
+      }
+    },
+    {
+      "id": "token-err-006",
+      "description": "Segment exceeds 32 character maximum (33 chars)",
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.b.c",
+      "expected": {
+        "valid": false,
+        "error": "segment_too_long"
+      }
+    },
+    {
+      "id": "token-err-007",
+      "description": "Too many segments (11, maximum is 10)",
+      "input": "s1.s2.s3.s4.s5.s6.s7.s8.s9.s10.s11",
+      "expected": {
+        "valid": false,
+        "error": "too_many_segments"
+      }
+    },
+    {
+      "id": "token-pattern-001",
+      "description": "Wildcard pattern matching: family.*.guide matches family.safe.guide",
+      "input": "family.safe.guide",
+      "pattern": "family.*.guide",
+      "expected": {
+        "matches": true
+      }
+    },
+    {
+      "id": "token-pattern-002",
+      "description": "Wildcard pattern mismatch: family.*.policy does not match family.safe.guide",
+      "input": "family.safe.guide",
+      "pattern": "family.*.policy",
+      "expected": {
+        "matches": false
+      }
+    },
+    {
+      "id": "token-pattern-003",
+      "description": "Double-star pattern: company.** matches company.acme.legal.compliance",
+      "input": "company.acme.legal.compliance",
+      "pattern": "company.**",
+      "expected": {
+        "matches": true
+      }
+    },
+    {
+      "id": "token-pattern-004",
+      "description": "Double-star suffix pattern: **.compliance matches company.acme.legal.compliance",
+      "input": "company.acme.legal.compliance",
+      "pattern": "**.compliance",
+      "expected": {
+        "matches": true
+      }
+    },
+    {
+      "id": "token-pattern-005",
+      "description": "Double-star pattern mismatch: org.** does not match company.acme.legal.compliance",
+      "input": "company.acme.legal.compliance",
+      "pattern": "org.**",
+      "expected": {
+        "matches": false
+      }
+    },
+    {
+      "id": "token-hierarchy-001",
+      "description": "Ancestor/descendant: company.acme.legal is ancestor of company.acme.legal.compliance",
+      "ancestor": "company.acme.legal",
+      "descendant": "company.acme.legal.compliance",
+      "expected": {
+        "is_ancestor": true,
+        "is_descendant": true,
+        "reverse_is_ancestor": false
+      }
+    }
+  ]
+}

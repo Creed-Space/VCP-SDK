@@ -1,0 +1,191 @@
+{
+  "suite": "adaptation/messaging",
+  "version": "1.0.0",
+  "description": "Test vectors for VCP/A inter-agent messaging envelope format. Messages carry context, constitution references, and state machine state between agents.",
+  "vectors": [
+    {
+      "id": "msg-001",
+      "description": "Valid complete message envelope",
+      "input": {
+        "vcp_message_version": "1.0",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "context": "T:morning|S:office",
+        "constitutions": ["creed://creed.space/professional@1.0.0"],
+        "state": "ACTIVE",
+        "timestamp": "2026-01-10T12:00:00Z"
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "msg-002",
+      "description": "Valid message with multiple constitutions",
+      "input": {
+        "vcp_message_version": "1.0",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "context": "T:morning|S:home|C:children",
+        "constitutions": [
+          "creed://creed.space/family.safe.guide@1.2.0",
+          "creed://creed.space/uef@1.0.0"
+        ],
+        "state": "ACTIVE",
+        "timestamp": "2026-01-10T12:00:00Z"
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "msg-003",
+      "description": "Valid message in EMERGENCY state",
+      "input": {
+        "vcp_message_version": "1.0",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "context": "emergency",
+        "constitutions": ["creed://creed.space/safety.minimal@1.0.0"],
+        "state": "EMERGENCY",
+        "timestamp": "2026-01-10T12:05:00Z"
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "msg-004",
+      "description": "Valid message in DEGRADED state with empty context",
+      "input": {
+        "vcp_message_version": "1.0",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "context": "",
+        "constitutions": ["creed://creed.space/platform.default@1.0.0"],
+        "state": "DEGRADED",
+        "timestamp": "2026-01-10T12:10:00Z"
+      },
+      "expected": {
+        "valid": true,
+        "note": "Empty context is valid in DEGRADED state; agent is operating on last-known or default"
+      }
+    },
+    {
+      "id": "msg-005",
+      "description": "Valid message in IDLE state with no constitutions",
+      "input": {
+        "vcp_message_version": "1.0",
+        "sender": "agent-gamma",
+        "recipient": "agent-delta",
+        "context": "",
+        "constitutions": [],
+        "state": "IDLE",
+        "timestamp": "2026-01-10T12:00:00Z"
+      },
+      "expected": {
+        "valid": true,
+        "note": "IDLE state with empty constitutions is valid; using platform default"
+      }
+    },
+    {
+      "id": "msg-err-001",
+      "description": "Missing sender field",
+      "input": {
+        "vcp_message_version": "1.0",
+        "recipient": "agent-beta",
+        "context": "T:morning",
+        "constitutions": [],
+        "state": "ACTIVE",
+        "timestamp": "2026-01-10T12:00:00Z"
+      },
+      "expected": {
+        "valid": false,
+        "error": "missing_sender"
+      }
+    },
+    {
+      "id": "msg-err-002",
+      "description": "Missing recipient field",
+      "input": {
+        "vcp_message_version": "1.0",
+        "sender": "agent-alpha",
+        "context": "T:morning",
+        "constitutions": [],
+        "state": "ACTIVE",
+        "timestamp": "2026-01-10T12:00:00Z"
+      },
+      "expected": {
+        "valid": false,
+        "error": "missing_recipient"
+      }
+    },
+    {
+      "id": "msg-err-003",
+      "description": "Invalid state value",
+      "input": {
+        "vcp_message_version": "1.0",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "context": "T:morning",
+        "constitutions": [],
+        "state": "RUNNING",
+        "timestamp": "2026-01-10T12:00:00Z"
+      },
+      "expected": {
+        "valid": false,
+        "error": "invalid_state",
+        "valid_states": ["IDLE", "ACTIVE", "TRANSITIONING", "CONFLICT", "DEGRADED", "EMERGENCY"]
+      }
+    },
+    {
+      "id": "msg-err-004",
+      "description": "Missing vcp_message_version field",
+      "input": {
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "context": "T:morning",
+        "constitutions": [],
+        "state": "ACTIVE",
+        "timestamp": "2026-01-10T12:00:00Z"
+      },
+      "expected": {
+        "valid": false,
+        "error": "missing_version"
+      }
+    },
+    {
+      "id": "msg-err-005",
+      "description": "Missing timestamp field",
+      "input": {
+        "vcp_message_version": "1.0",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "context": "T:morning",
+        "constitutions": [],
+        "state": "ACTIVE"
+      },
+      "expected": {
+        "valid": false,
+        "error": "missing_timestamp"
+      }
+    },
+    {
+      "id": "msg-err-006",
+      "description": "Invalid timestamp format (not ISO 8601)",
+      "input": {
+        "vcp_message_version": "1.0",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "context": "T:morning",
+        "constitutions": [],
+        "state": "ACTIVE",
+        "timestamp": "January 10, 2026"
+      },
+      "expected": {
+        "valid": false,
+        "error": "invalid_timestamp_format"
+      }
+    }
+  ]
+}

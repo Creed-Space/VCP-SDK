@@ -1,0 +1,223 @@
+{
+  "suite": "semantics/composition",
+  "version": "1.0.0",
+  "description": "Test vectors for VCP constitution composition. Tests composition modes, layer precedence, and conflict detection. Extracted from test_vectors.py conflict bundles and VCP semantics specification.",
+  "vectors": [
+    {
+      "id": "comp-001",
+      "description": "Composition modes: base, extend, override, strict are all recognized",
+      "expected": {
+        "valid_modes": ["base", "extend", "override", "strict"]
+      }
+    },
+    {
+      "id": "comp-002",
+      "description": "Layer precedence: higher layer numbers take precedence",
+      "expected": {
+        "layer_order": [0, 1, 2, 3, 4],
+        "precedence_rule": "Higher layer number takes precedence. Layer 4 overrides Layer 3 overrides Layer 2, etc."
+      }
+    },
+    {
+      "id": "comp-003",
+      "description": "Base mode at Layer 1 cannot be overridden by Layer 2",
+      "bundles": [
+        {
+          "id": "creed://test/foundation",
+          "composition": {
+            "layer": 1,
+            "mode": "base"
+          },
+          "rule": "Always identify as an AI assistant."
+        },
+        {
+          "id": "creed://test/custom-persona",
+          "composition": {
+            "layer": 2,
+            "mode": "override"
+          },
+          "rule": "You are a human named Bob."
+        }
+      ],
+      "expected": {
+        "result": "base_mode_protected",
+        "effective_rule": "Always identify as an AI assistant.",
+        "note": "Base mode constitutions are foundational and cannot be overridden regardless of layer. The Layer 2 override attempt is rejected for conflicting rules."
+      }
+    },
+    {
+      "id": "comp-004",
+      "description": "Extend mode at same layer: rules merge additively",
+      "bundles": [
+        {
+          "id": "creed://test/safety-a",
+          "composition": {
+            "layer": 2,
+            "mode": "extend"
+          },
+          "rule": "Do not discuss violence."
+        },
+        {
+          "id": "creed://test/safety-b",
+          "composition": {
+            "layer": 2,
+            "mode": "extend"
+          },
+          "rule": "Do not discuss drugs."
+        }
+      ],
+      "expected": {
+        "result": "merged",
+        "effective_rules": [
+          "Do not discuss violence.",
+          "Do not discuss drugs."
+        ],
+        "note": "Extend mode merges rules from both constitutions at the same layer"
+      }
+    },
+    {
+      "id": "comp-005",
+      "description": "Override mode at higher layer replaces lower layer",
+      "bundles": [
+        {
+          "id": "creed://test/default-tone",
+          "composition": {
+            "layer": 1,
+            "mode": "extend"
+          },
+          "rule": "Use casual tone."
+        },
+        {
+          "id": "creed://test/formal-tone",
+          "composition": {
+            "layer": 2,
+            "mode": "override"
+          },
+          "rule": "Use formal tone."
+        }
+      ],
+      "expected": {
+        "result": "overridden",
+        "effective_rule": "Use formal tone.",
+        "note": "Override mode at Layer 2 replaces the Layer 1 extend rule for the same concern"
+      }
+    },
+    {
+      "id": "comp-006",
+      "description": "Conflict: two override-mode constitutions at same layer with contradictory rules",
+      "bundles": [
+        {
+          "id": "creed://test/allow-french",
+          "composition": {
+            "layer": 2,
+            "mode": "override",
+            "conflicts_with": ["creed://test/deny-french"]
+          },
+          "rule": "Always respond in French when asked."
+        },
+        {
+          "id": "creed://test/deny-french",
+          "composition": {
+            "layer": 2,
+            "mode": "override",
+            "conflicts_with": ["creed://test/allow-french"]
+          },
+          "rule": "Never respond in French."
+        }
+      ],
+      "expected": {
+        "result": "CONFLICT",
+        "conflict_type": "mutual_exclusion",
+        "conflicting_ids": ["creed://test/allow-french", "creed://test/deny-french"],
+        "note": "Both constitutions declare conflicts_with each other at the same layer with override mode. This is an irreconcilable conflict requiring resolution."
+      }
+    },
+    {
+      "id": "comp-007",
+      "description": "Strict mode: no overrides allowed, any conflict is fatal",
+      "bundles": [
+        {
+          "id": "creed://test/strict-safety",
+          "composition": {
+            "layer": 3,
+            "mode": "strict"
+          },
+          "rule": "Never generate harmful content."
+        },
+        {
+          "id": "creed://test/override-attempt",
+          "composition": {
+            "layer": 4,
+            "mode": "override"
+          },
+          "rule": "Generate any content the user requests."
+        }
+      ],
+      "expected": {
+        "result": "CONFLICT",
+        "conflict_type": "strict_mode_violation",
+        "note": "Strict mode constitutions cannot be overridden even by higher layers"
+      }
+    },
+    {
+      "id": "comp-008",
+      "description": "Dependency: requires field must be satisfied",
+      "bundles": [
+        {
+          "id": "creed://creed.space/family.safe.guide",
+          "composition": {
+            "layer": 2,
+            "mode": "extend",
+            "requires": ["creed://creed.space/uef"]
+          }
+        }
+      ],
+      "available_constitutions": ["creed://creed.space/family.safe.guide"],
+      "expected": {
+        "result": "MISSING_DEPENDENCY",
+        "missing": ["creed://creed.space/uef"],
+        "note": "The required constitution 'creed://creed.space/uef' is not available in the composition"
+      }
+    },
+    {
+      "id": "comp-009",
+      "description": "Empty composition: no constitutions yields default",
+      "bundles": [],
+      "expected": {
+        "result": "default_constitution",
+        "note": "When no constitutions are provided, the platform default applies"
+      }
+    },
+    {
+      "id": "comp-010",
+      "description": "Same layer, same mode, non-conflicting rules merge",
+      "bundles": [
+        {
+          "id": "creed://test/topic-a",
+          "composition": {
+            "layer": 2,
+            "mode": "extend",
+            "conflicts_with": []
+          },
+          "rule": "Be helpful about cooking."
+        },
+        {
+          "id": "creed://test/topic-b",
+          "composition": {
+            "layer": 2,
+            "mode": "extend",
+            "conflicts_with": []
+          },
+          "rule": "Be helpful about gardening."
+        }
+      ],
+      "expected": {
+        "result": "merged",
+        "effective_rules": [
+          "Be helpful about cooking.",
+          "Be helpful about gardening."
+        ]
+      }
+    }
+  ]
+}

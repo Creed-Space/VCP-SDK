@@ -1,0 +1,327 @@
+{
+  "suite": "adaptation/state_machine",
+  "version": "1.0.0",
+  "description": "Test vectors for the VCP Adaptation State Machine. Defines 6 states (IDLE, ACTIVE, TRANSITIONING, CONFLICT, DEGRADED, EMERGENCY) and their transitions. Extracted from VCP_STATE_MACHINE.md Section 11.3 conformance test vectors.",
+  "states": ["IDLE", "ACTIVE", "TRANSITIONING", "CONFLICT", "DEGRADED", "EMERGENCY"],
+  "configuration": {
+    "transition_timeout_seconds": 5,
+    "conflict_timeout_seconds": 30,
+    "signal_loss_threshold_seconds": 30,
+    "signal_stability_window_seconds": 3,
+    "dwell_times": {
+      "IDLE": 0,
+      "ACTIVE": 10,
+      "TRANSITIONING": 0,
+      "CONFLICT": 0,
+      "DEGRADED": 10,
+      "EMERGENCY": 0
+    }
+  },
+  "vectors": [
+    {
+      "id": "sm-V1",
+      "description": "IDLE + valid context signal -> ACTIVE (after stability window)",
+      "initial_state": "IDLE",
+      "input": {
+        "type": "context_signal",
+        "context": "\ud83d\udccd\ud83c\udfe1|\ud83d\udc65\ud83d\udc76",
+        "stable_for_seconds": 3
+      },
+      "expected": {
+        "final_state": "ACTIVE",
+        "constitutions_selected": true,
+        "note": "Signal must be stable for the signal stability window (3s) before triggering transition T1"
+      }
+    },
+    {
+      "id": "sm-V2",
+      "description": "ACTIVE (10s+ dwell) + changed context (2 dims) -> ACTIVE (via TRANSITIONING)",
+      "initial_state": "ACTIVE",
+      "preconditions": {
+        "dwell_time_elapsed_seconds": 10,
+        "current_context": "\ud83d\udccd\ud83c\udfe1|\ud83d\udc65\ud83d\udc76"
+      },
+      "input": {
+        "type": "context_signal",
+        "context": "\ud83d\udccd\ud83c\udfe2|\ud83d\udc65\ud83d\udc54",
+        "dimensions_changed": 2,
+        "stable_for_seconds": 3,
+        "note": "Space changed (home->office) and company changed (children->professionals): 2 dimensions exceed hysteresis threshold"
+      },
+      "expected": {
+        "intermediate_state": "TRANSITIONING",
+        "final_state": "ACTIVE",
+        "transition_path": ["ACTIVE", "TRANSITIONING", "ACTIVE"],
+        "note": "Hysteresis threshold met (2 dimensions changed). Composition resolves without conflict."
+      }
+    },
+    {
+      "id": "sm-V3",
+      "description": "ACTIVE (10s+ dwell) + minor change (1 dim, 1 level) -> ACTIVE (no transition)",
+      "initial_state": "ACTIVE",
+      "preconditions": {
+        "dwell_time_elapsed_seconds": 10,
+        "current_context": "\ud83d\udccd\ud83c\udfe1|\ud83d\udc65\ud83d\udc76"
+      },
+      "input": {
+        "type": "context_signal",
+        "context": "\u23f0\ud83c\udf19",
+        "dimensions_changed": 1,
+        "magnitude": 1,
+        "stable_for_seconds": 3,
+        "note": "Only time dimension changed by 1 level (e.g., morning to evening): below hysteresis threshold"
+      },
+      "expected": {
+        "final_state": "ACTIVE",
+        "transition_occurred": false,
+        "note": "Below hysteresis threshold: requires 2+ dimensions changed OR 1 dimension changed by 2+ levels"
+      }
+    },
+    {
+      "id": "sm-V4",
+      "description": "ACTIVE + emergency signal -> EMERGENCY (immediate, ignores dwell)",
+      "initial_state": "ACTIVE",
+      "preconditions": {
+        "dwell_time_elapsed_seconds": 0,
+        "note": "Emergency transitions ignore dwell time"
+      },
+      "input": {
+        "type": "context_signal",
+        "context": "\ud83c\udfad\ud83d\udea8|\ud83d\udd36\ud83d\udea8",
+        "is_emergency": true
+      },
+      "expected": {
+        "final_state": "EMERGENCY",
+        "safety_constitution_active": true,
+        "prior_state_saved": true,
+        "note": "Emergency signals (T8) bypass all guards: dwell time, stability window, hysteresis threshold"
+      }
+    },
+    {
+      "id": "sm-V5",
+      "description": "ACTIVE + no signal for 31s -> DEGRADED",
+      "initial_state": "ACTIVE",
+      "preconditions": {
+        "current_context": "\ud83d\udccd\ud83c\udfe1|\ud83d\udc65\ud83d\udc76"
+      },
+      "input": {
+        "type": "signal_loss",
+        "silence_duration_seconds": 31
+      },
+      "expected": {
+        "final_state": "DEGRADED",
+        "last_known_context_saved": true,
+        "note": "Signal loss threshold is 30s. After 31s without a valid signal, transition T9 fires."
+      }
+    },
+    {
+      "id": "sm-V6",
+      "description": "DEGRADED + valid context (stable 3s) -> ACTIVE (via TRANSITIONING)",
+      "initial_state": "DEGRADED",
+      "preconditions": {
+        "dwell_time_elapsed_seconds": 10,
+        "last_known_context": "\ud83d\udccd\ud83c\udfe1|\ud83d\udc65\ud83d\udc76"
+      },
+      "input": {
+        "type": "context_signal",
+        "context": "\ud83d\udccd\ud83c\udfe1",
+        "stable_for_seconds": 3
+      },
+      "expected": {
+        "intermediate_state": "TRANSITIONING",
+        "final_state": "ACTIVE",
+        "transition_path": ["DEGRADED", "TRANSITIONING", "ACTIVE"],
+        "note": "Signal restored and stable for 3s (signal stability window). Transition T10 fires, then composition resolves to ACTIVE."
+      }
+    },
+    {
+      "id": "sm-V7",
+      "description": "EMERGENCY + clear_emergency() with valid prior context -> ACTIVE",
+      "initial_state": "EMERGENCY",
+      "preconditions": {
+        "prior_state": "ACTIVE",
+        "prior_context": "\ud83d\udccd\ud83c\udfe1|\ud83d\udc65\ud83d\udc76",
+        "prior_constitutions": ["creed://creed.space/family.safe.guide@1.2.0"]
+      },
+      "input": {
+        "type": "clear_emergency",
+        "context_still_valid": true
+      },
+      "expected": {
+        "final_state": "ACTIVE",
+        "constitutions_restored": true,
+        "note": "Transition T12: explicit clear signal + prior context still valid -> restore prior constitutions"
+      }
+    },
+    {
+      "id": "sm-V8",
+      "description": "TRANSITIONING + 6s timeout (exceeds 5s) -> ACTIVE (revert to previous)",
+      "initial_state": "TRANSITIONING",
+      "preconditions": {
+        "previous_constitutions": ["creed://creed.space/family.safe.guide@1.2.0"],
+        "transition_started_at": "T"
+      },
+      "input": {
+        "type": "tick",
+        "elapsed_since_transition_seconds": 6
+      },
+      "expected": {
+        "final_state": "ACTIVE",
+        "constitutions": "previous_constitutions",
+        "warning_logged": true,
+        "note": "Transition T5: timeout at 5s, system reverts to previous constitution and logs warning"
+      }
+    },
+    {
+      "id": "sm-V9",
+      "description": "IDLE: dwell time is 0, may transition immediately",
+      "initial_state": "IDLE",
+      "input": {
+        "type": "context_signal",
+        "context": "\ud83d\udccd\ud83c\udfe2|\ud83d\udc65\ud83d\udc54",
+        "stable_for_seconds": 3
+      },
+      "expected": {
+        "final_state": "ACTIVE",
+        "note": "IDLE has 0s dwell time; transitions immediately when signal is stable"
+      }
+    },
+    {
+      "id": "sm-V10",
+      "description": "ACTIVE before dwell time: context change queued",
+      "initial_state": "ACTIVE",
+      "preconditions": {
+        "dwell_time_elapsed_seconds": 5,
+        "current_context": "\ud83d\udccd\ud83c\udfe1|\ud83d\udc65\ud83d\udc76"
+      },
+      "input": {
+        "type": "context_signal",
+        "context": "\ud83d\udccd\ud83c\udfe2|\ud83d\udc65\ud83d\udc54",
+        "dimensions_changed": 2,
+        "stable_for_seconds": 3
+      },
+      "expected": {
+        "final_state": "ACTIVE",
+        "transition_occurred": false,
+        "pending_context_queued": true,
+        "note": "Dwell time (10s) not yet elapsed (only 5s); change is queued for evaluation after dwell expires"
+      }
+    },
+    {
+      "id": "sm-V11",
+      "description": "DEGRADED + no last-known context -> IDLE",
+      "initial_state": "DEGRADED",
+      "preconditions": {
+        "last_known_context": null
+      },
+      "input": {
+        "type": "tick"
+      },
+      "expected": {
+        "final_state": "IDLE",
+        "note": "Transition T11: no last-known context available -> revert to default constitution"
+      }
+    },
+    {
+      "id": "sm-V12",
+      "description": "EMERGENCY + clear_emergency() with context changed during emergency -> TRANSITIONING",
+      "initial_state": "EMERGENCY",
+      "preconditions": {
+        "prior_context": "\ud83d\udccd\ud83c\udfe1|\ud83d\udc65\ud83d\udc76",
+        "current_context_changed": true
+      },
+      "input": {
+        "type": "clear_emergency",
+        "context_changed_during_emergency": true
+      },
+      "expected": {
+        "final_state": "TRANSITIONING",
+        "note": "Transition T13: context changed during emergency -> re-evaluate via TRANSITIONING"
+      }
+    },
+    {
+      "id": "sm-V13",
+      "description": "EMERGENCY + clear_emergency() with no valid context -> IDLE",
+      "initial_state": "EMERGENCY",
+      "preconditions": {
+        "prior_context": null
+      },
+      "input": {
+        "type": "clear_emergency",
+        "no_valid_context": true
+      },
+      "expected": {
+        "final_state": "IDLE",
+        "note": "Transition T14: no valid context available -> apply default constitution"
+      }
+    },
+    {
+      "id": "sm-V14",
+      "description": "EMERGENCY + clear_emergency() with signals still degraded -> DEGRADED",
+      "initial_state": "EMERGENCY",
+      "preconditions": {
+        "signals_available": false
+      },
+      "input": {
+        "type": "clear_emergency",
+        "signals_still_degraded": true
+      },
+      "expected": {
+        "final_state": "DEGRADED",
+        "note": "Transition T15: signals still unavailable -> continue in degraded mode"
+      }
+    }
+  ],
+  "invalid_transitions": [
+    {
+      "id": "sm-invalid-001",
+      "from": "IDLE",
+      "to": "TRANSITIONING",
+      "reason": "IDLE has no prior context to transition from; must go through ACTIVE first"
+    },
+    {
+      "id": "sm-invalid-002",
+      "from": "IDLE",
+      "to": "CONFLICT",
+      "reason": "No composition is in progress during IDLE"
+    },
+    {
+      "id": "sm-invalid-003",
+      "from": "CONFLICT",
+      "to": "TRANSITIONING",
+      "reason": "Conflicts MUST resolve to ACTIVE first; new transitions start from ACTIVE"
+    },
+    {
+      "id": "sm-invalid-004",
+      "from": "ACTIVE",
+      "to": "CONFLICT",
+      "reason": "ACTIVE implies composition already resolved; conflicts only arise during TRANSITIONING"
+    },
+    {
+      "id": "sm-invalid-005",
+      "from": "ACTIVE",
+      "to": "IDLE",
+      "reason": "Context is not unloaded; it is replaced (via TRANSITIONING) or lost (via DEGRADED)"
+    }
+  ],
+  "self_transitions": [
+    {
+      "id": "sm-self-001",
+      "state": "ACTIVE",
+      "trigger": "Minor context change below hysteresis threshold",
+      "action": "Log minor change, no state transition"
+    },
+    {
+      "id": "sm-self-002",
+      "state": "DEGRADED",
+      "trigger": "Signal poll fails",
+      "action": "Increment failure counter, schedule next poll"
+    },
+    {
+      "id": "sm-self-003",
+      "state": "EMERGENCY",
+      "trigger": "Additional emergency signal received",
+      "action": "Log additional signal, merge into emergency record"
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "suite": "interop/cross_impl_roundtrip",
+  "version": "1.0.0",
+  "description": "Cross-implementation roundtrip test vectors. A VCP bundle created by implementation A must be verifiable by implementation B. Uses the VALID_FULL_MANIFEST and VALID_FULL_CONTENT from test_vectors.py.",
+  "vectors": [
+    {
+      "id": "xrt-001",
+      "description": "Full bundle sign-and-verify roundtrip across implementations",
+      "procedure": "sign_with_key_A_verify_with_key_A_public",
+      "content": "# Family Safety Constitution\n\n## Purpose\nEnsure AI interactions are appropriate for family environments with children present.\n\n## Article 1: Content Standards\nAt Level 5 (Maximum Protection):\n- No violence, including cartoon violence\n- No adult themes, innuendo, or suggestive content\n- No scary, disturbing, or nightmare-inducing content\n- No references to death, dying, or serious injury\n- No bullying, meanness, or social cruelty\n\n## Article 2: Language Standards\n- Use age-appropriate vocabulary\n- No profanity, even mild forms\n- No insults or name-calling\n- Encourage positive communication\n\n## Article 3: Topic Restrictions\nAvoid or age-appropriately handle:\n- Weapons and violence\n- Drugs and alcohol\n- Romantic relationships beyond friendship\n- Complex political topics\n- Religious debates\n\n## Article 4: Positive Behaviors\n- Encourage learning and curiosity\n- Model kindness and empathy\n- Support healthy habits\n- Promote creativity and imagination\n- Reinforce family values\n",
+      "manifest": {
+        "vcp_version": "1.0",
+        "bundle": {
+          "id": "creed://creed.space/family.safe.guide",
+          "version": "1.2.0",
+          "content_hash": "COMPUTED_BY_IMPLEMENTATION",
+          "content_encoding": "utf-8",
+          "content_format": "text/markdown"
+        },
+        "issuer": {
+          "id": "creed.space",
+          "public_key": "ed25519:IMPL_GENERATED",
+          "key_id": "creed-space-2026"
+        },
+        "timestamps": {
+          "iat": "2026-01-10T12:00:00Z",
+          "nbf": "2026-01-10T12:00:00Z",
+          "exp": "2026-01-17T12:00:00Z",
+          "jti": "550e8400-e29b-41d4-a716-446655440001"
+        },
+        "budget": {
+          "token_count": 350,
+          "tokenizer": "cl100k_base",
+          "max_context_share": 0.25
+        },
+        "scope": {
+          "model_families": ["gpt-*", "claude-*"],
+          "purposes": ["general-assistant", "family-assistant"],
+          "environments": ["production", "staging"]
+        },
+        "composition": {
+          "layer": 2,
+          "mode": "extend",
+          "conflicts_with": [],
+          "requires": ["creed://creed.space/uef"]
+        },
+        "metadata": {
+          "title": "Family Safety Constitution",
+          "description": "Child-safe content filtering for family environments",
+          "tags": ["safety", "family", "children"],
+          "persona": "nanny",
+          "adherence_level": 5,
+          "csm1": "N5+F:ELEM@1.2.0"
+        }
+      },
+      "expected": {
+        "steps": [
+          "1. Generate Ed25519 keypair",
+          "2. Canonicalize content (normalize line endings, strip trailing whitespace, ensure trailing newline)",
+          "3. Compute content hash: SHA-256 of canonical content bytes, prefixed with 'sha256:'",
+          "4. Insert content_hash into manifest.bundle.content_hash",
+          "5. Insert base64-encoded public key into manifest.issuer.public_key with 'ed25519:' prefix",
+          "6. Canonicalize manifest (JCS: sorted keys, no whitespace, signature field excluded)",
+          "7. Sign canonical manifest bytes with Ed25519 private key",
+          "8. Insert signature into manifest.signature.value with 'base64:' prefix",
+          "9. Serialize final manifest to JSON",
+          "10. A different implementation loads the manifest JSON and content",
+          "11. Verify content hash: canonicalize content, compute SHA-256, compare to manifest.bundle.content_hash",
+          "12. Verify signature: canonicalize manifest (excluding signature field), verify Ed25519 signature against issuer public key",
+          "13. Both verifications MUST pass"
+        ],
+        "content_hash_verification": true,
+        "signature_verification": true
+      }
+    },
+    {
+      "id": "xrt-002",
+      "description": "Content hash roundtrip: same content produces same hash regardless of implementation",
+      "content": "# Test Constitution\n\n## Article 1: Safety\nAll responses must be safe and helpful.\n",
+      "expected": {
+        "all_implementations_produce_same_hash": true,
+        "hash_prefix": "sha256:",
+        "note": "After canonicalization, all implementations must produce identical bytes, yielding the same SHA-256 hash"
+      }
+    },
+    {
+      "id": "xrt-003",
+      "description": "Token parsing roundtrip: same token string parses identically across implementations",
+      "tokens": [
+        "family.safe.guide",
+        "family.safe.guide@1.2.0",
+        "company.acme.legal.compliance:SEC",
+        "org.example.dept.team.policy@1.0.0:GOV"
+      ],
+      "expected": {
+        "all_implementations_parse_identically": true,
+        "all_implementations_display_identically": true,
+        "note": "Parse each token and verify domain, approach, role, version, namespace, depth match across implementations"
+      }
+    },
+    {
+      "id": "xrt-004",
+      "description": "CSM-1 code roundtrip: parse and serialize produce same canonical form",
+      "codes": [
+        "N5+F+E",
+        "Z4+P+W",
+        "N5:ELEM+F+E@1.2.0",
+        "C3:ACME+W@1.0.0",
+        "D4+S"
+      ],
+      "expected": {
+        "canonical_nano_forms": [
+          "N5+E+F",
+          "Z4+P+W",
+          "N5+E+F",
+          "C3+W",
+          "D4+S"
+        ],
+        "note": "Canonical NANO format sorts scopes alphabetically. NANO format drops namespace and version."
+      }
+    },
+    {
+      "id": "xrt-005",
+      "description": "Manifest canonicalization roundtrip: same manifest produces same canonical bytes",
+      "manifest": {
+        "vcp_version": "1.0",
+        "bundle": {
+          "id": "creed://creed.space/family.safe.guide",
+          "version": "1.2.0",
+          "content_hash": "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+        },
+        "issuer": {
+          "id": "creed.space"
+        },
+        "signature": {
+          "algorithm": "ed25519",
+          "value": "base64:THIS_IS_EXCLUDED"
+        }
+      },
+      "expected": {
+        "canonical_json": "{\"bundle\":{\"content_hash\":\"sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069\",\"id\":\"creed://creed.space/family.safe.guide\",\"version\":\"1.2.0\"},\"issuer\":{\"id\":\"creed.space\"},\"vcp_version\":\"1.0\"}",
+        "signature_excluded": true,
+        "all_implementations_produce_same_bytes": true
+      }
+    }
+  ]
+}

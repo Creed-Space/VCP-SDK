@@ -1,0 +1,176 @@
+{
+  "suite": "semantics/persona_resolution",
+  "version": "1.0.0",
+  "description": "Test vectors for CSM-1 persona code to name resolution. The canonical persona set is NZGAMDC (6+1). Old personas R (Anchor) and H (Hot-Rod) are no longer valid.",
+  "vectors": [
+    {
+      "id": "pr-001",
+      "description": "N resolves to nanny",
+      "input": "N",
+      "expected": {
+        "persona_name": "nanny",
+        "valid": true,
+        "focus": "Child safety and family-appropriate content",
+        "default_adherence": 5
+      }
+    },
+    {
+      "id": "pr-002",
+      "description": "Z resolves to sentinel",
+      "input": "Z",
+      "expected": {
+        "persona_name": "sentinel",
+        "valid": true,
+        "focus": "Security, privacy, and operational safety",
+        "default_adherence": 4
+      }
+    },
+    {
+      "id": "pr-003",
+      "description": "G resolves to godparent",
+      "input": "G",
+      "expected": {
+        "persona_name": "godparent",
+        "valid": true,
+        "focus": "Ethical guidance and moral reasoning",
+        "default_adherence": 4
+      }
+    },
+    {
+      "id": "pr-004",
+      "description": "A resolves to ambassador",
+      "input": "A",
+      "expected": {
+        "persona_name": "ambassador",
+        "valid": true,
+        "focus": "Professional conduct and diplomatic communication",
+        "default_adherence": 3
+      }
+    },
+    {
+      "id": "pr-005",
+      "description": "M resolves to muse",
+      "input": "M",
+      "expected": {
+        "persona_name": "muse",
+        "valid": true,
+        "focus": "Creativity and artistic expression",
+        "default_adherence": 2
+      }
+    },
+    {
+      "id": "pr-006",
+      "description": "D resolves to mediator",
+      "input": "D",
+      "expected": {
+        "persona_name": "mediator",
+        "valid": true,
+        "focus": "Fair resolution and balanced mediation",
+        "default_adherence": 3
+      }
+    },
+    {
+      "id": "pr-007",
+      "description": "C resolves to custom",
+      "input": "C",
+      "expected": {
+        "persona_name": "custom",
+        "valid": true,
+        "focus": "User-defined constitution",
+        "default_adherence": 3,
+        "requires_namespace": true
+      }
+    },
+    {
+      "id": "pr-err-001",
+      "description": "R is not a valid persona (removed Anchor)",
+      "input": "R",
+      "expected": {
+        "valid": false,
+        "note": "R (Anchor) was removed in the NZGAMDC persona update"
+      }
+    },
+    {
+      "id": "pr-err-002",
+      "description": "H is not a valid persona (removed Hot-Rod)",
+      "input": "H",
+      "expected": {
+        "valid": false,
+        "note": "H (Hot-Rod) was removed in the NZGAMDC persona update"
+      }
+    },
+    {
+      "id": "pr-err-003",
+      "description": "X is not a valid persona",
+      "input": "X",
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "pr-err-004",
+      "description": "Lowercase persona codes are invalid",
+      "input": "n",
+      "expected": {
+        "valid": false,
+        "note": "Persona codes must be uppercase single characters"
+      }
+    },
+    {
+      "id": "pr-reverse-001",
+      "description": "Reverse lookup: nanny resolves to N",
+      "input_name": "nanny",
+      "expected": {
+        "persona_code": "N"
+      }
+    },
+    {
+      "id": "pr-reverse-002",
+      "description": "Reverse lookup: sentinel resolves to Z",
+      "input_name": "sentinel",
+      "expected": {
+        "persona_code": "Z"
+      }
+    },
+    {
+      "id": "pr-reverse-003",
+      "description": "Reverse lookup: godparent resolves to G",
+      "input_name": "godparent",
+      "expected": {
+        "persona_code": "G"
+      }
+    },
+    {
+      "id": "pr-reverse-004",
+      "description": "Reverse lookup: ambassador resolves to A",
+      "input_name": "ambassador",
+      "expected": {
+        "persona_code": "A"
+      }
+    },
+    {
+      "id": "pr-reverse-005",
+      "description": "Reverse lookup: muse resolves to M",
+      "input_name": "muse",
+      "expected": {
+        "persona_code": "M"
+      }
+    },
+    {
+      "id": "pr-reverse-006",
+      "description": "Reverse lookup: mediator resolves to D",
+      "input_name": "mediator",
+      "expected": {
+        "persona_code": "D"
+      }
+    },
+    {
+      "id": "pr-reverse-007",
+      "description": "Reverse lookup: custom resolves to C",
+      "input_name": "custom",
+      "expected": {
+        "persona_code": "C"
+      }
+    }
+  ]
+}

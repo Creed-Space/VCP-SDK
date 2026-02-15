@@ -1,0 +1,170 @@
+{
+  "suite": "transport/content_canonicalization",
+  "version": "1.0.0",
+  "description": "Test vectors for VCP/T content canonicalization. Content must be normalized before hashing. Extracted from Rust transport.rs and Python test_vectors.py.",
+  "vectors": [
+    {
+      "id": "cc-001",
+      "description": "CRLF and CR line endings normalized to LF",
+      "input": "hello\r\nworld\rfoo\n",
+      "expected": {
+        "valid": true,
+        "canonical": "hello\nworld\nfoo\n"
+      }
+    },
+    {
+      "id": "cc-002",
+      "description": "Trailing whitespace stripped from each line",
+      "input": "hello   \nworld\t\t\n",
+      "expected": {
+        "valid": true,
+        "canonical": "hello\nworld\n"
+      }
+    },
+    {
+      "id": "cc-003",
+      "description": "Trailing empty lines removed",
+      "input": "hello\n\n\n\n",
+      "expected": {
+        "valid": true,
+        "canonical": "hello\n"
+      }
+    },
+    {
+      "id": "cc-004",
+      "description": "Trailing newline ensured when absent",
+      "input": "hello",
+      "expected": {
+        "valid": true,
+        "canonical": "hello\n"
+      }
+    },
+    {
+      "id": "cc-005",
+      "description": "Tabs within lines preserved (only trailing whitespace stripped)",
+      "input": "hello\tworld\nfoo",
+      "expected": {
+        "valid": true,
+        "canonical": "hello\tworld\nfoo\n"
+      }
+    },
+    {
+      "id": "cc-006",
+      "description": "CRLF normalization from Python test vectors",
+      "input": "Hello\r\nWorld\r\n",
+      "expected": {
+        "valid": true,
+        "canonical": "Hello\nWorld\n"
+      }
+    },
+    {
+      "id": "cc-007",
+      "description": "Leading spaces preserved, trailing spaces stripped",
+      "input": "  trailing spaces  \n",
+      "expected": {
+        "valid": true,
+        "canonical": "  trailing spaces\n"
+      }
+    },
+    {
+      "id": "cc-008",
+      "description": "Tab at end of line stripped, tab within line preserved",
+      "input": "Tab\there\t\n",
+      "expected": {
+        "valid": true,
+        "canonical": "Tab\there\n"
+      }
+    },
+    {
+      "id": "cc-009",
+      "description": "CR-only line endings normalized to LF",
+      "input": "Hello\rWorld\r",
+      "expected": {
+        "valid": true,
+        "canonical": "Hello\nWorld\n"
+      }
+    },
+    {
+      "id": "cc-010",
+      "description": "Content without trailing newline gets one",
+      "input": "No trailing newline",
+      "expected": {
+        "valid": true,
+        "canonical": "No trailing newline\n"
+      }
+    },
+    {
+      "id": "cc-011",
+      "description": "Multiple trailing lines and whitespace combined",
+      "input": "Multiple\n\n\ntrailing\n\n\n",
+      "expected": {
+        "valid": true,
+        "canonical": "Multiple\n\n\ntrailing\n"
+      }
+    },
+    {
+      "id": "cc-012",
+      "description": "Empty input produces single newline (or empty canonical form)",
+      "input": "",
+      "expected": {
+        "valid": true,
+        "canonical": "\n",
+        "note": "Implementations may produce empty string or single newline for empty input; both are acceptable if hashing is consistent"
+      }
+    },
+    {
+      "id": "cc-err-001",
+      "description": "Control character U+0001 (SOH) rejected",
+      "input": "hello\u0001world",
+      "expected": {
+        "valid": false,
+        "error": "control_character"
+      }
+    },
+    {
+      "id": "cc-err-002",
+      "description": "Bidi override U+202E (RLO) rejected",
+      "input": "hello\u202eworld",
+      "expected": {
+        "valid": false,
+        "error": "bidi_override"
+      }
+    },
+    {
+      "id": "cc-err-003",
+      "description": "Zero-width space U+200B rejected",
+      "input": "hello\u200bworld",
+      "expected": {
+        "valid": false,
+        "error": "forbidden_unicode"
+      }
+    },
+    {
+      "id": "cc-err-004",
+      "description": "BOM U+FEFF rejected",
+      "input": "\ufeffhello world",
+      "expected": {
+        "valid": false,
+        "error": "forbidden_unicode"
+      }
+    },
+    {
+      "id": "cc-err-005",
+      "description": "Null byte U+0000 rejected",
+      "input": "hello\u0000world",
+      "expected": {
+        "valid": false,
+        "error": "control_character"
+      }
+    },
+    {
+      "id": "cc-err-006",
+      "description": "Bidi override U+202D (LRO) rejected",
+      "input": "hello\u202dworld",
+      "expected": {
+        "valid": false,
+        "error": "bidi_override"
+      }
+    }
+  ]
+}

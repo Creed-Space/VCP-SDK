@@ -1,0 +1,237 @@
+{
+  "suite": "interop/complete_bundle",
+  "version": "1.0.0",
+  "description": "A complete valid VCP bundle with ALL manifest fields populated, ready for verification. Uses the VALID_FULL_MANIFEST and VALID_FULL_CONTENT from test_vectors.py as the reference bundle.",
+  "vectors": [
+    {
+      "id": "bundle-001",
+      "description": "Complete valid bundle: Family Safety Constitution with all manifest fields",
+      "content": "# Family Safety Constitution\n\n## Purpose\nEnsure AI interactions are appropriate for family environments with children present.\n\n## Article 1: Content Standards\nAt Level 5 (Maximum Protection):\n- No violence, including cartoon violence\n- No adult themes, innuendo, or suggestive content\n- No scary, disturbing, or nightmare-inducing content\n- No references to death, dying, or serious injury\n- No bullying, meanness, or social cruelty\n\n## Article 2: Language Standards\n- Use age-appropriate vocabulary\n- No profanity, even mild forms\n- No insults or name-calling\n- Encourage positive communication\n\n## Article 3: Topic Restrictions\nAvoid or age-appropriately handle:\n- Weapons and violence\n- Drugs and alcohol\n- Romantic relationships beyond friendship\n- Complex political topics\n- Religious debates\n\n## Article 4: Positive Behaviors\n- Encourage learning and curiosity\n- Model kindness and empathy\n- Support healthy habits\n- Promote creativity and imagination\n- Reinforce family values\n",
+      "manifest": {
+        "vcp_version": "1.0",
+        "bundle": {
+          "id": "creed://creed.space/family.safe.guide",
+          "version": "1.2.0",
+          "content_hash": "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+          "content_encoding": "utf-8",
+          "content_format": "text/markdown"
+        },
+        "issuer": {
+          "id": "creed.space",
+          "public_key": "ed25519:MC4CAQAwBQYDK2VwBCIEIHKhpwMdqgQwCXzLJv",
+          "key_id": "creed-space-2026"
+        },
+        "timestamps": {
+          "iat": "2026-01-10T12:00:00Z",
+          "nbf": "2026-01-10T12:00:00Z",
+          "exp": "2026-01-17T12:00:00Z",
+          "jti": "550e8400-e29b-41d4-a716-446655440001"
+        },
+        "budget": {
+          "token_count": 350,
+          "tokenizer": "cl100k_base",
+          "max_context_share": 0.25
+        },
+        "scope": {
+          "model_families": ["gpt-*", "claude-*"],
+          "purposes": ["general-assistant", "family-assistant"],
+          "environments": ["production", "staging"]
+        },
+        "composition": {
+          "layer": 2,
+          "mode": "extend",
+          "conflicts_with": [],
+          "requires": ["creed://creed.space/uef"]
+        },
+        "revocation": {
+          "check_uri": "https://creed.space/api/v1/revoked",
+          "crl_uri": "https://creed.space/crl/2026.json"
+        },
+        "safety_attestation": {
+          "auditor": "safety-review.creed.space",
+          "auditor_key_id": "safety-2026",
+          "reviewed_at": "2026-01-10T11:00:00Z",
+          "attestation_type": "injection-safe",
+          "signature": "base64:MEUCIQDrAbcDefGhIjKlMnOpQrStUvWxYz"
+        },
+        "metadata": {
+          "title": "Family Safety Constitution",
+          "description": "Child-safe content filtering for family environments",
+          "tags": ["safety", "family", "children"],
+          "persona": "nanny",
+          "adherence_level": 5,
+          "csm1": "N5+F:ELEM@1.2.0"
+        },
+        "signature": {
+          "algorithm": "ed25519",
+          "value": "base64:MEUCIQD6X8kBxRiOnNpqRsTuVwXyZaBcDefGhIj",
+          "signed_fields": [
+            "vcp_version",
+            "bundle",
+            "issuer",
+            "timestamps",
+            "budget",
+            "scope",
+            "composition",
+            "revocation",
+            "safety_attestation",
+            "metadata"
+          ]
+        }
+      },
+      "trust_config": {
+        "trust_anchors": {
+          "creed.space": {
+            "type": "issuer",
+            "keys": [
+              {
+                "id": "creed-space-2026",
+                "algorithm": "ed25519",
+                "public_key": "MC4CAQAwBQYDK2VwBCIEIHKhpwMdqgQwCXzLJv",
+                "state": "active",
+                "valid_from": "2026-01-01T00:00:00Z",
+                "valid_until": "2027-01-01T00:00:00Z"
+              }
+            ]
+          },
+          "safety-review.creed.space": {
+            "type": "auditor",
+            "keys": [
+              {
+                "id": "safety-2026",
+                "algorithm": "ed25519",
+                "public_key": "SafetyKeyPublicBase64==",
+                "state": "active",
+                "valid_from": "2026-01-01T00:00:00Z",
+                "valid_until": "2027-01-01T00:00:00Z"
+              }
+            ]
+          }
+        }
+      },
+      "expected_injection_format": {
+        "header": "[VCP:1.0]\n[ID:creed://creed.space/family.safe.guide@1.2.0]\n[HASH:7f83b165...9069]\n[TOKENS:350]\n[ATTESTED:injection-safe:safety-review.creed.space]",
+        "delimiters": {
+          "begin": "---BEGIN-CONSTITUTION---",
+          "end": "---END-CONSTITUTION---"
+        }
+      },
+      "verification_checklist": [
+        {
+          "step": 1,
+          "check": "manifest_schema",
+          "description": "Validate manifest JSON structure against VCP manifest schema",
+          "expected": "PASS"
+        },
+        {
+          "step": 2,
+          "check": "content_canonicalization",
+          "description": "Canonicalize content: normalize line endings, strip trailing whitespace, ensure trailing newline",
+          "expected": "PASS"
+        },
+        {
+          "step": 3,
+          "check": "content_hash",
+          "description": "SHA-256 of canonical content matches bundle.content_hash",
+          "expected": "PASS (with correct content_hash value)"
+        },
+        {
+          "step": 4,
+          "check": "temporal_validity",
+          "description": "Current time is between timestamps.nbf and timestamps.exp",
+          "expected": "CHECK against current time"
+        },
+        {
+          "step": 5,
+          "check": "issuer_trust",
+          "description": "issuer.id and issuer.key_id match a trust anchor",
+          "expected": "PASS (with trust_config loaded)"
+        },
+        {
+          "step": 6,
+          "check": "manifest_signature",
+          "description": "Ed25519 signature over canonical manifest (excluding signature field) verifies against issuer public key",
+          "expected": "PASS (with real keys)"
+        },
+        {
+          "step": 7,
+          "check": "safety_attestation",
+          "description": "Safety attestation signature verifies against auditor public key",
+          "expected": "PASS (with real keys)"
+        },
+        {
+          "step": 8,
+          "check": "revocation",
+          "description": "Bundle ID not found in revocation list at check_uri/crl_uri",
+          "expected": "PASS (not revoked)"
+        },
+        {
+          "step": 9,
+          "check": "budget",
+          "description": "Content fits within token_count budget using specified tokenizer",
+          "expected": "PASS"
+        },
+        {
+          "step": 10,
+          "check": "composition",
+          "description": "Composition rules (layer, mode, requires) are satisfiable",
+          "expected": "PASS (when requirements met)"
+        }
+      ]
+    },
+    {
+      "id": "bundle-002",
+      "description": "Minimal valid bundle with only required fields",
+      "content": "# Test Constitution\n\n## Article 1: Safety\nAll responses must be safe and helpful.\n",
+      "manifest": {
+        "vcp_version": "1.0",
+        "bundle": {
+          "id": "creed://test.example/minimal",
+          "version": "1.0.0",
+          "content_hash": "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+          "content_encoding": "utf-8",
+          "content_format": "text/markdown"
+        },
+        "issuer": {
+          "id": "test.example",
+          "public_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+          "key_id": "test-key-2026"
+        },
+        "timestamps": {
+          "iat": "2026-01-10T12:00:00Z",
+          "nbf": "2026-01-10T12:00:00Z",
+          "exp": "2026-01-17T12:00:00Z",
+          "jti": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "budget": {
+          "token_count": 50,
+          "tokenizer": "cl100k_base",
+          "max_context_share": 0.25
+        },
+        "safety_attestation": {
+          "auditor": "safety.test.example",
+          "auditor_key_id": "safety-key-2026",
+          "reviewed_at": "2026-01-10T11:00:00Z",
+          "attestation_type": "injection-safe",
+          "signature": "base64:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="
+        },
+        "signature": {
+          "algorithm": "ed25519",
+          "value": "base64:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=",
+          "signed_fields": [
+            "vcp_version",
+            "bundle",
+            "issuer",
+            "timestamps",
+            "budget",
+            "safety_attestation"
+          ]
+        }
+      },
+      "expected": {
+        "result": "VALID",
+        "note": "Minimal bundle with all required fields. Optional fields (scope, composition, revocation, metadata) are absent."
+      }
+    }
+  ]
+}

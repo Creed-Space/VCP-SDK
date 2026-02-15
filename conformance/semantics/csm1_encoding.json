@@ -1,0 +1,103 @@
+{
+  "suite": "semantics/csm1_encoding",
+  "version": "1.0.0",
+  "description": "Test vectors for CSM-1 encoding roundtrips: parse then serialize. Canonical serialization sorts scopes alphabetically. Personas are NZGAMDC.",
+  "vectors": [
+    {
+      "id": "enc-001",
+      "description": "Scopes sorted alphabetically in NANO output: F+E becomes E+F",
+      "input": "N5+F+E",
+      "expected": {
+        "parse_succeeds": true,
+        "to_nano": "N5+E+F",
+        "note": "Canonical NANO format sorts scopes alphabetically: E before F"
+      }
+    },
+    {
+      "id": "enc-002",
+      "description": "Already-sorted scopes remain unchanged",
+      "input": "Z4+P+W",
+      "expected": {
+        "parse_succeeds": true,
+        "to_nano": "Z4+P+W",
+        "note": "P before W is already alphabetical"
+      }
+    },
+    {
+      "id": "enc-003",
+      "description": "Single scope: no reordering needed",
+      "input": "M2+A",
+      "expected": {
+        "parse_succeeds": true,
+        "to_nano": "M2+A"
+      }
+    },
+    {
+      "id": "enc-004",
+      "description": "No scopes: just persona and adherence",
+      "input": "G4",
+      "expected": {
+        "parse_succeeds": true,
+        "to_nano": "G4"
+      }
+    },
+    {
+      "id": "enc-005",
+      "description": "MICRO roundtrip with namespace, scopes, and version",
+      "input": "N5:ELEM+F+E@1.2.0",
+      "expected": {
+        "parse_succeeds": true,
+        "to_micro": "N5:ELEM+E+F@1.2.0",
+        "note": "MICRO format includes namespace and version; scopes sorted alphabetically"
+      }
+    },
+    {
+      "id": "enc-006",
+      "description": "Custom persona MICRO roundtrip",
+      "input": "C3:ACME+W@1.0.0",
+      "expected": {
+        "parse_succeeds": true,
+        "to_micro": "C3:ACME+W@1.0.0"
+      }
+    },
+    {
+      "id": "enc-007",
+      "description": "Many scopes sorted: W+P+F+E+T becomes E+F+P+T+W",
+      "input": "Z3+W+P+F+E+T",
+      "expected": {
+        "parse_succeeds": true,
+        "to_nano": "Z3+E+F+P+T+W"
+      }
+    },
+    {
+      "id": "enc-008",
+      "description": "Mediator with Social and Religious scopes sorted",
+      "input": "D4+S+R",
+      "expected": {
+        "parse_succeeds": true,
+        "to_nano": "D4+R+S",
+        "note": "R before S alphabetically"
+      }
+    },
+    {
+      "id": "enc-009",
+      "description": "Ambassador MICRO with namespace only (no scopes, no version)",
+      "input": "A3:CORP",
+      "expected": {
+        "parse_succeeds": true,
+        "to_micro": "A3:CORP"
+      }
+    },
+    {
+      "id": "enc-010",
+      "description": "Parse-serialize-parse roundtrip: final result equals intermediate",
+      "input": "N5+F+E",
+      "expected": {
+        "parse_succeeds": true,
+        "to_nano": "N5+E+F",
+        "reparse_to_nano": "N5+E+F",
+        "note": "Parsing the serialized form and serializing again must produce the same string (idempotent)"
+      }
+    }
+  ]
+}

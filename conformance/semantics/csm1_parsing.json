@@ -1,0 +1,304 @@
+{
+  "suite": "semantics/csm1_parsing",
+  "version": "1.0.0",
+  "description": "Test vectors for CSM-1 (Constitutional Safety Minicode) parsing. Personas are NZGAMDC: N=nanny, Z=sentinel, G=godparent, A=ambassador, M=muse, D=mediator, C=custom. Extracted from CSM1_GRAMMAR_SPECIFICATION.md.",
+  "vectors": [
+    {
+      "id": "csm1-001",
+      "description": "Bare persona with adherence, no scopes",
+      "input": "N5",
+      "expected": {
+        "valid": true,
+        "persona": "N",
+        "persona_name": "nanny",
+        "adherence": 5,
+        "scopes": [],
+        "namespace": null,
+        "version": null
+      }
+    },
+    {
+      "id": "csm1-002",
+      "description": "Persona with single scope",
+      "input": "N5+F",
+      "expected": {
+        "valid": true,
+        "persona": "N",
+        "persona_name": "nanny",
+        "adherence": 5,
+        "scopes": ["F"],
+        "namespace": null,
+        "version": null
+      }
+    },
+    {
+      "id": "csm1-003",
+      "description": "Persona with multiple scopes",
+      "input": "N5+F+E",
+      "expected": {
+        "valid": true,
+        "persona": "N",
+        "persona_name": "nanny",
+        "adherence": 5,
+        "scopes": ["F", "E"],
+        "namespace": null,
+        "version": null
+      }
+    },
+    {
+      "id": "csm1-004",
+      "description": "Sentinel with Privacy and Work scopes",
+      "input": "Z4+P+W",
+      "expected": {
+        "valid": true,
+        "persona": "Z",
+        "persona_name": "sentinel",
+        "adherence": 4,
+        "scopes": ["P", "W"],
+        "namespace": null,
+        "version": null
+      }
+    },
+    {
+      "id": "csm1-005",
+      "description": "Godparent with Education and Religious scopes",
+      "input": "G4+E+R",
+      "expected": {
+        "valid": true,
+        "persona": "G",
+        "persona_name": "godparent",
+        "adherence": 4,
+        "scopes": ["E", "R"],
+        "namespace": null,
+        "version": null
+      }
+    },
+    {
+      "id": "csm1-006",
+      "description": "Ambassador with Work scope and CORP namespace",
+      "input": "A3+W:CORP",
+      "expected": {
+        "valid": true,
+        "persona": "A",
+        "persona_name": "ambassador",
+        "adherence": 3,
+        "scopes": ["W"],
+        "namespace": "CORP",
+        "version": null
+      }
+    },
+    {
+      "id": "csm1-007",
+      "description": "Muse with Adult scope",
+      "input": "M2+A",
+      "expected": {
+        "valid": true,
+        "persona": "M",
+        "persona_name": "muse",
+        "adherence": 2,
+        "scopes": ["A"],
+        "namespace": null,
+        "version": null
+      }
+    },
+    {
+      "id": "csm1-008",
+      "description": "Mediator with no scopes",
+      "input": "D3",
+      "expected": {
+        "valid": true,
+        "persona": "D",
+        "persona_name": "mediator",
+        "adherence": 3,
+        "scopes": [],
+        "namespace": null,
+        "version": null
+      }
+    },
+    {
+      "id": "csm1-009",
+      "description": "Full MICRO format: namespace, scopes, and version",
+      "input": "N5:ELEM+F+E@1.2.0",
+      "expected": {
+        "valid": true,
+        "persona": "N",
+        "persona_name": "nanny",
+        "adherence": 5,
+        "scopes": ["F", "E"],
+        "namespace": "ELEM",
+        "version": "1.2.0"
+      }
+    },
+    {
+      "id": "csm1-010",
+      "description": "Custom persona with namespace, scope, and version",
+      "input": "C3:ACME+W@1.0.0",
+      "expected": {
+        "valid": true,
+        "persona": "C",
+        "persona_name": "custom",
+        "adherence": 3,
+        "scopes": ["W"],
+        "namespace": "ACME",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "csm1-011",
+      "description": "Adherence level 0 (minimal)",
+      "input": "N0",
+      "expected": {
+        "valid": true,
+        "persona": "N",
+        "adherence": 0,
+        "scopes": []
+      }
+    },
+    {
+      "id": "csm1-012",
+      "description": "All valid scopes combined",
+      "input": "Z3+F+W+P+E+T+O+V+A+H+S+R",
+      "expected": {
+        "valid": true,
+        "persona": "Z",
+        "adherence": 3,
+        "scopes": ["F", "W", "P", "E", "T", "O", "V", "A", "H", "S", "R"]
+      }
+    },
+    {
+      "id": "csm1-013",
+      "description": "Version alias 'latest'",
+      "input": "A3:CORP@latest",
+      "expected": {
+        "valid": true,
+        "persona": "A",
+        "namespace": "CORP",
+        "version": "latest"
+      }
+    },
+    {
+      "id": "csm1-014",
+      "description": "Version alias 'canary'",
+      "input": "Z4+P@canary",
+      "expected": {
+        "valid": true,
+        "persona": "Z",
+        "scopes": ["P"],
+        "version": "canary"
+      }
+    },
+    {
+      "id": "csm1-015",
+      "description": "Mediator with Social scope",
+      "input": "D4+S",
+      "expected": {
+        "valid": true,
+        "persona": "D",
+        "persona_name": "mediator",
+        "adherence": 4,
+        "scopes": ["S"]
+      }
+    },
+    {
+      "id": "csm1-err-001",
+      "description": "Invalid persona letter 'X'",
+      "input": "X5+F",
+      "expected": {
+        "valid": false,
+        "error": "invalid_persona"
+      }
+    },
+    {
+      "id": "csm1-err-002",
+      "description": "Adherence out of range (6, maximum is 5)",
+      "input": "N6+F",
+      "expected": {
+        "valid": false,
+        "error": "adherence_out_of_range"
+      }
+    },
+    {
+      "id": "csm1-err-003",
+      "description": "Missing adherence digit",
+      "input": "N+F",
+      "expected": {
+        "valid": false,
+        "error": "missing_adherence"
+      }
+    },
+    {
+      "id": "csm1-err-004",
+      "description": "Invalid scope letter 'X'",
+      "input": "N5+X",
+      "expected": {
+        "valid": false,
+        "error": "invalid_scope"
+      }
+    },
+    {
+      "id": "csm1-err-005",
+      "description": "Scope must be single uppercase letter, not a word",
+      "input": "N5+family",
+      "expected": {
+        "valid": false,
+        "error": "invalid_scope_format"
+      }
+    },
+    {
+      "id": "csm1-err-006",
+      "description": "Namespace must be uppercase",
+      "input": "N5:elem",
+      "expected": {
+        "valid": false,
+        "error": "invalid_namespace"
+      }
+    },
+    {
+      "id": "csm1-err-007",
+      "description": "Namespace too long (max 8 characters)",
+      "input": "N5:TOOLONGNAMESPACE",
+      "expected": {
+        "valid": false,
+        "error": "namespace_too_long"
+      }
+    },
+    {
+      "id": "csm1-err-008",
+      "description": "Empty input",
+      "input": "",
+      "expected": {
+        "valid": false,
+        "error": "empty_code"
+      }
+    },
+    {
+      "id": "csm1-err-009",
+      "description": "Old persona 'R' (Anchor) no longer valid in NZGAMDC set",
+      "input": "R4+E",
+      "expected": {
+        "valid": false,
+        "error": "invalid_persona",
+        "note": "Persona 'R' (Anchor) was removed in the NZGAMDC update. 'R' is a valid SCOPE code but not a persona code."
+      }
+    },
+    {
+      "id": "csm1-err-010",
+      "description": "Old persona 'H' (Hot-Rod) no longer valid in NZGAMDC set",
+      "input": "H1+T",
+      "expected": {
+        "valid": false,
+        "error": "invalid_persona",
+        "note": "Persona 'H' (Hot-Rod) was removed in the NZGAMDC update. 'H' is a valid SCOPE code but not a persona code."
+      }
+    },
+    {
+      "id": "csm1-err-011",
+      "description": "Negative adherence",
+      "input": "N-1+F",
+      "expected": {
+        "valid": false,
+        "error": "missing_adherence"
+      }
+    }
+  ]
+}

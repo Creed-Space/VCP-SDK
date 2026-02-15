@@ -1,0 +1,128 @@
+{
+  "suite": "transport/content_hashing",
+  "version": "1.0.0",
+  "description": "Test vectors for VCP/T content hashing. Content is canonicalized then SHA-256 hashed. Hash format is 'sha256:<hex>'. Extracted from Python test_vectors.py and Rust transport.rs.",
+  "vectors": [
+    {
+      "id": "hash-001",
+      "description": "Known hash for 'Hello, World!\\n'",
+      "input": "Hello, World!\n",
+      "expected": {
+        "hash": "sha256:d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+        "note": "This is the SHA-256 of the canonical form. Since input is already canonical (single LF, no trailing whitespace), the hash is of the input bytes directly."
+      }
+    },
+    {
+      "id": "hash-002",
+      "description": "CRLF and LF produce the same hash (canonicalization normalizes line endings)",
+      "input_a": "line1\nline2",
+      "input_b": "line1\r\nline2",
+      "expected": {
+        "hashes_equal": true,
+        "note": "Both canonicalize to 'line1\\nline2\\n' before hashing"
+      }
+    },
+    {
+      "id": "hash-003",
+      "description": "Trailing whitespace ignored (canonicalization strips it)",
+      "input_a": "hello",
+      "input_b": "hello   ",
+      "expected": {
+        "hashes_equal": true,
+        "note": "Both canonicalize to 'hello\\n' before hashing"
+      }
+    },
+    {
+      "id": "hash-004",
+      "description": "Hash is deterministic: same content always produces same hash",
+      "input_a": "hello world",
+      "input_b": "hello world",
+      "expected": {
+        "hashes_equal": true
+      }
+    },
+    {
+      "id": "hash-005",
+      "description": "Different content produces different hashes",
+      "input_a": "hello",
+      "input_b": "world",
+      "expected": {
+        "hashes_equal": false
+      }
+    },
+    {
+      "id": "hash-006",
+      "description": "Hash verification: matching content verifies true",
+      "procedure": "compute_hash_then_verify",
+      "input": "test content",
+      "expected": {
+        "verification_result": true
+      }
+    },
+    {
+      "id": "hash-007",
+      "description": "Hash verification: mismatched content verifies false",
+      "input": "test",
+      "claimed_hash": "sha256:wrong",
+      "expected": {
+        "verification_result": false
+      }
+    },
+    {
+      "id": "hash-008",
+      "description": "Hash starts with 'sha256:' prefix",
+      "input": "any content here",
+      "expected": {
+        "hash_prefix": "sha256:",
+        "hash_hex_length": 64,
+        "note": "Hash format is 'sha256:' followed by 64 hex characters (256 bits)"
+      }
+    },
+    {
+      "id": "hash-009",
+      "description": "Unicode content hashes correctly",
+      "input": "Hello \u4e16\u754c\n",
+      "expected": {
+        "note": "UTF-8 encoded bytes of the canonical form are hashed. Implementations must use UTF-8 encoding.",
+        "hash_prefix": "sha256:"
+      }
+    },
+    {
+      "id": "hash-010",
+      "description": "Emoji content hashes correctly",
+      "input": "Safety first \ud83d\udee1\ufe0f\n",
+      "expected": {
+        "note": "Emoji is valid UTF-8 content. Canonical form preserves emoji. Hash is of UTF-8 bytes.",
+        "hash_prefix": "sha256:"
+      }
+    },
+    {
+      "id": "hash-011",
+      "description": "Trailing empty lines ignored: same hash with and without them",
+      "input_a": "hello\n",
+      "input_b": "hello\n\n\n\n",
+      "expected": {
+        "hashes_equal": true,
+        "note": "Both canonicalize to 'hello\\n'"
+      }
+    },
+    {
+      "id": "hash-012",
+      "description": "CR-only line endings produce same hash as LF",
+      "input_a": "line1\nline2\n",
+      "input_b": "line1\rline2\r",
+      "expected": {
+        "hashes_equal": true
+      }
+    },
+    {
+      "id": "hash-013",
+      "description": "Mixed line endings all normalize to same hash",
+      "input_a": "a\nb\nc\n",
+      "input_b": "a\r\nb\rc\n",
+      "expected": {
+        "hashes_equal": true
+      }
+    }
+  ]
+}

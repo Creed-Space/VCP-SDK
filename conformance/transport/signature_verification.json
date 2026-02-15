@@ -1,0 +1,168 @@
+{
+  "suite": "transport/signature_verification",
+  "version": "1.0.0",
+  "description": "Test vectors for VCP/T Ed25519 signature signing and verification. Uses deterministic keypair generation from seed bytes: keypair = Ed25519::from_seed([seed_byte; 32]). Extracted from Rust transport.rs tests.",
+  "note": "These are procedural test vectors. Implementations must generate Ed25519 keypairs from the specified seed bytes and execute the described procedure. Actual signature values are implementation-derived since they depend on the Ed25519 keypair generation.",
+  "vectors": [
+    {
+      "id": "sig-001",
+      "description": "Sign and verify roundtrip with seed byte 1",
+      "procedure": "generate_keypair_from_seed",
+      "seed_byte": 1,
+      "seed_description": "32 bytes all set to 0x01",
+      "manifest": {
+        "vcp_version": "1.0",
+        "bundle": {
+          "id": "test-bundle",
+          "content_hash": "sha256:abc123"
+        }
+      },
+      "expected": {
+        "sign_succeeds": true,
+        "verify_with_correct_key": true
+      }
+    },
+    {
+      "id": "sig-002",
+      "description": "Signature does not verify with wrong public key",
+      "procedure": "sign_with_seed_verify_with_different_seed",
+      "sign_seed_byte": 1,
+      "verify_seed_byte": 2,
+      "manifest": {
+        "bundle": {
+          "id": "test"
+        }
+      },
+      "expected": {
+        "sign_succeeds": true,
+        "verify_with_wrong_key": false
+      }
+    },
+    {
+      "id": "sig-003",
+      "description": "Signature does not verify on tampered manifest",
+      "procedure": "sign_original_verify_tampered",
+      "seed_byte": 3,
+      "original_manifest": {
+        "bundle": {
+          "id": "original"
+        }
+      },
+      "tampered_manifest": {
+        "bundle": {
+          "id": "tampered"
+        }
+      },
+      "expected": {
+        "sign_succeeds": true,
+        "verify_tampered": false
+      }
+    },
+    {
+      "id": "sig-004",
+      "description": "Signature field is excluded during verification: sign without sig field, verify with sig field present",
+      "procedure": "sign_without_sig_verify_with_sig",
+      "seed_byte": 4,
+      "manifest_for_signing": {
+        "vcp_version": "1.0",
+        "bundle": {
+          "id": "test"
+        }
+      },
+      "manifest_for_verification": {
+        "vcp_version": "1.0",
+        "bundle": {
+          "id": "test"
+        },
+        "signature": {
+          "algorithm": "ed25519",
+          "value": "PLACEHOLDER_WILL_BE_REPLACED_BY_ACTUAL_SIG"
+        }
+      },
+      "expected": {
+        "sign_succeeds": true,
+        "verify_with_sig_field_present": true,
+        "note": "canonicalize_manifest strips the 'signature' field before computing the verification hash"
+      }
+    },
+    {
+      "id": "sig-005",
+      "description": "base64: prefix accepted on signature values",
+      "procedure": "sign_and_verify_with_base64_prefix",
+      "seed_byte": 5,
+      "manifest": {
+        "bundle": {
+          "id": "prefix-test"
+        }
+      },
+      "expected": {
+        "sign_succeeds": true,
+        "raw_sig_verifies": true,
+        "prefixed_sig_verifies": true,
+        "prefix_format": "base64:<raw_signature>"
+      }
+    },
+    {
+      "id": "sig-006",
+      "description": "Ed25519 signing is deterministic: same key + same manifest = same signature",
+      "procedure": "sign_twice_compare",
+      "seed_byte": 6,
+      "manifest": {
+        "vcp_version": "1.0",
+        "bundle": {
+          "id": "deterministic-test",
+          "version": "1.0.0"
+        }
+      },
+      "expected": {
+        "signatures_equal": true,
+        "note": "Ed25519 is deterministic (RFC 8032); same private key + same message always produces the same signature"
+      }
+    },
+    {
+      "id": "sig-err-001",
+      "description": "Signing with short key (16 bytes instead of 32) must error",
+      "procedure": "sign_with_short_key",
+      "key_bytes": 16,
+      "manifest": {
+        "bundle": {
+          "id": "test"
+        }
+      },
+      "expected": {
+        "error": true,
+        "error_message_contains": "32 bytes"
+      }
+    },
+    {
+      "id": "sig-err-002",
+      "description": "Verification with short key (16 bytes instead of 32) must error",
+      "procedure": "verify_with_short_key",
+      "key_bytes": 16,
+      "manifest": {
+        "bundle": {
+          "id": "test"
+        }
+      },
+      "signature": "AAAA",
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "id": "sig-err-003",
+      "description": "Invalid base64 signature must error",
+      "procedure": "verify_with_invalid_base64",
+      "seed_byte": 0,
+      "manifest": {
+        "bundle": {
+          "id": "test"
+        }
+      },
+      "signature": "not-valid-base64!!!",
+      "expected": {
+        "error": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "suite": "transport/manifest_canonicalization",
+  "version": "1.0.0",
+  "description": "Test vectors for VCP/T manifest canonicalization. Manifests are canonicalized per JCS (RFC 8785) with the 'signature' field excluded. Extracted from Rust transport.rs tests.",
+  "vectors": [
+    {
+      "id": "mc-001",
+      "description": "Signature field excluded from canonical form",
+      "input": {
+        "bundle": {"id": "test"},
+        "signature": {"value": "should-be-excluded"},
+        "version": "1.0"
+      },
+      "expected": {
+        "signature_excluded": true,
+        "canonical_contains_bundle": true,
+        "canonical_contains_signature": false,
+        "canonical_json": "{\"bundle\":{\"id\":\"test\"},\"version\":\"1.0\"}"
+      }
+    },
+    {
+      "id": "mc-002",
+      "description": "Keys sorted alphabetically at top level",
+      "input": {
+        "z_field": 1,
+        "a_field": 2,
+        "m_field": 3
+      },
+      "expected": {
+        "key_order": ["a_field", "m_field", "z_field"],
+        "canonical_json": "{\"a_field\":2,\"m_field\":3,\"z_field\":1}"
+      }
+    },
+    {
+      "id": "mc-003",
+      "description": "No whitespace between tokens (JCS compact form)",
+      "input": {
+        "key": "value",
+        "number": 42
+      },
+      "expected": {
+        "canonical_json": "{\"key\":\"value\",\"number\":42}",
+        "note": "No spaces after colons or commas per JCS RFC 8785"
+      }
+    },
+    {
+      "id": "mc-004",
+      "description": "Nested objects: keys sorted at all levels",
+      "input": {
+        "outer_z": {
+          "inner_b": 2,
+          "inner_a": 1
+        },
+        "outer_a": {
+          "inner_z": "last",
+          "inner_a": "first"
+        }
+      },
+      "expected": {
+        "canonical_json": "{\"outer_a\":{\"inner_a\":\"first\",\"inner_z\":\"last\"},\"outer_a\":{\"inner_a\":\"first\",\"inner_z\":\"last\"},\"outer_z\":{\"inner_a\":1,\"inner_b\":2}}",
+        "note": "This expected value shows the principle; implementations should verify key ordering at all nesting levels independently",
+        "top_level_order": ["outer_a", "outer_z"],
+        "nested_order_outer_z": ["inner_a", "inner_b"],
+        "nested_order_outer_a": ["inner_a", "inner_z"]
+      }
+    },
+    {
+      "id": "mc-005",
+      "description": "Full manifest: signature excluded, keys sorted",
+      "input": {
+        "vcp_version": "1.0",
+        "bundle": {
+          "id": "test-bundle",
+          "content_hash": "sha256:abc123"
+        },
+        "signature": {
+          "algorithm": "ed25519",
+          "value": "base64:AAAA"
+        },
+        "issuer": {
+          "id": "test.example"
+        }
+      },
+      "expected": {
+        "signature_excluded": true,
+        "canonical_json": "{\"bundle\":{\"content_hash\":\"sha256:abc123\",\"id\":\"test-bundle\"},\"issuer\":{\"id\":\"test.example\"},\"vcp_version\":\"1.0\"}"
+      }
+    },
+    {
+      "id": "mc-006",
+      "description": "Arrays preserve element order (not sorted)",
+      "input": {
+        "tags": ["zebra", "apple", "mango"],
+        "id": "test"
+      },
+      "expected": {
+        "canonical_json": "{\"id\":\"test\",\"tags\":[\"zebra\",\"apple\",\"mango\"]}",
+        "note": "Array elements maintain their original order; only object keys are sorted"
+      }
+    },
+    {
+      "id": "mc-007",
+      "description": "Boolean and null values serialized correctly",
+      "input": {
+        "z_bool": true,
+        "a_null": null,
+        "m_false": false
+      },
+      "expected": {
+        "canonical_json": "{\"a_null\":null,\"m_false\":false,\"z_bool\":true}"
+      }
+    },
+    {
+      "id": "mc-008",
+      "description": "Deeply nested signature field still excluded",
+      "input": {
+        "bundle": {"id": "deep-test"},
+        "metadata": {"title": "Test"},
+        "signature": {
+          "algorithm": "ed25519",
+          "value": "base64:DEEP_SIG",
+          "signed_fields": ["bundle", "metadata"]
+        }
+      },
+      "expected": {
+        "signature_excluded": true,
+        "canonical_json": "{\"bundle\":{\"id\":\"deep-test\"},\"metadata\":{\"title\":\"Test\"}}"
+      }
+    }
+  ]
+}

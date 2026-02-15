@@ -1,0 +1,166 @@
+{
+  "suite": "adaptation/context_encoding",
+  "version": "1.0.0",
+  "description": "Test vectors for VCP/A context encoding and decoding. Context uses the Enneagram Protocol wire format with pipe '|' separator between situational and personal dimensions. Extracted from Rust context.rs tests.",
+  "vectors": [
+    {
+      "id": "ctx-001",
+      "description": "Empty context: no dimensions set",
+      "input": {
+        "situational": {},
+        "personal": {}
+      },
+      "expected": {
+        "wire": "",
+        "has_any": false
+      }
+    },
+    {
+      "id": "ctx-002",
+      "description": "Situational only: time dimension with sunrise emoji",
+      "input": {
+        "situational": {
+          "time": ["\ud83c\udf05"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire_contains": "\u23f0",
+        "wire_does_not_contain": "|",
+        "has_situational": true,
+        "has_personal": false,
+        "note": "Time dimension uses clock emoji prefix. No pipe separator when personal is empty."
+      }
+    },
+    {
+      "id": "ctx-003",
+      "description": "Personal only: cognitive dimension",
+      "input": {
+        "situational": {},
+        "personal": {
+          "cognitive": {
+            "value": "focused",
+            "level": 4
+          }
+        }
+      },
+      "expected": {
+        "wire_starts_with": "|",
+        "has_situational": false,
+        "has_personal": true,
+        "personal_cognitive_value": "focused",
+        "note": "When only personal dimensions are set, wire starts with pipe separator"
+      }
+    },
+    {
+      "id": "ctx-004",
+      "description": "Full roundtrip: situational time + space, personal cognitive + emotional",
+      "input": {
+        "situational": {
+          "time": ["\ud83c\udf05"],
+          "space": ["\ud83c\udfe1"]
+        },
+        "personal": {
+          "cognitive": {
+            "value": "focused",
+            "level": 4
+          },
+          "emotional": {
+            "value": "calm",
+            "level": 3
+          }
+        }
+      },
+      "expected": {
+        "wire_contains": "|",
+        "has_situational": true,
+        "has_personal": true,
+        "roundtrip_preserves_time": true,
+        "roundtrip_preserves_space": true,
+        "roundtrip_cognitive_value": "focused",
+        "roundtrip_emotional_value": "calm"
+      }
+    },
+    {
+      "id": "ctx-005",
+      "description": "Parse empty wire string",
+      "wire_input": "",
+      "expected": {
+        "has_any": false,
+        "has_situational": false,
+        "has_personal": false
+      }
+    },
+    {
+      "id": "ctx-006",
+      "description": "Serde roundtrip: context survives JSON serialization and deserialization",
+      "input": {
+        "situational": {
+          "company": ["team"]
+        },
+        "personal": {
+          "urgency": {
+            "value": "pressured",
+            "level": 4
+          }
+        }
+      },
+      "expected": {
+        "json_roundtrip": true,
+        "note": "Serialize to JSON and deserialize back; result must equal original"
+      }
+    },
+    {
+      "id": "ctx-007",
+      "description": "Context with all situational dimensions",
+      "input": {
+        "situational": {
+          "time": ["\ud83c\udf05"],
+          "space": ["\ud83c\udfe1"],
+          "company": ["\ud83d\udc76"],
+          "culture": ["western"],
+          "occasion": ["casual"],
+          "state": ["relaxed"],
+          "environment": ["indoor"],
+          "agency": ["autonomous"],
+          "constraints": ["none"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "has_situational": true,
+        "has_personal": false
+      }
+    },
+    {
+      "id": "ctx-008",
+      "description": "Emergency context: contains emergency indicators",
+      "input": {
+        "situational": {
+          "occasion": ["\ud83d\udea8"],
+          "constraints": ["\ud83d\udea8"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "has_emergency": true,
+        "note": "The alarm emoji in OCCASION or CONSTRAINTS indicates an emergency context"
+      }
+    },
+    {
+      "id": "ctx-009",
+      "description": "Children present indicator",
+      "input": {
+        "situational": {
+          "space": ["\ud83c\udfe1"],
+          "company": ["\ud83d\udc76"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "has_children": true,
+        "note": "Baby emoji in COMPANY dimension indicates children are present"
+      }
+    }
+  ]
+}

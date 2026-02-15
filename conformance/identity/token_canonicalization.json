@@ -1,0 +1,93 @@
+{
+  "suite": "identity/token_canonicalization",
+  "version": "1.0.0",
+  "description": "Test vectors for VCP/I identity token canonicalization. Tokens must be normalized before comparison or hashing.",
+  "vectors": [
+    {
+      "id": "canon-001",
+      "description": "Leading and trailing whitespace stripped",
+      "input": "  family.safe.guide  ",
+      "expected": {
+        "canonical": "family.safe.guide",
+        "valid": true
+      }
+    },
+    {
+      "id": "canon-002",
+      "description": "Tab and newline whitespace stripped",
+      "input": "\tfamily.safe.guide\n",
+      "expected": {
+        "canonical": "family.safe.guide",
+        "valid": true
+      }
+    },
+    {
+      "id": "canon-003",
+      "description": "Case folding: uppercase converted to lowercase",
+      "input": "FAMILY.SAFE.GUIDE",
+      "expected": {
+        "canonical": "family.safe.guide",
+        "note": "Canonicalization lowercases before validation; the raw input 'FAMILY.SAFE.GUIDE' would fail strict parsing but canonicalization normalizes it first"
+      }
+    },
+    {
+      "id": "canon-004",
+      "description": "Mixed case folding",
+      "input": "Family.Safe.Guide",
+      "expected": {
+        "canonical": "family.safe.guide"
+      }
+    },
+    {
+      "id": "canon-005",
+      "description": "Consecutive dots collapsed to single dot",
+      "input": "family..safe...guide",
+      "expected": {
+        "canonical": "family.safe.guide"
+      }
+    },
+    {
+      "id": "canon-006",
+      "description": "Leading and trailing dots removed",
+      "input": ".family.safe.guide.",
+      "expected": {
+        "canonical": "family.safe.guide"
+      }
+    },
+    {
+      "id": "canon-007",
+      "description": "Unicode NFKC normalization: fullwidth characters",
+      "input": "\uff46\uff41\uff4d\uff49\uff4c\uff59.safe.guide",
+      "expected": {
+        "canonical": "family.safe.guide",
+        "note": "Fullwidth Latin letters (U+FF46 etc.) normalize to ASCII under NFKC"
+      }
+    },
+    {
+      "id": "canon-008",
+      "description": "Unicode NFKC normalization: compatibility characters",
+      "input": "family.safe.guide",
+      "expected": {
+        "canonical": "family.safe.guide",
+        "note": "Already in NFKC form; no change"
+      }
+    },
+    {
+      "id": "canon-009",
+      "description": "Combined: whitespace + case + dots",
+      "input": "  FAMILY..Safe...GUIDE  ",
+      "expected": {
+        "canonical": "family.safe.guide"
+      }
+    },
+    {
+      "id": "canon-010",
+      "description": "Version and namespace preserved through canonicalization",
+      "input": "  family.safe.guide@1.2.0:ELEM  ",
+      "expected": {
+        "canonical": "family.safe.guide@1.2.0:ELEM",
+        "note": "Namespace remains uppercase; version preserved as-is"
+      }
+    }
+  ]
+}
