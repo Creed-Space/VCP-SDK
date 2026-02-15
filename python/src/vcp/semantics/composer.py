@@ -82,6 +82,19 @@ CONFLICT_KEYWORDS = {
 class Composer:
     """Compose multiple constitutions according to mode."""
 
+    def __init__(self, hook_executor: object | None = None) -> None:
+        """Initialize composer.
+
+        Args:
+            hook_executor: Optional HookExecutor for firing on_conflict hooks.
+                          When provided, on_conflict hooks fire when composition
+                          detects conflicting rules.  If a hook resolves the
+                          conflict (returns ``modified_constitution``), the
+                          resolved result is used instead of raising.
+                          Import: ``from vcp.hooks import HookExecutor``.
+        """
+        self._hook_executor = hook_executor
+
     def compose(
         self,
         constitutions: Sequence[Constitution],
@@ -163,6 +176,9 @@ class Composer:
                     sources[rule] = const.id
 
         if conflicts:
+            resolved = self._try_resolve_via_hook(conflicts, CompositionMode.EXTEND, merged)
+            if resolved is not None:
+                return resolved
             raise CompositionConflictError(conflicts)
 
         return CompositionResult(
@@ -243,6 +259,9 @@ class Composer:
                 sources[normalized] = const.id
 
         if conflicts:
+            resolved = self._try_resolve_via_hook(conflicts, CompositionMode.STRICT, merged)
+            if resolved is not None:
+                return resolved
             raise CompositionConflictError(conflicts)
 
         return CompositionResult(
@@ -251,6 +270,68 @@ class Composer:
             warnings=[],
             mode_used=CompositionMode.STRICT,
         )
+
+    def _try_resolve_via_hook(
+        self,
+        conflicts: list[Conflict],
+        mode: CompositionMode,
+        merged_so_far: list[str],
+    ) -> CompositionResult | None:
+        """Attempt to resolve conflicts via on_conflict hook.
+
+        Args:
+            conflicts: Detected conflicts.
+            mode: Current composition mode.
+            merged_so_far: Rules merged before conflict detection.
+
+        Returns:
+            CompositionResult if hook resolved the conflict, None otherwise.
+        """
+        if self._hook_executor is None:
+            return None
+
+        try:
+            from ..hooks.types import ConflictEvent, HookType
+
+            hook_result = self._hook_executor.execute(
+                HookType.ON_CONFLICT,
+                session_id="default",
+                context={},
+                constitution=None,  # Pass None so we can detect modification
+                event=ConflictEvent(
+                    conflicting_rules=[
+                        {
+                            "rule_a": c.rule_a,
+                            "source_a": c.source_a,
+                            "rule_b": c.rule_b,
+                            "source_b": c.source_b,
+                            "type": c.conflict_type,
+                        }
+                        for c in conflicts
+                    ],
+                    composition_strategy=mode.value,
+                    conflict_severity="error",
+                ),
+            )
+            if hook_result.status == "completed" and hook_result.constitution is not None:
+                # Hook resolved the conflict -- use the modified result
+                resolved_rules = hook_result.constitution
+                if isinstance(resolved_rules, list):
+                    return CompositionResult(
+                        merged_rules=resolved_rules,
+                        conflicts=conflicts,
+                        warnings=["Conflicts resolved by on_conflict hook"],
+                        mode_used=mode,
+                    )
+        except Exception:
+            # Fail-open: if hook execution throws, fall through to raise
+            import logging
+
+            logging.getLogger(__name__).exception(
+                "on_conflict hook execution error; continuing with normal conflict handling"
+            )
+
+        return None
 
     def _detect_conflict(
         self,

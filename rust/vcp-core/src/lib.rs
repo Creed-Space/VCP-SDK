@@ -17,6 +17,8 @@
 //! | [`context`] | Full context wire format (situational + personal) |
 //! | [`transport`] | Content hashing, canonicalization, signing, bundle verification |
 //! | [`trust`] | Trust anchor management for issuers and auditors |
+//! | [`hooks`] | Hook system for the adaptation pipeline (6 hook types) |
+//! | [`revocation`] | Bundle revocation checking with SSRF protection |
 //! | [`error`] | Error types and verification codes |
 //!
 //! ## Quick Start
@@ -45,11 +47,15 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::must_use_candidate)]
 
+pub mod composer;
 pub mod context;
 pub mod csm1;
 pub mod error;
+pub mod hooks;
 pub mod identity;
+pub mod orchestrator;
 pub mod personal;
+pub mod revocation;
 pub mod situational;
 pub mod transport;
 pub mod trust;
@@ -64,4 +70,13 @@ pub use situational::SituationalContext;
 pub use transport::{
     compute_content_hash, sign_manifest, verify_content_hash, verify_manifest_signature,
 };
+pub use hooks::{
+    ChainResult, Hook, HookAction, HookExecutor, HookHandler, HookInput, HookRegistry, HookResult,
+    HookScope, HookType,
+};
+pub use revocation::{RevocationChecker, RevocationStatus};
 pub use trust::{TrustAnchor, TrustConfig};
+
+// Orchestrator and composition engine.
+pub use composer::{Composer, CompositionMode, CompositionResult, Constitution, Conflict};
+pub use orchestrator::{Orchestrator, ReplayCache, VerificationContext};

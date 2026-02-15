@@ -58,17 +58,26 @@ class Transition:
 class StateTracker:
     """Track context state and detect transitions."""
 
-    def __init__(self, max_history: int = 100):
+    def __init__(
+        self,
+        max_history: int = 100,
+        hook_executor: object | None = None,
+    ):
         """Initialize state tracker.
 
         Args:
             max_history: Maximum history entries to keep
+            hook_executor: Optional HookExecutor for firing on_transition hooks.
+                          When provided, on_transition hooks fire whenever a
+                          non-NONE severity transition is detected.
+                          Import: ``from vcp.hooks import HookExecutor``.
         """
         self._history: list[tuple[datetime, VCPContext]] = []
         self._max_history = max_history
         self._handlers: dict[TransitionSeverity, list[Callable[[Transition], None]]] = {
             s: [] for s in TransitionSeverity
         }
+        self._hook_executor = hook_executor
 
     def record(self, context: VCPContext) -> Transition | None:
         """Record new context state, return transition if any.
@@ -93,6 +102,44 @@ class StateTracker:
         # Trim history if needed
         if len(self._history) > self._max_history:
             self._history = self._history[-self._max_history :]
+
+        # Fire on_transition hook (if executor configured)
+        if transition.severity != TransitionSeverity.NONE and self._hook_executor is not None:
+            try:
+                from ..hooks.types import HookType, TransitionEvent
+
+                hook_result = self._hook_executor.execute(
+                    HookType.ON_TRANSITION,
+                    session_id="default",
+                    context=context.to_json() if hasattr(context, "to_json") else {},
+                    constitution=None,
+                    event=TransitionEvent(
+                        previous_state=str(transition.previous.encode())
+                        if hasattr(transition.previous, "encode")
+                        else str(transition.previous),
+                        new_state=str(transition.current.encode())
+                        if hasattr(transition.current, "encode")
+                        else str(transition.current),
+                        trigger=transition.severity.value,
+                        transition_metadata={
+                            "changed_dimensions": [
+                                d._name for d in transition.changed_dimensions
+                            ]
+                        },
+                    ),
+                )
+                if hook_result.status == "aborted":
+                    # Hook aborted the transition -- remove the recorded entry
+                    # and return None to indicate the transition was blocked
+                    self._history.pop()
+                    return None
+            except Exception:
+                # Fail-open: if hook execution throws, continue with normal flow
+                import logging
+
+                logging.getLogger(__name__).exception(
+                    "on_transition hook execution error; continuing"
+                )
 
         # Invoke handlers
         if transition.severity != TransitionSeverity.NONE:

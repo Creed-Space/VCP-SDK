@@ -4,7 +4,10 @@ VCP Orchestrator Module
 Handles bundle verification and injection.
 """
 
+from __future__ import annotations
+
 import json
+import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -12,8 +15,11 @@ from datetime import datetime, timedelta
 
 from .bundle import Bundle
 from .canonicalize import canonicalize_manifest, verify_content_hash
+from .revocation import RevocationChecker
 from .trust import TrustConfig
 from .types import VerificationResult
+
+logger = logging.getLogger(__name__)
 
 
 class VerificationError(Exception):
@@ -107,6 +113,8 @@ class Orchestrator:
         trust_config: TrustConfig,
         replay_cache: ReplayCache | None = None,
         verify_signature: Callable[..., bool] | None = None,
+        revocation_checker: RevocationChecker | None = None,
+        hook_executor: object | None = None,
     ):
         """
         Initialize orchestrator.
@@ -116,10 +124,19 @@ class Orchestrator:
             replay_cache: Cache for JTI tracking (created if None)
             verify_signature: Function to verify Ed25519 signatures
                              (public_key_bytes, message_bytes, signature_bytes) -> bool
+            revocation_checker: Optional checker for bundle revocation status.
+                               When provided, bundles are checked against
+                               check_uri / CRL between attestation and
+                               temporal verification (spec step 10).
+            hook_executor: Optional HookExecutor for firing pipeline hooks.
+                          When provided, pre_inject hooks fire before returning
+                          VALID. Import: ``from vcp.hooks import HookExecutor``.
         """
         self.trust_config = trust_config
         self.replay_cache = replay_cache or ReplayCache()
         self._verify_signature = verify_signature
+        self.revocation_checker = revocation_checker
+        self._hook_executor = hook_executor
 
     def verify(
         self,
@@ -185,6 +202,27 @@ class Orchestrator:
             # Note: In production, reconstruct attestation payload and verify
             # For now, we trust the presence of the attestation
 
+        # 6b. Revocation check (between attestation and temporal — spec step 10)
+        if self.revocation_checker:
+            try:
+                status = self.revocation_checker.check(manifest)
+                if status.revoked:
+                    logger.warning(
+                        "Bundle jti=%s is revoked: reason=%s, revoked_at=%s",
+                        manifest.timestamps.jti,
+                        status.reason,
+                        status.revoked_at,
+                    )
+                    return VerificationResult.REVOKED
+            except Exception:
+                # Fail-open on revocation check errors: log and continue.
+                # The spec requires fail-closed for most checks, but revocation
+                # network errors should not block all bundles.
+                logger.exception(
+                    "Revocation check error for jti=%s; continuing verification",
+                    manifest.timestamps.jti,
+                )
+
         # 7. Temporal claims
         now = datetime.utcnow()
         ts = manifest.timestamps
@@ -245,6 +283,37 @@ class Orchestrator:
             # Log warning but don't fail if attestation present
             # In strict mode, could return INVALID_ATTESTATION
             pass
+
+        # 12. Fire pre_inject hooks (if executor configured)
+        if self._hook_executor is not None:
+            try:
+                from .hooks.types import HookType, PreInjectEvent
+
+                hook_result = self._hook_executor.execute(
+                    HookType.PRE_INJECT,
+                    session_id="default",
+                    context={
+                        "environment": context.environment,
+                        "purpose": context.purpose,
+                        "model_family": context.model_family,
+                    },
+                    constitution=bundle.content,
+                    event=PreInjectEvent(
+                        injection_target=context.model_family,
+                        injection_format="system_prompt",
+                        raw_constitution=bundle.content,
+                    ),
+                )
+                if hook_result.status == "aborted":
+                    logger.warning(
+                        "pre_inject hook aborted verification: reason=%s, aborted_by=%s",
+                        hook_result.reason,
+                        hook_result.aborted_by,
+                    )
+                    return VerificationResult.INVALID_ATTESTATION
+            except Exception:
+                # Fail-open: if hook execution itself throws, continue normally
+                logger.exception("pre_inject hook execution error; continuing verification")
 
         return VerificationResult.VALID
 

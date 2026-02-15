@@ -29,6 +29,23 @@ export type {
 
 export { createVCPTools } from './tools.js';
 
+export {
+	HookRegistry,
+	HookType,
+} from './hooks.js';
+
+export type {
+	ResultStatus,
+	HookInput,
+	HookResult,
+	HookHandler,
+	HookDefinition,
+	ChainHookResult,
+	ChainResult,
+	HookEvent,
+	HookEventListener,
+} from './hooks.js';
+
 import type { VCPWebMCPConfig, VCPWebMCPResult, WebMCPToolRegistration } from './types.js';
 import { createVCPTools } from './tools.js';
 

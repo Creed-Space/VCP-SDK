@@ -46,6 +46,14 @@ pub enum VcpError {
     /// A JSON serialization / deserialization error.
     #[error("json error: {0}")]
     JsonError(String),
+
+    /// A hook registration or execution error.
+    #[error("hook error: {0}")]
+    HookError(String),
+
+    /// A revocation check error.
+    #[error("revocation error: {0}")]
+    RevocationError(String),
 }
 
 impl From<serde_json::Error> for VcpError {
