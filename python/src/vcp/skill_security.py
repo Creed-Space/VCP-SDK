@@ -347,7 +347,7 @@ def verify_skill(
         # Decode the anchor's public key
         try:
             pub_bytes = base64.b64decode(anchor.public_key)
-            public_key = Ed25519PublicKey.from_public_key_bytes(pub_bytes)
+            public_key = Ed25519PublicKey.from_public_bytes(pub_bytes)
         except Exception as exc:
             return False, f"Failed to load issuer public key: {exc}"
 
