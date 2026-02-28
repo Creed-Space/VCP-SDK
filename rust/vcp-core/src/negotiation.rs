@@ -6,8 +6,7 @@
 use std::collections::HashMap;
 
 /// Client's initial hello message in VCP negotiation.
-#[derive(Debug, Clone, PartialEq)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct VcpHello {
     /// Protocol version requested (e.g. "3.1.0").
     pub version: String,
@@ -42,8 +41,7 @@ impl VcpHello {
 }
 
 /// Server's acknowledgment in VCP negotiation.
-#[derive(Debug, Clone, PartialEq)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct VcpAck {
     /// Agreed protocol version.
     pub version: String,

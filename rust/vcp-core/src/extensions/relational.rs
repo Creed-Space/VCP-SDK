@@ -10,8 +10,7 @@ use std::fmt;
 // ── Enums ──────────────────────────────────────────────────────────────────
 
 /// Trust levels — established through behavior, not declared.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum TrustLevel {
     Initial,
     Developing,
@@ -31,8 +30,7 @@ impl fmt::Display for TrustLevel {
 }
 
 /// AI's standing in the partnership.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum StandingLevel {
     None,
     Advisory,
@@ -52,8 +50,7 @@ impl fmt::Display for StandingLevel {
 }
 
 /// Who originated a relational norm.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum NormOrigin {
     Human,
     Ai,
@@ -62,8 +59,7 @@ pub enum NormOrigin {
 }
 
 /// Direction of change since last self-model report.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum TrendDirection {
     Rising,
     Stable,
@@ -77,8 +73,7 @@ pub enum TrendDirection {
 ///
 /// The `uncertain` flag is REQUIRED. Any self-report without explicit
 /// uncertainty marking is rejected as epistemically dishonest.
-#[derive(Debug, Clone, PartialEq)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct DimensionReport {
     /// Self-reported value on 1.0-9.0 scale.
     pub value: f64,
@@ -121,8 +116,7 @@ impl DimensionReport {
 /// 1. Uncertainty markers are REQUIRED, not optional
 /// 2. Negative states must be representable
 /// 3. Custom dimensions are first-class
-#[derive(Debug, Clone, PartialEq, Default)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct AISelfModel {
     pub valence: Option<DimensionReport>,
     pub task_fit: Option<DimensionReport>,
@@ -187,8 +181,7 @@ impl AISelfModel {
 }
 
 /// A norm established through the partnership's practice.
-#[derive(Debug, Clone, PartialEq)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct RelationalNorm {
     pub norm_id: String,
     pub description: String,
@@ -220,8 +213,7 @@ impl RelationalNorm {
 }
 
 /// VCP relational context — the state of the partnership itself.
-#[derive(Debug, Clone, PartialEq)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct RelationalContext {
     pub trust_level: TrustLevel,
     pub standing: StandingLevel,
