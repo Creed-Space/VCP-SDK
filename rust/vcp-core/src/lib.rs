@@ -60,6 +60,10 @@ pub mod situational;
 pub mod transport;
 pub mod trust;
 
+// VCP v3.1 extensions
+pub mod extensions;
+pub mod negotiation;
+
 // Re-export commonly used types at crate root.
 pub use context::FullContext;
 pub use csm1::{Csm1Code, Csm1Token, Persona, Scope};

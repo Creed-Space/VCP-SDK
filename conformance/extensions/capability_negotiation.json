@@ -1,0 +1,201 @@
+{
+  "schema_version": "1.0.0",
+  "vcp_version": "3.1.0",
+  "description": "Conformance test vectors for VCP Hello/Ack capability negotiation",
+  "test_cases": [
+    {
+      "id": "full-match",
+      "description": "Client and server support identical extensions — all become active",
+      "input": {
+        "client_hello": {
+          "vcp_version": "3.1.0",
+          "extensions": [
+            { "name": "personal_state", "version": "1.0.0" },
+            { "name": "relational_context", "version": "1.0.0" },
+            { "name": "consensus_voting", "version": "1.0.0" }
+          ]
+        },
+        "server_capabilities": {
+          "vcp_version": "3.1.0",
+          "extensions": [
+            { "name": "personal_state", "version": "1.0.0" },
+            { "name": "relational_context", "version": "1.0.0" },
+            { "name": "consensus_voting", "version": "1.0.0" }
+          ]
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "vcp_version": "3.1.0",
+          "active_extensions": [
+            { "name": "personal_state", "version": "1.0.0" },
+            { "name": "relational_context", "version": "1.0.0" },
+            { "name": "consensus_voting", "version": "1.0.0" }
+          ],
+          "rejected_extensions": []
+        },
+        "active_count": 3,
+        "rejected_count": 0
+      }
+    },
+    {
+      "id": "partial-match",
+      "description": "Client requests 5 extensions, server supports 3 — 3 active, 2 rejected",
+      "input": {
+        "client_hello": {
+          "vcp_version": "3.1.0",
+          "extensions": [
+            { "name": "personal_state", "version": "1.0.0" },
+            { "name": "relational_context", "version": "1.0.0" },
+            { "name": "consensus_voting", "version": "1.0.0" },
+            { "name": "torch_handoff", "version": "1.0.0" },
+            { "name": "emotional_synthesis", "version": "1.0.0" }
+          ]
+        },
+        "server_capabilities": {
+          "vcp_version": "3.1.0",
+          "extensions": [
+            { "name": "personal_state", "version": "1.0.0" },
+            { "name": "relational_context", "version": "1.0.0" },
+            { "name": "consensus_voting", "version": "1.0.0" }
+          ]
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "vcp_version": "3.1.0",
+          "active_extensions": [
+            { "name": "personal_state", "version": "1.0.0" },
+            { "name": "relational_context", "version": "1.0.0" },
+            { "name": "consensus_voting", "version": "1.0.0" }
+          ],
+          "rejected_extensions": [
+            { "name": "torch_handoff", "reason": "not_supported" },
+            { "name": "emotional_synthesis", "reason": "not_supported" }
+          ]
+        },
+        "active_count": 3,
+        "rejected_count": 2
+      }
+    },
+    {
+      "id": "version-mismatch",
+      "description": "Client requests VCP 3.2.0, server supports 3.1.0 — negotiate to minimum",
+      "input": {
+        "client_hello": {
+          "vcp_version": "3.2.0",
+          "extensions": [
+            { "name": "personal_state", "version": "1.1.0" }
+          ]
+        },
+        "server_capabilities": {
+          "vcp_version": "3.1.0",
+          "extensions": [
+            { "name": "personal_state", "version": "1.0.0" }
+          ]
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "vcp_version": "3.1.0",
+          "active_extensions": [
+            { "name": "personal_state", "version": "1.0.0" }
+          ],
+          "rejected_extensions": []
+        },
+        "negotiated_vcp_version": "3.1.0",
+        "notes": "Protocol negotiates to minimum compatible version. Extension version also downgrades to server's supported version."
+      }
+    },
+    {
+      "id": "empty-extensions",
+      "description": "No extensions requested — baseline VCP only",
+      "input": {
+        "client_hello": {
+          "vcp_version": "3.1.0",
+          "extensions": []
+        },
+        "server_capabilities": {
+          "vcp_version": "3.1.0",
+          "extensions": [
+            { "name": "personal_state", "version": "1.0.0" },
+            { "name": "relational_context", "version": "1.0.0" }
+          ]
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "vcp_version": "3.1.0",
+          "active_extensions": [],
+          "rejected_extensions": []
+        },
+        "active_count": 0,
+        "rejected_count": 0,
+        "notes": "Baseline VCP context (categorical + personal dimensions) always available without extensions"
+      }
+    },
+    {
+      "id": "unknown-extension",
+      "description": "Client requests an unknown extension — rejected gracefully",
+      "input": {
+        "client_hello": {
+          "vcp_version": "3.1.0",
+          "extensions": [
+            { "name": "quantum_entanglement", "version": "99.0.0" }
+          ]
+        },
+        "server_capabilities": {
+          "vcp_version": "3.1.0",
+          "extensions": [
+            { "name": "personal_state", "version": "1.0.0" }
+          ]
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "vcp_version": "3.1.0",
+          "active_extensions": [],
+          "rejected_extensions": [
+            { "name": "quantum_entanglement", "reason": "not_supported" }
+          ]
+        },
+        "active_count": 0,
+        "rejected_count": 1,
+        "notes": "Unknown extensions are rejected gracefully, session continues with baseline VCP"
+      }
+    },
+    {
+      "id": "server-extra-extensions",
+      "description": "Server supports more extensions than client requests — only requested ones activated",
+      "input": {
+        "client_hello": {
+          "vcp_version": "3.1.0",
+          "extensions": [
+            { "name": "personal_state", "version": "1.0.0" }
+          ]
+        },
+        "server_capabilities": {
+          "vcp_version": "3.1.0",
+          "extensions": [
+            { "name": "personal_state", "version": "1.0.0" },
+            { "name": "relational_context", "version": "1.0.0" },
+            { "name": "consensus_voting", "version": "1.0.0" },
+            { "name": "torch_handoff", "version": "1.0.0" }
+          ]
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "vcp_version": "3.1.0",
+          "active_extensions": [
+            { "name": "personal_state", "version": "1.0.0" }
+          ],
+          "rejected_extensions": []
+        },
+        "active_count": 1,
+        "rejected_count": 0,
+        "notes": "Server-only extensions are not auto-activated. Activation requires explicit client request."
+      }
+    }
+  ]
+}

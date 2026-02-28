@@ -1,0 +1,224 @@
+{
+  "schema_version": "1.0.0",
+  "vcp_version": "3.1.0",
+  "description": "Conformance test vectors for personal state decay and lifecycle management",
+  "test_cases": [
+    {
+      "id": "decay-exponential-no-elapsed",
+      "description": "Exponential decay with zero elapsed time returns declared intensity unchanged",
+      "input": {
+        "declared_intensity": 5,
+        "half_life_seconds": 1800,
+        "baseline": 1,
+        "elapsed_seconds": 0
+      },
+      "expected": {
+        "decayed_intensity": 5,
+        "notes": "No time elapsed, intensity unchanged"
+      }
+    },
+    {
+      "id": "decay-exponential-one-half-life",
+      "description": "After one half-life (1800s), intensity 5 decays to 3 (floor of 3.0)",
+      "input": {
+        "declared_intensity": 5,
+        "half_life_seconds": 1800,
+        "baseline": 1,
+        "elapsed_seconds": 1800
+      },
+      "expected": {
+        "decayed_intensity": 3,
+        "raw_value": 3.0,
+        "formula": "max(1, floor(1 + (5 - 1) * exp(-ln(2)/1800 * 1800))) = max(1, floor(1 + 4 * 0.5)) = max(1, floor(3.0)) = 3"
+      }
+    },
+    {
+      "id": "decay-exponential-two-half-lives",
+      "description": "After two half-lives (3600s), intensity 5 decays to 2 (floor of 2.0)",
+      "input": {
+        "declared_intensity": 5,
+        "half_life_seconds": 1800,
+        "baseline": 1,
+        "elapsed_seconds": 3600
+      },
+      "expected": {
+        "decayed_intensity": 2,
+        "raw_value": 2.0,
+        "formula": "max(1, floor(1 + 4 * exp(-ln(2)/1800 * 3600))) = max(1, floor(1 + 4 * 0.25)) = max(1, floor(2.0)) = 2"
+      }
+    },
+    {
+      "id": "decay-exponential-three-half-lives",
+      "description": "After three half-lives (5400s), intensity 5 decays to 1 (floor of 1.5 = 1, but baseline is 1)",
+      "input": {
+        "declared_intensity": 5,
+        "half_life_seconds": 1800,
+        "baseline": 1,
+        "elapsed_seconds": 5400
+      },
+      "expected": {
+        "decayed_intensity": 1,
+        "raw_value": 1.5,
+        "formula": "max(1, floor(1 + 4 * 0.125)) = max(1, floor(1.5)) = max(1, 1) = 1"
+      }
+    },
+    {
+      "id": "decay-baseline-intensity",
+      "description": "Intensity at baseline (1) never decays further regardless of elapsed time",
+      "input": {
+        "declared_intensity": 1,
+        "half_life_seconds": 1800,
+        "baseline": 1,
+        "elapsed_seconds": 1800
+      },
+      "expected": {
+        "decayed_intensity": 1,
+        "notes": "declared == baseline, so (declared - baseline) = 0, decay term vanishes"
+      }
+    },
+    {
+      "id": "decay-pinned-signal",
+      "description": "Pinned signal never decays regardless of elapsed time",
+      "input": {
+        "declared_intensity": 5,
+        "half_life_seconds": 1800,
+        "baseline": 1,
+        "elapsed_seconds": 100000,
+        "pinned": true
+      },
+      "expected": {
+        "decayed_intensity": 5,
+        "notes": "Pinned signals return declared_intensity immediately"
+      }
+    },
+    {
+      "id": "decay-cognitive-state-config",
+      "description": "Cognitive state uses 720s half-life (from DECAY_CONFIGS)",
+      "input": {
+        "dimension": "cognitive_state",
+        "declared_intensity": 4,
+        "half_life_seconds": 720,
+        "baseline": 1,
+        "elapsed_seconds": 720
+      },
+      "expected": {
+        "decayed_intensity": 2,
+        "raw_value": 2.5,
+        "formula": "max(1, floor(1 + 3 * exp(-ln(2)/720 * 720))) = max(1, floor(1 + 3 * 0.5)) = max(1, floor(2.5)) = 2"
+      }
+    },
+    {
+      "id": "decay-perceived-urgency-config",
+      "description": "Perceived urgency uses 900s half-life (from DECAY_CONFIGS)",
+      "input": {
+        "dimension": "perceived_urgency",
+        "declared_intensity": 5,
+        "half_life_seconds": 900,
+        "baseline": 1,
+        "elapsed_seconds": 900
+      },
+      "expected": {
+        "decayed_intensity": 3,
+        "raw_value": 3.0,
+        "formula": "max(1, floor(1 + 4 * exp(-ln(2)/900 * 900))) = max(1, floor(3.0)) = 3"
+      }
+    },
+    {
+      "id": "decay-configs-reference",
+      "description": "Reference table of all DECAY_CONFIGS values for validation",
+      "input": {},
+      "expected": {
+        "decay_configs": {
+          "perceived_urgency": { "half_life_seconds": 900, "baseline": 1, "reset_on_engagement": false },
+          "body_signals": { "half_life_seconds": 14400, "baseline": 1, "reset_on_engagement": false },
+          "cognitive_state": { "half_life_seconds": 720, "baseline": 1, "reset_on_engagement": true },
+          "emotional_tone": { "half_life_seconds": 1800, "baseline": 1, "reset_on_engagement": false },
+          "energy_level": { "half_life_seconds": 7200, "baseline": 1, "reset_on_engagement": false }
+        }
+      }
+    },
+    {
+      "id": "lifecycle-set",
+      "description": "Signal at t=0 (no elapsed time) is in SET state",
+      "input": {
+        "declared_intensity": 5,
+        "elapsed_seconds": 0,
+        "config": { "half_life_seconds": 1800, "baseline": 1, "fresh_window_seconds": 60, "stale_threshold": 0.3 }
+      },
+      "expected": {
+        "lifecycle_state": "set",
+        "notes": "elapsed <= 0 returns SET"
+      }
+    },
+    {
+      "id": "lifecycle-active",
+      "description": "Signal within fresh window (30s < 60s) is ACTIVE",
+      "input": {
+        "declared_intensity": 5,
+        "elapsed_seconds": 30,
+        "config": { "half_life_seconds": 1800, "baseline": 1, "fresh_window_seconds": 60, "stale_threshold": 0.3 }
+      },
+      "expected": {
+        "lifecycle_state": "active",
+        "effective_intensity": 4,
+        "notes": "elapsed < fresh_window_seconds (60s)"
+      }
+    },
+    {
+      "id": "lifecycle-decaying",
+      "description": "Signal past fresh window but above stale threshold is DECAYING",
+      "input": {
+        "declared_intensity": 5,
+        "elapsed_seconds": 1800,
+        "config": { "half_life_seconds": 1800, "baseline": 1, "fresh_window_seconds": 60, "stale_threshold": 0.3 }
+      },
+      "expected": {
+        "lifecycle_state": "decaying",
+        "effective_intensity": 3,
+        "notes": "stale_level = 1 + (5-1)*0.3 = 2.2; effective=3 > 2.2 so DECAYING"
+      }
+    },
+    {
+      "id": "lifecycle-stale",
+      "description": "Signal below stale threshold but above baseline is STALE",
+      "input": {
+        "declared_intensity": 5,
+        "elapsed_seconds": 3600,
+        "config": { "half_life_seconds": 1800, "baseline": 1, "fresh_window_seconds": 60, "stale_threshold": 0.3 }
+      },
+      "expected": {
+        "lifecycle_state": "stale",
+        "effective_intensity": 2,
+        "notes": "stale_level = 2.2; effective=2 <= 2.2 and > baseline(1) so STALE"
+      }
+    },
+    {
+      "id": "lifecycle-expired",
+      "description": "Signal decayed to baseline is EXPIRED",
+      "input": {
+        "declared_intensity": 5,
+        "elapsed_seconds": 7200,
+        "config": { "half_life_seconds": 1800, "baseline": 1, "fresh_window_seconds": 60, "stale_threshold": 0.3 }
+      },
+      "expected": {
+        "lifecycle_state": "expired",
+        "effective_intensity": 1,
+        "notes": "effective <= baseline so EXPIRED"
+      }
+    },
+    {
+      "id": "lifecycle-pinned-always-active",
+      "description": "Pinned signals always return ACTIVE lifecycle state",
+      "input": {
+        "declared_intensity": 5,
+        "elapsed_seconds": 100000,
+        "config": { "half_life_seconds": 1800, "baseline": 1, "fresh_window_seconds": 60, "stale_threshold": 0.3, "pinned": true }
+      },
+      "expected": {
+        "lifecycle_state": "active",
+        "effective_intensity": 5,
+        "notes": "Pinned signals always return ACTIVE"
+      }
+    }
+  ]
+}
