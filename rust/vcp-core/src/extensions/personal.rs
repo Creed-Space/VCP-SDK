@@ -246,7 +246,7 @@ pub fn default_decay_config(dim: PersonalDimension) -> DecayConfig {
 ///
 /// # Panics
 ///
-/// Panics if step thresholds contain NaN values (partial_cmp unwrap in sort).
+/// Panics if step thresholds contain NaN values (`partial_cmp` unwrap in sort).
 pub fn compute_decayed_intensity(
     declared_intensity: u8,
     declared_at: SystemTime,
