@@ -537,7 +537,10 @@ mod tests {
 
     #[test]
     fn test_personal_dimension_display() {
-        assert_eq!(PersonalDimension::CognitiveState.to_string(), "cognitive_state");
+        assert_eq!(
+            PersonalDimension::CognitiveState.to_string(),
+            "cognitive_state"
+        );
         assert_eq!(PersonalDimension::BodySignals.to_string(), "body_signals");
     }
 }

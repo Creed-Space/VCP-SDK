@@ -270,10 +270,7 @@ impl SchulzeElection {
     }
 
     /// Convert strongest path matrix to ordered ranking.
-    fn determine_ranking(
-        &self,
-        p: &[Vec<i32>],
-    ) -> (Vec<SchulzeRanking>, Vec<(String, String)>) {
+    fn determine_ranking(&self, p: &[Vec<i32>]) -> (Vec<SchulzeRanking>, Vec<(String, String)>) {
         let n = self.candidates.len();
         let mut ties: Vec<(String, String)> = Vec::new();
 
@@ -432,8 +429,7 @@ mod tests {
     #[test]
     fn test_strongest_paths_match_python() {
         // Classic 4-candidate Schulze example
-        let mut election =
-            SchulzeElection::new(cands(&["a", "b", "c", "d"])).unwrap();
+        let mut election = SchulzeElection::new(cands(&["a", "b", "c", "d"])).unwrap();
         // 3 voters: a > b > c > d
         for _ in 0..3 {
             election.add_ballot(Ballot::new("v", cands(&["a", "b", "c", "d"])));
@@ -477,7 +473,7 @@ mod tests {
         // a should beat both b and c
         assert_eq!(result.pairwise_matrix[0][1], 1); // a>b
         assert_eq!(result.pairwise_matrix[0][2], 1); // a>c
-        // b and c tied (both unranked)
+                                                     // b and c tied (both unranked)
         assert_eq!(result.pairwise_matrix[1][2], 0);
         assert_eq!(result.pairwise_matrix[2][1], 0);
     }

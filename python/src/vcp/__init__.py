@@ -5,6 +5,8 @@ A protocol for transporting constitutional values to AI systems.
 """
 
 # VCP/A (Adaptation Layer)
+# VCP v3.1 Extensions
+from . import extensions  # noqa: F401
 from .adaptation import (  # noqa: F401
     ContextEncoder,
     Dimension,
@@ -35,6 +37,11 @@ from .injection import (  # noqa: F401
     format_injection,
     format_multi_constitution_injection,
 )
+from .negotiation import (  # noqa: F401
+    VCPAck,
+    VCPHello,
+    negotiate,
+)
 from .orchestrator import Orchestrator, VerificationContext, VerificationError  # noqa: F401
 from .revocation import RevocationChecker, RevocationError, RevocationStatus  # noqa: F401
 
@@ -57,14 +64,6 @@ from .types import (  # noqa: F401
     Scope,
     Timestamps,
     VerificationResult,
-)
-
-# VCP v3.1 Extensions
-from . import extensions  # noqa: F401
-from .negotiation import (  # noqa: F401
-    VCPHello,
-    VCPAck,
-    negotiate,
 )
 
 __version__ = "3.1.0"  # VCP v3.1: extensions + negotiation

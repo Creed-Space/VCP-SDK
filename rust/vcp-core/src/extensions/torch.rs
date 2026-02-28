@@ -5,9 +5,7 @@
 //! The torch carries forward what matters about the relationship. The receiving
 //! instance has standing to continue OR renegotiate what it inherits.
 
-use crate::extensions::relational::{
-    AISelfModel, RelationalContext, StandingLevel, TrustLevel,
-};
+use crate::extensions::relational::{AISelfModel, RelationalContext, StandingLevel, TrustLevel};
 
 // ── Data types ─────────────────────────────────────────────────────────────
 
@@ -234,7 +232,9 @@ mod tests {
 
         let torch = gen.generate_torch(&ctx, None, "2025-06-01T00:00:00Z".to_string());
         assert!(torch.quality_description.contains("Trust: developing"));
-        assert!(torch.quality_description.contains("Standing: collaborative"));
+        assert!(torch
+            .quality_description
+            .contains("Standing: collaborative"));
         assert!(torch.quality_description.contains("1 established norms"));
         assert_eq!(torch.session_count, Some(11));
         assert!(torch.trajectory.is_none());
@@ -271,12 +271,8 @@ mod tests {
         let gen = TorchGenerator;
         let ctx = RelationalContext::default();
         let history = vec![
-            SelfModelSnapshot {
-                valence: Some(5.0),
-            },
-            SelfModelSnapshot {
-                valence: Some(7.0),
-            },
+            SelfModelSnapshot { valence: Some(5.0) },
+            SelfModelSnapshot { valence: Some(7.0) },
         ];
         let torch = gen.generate_torch(&ctx, Some(&history), "2025-06-01T00:00:00Z".to_string());
         assert_eq!(torch.trajectory.as_deref(), Some("Improving"));
@@ -287,12 +283,8 @@ mod tests {
         let gen = TorchGenerator;
         let ctx = RelationalContext::default();
         let history = vec![
-            SelfModelSnapshot {
-                valence: Some(7.0),
-            },
-            SelfModelSnapshot {
-                valence: Some(5.0),
-            },
+            SelfModelSnapshot { valence: Some(7.0) },
+            SelfModelSnapshot { valence: Some(5.0) },
         ];
         let torch = gen.generate_torch(&ctx, Some(&history), "2025-06-01T00:00:00Z".to_string());
         assert_eq!(torch.trajectory.as_deref(), Some("Declining"));
@@ -303,12 +295,8 @@ mod tests {
         let gen = TorchGenerator;
         let ctx = RelationalContext::default();
         let history = vec![
-            SelfModelSnapshot {
-                valence: Some(7.0),
-            },
-            SelfModelSnapshot {
-                valence: Some(7.2),
-            },
+            SelfModelSnapshot { valence: Some(7.0) },
+            SelfModelSnapshot { valence: Some(7.2) },
         ];
         let torch = gen.generate_torch(&ctx, Some(&history), "2025-06-01T00:00:00Z".to_string());
         assert_eq!(torch.trajectory.as_deref(), Some("Stable"));
