@@ -1,17 +1,16 @@
 <div align="center">
 
-# Value-Context Protocol (VCP) SDK
+# VCP SDK — Official SDK for the Value Context Protocol
 
-**The open standard for portable, adaptive, and verifiable AI context.**
+**Multi-language SDK for VCP v3.1 — parse tokens, encode context, negotiate capabilities, and implement all 4 extension modules.**
 
 [![CI](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml)
-[![Specification](https://img.shields.io/badge/spec-v1.1-blue?style=flat-square)](./specs/VCP_SPECIFICATION_v1.0_COMPLETE.md)
-[![Python SDK](https://img.shields.io/badge/python-1.0.0-3776AB?style=flat-square&logo=python&logoColor=white)](./python/)
-[![Rust SDK](https://img.shields.io/badge/rust-0.1.0-DEA584?style=flat-square&logo=rust&logoColor=white)](./rust/)
-[![TypeScript SDK](https://img.shields.io/badge/typescript-0.1.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](./webmcp/)
+[![Python SDK](https://img.shields.io/badge/python-3.1.0-3776AB?style=flat-square&logo=python&logoColor=white)](./python/)
+[![TypeScript SDK](https://img.shields.io/badge/typescript-3.1.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](./webmcp/)
+[![Rust SDK](https://img.shields.io/badge/rust-3.1.0-DEA584?style=flat-square&logo=rust&logoColor=white)](./rust/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](./LICENSE)
 
-[Website](https://www.valuecontextprotocol.org) · [Overview](#overview) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Documentation](#documentation) · [Contributing](#contributing)
+[Spec](https://github.com/Creed-Space/VCP-Spec) · [Inspector](https://inspector.valuecontextprotocol.org/) · [Website](https://valuecontextprotocol.org/)
 
 </div>
 
@@ -19,61 +18,61 @@
 
 ## Overview
 
-The **Value-Context Protocol (VCP)** is an open specification for transporting constitutional values, behavioral rules, and personal context to AI systems. It addresses a structural gap in how Large Language Models receive instructions: they accept text input but have no native ability to resolve references, verify signatures, or validate hashes.
+The **Value-Context Protocol (VCP)** is an open specification for transporting constitutional values, behavioral rules, and personal context to AI systems. The VCP SDK provides production-ready implementations in Python, TypeScript, and Rust with full cross-language parity.
 
-VCP provides a **signed envelope format** that enables cryptographic verification at the orchestration layer while delivering complete, self-contained text to the model.
+VCP v3.1 introduces four **extension modules** — Personal State, Relational Context, Constitutional Consensus, and Session Handoff — alongside a capability negotiation handshake, enabling richer context exchange between humans and AI.
 
-### The Problem
+---
 
-| Current Approach | Limitation |
+## Features (v3.1)
+
+### Core
+- **Token parsing** — CSM-1 compact state message encoding/decoding
+- **Bundle verification** — Signed bundles with Ed25519 signatures and SHA-256 content hashes
+- **Content hashing** — Deterministic canonicalization for integrity verification
+- **Identity resolution** — Universal Value Codes (UVC) naming and namespace management
+
+### Extension Modules
+| Module | Description |
 |:---|:---|
-| **Full text injection** | Token-inefficient, no verification, no audit trail |
-| **Reference-based** | Requires universal resolution infrastructure that doesn't exist |
-| **Platform-specific** | Context locked to one service; users re-enter preferences everywhere |
+| **Personal State** | Signal declaration with exponential/linear decay, lifecycle tracking (`SET`/`STALE`) |
+| **Relational Context** | AI self-model, trust levels, standing, bias detection |
+| **Constitutional Consensus** | Schulze method voting, pairwise matrix, strongest path computation |
+| **Session Handoff (Torch)** | Generation, consumption, lineage tracking across sessions |
 
-### The VCP Solution
+### Protocol
+- **Capability Negotiation** — VCP-Hello/VCP-Ack handshake protocol for feature discovery
+- **53 conformance test vectors** across 5 categories (personal, relational, consensus, torch, negotiation)
+- **Cross-SDK conformance CI** — GitHub Actions testing Python, TypeScript, and Rust in lockstep
 
-VCP introduces a **Verify-then-Inject** pattern:
+---
 
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Repository    │────▶│  Orchestrator   │────▶│      LLM        │
-│  (Signed Bundle)│     │  (Verify + Log) │     │ (Receives Text) │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-```
+## SDK Languages
 
-1. Constitutions are packaged as **signed bundles** with manifest, content, and cryptographic proofs
-2. The **orchestrator** fetches, verifies signatures and hashes, and logs the transaction
-3. The **LLM** receives verified full text with a compact header — no resolution required
-4. **Audit systems** can independently verify what values were applied, without LLM cooperation
+| Language | Directory | Install | Status |
+|:---|:---|:---|:---|
+| **Python** | [`python/`](./python/) | `pip install vcp-sdk` | Stable |
+| **TypeScript** | [`webmcp/`](./webmcp/) | `npm install @creed-space/vcp-sdk` | Stable |
+| **Rust** | [`rust/`](./rust/) | `cargo add vcp-core` | Stable |
 
-### Core Properties
-
-| Property | Description |
-|:---|:---|
-| **Portability** | Define your context once — every compatible service receives it automatically |
-| **Adaptation** | Context profiles shift by situation: work mode at the office, personal mode at home |
-| **Liveness** | Real-time personal state (energy, focus, urgency) modulates AI responses moment-to-moment |
-
-> Share *influence* without sharing *information*. VCP shapes AI behavior through contextual flags while protecting the underlying personal data.
+All SDKs implement the same core protocol and validate against shared conformance test vectors in [`conformance/`](./conformance/).
 
 ---
 
 ## Quick Start
 
-### Python (Reference Implementation)
+### Python
 
 ```bash
-cd python
-pip install -r requirements.txt
+pip install vcp-sdk
 ```
 
 ```python
-from vcp.identity import IdentityToken
 from vcp.semantics.csm1 import CSM1Token
-from vcp.transport import SignedBundle
+from vcp.extensions.personal_state import PersonalStateManager
+from vcp.extensions.consensus import SchulzeVoting
 
-# Parse a CSM-1 compact token
+# Parse a CSM-1 token
 token = CSM1Token.parse("""
 VCP:1.0:user-alice-daily
 C:family.safe.guide@1.2.0
@@ -85,69 +84,79 @@ S:🔒housing|🔒health
 R:🧠focused:4|💭calm:3|🔋low_energy:2
 """)
 
-# Verify a signed bundle
-bundle = SignedBundle.load("family.safe.guide@1.2.0")
-assert bundle.verify()  # Checks signature + hash integrity
+# Capability negotiation
+from vcp.negotiation import VCPHello, VCPAck
+hello = VCPHello(extensions=["personal_state", "relational", "consensus", "torch"])
 ```
 
+### TypeScript
+
 ```bash
-pytest tests/  # Run the test suite
+npm install @creed-space/vcp-sdk
 ```
 
-### Rust (High-Performance / WASM)
+```typescript
+import { parseCSM1, VCPHello } from '@creed-space/vcp-sdk';
+
+// Parse a CSM-1 token
+const token = parseCSM1(rawToken);
+console.log(token.constitution); // "family.safe.guide@1.2.0"
+
+// Negotiate capabilities
+const hello = new VCPHello({
+  extensions: ['personal_state', 'relational', 'consensus', 'torch']
+});
+```
+
+### Rust
 
 ```bash
-cd rust
-cargo build
-cargo test
+cargo add vcp-core
 ```
 
 ```rust
 use vcp_core::csm1::CSM1Token;
-use vcp_core::identity::IdentityToken;
+use vcp_core::negotiation::VCPHello;
 
 let token = CSM1Token::parse(raw_token)?;
 let identity = token.identity();
 let constitution = token.constitution();
+
+// Negotiate capabilities
+let hello = VCPHello::new(&["personal_state", "relational", "consensus", "torch"]);
 ```
 
-**Crates:**
+---
 
-| Crate | Purpose |
-|:---|:---|
-| `vcp-core` | Identity, CSM-1 parsing, context management, transport — `no_std` compatible |
-| `vcp-wasm` | Browser bindings via `wasm-bindgen` for client-side VCP |
-| `vcp-cli` | Command-line tool: `vcp parse`, `vcp encode`, `vcp verify` |
+## Conformance
 
-### TypeScript / WebMCP (Browser)
+The `conformance/` directory contains **53 test vectors** across 5 categories:
 
+| Category | Vectors | Description |
+|:---|:---|:---|
+| Personal State | 12 | Decay curves, lifecycle transitions, signal declaration |
+| Relational Context | 11 | Trust levels, standing, self-model, bias detection |
+| Constitutional Consensus | 10 | Schulze voting, pairwise matrices, strongest paths |
+| Session Handoff (Torch) | 10 | Generation, consumption, lineage verification |
+| Capability Negotiation | 10 | VCP-Hello/VCP-Ack handshake, extension discovery |
+
+Run conformance tests:
 ```bash
-cd webmcp
-npm install
-npm run build
+# Python
+cd python && pytest tests/conformance/
+
+# TypeScript
+cd webmcp && npm test -- --grep conformance
+
+# Rust
+cd rust && cargo test conformance
 ```
-
-```typescript
-import { registerVCPTools } from '@vcp/webmcp';
-
-// Register VCP tools with the browser's WebMCP API (Chrome 145+)
-registerVCPTools({
-  tokenEncoder: myEncoder,
-  tokenParser: myParser,
-});
-// AI agents can now discover: vcp_chat, vcp_build_token,
-// vcp_parse_token, vcp_transmission_summary, vcp_list_personas
-```
-
-Includes MCP-B polyfill for non-Chrome browsers.
 
 ---
 
 ## Architecture
 
 ### Four-Layer Protocol Stack
-
-VCP is a four-layer protocol stack — like OSI, but for AI values:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -169,128 +178,24 @@ VCP is a four-layer protocol stack — like OSI, but for AI values:
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Three-Timescale Context Model
-
-VCP operates across three temporal scales with distinct update frequencies:
+### v3.1 Extension Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  CONSTITUTIONAL RULES          Rarely change · Hard limits   │
-│  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │
-│  SITUATIONAL CONTEXT      Per-session · Role & environment   │
-│  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │
-│  PERSONAL STATE         Moment-to-moment · Energy & focus    │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        VCP v3.1 Extensions                          │
+├──────────────┬──────────────┬──────────────────┬────────────────────┤
+│ Personal     │ Relational   │ Constitutional   │ Session            │
+│ State        │ Context      │ Consensus        │ Handoff            │
+│              │              │                  │                    │
+│ · Signals    │ · Self-model │ · Schulze voting │ · Torch generation │
+│ · Decay      │ · Trust      │ · Pairwise matrix│ · Consumption      │
+│ · Lifecycle  │ · Standing   │ · Strongest paths│ · Lineage          │
+├──────────────┴──────────────┴──────────────────┴────────────────────┤
+│                   Capability Negotiation (VCP-Hello/VCP-Ack)        │
+├─────────────────────────────────────────────────────────────────────┤
+│                          VCP Core (Layers 1-4)                      │
+└─────────────────────────────────────────────────────────────────────┘
 ```
-
-**Key invariant:** Personal state modulates *expression*, never safety boundaries. A stressed user may receive a gentler tone — but constitutional rules are never weakened.
-
-### Privacy Architecture
-
-| Level | Behavior | Examples |
-|:---|:---|:---|
-| **Public** | Always shared | Goals, experience level, learning style |
-| **Consent** | Shared with explicit permission | Location context, health indicators |
-| **Private** | Never transmitted; influences AI locally | Raw emotional state, sensitive constraints |
-
----
-
-## Key Concepts
-
-### Universal Value Codes (UVC)
-
-A hierarchical naming scheme for constitutions and values:
-
-```
-family.safe.guide@1.2.0
-│      │    │     └── Semantic version
-│      │    └──────── Role / approach
-│      └───────────── Domain
-└──────────────────── Namespace
-```
-
-### CSM-1 Token Format (v1.1)
-
-Compact State Message — an 8-line token encoding complete user context in ~200 bytes:
-
-```
-VCP:1.0:user-alice-daily          ← Protocol version + session ID
-C:family.safe.guide@1.2.0        ← Constitution reference
-P:G:3                             ← Persona + generation level
-G:learn_guitar:beginner:visual    ← Goal + skill level + learning style
-X:🔇:💰low:⚡var                  ← Environmental constraints
-F:time_limited|noise_restricted   ← Active flags
-S:🔒housing|🔒health              ← Shielded (private) topics
-R:🧠focused:4|💭calm:3|🔋low:2   ← Real-time personal state (v1.1)
-```
-
-The R-line (Line 8) is new in v1.1 — see [`docs/content/CSM1_v1.1_AMENDMENT.md`](./docs/content/CSM1_v1.1_AMENDMENT.md).
-
-### Signed Bundles
-
-Constitutions are packaged as cryptographically signed bundles:
-
-```json
-{
-  "manifest": {
-    "id": "family.safe.guide",
-    "version": "1.2.0",
-    "hash": "sha256:abc123...",
-    "signature": "ed25519:..."
-  },
-  "content": "... constitutional text ..."
-}
-```
-
-The orchestrator verifies the signature and hash before injecting content into the model's context window.
-
-### Personas
-
-Six built-in personas define distinct interaction styles:
-
-| Persona | Style | Use Case |
-|:---|:---|:---|
-| **Muse** | Creative, exploratory | Brainstorming, ideation |
-| **Sentinel** | Cautious, protective | Safety-critical contexts |
-| **Godparent** | Nurturing, patient | Learning, mentorship |
-| **Ambassador** | Professional, diplomatic | Business, formal communication |
-| **Anchor** | Grounding, stabilizing | Emotional support, crisis |
-| **Nanny** | Structured, rule-following | Children, constrained environments |
-
-### Deterministic Hooks
-
-Rules enforced at three tiers, providing deterministic reliability where probabilistic model behavior falls short:
-
-| Tier | Behavior | Override |
-|:---|:---|:---|
-| **Constitutional** | Hard rules, always enforced | Cannot be overridden |
-| **Situational** | Active in specific contexts | Context-dependent activation |
-| **Personal** | Advisory user preferences | Soft influence on behavior |
-
----
-
-## SDKs
-
-| Language | Directory | Version | Status | Targets |
-|:---|:---|:---|:---|:---|
-| **Python** | [`python/`](./python/) | 1.0.0 | Stable | Reference implementation, LLM integration, server-side |
-| **Rust** | [`rust/`](./rust/) | 0.1.0 | Beta | High-performance parsing, WASM/browser, embedded, CLI |
-| **TypeScript** | [`webmcp/`](./webmcp/) | 0.1.0 | Beta | Browser-side tool registration via `navigator.modelContext` |
-
-All SDKs implement the same core protocol and validate against the shared JSON schemas in [`schemas/`](./schemas/).
-
----
-
-## Integrations
-
-VCP works with existing infrastructure:
-
-| Integration | Status | Description |
-|:---|:---|:---|
-| **Model Context Protocol (MCP)** | Native | VCP tools register as MCP-compatible resources |
-| **WebMCP (Chrome 145+)** | Stable | Browser-native AI tool discovery via `navigator.modelContext` |
-| **REST API** | Stable | Standard HTTP endpoints for token exchange |
-| **OpenAI Actions** | Compatible | Export VCP artifacts as OpenAI-compatible actions |
 
 ---
 
@@ -298,9 +203,7 @@ VCP works with existing infrastructure:
 
 ### Protocol Specification
 
-The VCP protocol specification, JSON schemas, and protocol-layer documentation live in their own repository:
-
-**[Creed-Space/VCP-Spec](https://github.com/Creed-Space/VCP-Spec)** -- Specification, schemas, governance, and protocol docs.
+**[Creed-Space/VCP-Spec](https://github.com/Creed-Space/VCP-Spec)** — Specification, schemas, governance, and protocol docs.
 
 ### SDK Guides
 
@@ -308,74 +211,7 @@ The VCP protocol specification, JSON schemas, and protocol-layer documentation l
 |:---|:---|
 | [`docs/VCP_IMPLEMENTATION_GUIDE.md`](./docs/VCP_IMPLEMENTATION_GUIDE.md) | SDK implementors |
 | [`docs/VCP_INTEGRATION.md`](./docs/VCP_INTEGRATION.md) | Integration guide |
-| [`docs/CROSS_PROJECT_VCP_BRIDGE.md`](./docs/CROSS_PROJECT_VCP_BRIDGE.md) | Cross-project bridging |
-
----
-
-## Design Principles
-
-1. **Verify-then-Inject** — Verification happens at the orchestration layer, not inside the model
-2. **Complete Delivery** — Models receive full text, not references they cannot resolve
-3. **Audit Trail** — Every application of values is logged and independently verifiable
-4. **Implementation Agnostic** — Works with any constitutional AI framework or model provider
-5. **Supply-Chain Security** — Draws on patterns from package signing (npm, PyPI, cargo) and Subresource Integrity
-6. **Privacy by Design** — Share influence without sharing information; users control disclosure at three granularity levels
-7. **Bilateral Symmetry** — Users declare personal state; AI maintains its own self-model. Mutual understanding without privileged access.
-
----
-
-## Demo
-
-Explore VCP interactively at **[ValueContextProtocol.org](https://www.valuecontextprotocol.org)** — build tokens, test personas, and see the protocol in action.
-
-Source: [Creed-Space/VCP-Demo-Site](https://github.com/Creed-Space/VCP-Demo-Site)
-
----
-
-## Repository Structure
-
-```
-VCP-SDK/
-├── specs/                 # Protocol specifications
-│   ├── VCP_SPECIFICATION_v1.0_COMPLETE.md
-│   ├── VCP_SPECIFICATION_v1.1_AMENDMENTS.md
-│   └── value_context_protocols_paper_v1.md
-├── docs/                  # Guides and reference
-│   ├── VCP_NEWCOMER_GUIDE.md
-│   ├── VCP_OVERVIEW.md
-│   ├── VCP_IMPLEMENTATION_GUIDE.md
-│   ├── identity/          # VCP/I layer
-│   ├── semantics/         # VCP/S layer
-│   ├── adaptation/        # VCP/A layer
-│   ├── context/           # Context specification
-│   ├── uvc/               # Universal Value Codes
-│   ├── content/           # CSM-1 grammar + amendments
-│   └── openapi/           # API specification
-├── schemas/               # JSON Schema definitions
-├── python/                # Python SDK (stable)
-├── rust/                  # Rust SDK (beta)
-│   ├── vcp-core/          # Core library
-│   ├── vcp-wasm/          # WASM bindings
-│   └── vcp-cli/           # CLI tool
-├── webmcp/                # TypeScript/WebMCP SDK (beta)
-├── integrations/          # Integration examples
-├── CONTRIBUTING.md
-├── CODE_OF_CONDUCT.md
-├── SECURITY.md
-└── LICENSE
-```
-
----
-
-## Related Work
-
-VCP draws on established patterns from:
-
-- **Software Supply Chain** — Package signing (npm, PyPI, cargo)
-- **Web Integrity** — Subresource Integrity (SRI), Content Security Policy
-- **Distributed Systems** — Content-addressed storage (IPFS, git)
-- **Identity Systems** — Decentralized Identifiers (DIDs), URNs
-- **Constitutional AI** — Anthropic's Constitutional AI, system prompt architectures
+| [`docs/VCP_NEWCOMER_GUIDE.md`](./docs/VCP_NEWCOMER_GUIDE.md) | Getting started |
 
 ---
 
@@ -413,6 +249,6 @@ A **[Creed Space](https://creedspace.com)** project.
 
 *Context that travels with you.*
 
-[Website](https://www.valuecontextprotocol.org) · [Documentation](./docs/) · [Specification](./specs/) · [Playground](https://www.valuecontextprotocol.org/playground)
+[Website](https://valuecontextprotocol.org/) · [Spec](https://github.com/Creed-Space/VCP-Spec) · [Inspector](https://inspector.valuecontextprotocol.org/) · [Documentation](./docs/)
 
 </div>
