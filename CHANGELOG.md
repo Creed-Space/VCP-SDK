@@ -4,6 +4,23 @@ All notable changes to the VCP SDK will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-02-28
+
+### Added
+- **Extension modules** for all 4 VCP v3.1 extensions:
+  - Personal State — signal declaration, exponential/linear decay, lifecycle tracking
+  - Relational Context — AI self-model, trust levels, standing, bias detection
+  - Constitutional Consensus — Schulze method voting, pairwise matrix, strongest paths
+  - Session Handoff (Torch) — generation, consumption, lineage tracking
+- **Capability Negotiation** — VCP-Hello/VCP-Ack handshake protocol
+- **53 conformance test vectors** across 5 categories (personal, relational, consensus, torch, negotiation)
+- **Cross-SDK conformance CI** — GitHub Actions workflow testing Python, TypeScript, and Rust
+- Python, TypeScript, and Rust implementations with full parity
+
+### Changed
+- Ballot model standardized to grouped `rankings: list[list[str]]` format across all SDKs
+- Python LifecycleState enum uses `SET`/`STALE` (replaces `FRESH`/`BASELINE`)
+
 ## [Unreleased]
 
 ### Added
@@ -58,6 +75,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Dependabot configuration for all package ecosystems
 - Comprehensive README with architecture diagrams, quick-start guides, and full documentation index
 
-[Unreleased]: https://github.com/Creed-Space/VCP-SDK/compare/v1.1.0...HEAD
+[3.1.0]: https://github.com/Creed-Space/VCP-SDK/compare/v1.1.0...v3.1.0
+[Unreleased]: https://github.com/Creed-Space/VCP-SDK/compare/v3.1.0...HEAD
 [1.1.0]: https://github.com/Creed-Space/VCP-SDK/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Creed-Space/VCP-SDK/releases/tag/v1.0.0
