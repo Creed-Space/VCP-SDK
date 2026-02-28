@@ -11,7 +11,7 @@ use std::time::SystemTime;
 
 /// The 5 personal state dimensions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum PersonalDimension {
     CognitiveState,
     EmotionalTone,
@@ -34,7 +34,7 @@ impl fmt::Display for PersonalDimension {
 
 /// Source of a personal signal.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum SignalSource {
     Declared,
     Inferred,
@@ -45,7 +45,7 @@ pub enum SignalSource {
 
 /// Lifecycle state for a personal dimension signal.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum LifecycleState {
     /// Just declared (t=0).
     Set,
@@ -61,7 +61,7 @@ pub enum LifecycleState {
 
 /// Decay curve shapes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum DecayCurve {
     Exponential,
     Linear,
@@ -72,7 +72,7 @@ pub enum DecayCurve {
 
 /// A single personal state signal with category + intensity.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct PersonalSignal {
     /// Categorical value (e.g., "focused", "calm").
     pub category: String,
@@ -119,7 +119,7 @@ impl PersonalSignal {
 
 /// Personal state context (5 dimensions).
 #[derive(Debug, Clone, PartialEq, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct PersonalContext {
     pub cognitive_state: Option<PersonalSignal>,
     pub emotional_tone: Option<PersonalSignal>,
@@ -141,7 +141,7 @@ impl PersonalContext {
 
 /// A discrete intensity step for step-curve decay.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct StepThreshold {
     /// Time after declaration when this step activates.
     pub after_seconds: f64,
@@ -151,7 +151,7 @@ pub struct StepThreshold {
 
 /// Configuration for signal decay behavior.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct DecayConfig {
     /// Half-life in seconds (for exponential decay).
     pub half_life_seconds: f64,

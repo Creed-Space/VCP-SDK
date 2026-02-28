@@ -11,7 +11,7 @@ use crate::extensions::relational::{AISelfModel, RelationalContext, StandingLeve
 
 /// Session handoff state.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct TorchState {
     /// Natural language description of relationship quality at handoff.
     pub quality_description: String,
@@ -31,7 +31,7 @@ pub struct TorchState {
 
 /// Compact torch entry for lineage chain.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct TorchSummary {
     pub date: String,
     pub gestalt_token: Option<String>,
@@ -40,7 +40,7 @@ pub struct TorchSummary {
 
 /// Tracks chain of torches across sessions.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct TorchLineage {
     pub session_count: u32,
     pub first_session_date: Option<String>,

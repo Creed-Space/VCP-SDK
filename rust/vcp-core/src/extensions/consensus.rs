@@ -22,7 +22,7 @@ use std::collections::{HashMap, HashSet};
 ///
 /// This format matches the Python and TypeScript SDKs for cross-SDK parity.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Ballot {
     /// Voter identifier.
     pub voter_id: String,
@@ -54,7 +54,7 @@ impl Ballot {
 
 /// Pairwise comparison between two candidates.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct PairwiseResult {
     pub candidate_a: String,
     pub candidate_b: String,
@@ -64,7 +64,7 @@ pub struct PairwiseResult {
 
 /// A candidate's position in the final Schulze ranking.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct SchulzeRanking {
     pub candidate: String,
     /// 1-indexed rank, ties possible.
@@ -76,7 +76,7 @@ pub struct SchulzeRanking {
 
 /// Complete result of a Schulze election.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct ElectionResult {
     /// Winner candidate, or None if no ballots.
     pub winner: Option<String>,
