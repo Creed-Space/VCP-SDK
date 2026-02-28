@@ -77,7 +77,7 @@ pub struct PersonalSignal {
     pub source: SignalSource,
     /// Confidence in this signal (0.0-1.0).
     pub confidence: f64,
-    /// When signal was declared (for decay). Uses SystemTime.
+    /// When signal was declared (for decay). Uses `SystemTime`.
     pub declared_at: Option<SystemTime>,
 }
 
@@ -94,18 +94,21 @@ impl PersonalSignal {
     }
 
     /// Set the source of this signal.
+    #[must_use]
     pub fn with_source(mut self, source: SignalSource) -> Self {
         self.source = source;
         self
     }
 
     /// Set the confidence of this signal.
+    #[must_use]
     pub fn with_confidence(mut self, confidence: f64) -> Self {
         self.confidence = confidence.clamp(0.0, 1.0);
         self
     }
 
     /// Set the declaration time for decay.
+    #[must_use]
     pub fn with_declared_at(mut self, at: SystemTime) -> Self {
         self.declared_at = Some(at);
         self
@@ -197,18 +200,21 @@ impl DecayConfig {
     }
 
     /// Set the baseline intensity.
+    #[must_use]
     pub fn with_baseline(mut self, baseline: u8) -> Self {
         self.baseline = baseline;
         self
     }
 
     /// Set the reset-on-engagement flag.
+    #[must_use]
     pub fn with_reset_on_engagement(mut self, reset: bool) -> Self {
         self.reset_on_engagement = reset;
         self
     }
 
     /// Set the pinned flag.
+    #[must_use]
     pub fn with_pinned(mut self, pinned: bool) -> Self {
         self.pinned = pinned;
         self
@@ -237,6 +243,10 @@ pub fn default_decay_config(dim: PersonalDimension) -> DecayConfig {
 /// result = max(baseline, floor(baseline + (declared - baseline) * exp(-lambda * t)))
 ///
 /// When intensity decays to baseline (1), the signal effectively clears.
+///
+/// # Panics
+///
+/// Panics if step thresholds contain NaN values (partial_cmp unwrap in sort).
 pub fn compute_decayed_intensity(
     declared_intensity: u8,
     declared_at: SystemTime,
@@ -265,7 +275,8 @@ pub fn compute_decayed_intensity(
             let decayed = f64::from(config.baseline)
                 + f64::from(declared_intensity.saturating_sub(config.baseline))
                     * (-lambda * elapsed).exp();
-            let floored = decayed.floor() as u8;
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let floored = decayed.clamp(0.0, 255.0).floor() as u8;
             floored.max(config.baseline)
         }
         DecayCurve::Linear => {
@@ -279,7 +290,8 @@ pub fn compute_decayed_intensity(
             let fraction = (elapsed / full_decay).min(1.0);
             let decayed = f64::from(declared_intensity)
                 - f64::from(declared_intensity.saturating_sub(config.baseline)) * fraction;
-            let floored = decayed.floor() as u8;
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let floored = decayed.clamp(0.0, 255.0).floor() as u8;
             floored.max(config.baseline)
         }
         DecayCurve::Step => {

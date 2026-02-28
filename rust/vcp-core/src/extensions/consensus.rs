@@ -165,8 +165,7 @@ impl SchulzeElection {
         let winner = ranking.first().map(|r| r.candidate.clone());
         let has_condorcet = winner
             .as_ref()
-            .map(|w| self.check_condorcet(&d, w))
-            .unwrap_or(false);
+            .is_some_and(|w| self.check_condorcet(&d, w));
 
         ElectionResult {
             winner,
@@ -231,6 +230,7 @@ impl SchulzeElection {
     /// p[i][j] = strength of the strongest path from i to j.
     /// Path strength = minimum edge weight along the path.
     /// Only considers edges where d[i][j] > d[j][i] (net victories).
+    #[allow(clippy::needless_range_loop)]
     fn compute_strongest_paths(&self, d: &[Vec<i32>]) -> Vec<Vec<i32>> {
         let n = self.candidates.len();
         let mut p = vec![vec![0i32; n]; n];
@@ -266,6 +266,7 @@ impl SchulzeElection {
     }
 
     /// Convert strongest path matrix to ordered ranking.
+    #[allow(clippy::needless_range_loop)]
     fn determine_ranking(&self, p: &[Vec<i32>]) -> (Vec<SchulzeRanking>, Vec<(String, String)>) {
         let n = self.candidates.len();
         let mut ties: Vec<(String, String)> = Vec::new();
@@ -338,10 +339,10 @@ impl SchulzeElection {
     }
 
     /// Check if the winner is a Condorcet winner (beats all others pairwise).
+    #[allow(clippy::needless_range_loop)]
     fn check_condorcet(&self, d: &[Vec<i32>], winner: &str) -> bool {
-        let wi = match self.index.get(winner) {
-            Some(&i) => i,
-            None => return false,
+        let Some(&wi) = self.index.get(winner) else {
+            return false;
         };
         for j in 0..self.candidates.len() {
             if j != wi && d[wi][j] <= d[j][wi] {

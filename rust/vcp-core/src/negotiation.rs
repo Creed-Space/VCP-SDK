@@ -4,6 +4,7 @@
 //! which protocol extensions are supported and at what versions.
 
 use std::collections::HashMap;
+use std::hash::BuildHasher;
 
 /// Client's initial hello message in VCP negotiation.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -28,12 +29,14 @@ impl VcpHello {
     }
 
     /// Add an extension request.
+    #[must_use]
     pub fn with_extension(mut self, name: impl Into<String>, version: impl Into<String>) -> Self {
         self.extensions.insert(name.into(), version.into());
         self
     }
 
     /// Add a capability flag.
+    #[must_use]
     pub fn with_capability(mut self, name: impl Into<String>, enabled: bool) -> Self {
         self.capabilities.insert(name.into(), enabled);
         self
@@ -59,12 +62,12 @@ pub struct VcpAck {
 /// accepted if the server lists it with a truthy capability value. Version
 /// negotiation is basic: the client's requested version is accepted as-is if
 /// the server supports the extension.
-pub fn negotiate(hello: &VcpHello, server_capabilities: &HashMap<String, String>) -> VcpAck {
+pub fn negotiate<S: BuildHasher>(hello: &VcpHello, server_capabilities: &HashMap<String, String, S>) -> VcpAck {
     let mut accepted = HashMap::new();
     let mut rejected = HashMap::new();
     let mut caps = HashMap::new();
 
-    for (ext_name, _requested_version) in &hello.extensions {
+    for ext_name in hello.extensions.keys() {
         if let Some(server_version) = server_capabilities.get(ext_name) {
             accepted.insert(ext_name.clone(), server_version.clone());
             caps.insert(ext_name.clone(), true);
@@ -75,7 +78,7 @@ pub fn negotiate(hello: &VcpHello, server_capabilities: &HashMap<String, String>
     }
 
     // Merge in server-only capabilities that the client didn't request
-    for (cap_name, _cap_version) in server_capabilities {
+    for cap_name in server_capabilities.keys() {
         if !accepted.contains_key(cap_name) && !rejected.contains_key(cap_name) {
             caps.insert(cap_name.clone(), true);
         }

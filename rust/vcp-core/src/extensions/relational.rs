@@ -98,12 +98,14 @@ impl DimensionReport {
     }
 
     /// Set a label.
+    #[must_use]
     pub fn with_label(mut self, label: impl Into<String>) -> Self {
         self.label = Some(label.into());
         self
     }
 
     /// Set a trend direction.
+    #[must_use]
     pub fn with_trend(mut self, trend: TrendDirection) -> Self {
         self.trend = Some(trend);
         self

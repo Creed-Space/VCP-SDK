@@ -37,21 +37,11 @@ pub struct TorchSummary {
 }
 
 /// Tracks chain of torches across sessions.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct TorchLineage {
     pub session_count: u32,
     pub first_session_date: Option<String>,
     pub torch_chain: Vec<TorchSummary>,
-}
-
-impl Default for TorchLineage {
-    fn default() -> Self {
-        Self {
-            session_count: 0,
-            first_session_date: None,
-            torch_chain: Vec::new(),
-        }
-    }
 }
 
 impl TorchLineage {
@@ -87,7 +77,7 @@ impl TorchGenerator {
         let quality = quality_parts.join(". ");
 
         // Derive trajectory
-        let trajectory = self.derive_trajectory(self_model_history);
+        let trajectory = Self::derive_trajectory(self_model_history);
 
         // Build primes from norms (first 3, truncated to 80 chars)
         let primes: Vec<String> = relational_ctx
@@ -105,7 +95,7 @@ impl TorchGenerator {
             .collect();
 
         // Build gestalt token
-        let gestalt = self.build_gestalt(relational_ctx.ai_self_model.as_ref());
+        let gestalt = Self::build_gestalt(relational_ctx.ai_self_model.as_ref());
 
         TorchState {
             quality_description: quality,
@@ -118,7 +108,7 @@ impl TorchGenerator {
         }
     }
 
-    fn derive_trajectory(&self, history: Option<&[SelfModelSnapshot]>) -> Option<String> {
+    fn derive_trajectory(history: Option<&[SelfModelSnapshot]>) -> Option<String> {
         let history = history?;
         if history.len() < 2 {
             return None;
@@ -136,7 +126,7 @@ impl TorchGenerator {
         }
     }
 
-    fn build_gestalt(&self, model: Option<&AISelfModel>) -> Option<String> {
+    fn build_gestalt(model: Option<&AISelfModel>) -> Option<String> {
         let model = model?;
         let mut parts: Vec<String> = Vec::new();
 
@@ -177,7 +167,7 @@ impl TorchConsumer {
     ///
     /// Sets standing to Advisory to allow renegotiation. The receiving instance
     /// can accept, modify, or flag concerns about inherited context.
-    pub fn receive_torch(&self, torch: TorchState) -> RelationalContext {
+    pub fn receive_torch(&self, torch: &TorchState) -> RelationalContext {
         let session_count = torch.session_count.unwrap_or(1);
         let trust = Self::trust_from_session_count(session_count);
 
@@ -311,7 +301,7 @@ mod tests {
             session_count: Some(3),
             gestalt_token: None,
         };
-        let ctx = consumer.receive_torch(torch);
+        let ctx = consumer.receive_torch(&torch);
         assert_eq!(ctx.trust_level, TrustLevel::Initial);
         assert_eq!(ctx.standing, StandingLevel::Advisory);
         assert_eq!(ctx.continuity_depth, 3);
@@ -329,7 +319,7 @@ mod tests {
             session_count: Some(10),
             gestalt_token: None,
         };
-        let ctx = consumer.receive_torch(torch);
+        let ctx = consumer.receive_torch(&torch);
         assert_eq!(ctx.trust_level, TrustLevel::Developing);
     }
 
@@ -345,7 +335,7 @@ mod tests {
             session_count: Some(50),
             gestalt_token: None,
         };
-        let ctx = consumer.receive_torch(torch);
+        let ctx = consumer.receive_torch(&torch);
         assert_eq!(ctx.trust_level, TrustLevel::Established);
     }
 
@@ -361,7 +351,7 @@ mod tests {
             session_count: Some(100),
             gestalt_token: None,
         };
-        let ctx = consumer.receive_torch(torch);
+        let ctx = consumer.receive_torch(&torch);
         assert_eq!(ctx.trust_level, TrustLevel::Deep);
     }
 
