@@ -62,7 +62,10 @@ pub struct VcpAck {
 /// accepted if the server lists it with a truthy capability value. Version
 /// negotiation is basic: the client's requested version is accepted as-is if
 /// the server supports the extension.
-pub fn negotiate<S: BuildHasher>(hello: &VcpHello, server_capabilities: &HashMap<String, String, S>) -> VcpAck {
+pub fn negotiate<S: BuildHasher>(
+    hello: &VcpHello,
+    server_capabilities: &HashMap<String, String, S>,
+) -> VcpAck {
     let mut accepted = HashMap::new();
     let mut rejected = HashMap::new();
     let mut caps = HashMap::new();

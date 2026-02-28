@@ -163,9 +163,7 @@ impl SchulzeElection {
         let (ranking, ties) = self.determine_ranking(&p);
 
         let winner = ranking.first().map(|r| r.candidate.clone());
-        let has_condorcet = winner
-            .as_ref()
-            .is_some_and(|w| self.check_condorcet(&d, w));
+        let has_condorcet = winner.as_ref().is_some_and(|w| self.check_condorcet(&d, w));
 
         ElectionResult {
             winner,
