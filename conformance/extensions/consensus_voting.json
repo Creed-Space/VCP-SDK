@@ -1,0 +1,675 @@
+{
+  "schema_version": "1.0.0",
+  "vcp_version": "3.1.0",
+  "description": "Conformance test vectors for Schulze voting algorithm (Constitutional Consensus Primitive)",
+  "test_cases": [
+    {
+      "id": "basic-election-3-candidates",
+      "description": "3 candidates (A, B, C), 5 voters with clear winner A (Condorcet winner)",
+      "input": {
+        "candidates": [
+          "A",
+          "B",
+          "C"
+        ],
+        "ballots": [
+          {
+            "voter_id": "v1",
+            "rankings": [
+              [
+                "A"
+              ],
+              [
+                "B"
+              ],
+              [
+                "C"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v2",
+            "rankings": [
+              [
+                "A"
+              ],
+              [
+                "B"
+              ],
+              [
+                "C"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v3",
+            "rankings": [
+              [
+                "B"
+              ],
+              [
+                "C"
+              ],
+              [
+                "A"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v4",
+            "rankings": [
+              [
+                "C"
+              ],
+              [
+                "A"
+              ],
+              [
+                "B"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v5",
+            "rankings": [
+              [
+                "A"
+              ],
+              [
+                "C"
+              ],
+              [
+                "B"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "winner": "A",
+        "has_condorcet_winner": true,
+        "ballot_count": 5,
+        "pairwise_matrix": [
+          [
+            0,
+            4,
+            3
+          ],
+          [
+            1,
+            0,
+            3
+          ],
+          [
+            2,
+            2,
+            0
+          ]
+        ],
+        "pairwise_matrix_legend": "d[i][j] = ballots preferring candidate i over candidate j. Rows/cols: A=0, B=1, C=2",
+        "strongest_paths": [
+          [
+            0,
+            4,
+            3
+          ],
+          [
+            0,
+            0,
+            3
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "strongest_paths_legend": "p[i][j] = strength of strongest path from i to j (Floyd-Warshall). Only set where d[i][j] > d[j][i].",
+        "ranking": [
+          {
+            "candidate": "A",
+            "rank": 1,
+            "wins": 2,
+            "losses": 0
+          },
+          {
+            "candidate": "B",
+            "rank": 2,
+            "wins": 1,
+            "losses": 1
+          },
+          {
+            "candidate": "C",
+            "rank": 3,
+            "wins": 0,
+            "losses": 2
+          }
+        ],
+        "ties": [],
+        "pairwise_breakdown": {
+          "A_vs_B": "4-1 (voters 1,2,4,5 prefer A; voter 3 prefers B)",
+          "A_vs_C": "3-2 (voters 1,2,5 prefer A; voters 3,4 prefer C)",
+          "B_vs_C": "3-2 (voters 1,2,3 prefer B; voters 4,5 prefer C)"
+        }
+      }
+    },
+    {
+      "id": "condorcet-winner-4-candidates",
+      "description": "4 candidates with B as clear Condorcet winner; Floyd-Warshall produces indirect strongest paths",
+      "input": {
+        "candidates": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "ballots": [
+          {
+            "voter_id": "v1",
+            "rankings": [
+              [
+                "A"
+              ],
+              [
+                "B"
+              ],
+              [
+                "C"
+              ],
+              [
+                "D"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v2",
+            "rankings": [
+              [
+                "A"
+              ],
+              [
+                "B"
+              ],
+              [
+                "C"
+              ],
+              [
+                "D"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v3",
+            "rankings": [
+              [
+                "A"
+              ],
+              [
+                "B"
+              ],
+              [
+                "C"
+              ],
+              [
+                "D"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v4",
+            "rankings": [
+              [
+                "D"
+              ],
+              [
+                "C"
+              ],
+              [
+                "B"
+              ],
+              [
+                "A"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v5",
+            "rankings": [
+              [
+                "D"
+              ],
+              [
+                "C"
+              ],
+              [
+                "B"
+              ],
+              [
+                "A"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v6",
+            "rankings": [
+              [
+                "B"
+              ],
+              [
+                "D"
+              ],
+              [
+                "A"
+              ],
+              [
+                "C"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v7",
+            "rankings": [
+              [
+                "B"
+              ],
+              [
+                "D"
+              ],
+              [
+                "A"
+              ],
+              [
+                "C"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "winner": "B",
+        "has_condorcet_winner": true,
+        "ballot_count": 7,
+        "pairwise_matrix": [
+          [
+            0,
+            3,
+            5,
+            3
+          ],
+          [
+            4,
+            0,
+            5,
+            5
+          ],
+          [
+            2,
+            2,
+            0,
+            3
+          ],
+          [
+            4,
+            2,
+            4,
+            0
+          ]
+        ],
+        "pairwise_matrix_legend": "Rows/cols: A=0, B=1, C=2, D=3",
+        "strongest_paths": [
+          [
+            0,
+            0,
+            5,
+            0
+          ],
+          [
+            4,
+            0,
+            5,
+            5
+          ],
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            4,
+            0
+          ]
+        ],
+        "ranking": [
+          {
+            "candidate": "B",
+            "rank": 1,
+            "wins": 3,
+            "losses": 0
+          },
+          {
+            "candidate": "D",
+            "rank": 2,
+            "wins": 2,
+            "losses": 1
+          },
+          {
+            "candidate": "A",
+            "rank": 3,
+            "wins": 1,
+            "losses": 2
+          },
+          {
+            "candidate": "C",
+            "rank": 4,
+            "wins": 0,
+            "losses": 3
+          }
+        ],
+        "ties": []
+      }
+    },
+    {
+      "id": "tie-case-symmetric",
+      "description": "2 candidates with 2 voters giving opposite rankings produces a tie (both strongest paths = 0)",
+      "input": {
+        "candidates": [
+          "X",
+          "Y"
+        ],
+        "ballots": [
+          {
+            "voter_id": "v1",
+            "rankings": [
+              [
+                "X"
+              ],
+              [
+                "Y"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v2",
+            "rankings": [
+              [
+                "Y"
+              ],
+              [
+                "X"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "winner": "X",
+        "has_condorcet_winner": false,
+        "ballot_count": 2,
+        "pairwise_matrix": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        "pairwise_matrix_legend": "d[X][Y] = 1, d[Y][X] = 1 \u2014 perfectly tied",
+        "strongest_paths": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "strongest_paths_legend": "No strongest paths since neither d[i][j] > d[j][i]",
+        "ranking": [
+          {
+            "candidate": "X",
+            "rank": 1,
+            "wins": 0,
+            "losses": 0
+          },
+          {
+            "candidate": "Y",
+            "rank": 1,
+            "wins": 0,
+            "losses": 0
+          }
+        ],
+        "ties": [
+          [
+            "X",
+            "Y"
+          ]
+        ],
+        "notes": "Both candidates tied at rank 1 with 0 wins. Winner is first in candidate order (implementation detail)."
+      }
+    },
+    {
+      "id": "single-voter",
+      "description": "Single voter ranking 3 candidates produces trivially correct result",
+      "input": {
+        "candidates": [
+          "A",
+          "B",
+          "C"
+        ],
+        "ballots": [
+          {
+            "voter_id": "v1",
+            "rankings": [
+              [
+                "A"
+              ],
+              [
+                "B"
+              ],
+              [
+                "C"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "winner": "A",
+        "has_condorcet_winner": true,
+        "ballot_count": 1,
+        "pairwise_matrix": [
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "strongest_paths": [
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "ranking": [
+          {
+            "candidate": "A",
+            "rank": 1,
+            "wins": 2,
+            "losses": 0
+          },
+          {
+            "candidate": "B",
+            "rank": 2,
+            "wins": 1,
+            "losses": 1
+          },
+          {
+            "candidate": "C",
+            "rank": 3,
+            "wins": 0,
+            "losses": 2
+          }
+        ],
+        "ties": []
+      }
+    },
+    {
+      "id": "no-ballots",
+      "description": "Election with no ballots returns null winner and zero matrices",
+      "input": {
+        "candidates": [
+          "A",
+          "B"
+        ],
+        "ballots": []
+      },
+      "expected": {
+        "winner": null,
+        "has_condorcet_winner": false,
+        "ballot_count": 0,
+        "pairwise_matrix": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "strongest_paths": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "ranking": [],
+        "ties": []
+      }
+    },
+    {
+      "id": "tied-groups-ballot",
+      "description": "Ballot with explicit tied groups (candidates ranked equally within a group). Uses canonical grouped rankings format.",
+      "input": {
+        "candidates": [
+          "A",
+          "B",
+          "C"
+        ],
+        "ballots": [
+          {
+            "voter_id": "v1",
+            "rankings": [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "C"
+              ]
+            ]
+          },
+          {
+            "voter_id": "v2",
+            "rankings": [
+              [
+                "C"
+              ],
+              [
+                "A"
+              ],
+              [
+                "B"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "ballot_count": 2,
+        "pairwise_matrix": [
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            0
+          ]
+        ],
+        "pairwise_matrix_legend": "v1: A=B (tied), A>C, B>C. v2: C>A>B. d[A][B]=1, d[B][A]=0, d[A][C]=1, d[C][A]=1, d[B][C]=1, d[C][B]=1",
+        "notes": "Tied groups express equal preference \u2014 no pairwise count within the tied group. All SDKs use grouped rankings format."
+      }
+    },
+    {
+      "id": "ballot-model-fields",
+      "description": "Ballot data model required and optional fields",
+      "input": {},
+      "expected": {
+        "required_fields": [
+          "voter_id",
+          "rankings"
+        ],
+        "optional_fields": [
+          "timestamp"
+        ],
+        "rankings_description": "Ordered list of candidate groups, best-first. Each inner list contains candidates of equal preference (ties). Example: [[\"A\"], [\"B\", \"C\"], [\"D\"]] means A > B=C > D."
+      }
+    },
+    {
+      "id": "election-result-model-fields",
+      "description": "ElectionResult data model fields",
+      "input": {},
+      "expected": {
+        "fields": {
+          "winner": "str | null \u2014 null if no ballots",
+          "ranking": "list of SchulzeRanking \u2014 ordered by wins descending",
+          "pairwise_matrix": "list[list[int]] \u2014 d[i][j] = ballots preferring i over j",
+          "strongest_paths": "list[list[int]] \u2014 p[i][j] via Floyd-Warshall",
+          "candidates": "list[str] \u2014 index matches matrix indices",
+          "ballot_count": "int",
+          "has_condorcet_winner": "bool \u2014 winner beats all others pairwise",
+          "ties": "list of (str, str) pairs that tied in final ranking"
+        }
+      }
+    }
+  ]
+}

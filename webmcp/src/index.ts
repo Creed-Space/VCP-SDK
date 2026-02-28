@@ -46,6 +46,25 @@ export type {
 	HookEventListener,
 } from './hooks.js';
 
+// VCP v3.1 Extensions
+export {
+	PersonalDimension,
+	computeDecayedIntensity,
+	computeLifecycleState,
+	TrustLevel,
+	StandingLevel,
+	SelfModelScaffold,
+	createDefaultRelationalContext,
+	SchulzeElection,
+	TorchGenerator,
+	TorchConsumer,
+	createEmptyLineage,
+	appendToLineage,
+	VCPCapability,
+	negotiate,
+	createFullHello,
+} from './extensions/index.js';
+
 import type { VCPWebMCPConfig, VCPWebMCPResult, WebMCPToolRegistration } from './types.js';
 import { createVCPTools } from './tools.js';
 

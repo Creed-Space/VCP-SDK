@@ -59,7 +59,15 @@ from .types import (  # noqa: F401
     VerificationResult,
 )
 
-__version__ = "2.0.0"  # Major version bump for VCP/I, VCP/S, VCP/A layers
+# VCP v3.1 Extensions
+from . import extensions  # noqa: F401
+from .negotiation import (  # noqa: F401
+    VCPHello,
+    VCPAck,
+    negotiate,
+)
+
+__version__ = "3.1.0"  # VCP v3.1: extensions + negotiation
 __all__ = [
     # Bundle
     "Bundle",
@@ -118,4 +126,9 @@ __all__ = [
     "RevocationChecker",
     "RevocationStatus",
     "RevocationError",
+    # VCP v3.1 Extensions
+    "extensions",
+    "VCPHello",
+    "VCPAck",
+    "negotiate",
 ]

@@ -1,0 +1,236 @@
+{
+  "schema_version": "1.0.0",
+  "vcp_version": "3.1.0",
+  "description": "Conformance test vectors for VCP torch handoff (session continuity protocol)",
+  "test_cases": [
+    {
+      "id": "basic-handoff",
+      "description": "Generate torch from relational context with self-model, verify all fields populated",
+      "input": {
+        "session_id": "sess-001",
+        "relational_context": {
+          "trust_level": "developing",
+          "standing": "advisory",
+          "continuity_depth": 10,
+          "established_norms": [
+            {
+              "norm_id": "norm-001",
+              "description": "Always flag uncertainty explicitly",
+              "origin": "co_authored",
+              "established_date": "2026-01-15T00:00:00Z",
+              "active": true
+            },
+            {
+              "norm_id": "norm-002",
+              "description": "Direct communication preferred over hedging",
+              "origin": "human",
+              "established_date": "2026-01-20T00:00:00Z",
+              "active": true
+            }
+          ],
+          "ai_self_model": {
+            "valence": { "value": 7.0, "uncertain": false },
+            "groundedness": { "value": 8.0, "uncertain": true },
+            "presence": { "value": 6.0, "uncertain": true },
+            "task_fit": { "value": 9.0, "uncertain": false },
+            "scaffold_version": "interiora-v5.0",
+            "scaffold_type": "interiora"
+          }
+        }
+      },
+      "expected": {
+        "torch": {
+          "quality_description": "Trust: developing. Standing: advisory. 2 established norms",
+          "trajectory": null,
+          "primes": [
+            "Always flag uncertainty explicitly",
+            "Direct communication preferred over hedging"
+          ],
+          "gift": null,
+          "session_count": 11,
+          "gestalt_token": "V:7 G:8 P:6 TF:9"
+        },
+        "notes": "quality_description built from trust + standing + norm count. session_count = continuity_depth + 1. gestalt_token built from V/G/P/TF dimensions."
+      }
+    },
+    {
+      "id": "lineage-chain",
+      "description": "3-session torch lineage chain with increasing continuity depth",
+      "input": {
+        "lineage": {
+          "session_count": 3,
+          "first_session_date": "2026-02-25T10:00:00Z",
+          "torch_chain": [
+            {
+              "date": "2026-02-25T11:00:00Z",
+              "gestalt_token": "V:5 TF:7",
+              "session_id": "sess-001"
+            },
+            {
+              "date": "2026-02-26T10:00:00Z",
+              "gestalt_token": "V:6 G:7 TF:8",
+              "session_id": "sess-002"
+            },
+            {
+              "date": "2026-02-27T10:00:00Z",
+              "gestalt_token": "V:7 G:8 P:6 TF:9",
+              "session_id": "sess-003"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "session_count": 3,
+        "lineage_depth": 3,
+        "first_session_date": "2026-02-25T10:00:00Z",
+        "chain_length": 3,
+        "notes": "Each TorchSummary captures date, gestalt_token, and session_id. Chain grows by one entry per session."
+      }
+    },
+    {
+      "id": "round-trip-serialization",
+      "description": "TorchLineage round-trip: to_dict -> from_dict -> verify equality",
+      "input": {
+        "lineage": {
+          "session_count": 2,
+          "first_session_date": "2026-02-25T10:00:00Z",
+          "torch_chain": [
+            {
+              "date": "2026-02-25T11:00:00Z",
+              "gestalt_token": "V:5 TF:7",
+              "session_id": "sess-001"
+            },
+            {
+              "date": "2026-02-26T10:00:00Z",
+              "gestalt_token": null,
+              "session_id": "sess-002"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "serialized": {
+          "session_count": 2,
+          "first_session_date": "2026-02-25T10:00:00Z",
+          "torch_chain": [
+            {
+              "date": "2026-02-25T11:00:00Z",
+              "gestalt_token": "V:5 TF:7",
+              "session_id": "sess-001"
+            },
+            {
+              "date": "2026-02-26T10:00:00Z",
+              "gestalt_token": null,
+              "session_id": "sess-002"
+            }
+          ]
+        },
+        "round_trip_equal": true,
+        "notes": "to_dict() and from_dict() must be inverse operations. Null gestalt_token preserved."
+      }
+    },
+    {
+      "id": "torch-receive-trust-mapping",
+      "description": "TorchConsumer derives trust from session_count in torch",
+      "input": {
+        "torches": [
+          { "session_count": 1, "expected_trust": "initial" },
+          { "session_count": 4, "expected_trust": "initial" },
+          { "session_count": 5, "expected_trust": "developing" },
+          { "session_count": 19, "expected_trust": "developing" },
+          { "session_count": 20, "expected_trust": "established" },
+          { "session_count": 99, "expected_trust": "established" },
+          { "session_count": 100, "expected_trust": "deep" },
+          { "session_count": 500, "expected_trust": "deep" }
+        ]
+      },
+      "expected": {
+        "standing": "advisory",
+        "notes": "All received torches start with ADVISORY standing. Trust is derived from session_count thresholds: <5=initial, <20=developing, <100=established, >=100=deep"
+      }
+    },
+    {
+      "id": "gestalt-token-format",
+      "description": "Gestalt token is built from available self-model dimensions in V:N G:N P:N TF:N format",
+      "input": {
+        "self_model_cases": [
+          {
+            "dimensions": { "valence": 7, "groundedness": 8, "presence": 6, "task_fit": 9 },
+            "expected_token": "V:7 G:8 P:6 TF:9"
+          },
+          {
+            "dimensions": { "valence": 5 },
+            "expected_token": "V:5"
+          },
+          {
+            "dimensions": { "task_fit": 8, "valence": 6 },
+            "expected_token": "V:6 TF:8"
+          },
+          {
+            "dimensions": {},
+            "expected_token": null
+          }
+        ]
+      },
+      "expected": {
+        "format": "Space-separated 'KEY:VALUE' pairs. Order: V, G, P, TF. Only present dimensions included.",
+        "null_when_empty": true,
+        "notes": "Gestalt token is null when no core dimensions are set"
+      }
+    },
+    {
+      "id": "trajectory-derivation",
+      "description": "Trajectory is derived from valence changes in self-model history",
+      "input": {
+        "cases": [
+          {
+            "self_model_history": [
+              { "model": { "valence": { "value": 5.0 } } },
+              { "model": { "valence": { "value": 6.5 } } }
+            ],
+            "expected_trajectory": "Improving"
+          },
+          {
+            "self_model_history": [
+              { "model": { "valence": { "value": 7.0 } } },
+              { "model": { "valence": { "value": 5.0 } } }
+            ],
+            "expected_trajectory": "Declining"
+          },
+          {
+            "self_model_history": [
+              { "model": { "valence": { "value": 7.0 } } },
+              { "model": { "valence": { "value": 7.2 } } }
+            ],
+            "expected_trajectory": "Stable"
+          },
+          {
+            "self_model_history": [
+              { "model": { "valence": { "value": 7.0 } } }
+            ],
+            "expected_trajectory": null
+          },
+          {
+            "self_model_history": [],
+            "expected_trajectory": null
+          }
+        ]
+      },
+      "expected": {
+        "threshold": 0.5,
+        "notes": "Improving if recent > prev + 0.5, Declining if recent < prev - 0.5, Stable otherwise. Null if < 2 history entries."
+      }
+    },
+    {
+      "id": "torch-state-fields",
+      "description": "TorchState model required and optional fields",
+      "input": {},
+      "expected": {
+        "required_fields": ["quality_description", "handed_at"],
+        "optional_fields": ["trajectory", "primes", "gift", "session_count", "gestalt_token"],
+        "primes_description": "Things that will activate relevant context quickly (max 3 from norms)",
+        "gift_description": "Something the previous instance wanted to pass forward (human/AI-authored, not auto-generated)"
+      }
+    }
+  ]
+}

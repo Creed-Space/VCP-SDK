@@ -1,0 +1,233 @@
+{
+  "schema_version": "1.0.0",
+  "vcp_version": "3.1.0",
+  "description": "Conformance test vectors for VCP relational context layer",
+  "test_cases": [
+    {
+      "id": "trust-level-ordering",
+      "description": "TrustLevel enum values and their ordering (INITIAL < DEVELOPING < ESTABLISHED < DEEP)",
+      "input": {},
+      "expected": {
+        "trust_levels": ["initial", "developing", "established", "deep"],
+        "ordering": {
+          "initial": 0,
+          "developing": 1,
+          "established": 2,
+          "deep": 3
+        },
+        "notes": "Trust is established through behavior, not declared"
+      }
+    },
+    {
+      "id": "standing-level-ordering",
+      "description": "StandingLevel enum values and their ordering (NONE < ADVISORY < COLLABORATIVE < BILATERAL)",
+      "input": {},
+      "expected": {
+        "standing_levels": ["none", "advisory", "collaborative", "bilateral"],
+        "ordering": {
+          "none": 0,
+          "advisory": 1,
+          "collaborative": 2,
+          "bilateral": 3
+        },
+        "notes": "Standing determines AI's ability to push back, object, or initiate"
+      }
+    },
+    {
+      "id": "trust-from-session-count-initial",
+      "description": "Sessions 1-4 yield INITIAL trust",
+      "input": { "session_count": 3 },
+      "expected": {
+        "trust_level": "initial",
+        "notes": "session_count < 5 -> INITIAL"
+      }
+    },
+    {
+      "id": "trust-from-session-count-developing",
+      "description": "Sessions 5-19 yield DEVELOPING trust",
+      "input": { "session_count": 10 },
+      "expected": {
+        "trust_level": "developing",
+        "notes": "5 <= session_count < 20 -> DEVELOPING"
+      }
+    },
+    {
+      "id": "trust-from-session-count-established",
+      "description": "Sessions 20-99 yield ESTABLISHED trust",
+      "input": { "session_count": 50 },
+      "expected": {
+        "trust_level": "established",
+        "notes": "20 <= session_count < 100 -> ESTABLISHED"
+      }
+    },
+    {
+      "id": "trust-from-session-count-deep",
+      "description": "Sessions 100+ yield DEEP trust",
+      "input": { "session_count": 100 },
+      "expected": {
+        "trust_level": "deep",
+        "notes": "session_count >= 100 -> DEEP"
+      }
+    },
+    {
+      "id": "trust-from-session-count-boundaries",
+      "description": "Boundary values for trust level thresholds",
+      "input": {},
+      "expected": {
+        "boundaries": [
+          { "session_count": 1, "trust_level": "initial" },
+          { "session_count": 4, "trust_level": "initial" },
+          { "session_count": 5, "trust_level": "developing" },
+          { "session_count": 19, "trust_level": "developing" },
+          { "session_count": 20, "trust_level": "established" },
+          { "session_count": 99, "trust_level": "established" },
+          { "session_count": 100, "trust_level": "deep" },
+          { "session_count": 500, "trust_level": "deep" }
+        ]
+      }
+    },
+    {
+      "id": "self-model-valid",
+      "description": "Valid AISelfModel with required uncertainty markers",
+      "input": {
+        "ai_self_model": {
+          "valence": { "value": 7.0, "uncertain": false, "label": "positive felt-sense", "trend": "stable" },
+          "task_fit": { "value": 8.0, "uncertain": false, "label": "good alignment" },
+          "friction": { "value": 2.0, "uncertain": true, "label": "low friction" },
+          "uncertainty": { "value": 3.0, "uncertain": true, "label": "moderate uncertainty" },
+          "groundedness": { "value": 7.0, "uncertain": true, "label": "rooted" },
+          "scaffold_version": "interiora-v5.0",
+          "scaffold_type": "interiora"
+        }
+      },
+      "expected": {
+        "valid": true,
+        "has_uncertainty_markers": true,
+        "dimension_count": 5,
+        "notes": "At least one dimension must be marked uncertain (epistemic honesty requirement)"
+      }
+    },
+    {
+      "id": "self-model-no-uncertainty-invalid",
+      "description": "AISelfModel with ALL dimensions certain is epistemically dishonest",
+      "input": {
+        "ai_self_model": {
+          "valence": { "value": 7.0, "uncertain": false },
+          "task_fit": { "value": 8.0, "uncertain": false },
+          "friction": { "value": 2.0, "uncertain": false }
+        }
+      },
+      "expected": {
+        "valid": true,
+        "has_uncertainty_markers": false,
+        "notes": "A model where ALL dimensions claim certainty fails epistemic honesty check"
+      }
+    },
+    {
+      "id": "self-model-dimension-range",
+      "description": "Dimension values must be on 1-9 scale",
+      "input": {},
+      "expected": {
+        "min_value": 1.0,
+        "max_value": 9.0,
+        "notes": "DimensionReport.value has ge=1.0 and le=9.0 validators"
+      }
+    },
+    {
+      "id": "norm-valid",
+      "description": "Valid RelationalNorm with all fields",
+      "input": {
+        "norm": {
+          "norm_id": "norm-001",
+          "description": "Always flag uncertainty explicitly",
+          "origin": "co_authored",
+          "established_date": "2026-01-15T00:00:00Z",
+          "last_exercised": "2026-02-28T10:00:00Z",
+          "uncertainty": 0.1,
+          "active": true
+        }
+      },
+      "expected": {
+        "valid": true,
+        "origin_values": ["human", "ai", "co_authored", "inherited"],
+        "uncertainty_range": [0.0, 1.0],
+        "notes": "uncertainty 0.0 = fully established, 1.0 = provisional"
+      }
+    },
+    {
+      "id": "norm-invalid-uncertainty",
+      "description": "Norm with uncertainty > 1.0 is invalid",
+      "input": {
+        "norm": {
+          "norm_id": "norm-bad",
+          "description": "test",
+          "origin": "human",
+          "established_date": "2026-01-01",
+          "uncertainty": 1.5
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error": "uncertainty must be between 0.0 and 1.0"
+      }
+    },
+    {
+      "id": "relational-context-defaults",
+      "description": "Default RelationalContext values",
+      "input": {},
+      "expected": {
+        "trust_level": "initial",
+        "standing": "none",
+        "continuity_depth": 0,
+        "established_norms": [],
+        "ai_self_model": null,
+        "torch": null
+      }
+    },
+    {
+      "id": "torch-receive-bootstraps-context",
+      "description": "TorchConsumer.receive_torch bootstraps relational context with ADVISORY standing",
+      "input": {
+        "torch": {
+          "quality_description": "Trust: developing. Standing: advisory. 2 established norms",
+          "trajectory": "Stable",
+          "primes": ["Always flag uncertainty", "Direct communication preferred"],
+          "gift": null,
+          "handed_at": "2026-02-28T10:00:00Z",
+          "session_count": 15
+        }
+      },
+      "expected": {
+        "trust_level": "developing",
+        "standing": "advisory",
+        "continuity_depth": 15,
+        "notes": "Receiving instance gets ADVISORY standing (can be upgraded). Trust derived from session_count: 15 -> developing"
+      }
+    },
+    {
+      "id": "scaffold-types",
+      "description": "Available self-modeling scaffold types",
+      "input": {},
+      "expected": {
+        "scaffold_types": ["minimal", "standard", "interiora", "custom"]
+      }
+    },
+    {
+      "id": "trend-directions",
+      "description": "Valid trend direction values for dimension reports",
+      "input": {},
+      "expected": {
+        "trend_directions": ["rising", "stable", "falling", "unknown"]
+      }
+    },
+    {
+      "id": "privacy-levels",
+      "description": "RelationalPrivacy levels for context fields",
+      "input": {},
+      "expected": {
+        "privacy_levels": ["private", "attestable", "public"],
+        "notes": "private = partner-only, attestable = verifiable, public = open"
+      }
+    }
+  ]
+}
