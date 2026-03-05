@@ -27,6 +27,14 @@ Exceptions:
     HookError, HookValidationError, DuplicateHookError
 """
 
+from .config import (
+    DeploymentConfig,
+    HookConfigError,
+    HookEntryConfig,
+    build_registry,
+    load_from_dict,
+    load_from_yaml,
+)
 from .builtin import (
     adherence_escalate_hook,
     audit_hook,
@@ -80,4 +88,11 @@ __all__ = [
     "HookError",
     "HookValidationError",
     "DuplicateHookError",
+    "HookConfigError",
+    # Config loader
+    "load_from_yaml",
+    "load_from_dict",
+    "build_registry",
+    "DeploymentConfig",
+    "HookEntryConfig",
 ]

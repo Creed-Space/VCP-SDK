@@ -1,0 +1,64 @@
+# VCP Hook Deployment Configuration
+# Reference: VCP_HOOKS.md section 6
+#
+# Usage:
+#   from vcp.hooks.config import load_from_yaml, build_registry
+#   config = load_from_yaml("hooks_deployment.yaml")
+#   registry = build_registry(config)
+#   executor = HookExecutor(registry)
+
+version: "1.0"
+
+hooks:
+  # --- Built-in hooks ---
+
+  # Block constitutions out of scope for the current environment.
+  # Runs first (highest priority).
+  - name: scope-filter
+    type: pre_inject
+    builtin: scope_filter_hook
+    priority: 95
+    timeout_ms: 2000
+    enabled: true
+    description: "Abort injection if constitution is out of scope for this environment"
+
+  # Escalate adherence during emergency context transitions.
+  - name: adherence-escalate
+    type: on_transition
+    builtin: adherence_escalate_hook
+    priority: 90
+    timeout_ms: 3000
+    enabled: true
+    description: "Increase adherence level when emergency state detected"
+
+  # Switch to child-safe persona when children are in context.
+  - name: persona-select
+    type: post_select
+    builtin: persona_select_hook
+    priority: 80
+    timeout_ms: 5000
+    enabled: true
+    description: "Select Nanny persona when children present in COMPANY dimension"
+
+  # Audit log — runs last (lowest priority) to capture final state.
+  - name: audit
+    type: pre_inject
+    builtin: audit_hook
+    priority: 10
+    timeout_ms: 2000
+    enabled: true
+    description: "Log hook execution details to audit trail"
+
+  # --- Custom hook example (commented out) ---
+  # Uncomment and point 'action' at your own HookAction callable.
+  #
+  # - name: my-custom-hook
+  #   type: pre_inject
+  #   action: mypackage.hooks.my_pre_inject_action
+  #   priority: 50
+  #   timeout_ms: 5000
+  #   enabled: true
+  #   description: "Custom org-specific pre-inject check"
+  #   metadata:
+  #     owner: "platform-team"
+  #     ticket: "VCP-42"
