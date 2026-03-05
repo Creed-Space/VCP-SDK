@@ -66,6 +66,26 @@ from .types import (  # noqa: F401
     VerificationResult,
 )
 
+from . import metrics  # noqa: F401
+from .metrics import (  # noqa: F401
+    get_metrics_summary,
+    is_prometheus_available,
+    track_duration,
+    vcp_active_sessions,
+    vcp_audit_events_total,
+    vcp_bundle_verifications_total,
+    vcp_bundle_verify_duration_seconds,
+    vcp_compositions_total,
+    vcp_context_encode_duration_seconds,
+    vcp_context_encodes_total,
+    vcp_csm1_parses_total,
+    vcp_hook_duration_seconds,
+    vcp_hook_executions_total,
+    vcp_registry_size,
+    vcp_token_lookups_total,
+    vcp_transitions_total,
+)
+
 __version__ = "3.1.0"  # VCP v3.1: extensions + negotiation
 __all__ = [
     # Bundle
