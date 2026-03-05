@@ -67,6 +67,26 @@ from .types import (  # noqa: F401
 )
 
 from . import metrics  # noqa: F401
+from .privacy import (  # noqa: F401
+    CONSENT_REQUIRED_FIELDS,
+    PRIVATE_FIELDS,
+    PUBLIC_FIELDS,
+    ConstraintFlags,
+    ConsentRecord,
+    FilteredContext,
+    PlatformManifest,
+    PrivacyTier,
+    extract_constraint_flags,
+    filter_context_for_platform,
+    format_field_name,
+    generate_privacy_summary,
+    get_field_privacy_level,
+    get_field_value,
+    get_share_preview,
+    get_stakeholder_hidden_fields,
+    get_stakeholder_visible_fields,
+    is_private_field,
+)
 from .metrics import (  # noqa: F401
     get_metrics_summary,
     is_prometheus_available,
@@ -150,4 +170,23 @@ __all__ = [
     "VCPHello",
     "VCPAck",
     "negotiate",
+    # Privacy field filtering
+    "PUBLIC_FIELDS",
+    "CONSENT_REQUIRED_FIELDS",
+    "PRIVATE_FIELDS",
+    "PrivacyTier",
+    "ConstraintFlags",
+    "FilteredContext",
+    "PlatformManifest",
+    "ConsentRecord",
+    "extract_constraint_flags",
+    "filter_context_for_platform",
+    "get_stakeholder_visible_fields",
+    "get_stakeholder_hidden_fields",
+    "get_share_preview",
+    "get_field_value",
+    "is_private_field",
+    "get_field_privacy_level",
+    "format_field_name",
+    "generate_privacy_summary",
 ]
