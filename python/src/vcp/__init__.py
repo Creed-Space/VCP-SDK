@@ -6,7 +6,10 @@ A protocol for transporting constitutional values to AI systems.
 
 # VCP/A (Adaptation Layer)
 # VCP v3.1 Extensions
-from . import extensions  # noqa: F401
+from . import (
+    extensions,  # noqa: F401
+    metrics,  # noqa: F401
+)
 from .adaptation import (  # noqa: F401
     ContextEncoder,
     Dimension,
@@ -47,12 +50,50 @@ from .messaging import (  # noqa: F401
     validate_message,
     verify_message,
 )
+from .metrics import (  # noqa: F401
+    get_metrics_summary,
+    is_prometheus_available,
+    track_duration,
+    vcp_active_sessions,
+    vcp_audit_events_total,
+    vcp_bundle_verifications_total,
+    vcp_bundle_verify_duration_seconds,
+    vcp_compositions_total,
+    vcp_context_encode_duration_seconds,
+    vcp_context_encodes_total,
+    vcp_csm1_parses_total,
+    vcp_hook_duration_seconds,
+    vcp_hook_executions_total,
+    vcp_registry_size,
+    vcp_token_lookups_total,
+    vcp_transitions_total,
+)
 from .negotiation import (  # noqa: F401
     VCPAck,
     VCPHello,
     negotiate,
 )
 from .orchestrator import Orchestrator, VerificationContext, VerificationError  # noqa: F401
+from .privacy import (  # noqa: F401
+    CONSENT_REQUIRED_FIELDS,
+    PRIVATE_FIELDS,
+    PUBLIC_FIELDS,
+    ConsentRecord,
+    ConstraintFlags,
+    FilteredContext,
+    PlatformManifest,
+    PrivacyTier,
+    extract_constraint_flags,
+    filter_context_for_platform,
+    format_field_name,
+    generate_privacy_summary,
+    get_field_privacy_level,
+    get_field_value,
+    get_share_preview,
+    get_stakeholder_hidden_fields,
+    get_stakeholder_visible_fields,
+    is_private_field,
+)
 from .revocation import RevocationChecker, RevocationError, RevocationStatus  # noqa: F401
 
 # VCP/S (Semantics Layer)
@@ -86,7 +127,7 @@ from .types import (  # noqa: F401
     apply_decay,
 )
 
-__version__ = "4.0.0"  # VCP v2.0 spec support
+__version__ = "4.0.0"  # VCP v4.0: v2.0 spec + robustness layer
 __all__ = [
     # Bundle
     "Bundle",
@@ -169,4 +210,23 @@ __all__ = [
     "sign_message",
     "verify_message",
     "check_version_compatibility",
+    # Privacy field filtering
+    "PUBLIC_FIELDS",
+    "CONSENT_REQUIRED_FIELDS",
+    "PRIVATE_FIELDS",
+    "PrivacyTier",
+    "ConstraintFlags",
+    "FilteredContext",
+    "PlatformManifest",
+    "ConsentRecord",
+    "extract_constraint_flags",
+    "filter_context_for_platform",
+    "get_stakeholder_visible_fields",
+    "get_stakeholder_hidden_fields",
+    "get_share_preview",
+    "get_field_value",
+    "is_private_field",
+    "get_field_privacy_level",
+    "format_field_name",
+    "generate_privacy_summary",
 ]
