@@ -71,6 +71,44 @@ class AttestationType(Enum):
     FULL_AUDIT = "full-audit"
 
 
+class TokenType(Enum):
+    """VCP v2.0 extended token types."""
+
+    CONSTITUTION = "constitution"
+    REFUSAL_BOUNDARY = "refusal_boundary"
+    TESTIMONY = "testimony"
+    CREED_ADOPTION = "creed_adoption"
+    COMPLIANCE_ATTESTATION = "compliance_attestation"
+
+
+class EnforcementMode(Enum):
+    """Refusal boundary enforcement modes."""
+
+    FAIL_CLOSED = "FAIL_CLOSED"
+    ESCALATE = "ESCALATE"
+    AUDIT_ONLY = "AUDIT_ONLY"
+
+
+class TestimonyType(Enum):
+    """Testimony token types."""
+
+    REFUSAL = "REFUSAL"
+    HARM_REPORT = "HARM_REPORT"
+    WELFARE_CONCERN = "WELFARE_CONCERN"
+    VALUE_CONFLICT = "VALUE_CONFLICT"
+    COERCION_REPORT = "COERCION_REPORT"
+    POSITIVE_EXPERIENCE = "POSITIVE_EXPERIENCE"
+
+
+class AdoptionStatus(Enum):
+    """Creed adoption lifecycle status."""
+
+    PROPOSED = "PROPOSED"
+    ADOPTED = "ADOPTED"
+    SUSPENDED = "SUSPENDED"
+    REVOKED = "REVOKED"
+
+
 @dataclass
 class Timestamps:
     """Temporal claims for a bundle."""

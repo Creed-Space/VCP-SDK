@@ -7,7 +7,7 @@
       "id": "msg-001",
       "description": "Valid complete message envelope",
       "input": {
-        "vcp_message_version": "1.0",
+        "vcp_message_version": "2.0",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "context": "T:morning|S:office",
@@ -23,7 +23,7 @@
       "id": "msg-002",
       "description": "Valid message with multiple constitutions",
       "input": {
-        "vcp_message_version": "1.0",
+        "vcp_message_version": "2.0",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "context": "T:morning|S:home|C:children",
@@ -42,7 +42,7 @@
       "id": "msg-003",
       "description": "Valid message in EMERGENCY state",
       "input": {
-        "vcp_message_version": "1.0",
+        "vcp_message_version": "2.0",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "context": "emergency",
@@ -58,7 +58,7 @@
       "id": "msg-004",
       "description": "Valid message in DEGRADED state with empty context",
       "input": {
-        "vcp_message_version": "1.0",
+        "vcp_message_version": "2.0",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "context": "",
@@ -75,7 +75,7 @@
       "id": "msg-005",
       "description": "Valid message in IDLE state with no constitutions",
       "input": {
-        "vcp_message_version": "1.0",
+        "vcp_message_version": "2.0",
         "sender": "agent-gamma",
         "recipient": "agent-delta",
         "context": "",
@@ -92,7 +92,7 @@
       "id": "msg-err-001",
       "description": "Missing sender field",
       "input": {
-        "vcp_message_version": "1.0",
+        "vcp_message_version": "2.0",
         "recipient": "agent-beta",
         "context": "T:morning",
         "constitutions": [],
@@ -108,7 +108,7 @@
       "id": "msg-err-002",
       "description": "Missing recipient field",
       "input": {
-        "vcp_message_version": "1.0",
+        "vcp_message_version": "2.0",
         "sender": "agent-alpha",
         "context": "T:morning",
         "constitutions": [],
@@ -124,7 +124,7 @@
       "id": "msg-err-003",
       "description": "Invalid state value",
       "input": {
-        "vcp_message_version": "1.0",
+        "vcp_message_version": "2.0",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "context": "T:morning",
@@ -158,7 +158,7 @@
       "id": "msg-err-005",
       "description": "Missing timestamp field",
       "input": {
-        "vcp_message_version": "1.0",
+        "vcp_message_version": "2.0",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "context": "T:morning",
@@ -174,7 +174,7 @@
       "id": "msg-err-006",
       "description": "Invalid timestamp format (not ISO 8601)",
       "input": {
-        "vcp_message_version": "1.0",
+        "vcp_message_version": "2.0",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "context": "T:morning",

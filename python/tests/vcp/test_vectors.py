@@ -1,7 +1,7 @@
 """
 VCP Test Vectors for Conformance Testing
 
-These test vectors can be used to verify implementations of VCP v1.0.
+These test vectors can be used to verify implementations of VCP v2.0.
 """
 
 import json
@@ -18,7 +18,7 @@ All responses must be safe and helpful.
 """
 
 VALID_MINIMAL_MANIFEST = {
-    "vcp_version": "1.0",
+    "vcp_version": "2.0",
     "bundle": {
         "id": "creed://test.example/minimal",
         "version": "1.0.0",
@@ -115,7 +115,7 @@ Avoid or age-appropriately handle:
 """
 
 VALID_FULL_MANIFEST = {
-    "vcp_version": "1.0",
+    "vcp_version": "2.0",
     "bundle": {
         "id": "creed://creed.space/family.safe.guide",
         "version": "1.2.0",
@@ -238,7 +238,7 @@ Text with \u200b zero-width spaces\u200b embedded.
 # ==============================================================================
 
 EXPIRED_MANIFEST = {
-    "vcp_version": "1.0",
+    "vcp_version": "2.0",
     "bundle": {
         "id": "creed://test.example/expired",
         "version": "1.0.0",
@@ -287,7 +287,7 @@ EXPIRED_MANIFEST = {
 # ==============================================================================
 
 FUTURE_MANIFEST = {
-    "vcp_version": "1.0",
+    "vcp_version": "2.0",
     "bundle": {
         "id": "creed://test.example/future",
         "version": "1.0.0",
@@ -409,7 +409,7 @@ TRUST_CONFIG = {
 # TEST VECTOR 9: Expected Injection Outputs
 # ==============================================================================
 
-EXPECTED_INJECTION_HEADER = """[VCP:1.0]
+EXPECTED_INJECTION_HEADER = """[VCP:2.0]
 [ID:creed://creed.space/family.safe.guide@1.2.0]
 [HASH:7f83b165...9069]
 [TOKENS:350]

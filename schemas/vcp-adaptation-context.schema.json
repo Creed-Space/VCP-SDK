@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vcp.creed.space/schema/vcp-context/v1.json",
-  "title": "VCP Context Schema",
-  "description": "JSON Schema for VCP Context Enneagram Protocol validation",
+  "$id": "https://vcp.creed.space/schema/vcp-context/v2.json",
+  "title": "VCP Context Schema v2.0",
+  "description": "JSON Schema for VCP Context Enneagram Protocol validation (updated for VCP v2.0)",
   "type": "object",
 
   "properties": {
@@ -188,11 +188,11 @@
 
     "context_message": {
       "type": "object",
-      "description": "Inter-agent context message",
+      "description": "Inter-agent context message (legacy v1 format, prefer VCP/M v2.0 messaging schema for new implementations)",
       "properties": {
         "version": {
           "type": "string",
-          "default": "1.0"
+          "default": "2.0"
         },
         "message_id": {
           "type": "string",

@@ -166,7 +166,7 @@ pub fn canonicalize_manifest(manifest: &serde_json::Value) -> VcpResult<Vec<u8>>
 /// let public_key = signing_key.verifying_key().to_bytes();
 ///
 /// let manifest = serde_json::json!({
-///     "vcp_version": "1.0",
+///     "vcp_version": "2.0",
 ///     "bundle": {"id": "test", "content_hash": "sha256:abc"}
 /// });
 ///
@@ -569,7 +569,7 @@ mod tests {
     fn sign_and_verify_manifest_roundtrip() {
         let (sk, vk) = test_keypair(1);
         let manifest = serde_json::json!({
-            "vcp_version": "1.0",
+            "vcp_version": "2.0",
             "bundle": {"id": "test-bundle", "content_hash": "sha256:abc123"}
         });
 
@@ -606,7 +606,7 @@ mod tests {
 
         // Sign manifest without signature field.
         let manifest_no_sig = serde_json::json!({
-            "vcp_version": "1.0",
+            "vcp_version": "2.0",
             "bundle": {"id": "test"}
         });
         let sig = sign_manifest(&manifest_no_sig, &sk.to_bytes()).unwrap();
@@ -614,7 +614,7 @@ mod tests {
         // Verification should pass even if the manifest now contains a signature field,
         // because canonicalize_manifest strips it.
         let manifest_with_sig = serde_json::json!({
-            "vcp_version": "1.0",
+            "vcp_version": "2.0",
             "bundle": {"id": "test"},
             "signature": {"algorithm": "ed25519", "value": sig.clone()}
         });
@@ -669,7 +669,7 @@ mod tests {
     fn sign_deterministic_for_same_key_and_manifest() {
         let (sk, _vk) = test_keypair(6);
         let manifest = serde_json::json!({
-            "vcp_version": "1.0",
+            "vcp_version": "2.0",
             "bundle": {"id": "deterministic-test", "version": "1.0.0"}
         });
 

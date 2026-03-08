@@ -60,9 +60,10 @@ pub mod situational;
 pub mod transport;
 pub mod trust;
 
-// VCP v3.1 extensions
+// VCP v2.0 extensions
 pub mod extensions;
 pub mod negotiation;
+pub mod types;
 
 // Re-export commonly used types at crate root.
 pub use context::FullContext;
@@ -84,3 +85,6 @@ pub use trust::{TrustAnchor, TrustConfig};
 // Orchestrator and composition engine.
 pub use composer::{Composer, CompositionMode, CompositionResult, Conflict, Constitution};
 pub use orchestrator::{Orchestrator, ReplayCache, VerificationContext};
+
+// VCP v2.0 type definitions.
+pub use types::{AdoptionStatus, EnforcementMode, TestimonyType, TokenType};

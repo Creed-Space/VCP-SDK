@@ -1,4 +1,4 @@
-"""Tests for VCP Inter-Agent Messaging v1.2 envelope support."""
+"""Tests for VCP Inter-Agent Messaging v2.0 envelope support."""
 from __future__ import annotations
 
 import json
@@ -28,7 +28,7 @@ def _valid_payload() -> dict:
 
 def _valid_message(**overrides) -> VcpMessage:
     defaults = dict(
-        vcp_message="1.2",
+        vcp_message="2.0",
         type="context_share",
         message_id=str(uuid.uuid4()),
         sender="agent://test.local/sender",
@@ -110,7 +110,7 @@ class TestValidateMessage:
         assert any("type must be one of" in e for e in errors)
 
     def test_invalid_vcp_message_version(self) -> None:
-        msg = _valid_message(vcp_message="2.0")
+        msg = _valid_message(vcp_message="99.0")
         errors = validate_message(msg)
         assert any("vcp_message must be" in e for e in errors)
 
@@ -197,7 +197,7 @@ class TestSerialization:
         d["extra_field"] = "should be ignored"
         # Should not raise -- extra fields are silently ignored.
         restored = message_from_dict(d)
-        assert restored.vcp_message == "1.2"
+        assert restored.vcp_message == "2.0"
 
     def test_to_dict_omits_signature_when_none(self) -> None:
         msg = _valid_message(signature=None)

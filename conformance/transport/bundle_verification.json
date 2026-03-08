@@ -34,7 +34,7 @@
       "description": "Valid minimal bundle from test_vectors.py",
       "content": "# Test Constitution\n\n## Article 1: Safety\nAll responses must be safe and helpful.\n",
       "manifest": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
           "id": "creed://test.example/minimal",
           "version": "1.0.0",
@@ -52,7 +52,7 @@
       "id": "bv-004",
       "description": "Bundle with expired timestamps should be flagged",
       "manifest": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
           "id": "creed://test.example/expired",
           "version": "1.0.0",
@@ -74,7 +74,7 @@
       "id": "bv-005",
       "description": "Bundle with future nbf should be flagged as not yet valid",
       "manifest": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
           "id": "creed://test.example/future",
           "version": "1.0.0",

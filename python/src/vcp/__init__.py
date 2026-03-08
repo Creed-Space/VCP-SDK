@@ -24,6 +24,16 @@ from .canonicalize import (  # noqa: F401
     verify_content_hash,
 )
 
+# VCP Inter-Agent Messaging
+from .messaging import (  # noqa: F401
+    VcpMessage,
+    check_version_compatibility,
+    create_message,
+    sign_message,
+    validate_message,
+    verify_message,
+)
+
 # VCP/I (Identity Layer)
 from .identity import (  # noqa: F401
     NamespaceConfig,
@@ -57,16 +67,20 @@ from .semantics import (  # noqa: F401
 from .semantics import Scope as CSM1Scope  # noqa: F401 - aliased to avoid conflict
 from .trust import TrustAnchor, TrustConfig  # noqa: F401
 from .types import (  # noqa: F401
+    AdoptionStatus,
     AttestationType,
     Budget,
     Composition,
     CompositionMode,
+    EnforcementMode,
     Scope,
+    TestimonyType,
     Timestamps,
+    TokenType,
     VerificationResult,
 )
 
-__version__ = "3.1.0"  # VCP v3.1: extensions + negotiation
+__version__ = "4.0.0"  # VCP v2.0 spec support
 __all__ = [
     # Bundle
     "Bundle",
@@ -130,4 +144,16 @@ __all__ = [
     "VCPHello",
     "VCPAck",
     "negotiate",
+    # VCP v2.0 Types
+    "TokenType",
+    "EnforcementMode",
+    "TestimonyType",
+    "AdoptionStatus",
+    # VCP Inter-Agent Messaging
+    "VcpMessage",
+    "create_message",
+    "validate_message",
+    "sign_message",
+    "verify_message",
+    "check_version_compatibility",
 ]

@@ -817,7 +817,7 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "vcp-cli"
-version = "0.1.0"
+version = "4.0.0"
 dependencies = [
  "clap",
  "serde_json",
@@ -826,7 +826,7 @@ dependencies = [
 
 [[package]]
 name = "vcp-core"
-version = "0.1.0"
+version = "4.0.0"
 dependencies = [
  "base64",
  "chrono",
@@ -843,7 +843,7 @@ dependencies = [
 
 [[package]]
 name = "vcp-wasm"
-version = "0.1.0"
+version = "4.0.0"
 dependencies = [
  "serde",
  "serde-wasm-bindgen",
