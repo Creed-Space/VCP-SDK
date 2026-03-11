@@ -20,23 +20,19 @@
 
 The **Value-Context Protocol (VCP)** is an open specification for transporting constitutional values, behavioral rules, and personal context to AI systems. The VCP SDK provides production-ready implementations in Python, TypeScript, and Rust with full cross-language parity.
 
-VCP v3.1 defines six protocol layers spanning identity, transport, semantics, adaptation, messaging, and economic governance. Layers 5 and 6 (VCP/M and VCP/E) enable inter-agent communication and fiduciary constraint management.
+VCP v3.1 defines six protocol layers — Identity, Transport, Semantics, Adaptation, Messaging, and Economic Governance (I-T-S-A-M-E) — spanning naming through fiduciary governance.
 
 ---
 
 ## Features (v3.1)
 
-### Core Layers (1-4)
+### The Six Layers (I-T-S-A-M-E)
 - **VCP/I (Identity)** — Token parsing, naming, namespace management
 - **VCP/T (Transport)** — Signed bundles with Ed25519 signatures and SHA-256 content hashes
 - **VCP/S (Semantics)** — CSM-1 grammar, personas, composition rules
 - **VCP/A (Adaptation)** — Context encoding, state tracking, deterministic hooks
-
-### Extension Layers (5-6)
-| Layer | Description |
-|:---|:---|
-| **VCP/M (Messaging)** | Inter-agent message types: context_share, constitution_announce, constraint_propagate, escalation with severity levels |
-| **VCP/E (Economic Governance)** | Fiduciary constraints, authorization gaps (capability, accountability, compatibility), transaction governance |
+- **VCP/M (Messaging)** — Inter-agent message types: context_share, constitution_announce, constraint_propagate, escalation with severity levels
+- **VCP/E (Economic Governance)** — Fiduciary constraints, authorization gaps (capability, accountability, compatibility), transaction governance
 
 ### Protocol
 - **Capability Negotiation** — VCP-Hello/VCP-Ack handshake protocol for feature discovery
