@@ -18,7 +18,7 @@
 
 ### Why the Data File is Optional
 
-**VCP functions completely without a populated ontology.** The four layers work as follows:
+**VCP functions completely without a populated ontology.** The six layers work as follows:
 
 - **VCP/I (Identity)**: Tokens are names that resolve to bundles. No semantic backing required.
 - **VCP/T (Transport)**: Bundles are signed containers. Content-agnostic.

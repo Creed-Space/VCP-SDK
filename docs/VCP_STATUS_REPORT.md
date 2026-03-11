@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The Value-Context Protocol (VCP) is fully implemented and deployed at 100% active mode across all four layers.
+The Value-Context Protocol (VCP) is fully implemented and deployed at 100% active mode across all six layers.
 
 | Layer | Status | Tests | Mode |
 |-------|--------|-------|------|
@@ -271,4 +271,4 @@ flags.set_flag("vcp_adaptation_shadow", True)
 
 ---
 
-*VCP: One protocol, four layers, complete constitutional AI.*
+*VCP: One protocol, six layers, complete constitutional AI.*

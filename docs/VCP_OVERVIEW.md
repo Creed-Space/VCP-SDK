@@ -41,7 +41,7 @@ VCP implementation verified as fully operational with runtime proof.
 | 2.1 | Token Validation | ✅ | `family.safe.guide@1.2.0` → correct URI/domain/approach/role |
 | 2.2 | CSM1 Parse | ✅ | `N5+F+E` → NANNY persona, adherence=5, scopes=[FAMILY,EDUCATION] |
 | 2.3 | Context Encode | ✅ | morning/home/children → `⏰🌅\|📍🏡\|👥👶` |
-| 2.4 | VCP Status | ✅ | HTTP 200, all 4 layers enabled, version 2.0.0 |
+| 2.4 | VCP Status | ✅ | HTTP 200, all 6 layers enabled, version 3.1.0 |
 | 3.1 | Plugin Instantiation | ✅ | VCPAdaptationPlugin v2.0.0, priority=HIGH, tracker+encoder init |
 | 3.2 | Plugin Execution | ✅ | Adds `vcp_signals` with wire format to context.metadata |
 | 3.3 | Plugin Registration | ✅ | Exported from plugins package, loadable by PDP |
@@ -52,7 +52,7 @@ VCP implementation verified as fully operational with runtime proof.
 | 5.2 | MCP Module | ✅ | `services.mcp.vcp_server` imports successfully |
 | 5.3 | MCP Config | ✅ | `.mcp.json` has valid vcp server configuration |
 | 5.4 | MCP Responds | ✅ | `mcp-cli call vcp/vcp_status` returns correct flags |
-| 6.1 | Feature Flags | ✅ | All 4 layers ON, shadow modes OFF, strict mode OFF |
+| 6.1 | Feature Flags | ✅ | All 6 layers ON, shadow modes OFF, strict mode OFF |
 | 6.2 | Flag Toggle | ✅ | `FF_VCP_ADAPTATION_ENABLED=false` correctly disables |
 | 7.1 | Unit Tests | ✅ | 43 passed (router models + plugin tests) |
 | 7.1 | Integration Tests | ✅ | 23 passed (core, API, PDP, export, MCP, flags) |
@@ -82,9 +82,9 @@ VCP implementation verified as fully operational with runtime proof.
 
 ## Abstract
 
-The **Value-Context Protocol (VCP)** is a unified four-layer protocol stack for transporting, encoding, and applying constitutional values to AI systems. Like the OSI model for networking, VCP defines a complete architecture where each layer handles a specific concern, with well-defined interfaces between them.
+The **Value-Context Protocol (VCP)** is a unified six-layer protocol stack for transporting, encoding, and applying constitutional values to AI systems. Like the OSI model for networking, VCP defines a complete architecture where each layer handles a specific concern, with well-defined interfaces between them.
 
-VCP is **one protocol** with four layers—not four separate protocols.
+VCP is **one protocol** with six layers—not six separate protocols.
 
 ---
 
@@ -136,10 +136,12 @@ VCP is **one protocol** with four layers—not four separate protocols.
 
 ---
 
-## The Four Layers
+## The Six Layers
 
 | Layer | Name | Short | Purpose | Key Question |
 |-------|------|-------|---------|--------------|
+| **6** | VCP-Economic Governance | VCP/E | Transaction governance | *Who pays?* |
+| **5** | VCP-Messaging | VCP/M | Inter-agent message exchange | *Who talks?* |
 | **4** | VCP-Adaptation | VCP/A | Context-aware application | *When and how does it apply?* |
 | **3** | VCP-Semantics | VCP/S | Rule meaning and composition | *What does it mean?* |
 | **2** | VCP-Transport | VCP/T | Secure verified delivery | *How is it delivered safely?* |
@@ -460,7 +462,7 @@ if context.has_children():
 | 2 Data Link | (not needed) | — |
 | 1 Physical | (not needed) | — |
 
-VCP is a 4-layer stack because AI constitutional delivery doesn't require session management or physical/data link concerns.
+VCP is a 6-layer stack where layers 1-4 handle constitutional delivery, and layers 5-6 add inter-agent messaging and economic governance for multi-agent systems.
 
 ---
 
@@ -543,11 +545,13 @@ vcp adaptation detect-transition old.json new.json
 
 ### Layer Mnemonics
 
-**I-T-S-A**: *"It's a protocol!"*
+**I-T-S-A-M-E**: *"It's-a me!"*
 - **I**dentity - What is it?
 - **T**ransport - How does it travel?
 - **S**emantics - What does it mean?
 - **A**daptation - How does it apply?
+- **M**essaging - Who talks?
+- **E**conomic Governance - Who pays?
 
 ### Short Forms
 
@@ -681,7 +685,7 @@ Run the export verification snippet in `_contprompts/vcp_remaining_verification_
 | 2.1.0 | 2026-01-11 | Core implementation complete (VCP/I, VCP/S, VCP/A); 157 tests |
 | 2.0.1 | 2026-01-11 | Clarified Value Ontology is optional; VCP complete without it |
 | 2.0.0 | 2026-01-11 | Unified naming (VCP/I, VCP/T, VCP/S, VCP/A) |
-| 1.0.0 | 2026-01-11 | Initial four-layer architecture |
+| 1.0.0 | 2026-01-11 | Initial six-layer architecture (I-T-S-A-M-E) |
 
 ---
 
@@ -742,6 +746,6 @@ A **mapping bridge** (v4.2 → VCP 2.0) enables compatibility. See [`VCP_TORCH_A
 
 ---
 
-*The Value-Context Protocol: One protocol, four layers, complete constitutional AI.*
+*The Value-Context Protocol: One protocol, six layers, complete constitutional AI.*
 
 *This document is released under CC BY 4.0. Contributions welcome.*

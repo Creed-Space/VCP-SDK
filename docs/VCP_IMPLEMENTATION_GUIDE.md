@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document describes the **Value-Context Protocol (VCP)** implementation in the Creed Space codebase. VCP is a four-layer protocol stack for transporting constitutional values to AI systems.
+This document describes the **Value-Context Protocol (VCP)** implementation in the Creed Space codebase. VCP is a six-layer protocol stack for transporting constitutional values to AI systems.
 
 > **Note**: This is distinct from the Visceral-Chromatic Protocol (also abbreviated VCP) used for interoceptive state tracking. See `docs/VCP_INTEGRATION_IMPLEMENTATION.md` for that system.
 
@@ -502,4 +502,4 @@ In multi-worker mode, isolation holds per worker; continuity across workers requ
 
 ---
 
-*The Value-Context Protocol: One protocol, four layers, complete constitutional AI.*
+*The Value-Context Protocol: One protocol, six layers, complete constitutional AI.*

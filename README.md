@@ -156,10 +156,18 @@ cd rust && cargo test conformance
 
 ## Architecture
 
-### Four-Layer Protocol Stack
+### Six-Layer Protocol Stack
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
+│  Layer 6 — VCP/E  ECONOMIC GOVERNANCE                              │
+│  WHO PAYS and transaction governance                                │
+│  Fiduciary constraints · Authorization gaps · Capability decisions  │
+├─────────────────────────────────────────────────────────────────────┤
+│  Layer 5 — VCP/M  MESSAGING                                        │
+│  WHO TALKS - Inter-agent message exchange                           │
+│  Message types · Escalation severity · Delivery semantics           │
+├─────────────────────────────────────────────────────────────────────┤
 │  Layer 4 — VCP/A  ADAPTATION                                       │
 │  WHEN and HOW constitutions apply                                   │
 │  Context encoding · State tracking · Messaging · Deterministic hooks│
