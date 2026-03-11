@@ -836,6 +836,44 @@ class TestIntegration:
         tracker.clear()
         assert tracker.history_count == 0
 
+    def test_hybrid_clear_clears_both_backends(self, mock_redis: MagicMock) -> None:
+        """Test clear() clears both Redis and memory."""
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
+
+        tracker = HybridStateTracker(
+            session_id="clear-test",
+            redis_client=mock_redis,
+        )
+
+        # Record a context
+        context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
+        tracker.record(context)
+
+        tracker.clear()
+
+        # Memory should be cleared
+        assert tracker._memory_tracker.current is None
+        # Redis should have been called with delete
+        mock_redis.delete.assert_called()
+
+    def test_hybrid_clear_without_redis(self) -> None:
+        """Test clear() works when Redis is not available."""
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
+
+        tracker = HybridStateTracker(
+            session_id="clear-no-redis",
+            redis_client=None,
+        )
+
+        context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
+        tracker.record(context)
+        assert tracker._memory_tracker.current is not None
+
+        tracker.clear()
+        assert tracker._memory_tracker.current is None
+
     def test_hybrid_with_redis_failure_recovery(self, mock_redis: MagicMock) -> None:
         """Test hybrid tracker recovers from Redis failures."""
         from vcp.adaptation.context import Dimension, VCPContext

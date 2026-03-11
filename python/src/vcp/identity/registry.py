@@ -50,6 +50,8 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+from ..metrics import vcp_registry_size, vcp_token_lookups_total
+
 if TYPE_CHECKING:
     from .token import Token
 
@@ -463,6 +465,7 @@ class LocalRegistry(Registry):
         self._tree.insert(entry)
         self._bloom.add(token.canonical)
         self._entries[token.canonical] = entry
+        vcp_registry_size.set(len(self._entries))
 
         # Notify subscribers
         self._notify_subscribers(token, "created")
@@ -471,7 +474,9 @@ class LocalRegistry(Registry):
 
     def resolve(self, token: Token) -> RegistryEntry | None:
         """Resolve exact token (always allowed, reveals nothing about siblings)."""
-        return self._entries.get(token.canonical)
+        result = self._entries.get(token.canonical)
+        vcp_token_lookups_total.labels(status="ok" if result else "miss").inc()
+        return result
 
     def exists(self, token: Token) -> bool:
         """Check existence via bloom filter (no enumeration possible)."""
