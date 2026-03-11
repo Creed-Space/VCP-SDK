@@ -155,7 +155,7 @@ __all__ = [
     "EnforcementMode",
     "TestimonyType",
     "AdoptionStatus",
-    # User Competence
+    # Competence
     "CompetenceCriterion",
     "CompetenceMeasurementBasis",
     "CompetenceClaim",
