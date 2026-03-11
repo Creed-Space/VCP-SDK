@@ -12,6 +12,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from .metrics import vcp_audit_events_total
+
 
 class AuditLevel(Enum):
     """Audit log detail levels."""
@@ -210,6 +212,7 @@ class AuditLogger:
         )
 
         self._entries.append(entry)
+        vcp_audit_events_total.labels(event_type="verification").inc()
 
         if self._log_callback:
             self._log_callback(entry)

@@ -345,6 +345,12 @@ class HybridStateTracker:
                 )
         return self._memory_tracker.history_count
 
+    def clear(self) -> None:
+        """Clear all history from both backends."""
+        self._memory_tracker.clear()
+        if self._redis_tracker:
+            self._redis_tracker.clear()
+
     def find_transitions(
         self,
         min_severity: TransitionSeverity = TransitionSeverity.MINOR,

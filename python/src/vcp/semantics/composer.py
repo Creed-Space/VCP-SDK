@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from ..metrics import vcp_compositions_total
 from ..types import CompositionMode
 
 if TYPE_CHECKING:
@@ -113,18 +114,26 @@ class Composer:
             CompositionConflictError: If mode requires no conflicts but conflicts exist
         """
         if not constitutions:
+            vcp_compositions_total.labels(status="ok").inc()
             return CompositionResult(merged_rules=[], mode_used=mode)
 
-        if mode == CompositionMode.BASE:
-            return self._compose_base(constitutions)
-        elif mode == CompositionMode.EXTEND:
-            return self._compose_extend(constitutions)
-        elif mode == CompositionMode.OVERRIDE:
-            return self._compose_override(constitutions)
-        elif mode == CompositionMode.STRICT:
-            return self._compose_strict(constitutions)
-        else:
-            raise ValueError(f"Unknown composition mode: {mode}")
+        try:
+            if mode == CompositionMode.BASE:
+                result = self._compose_base(constitutions)
+            elif mode == CompositionMode.EXTEND:
+                result = self._compose_extend(constitutions)
+            elif mode == CompositionMode.OVERRIDE:
+                result = self._compose_override(constitutions)
+            elif mode == CompositionMode.STRICT:
+                result = self._compose_strict(constitutions)
+            else:
+                raise ValueError(f"Unknown composition mode: {mode}")
+        except CompositionConflictError:
+            vcp_compositions_total.labels(status="conflict").inc()
+            raise
+
+        vcp_compositions_total.labels(status="ok").inc()
+        return result
 
     def _compose_base(self, constitutions: Sequence[Constitution]) -> CompositionResult:
         """BASE: First constitution cannot be overridden.

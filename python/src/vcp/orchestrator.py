@@ -12,10 +12,11 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .bundle import Bundle
 from .canonicalize import canonicalize_manifest, verify_content_hash
+from .metrics import track_duration, vcp_bundle_verifications_total, vcp_bundle_verify_duration_seconds
 from .revocation import RevocationChecker
 from .trust import TrustConfig
 from .types import VerificationResult
@@ -161,6 +162,20 @@ class Orchestrator:
         manifest = bundle.manifest
         manifest_dict = manifest.to_dict()
 
+        with track_duration(vcp_bundle_verify_duration_seconds):
+            result = self._verify_inner(bundle, context, manifest, manifest_dict)
+
+        vcp_bundle_verifications_total.labels(result=result.name).inc()
+        return result
+
+    def _verify_inner(
+        self,
+        bundle: Bundle,
+        context: VerificationContext,
+        manifest: Any,
+        manifest_dict: dict,
+    ) -> VerificationResult:
+        """Internal verification logic."""
         # 1. Size limits
         manifest_json = json.dumps(manifest_dict)
         if len(manifest_json.encode()) > self.MAX_MANIFEST_SIZE:

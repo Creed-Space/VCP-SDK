@@ -12,6 +12,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from ..metrics import vcp_active_sessions, vcp_transitions_total
 from .context import Dimension, VCPContext
 
 if TYPE_CHECKING:
@@ -96,6 +97,7 @@ class StateTracker:
 
         if not self._history:
             self._history.append((now, context))
+            vcp_active_sessions.inc()
             return None
 
         previous = self._history[-1][1]
@@ -145,8 +147,9 @@ class StateTracker:
                     "on_transition hook execution error; continuing"
                 )
 
-        # Invoke handlers
+        # Invoke handlers and record metric
         if transition.severity != TransitionSeverity.NONE:
+            vcp_transitions_total.labels(severity=transition.severity.value).inc()
             for handler in self._handlers[transition.severity]:
                 handler(transition)
 
@@ -266,6 +269,8 @@ class StateTracker:
 
     def clear(self) -> None:
         """Clear all history."""
+        if self._history:
+            vcp_active_sessions.dec()
         self._history.clear()
 
     def find_transitions(

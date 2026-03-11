@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from ..metrics import track_duration, vcp_context_encode_duration_seconds, vcp_context_encodes_total
+
 
 class Dimension(Enum):
     """9 context dimensions for VCP/A encoding."""
@@ -288,6 +290,7 @@ class ContextEncoder:
         Returns:
             Encoded VCPContext
         """
+        vcp_context_encodes_total.inc()
         dimensions: dict[Dimension, list[str]] = {}
 
         mappings = [
