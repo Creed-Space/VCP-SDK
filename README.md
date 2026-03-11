@@ -2,7 +2,7 @@
 
 # VCP SDK — Official SDK for the Value Context Protocol
 
-**Multi-language SDK for VCP v2.0 — parse tokens, encode context, negotiate capabilities, and implement all 4 extension modules.**
+**Multi-language SDK for VCP v3.1 — parse tokens, encode context, negotiate capabilities, and implement all 6 protocol layers.**
 
 [![CI](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml)
 [![Python SDK](https://img.shields.io/badge/python-4.0.0-3776AB?style=flat-square&logo=python&logoColor=white)](./python/)
@@ -20,25 +20,23 @@
 
 The **Value-Context Protocol (VCP)** is an open specification for transporting constitutional values, behavioral rules, and personal context to AI systems. The VCP SDK provides production-ready implementations in Python, TypeScript, and Rust with full cross-language parity.
 
-VCP v2.0 introduces four **extension modules** — Personal State, Relational Context, Constitutional Consensus, and Session Handoff — alongside a capability negotiation handshake, enabling richer context exchange between humans and AI.
+VCP v3.1 defines six protocol layers spanning identity, transport, semantics, adaptation, messaging, and economic governance. Layers 5 and 6 (VCP/M and VCP/E) enable inter-agent communication and fiduciary constraint management.
 
 ---
 
-## Features (v2.0)
+## Features (v3.1)
 
-### Core
-- **Token parsing** — CSM-1 compact state message encoding/decoding
-- **Bundle verification** — Signed bundles with Ed25519 signatures and SHA-256 content hashes
-- **Content hashing** — Deterministic canonicalization for integrity verification
-- **Identity resolution** — Universal Value Codes (UVC) naming and namespace management
+### Core Layers (1-4)
+- **VCP/I (Identity)** — Token parsing, naming, namespace management
+- **VCP/T (Transport)** — Signed bundles with Ed25519 signatures and SHA-256 content hashes
+- **VCP/S (Semantics)** — CSM-1 grammar, personas, composition rules
+- **VCP/A (Adaptation)** — Context encoding, state tracking, deterministic hooks
 
-### Extension Modules
-| Module | Description |
+### Extension Layers (5-6)
+| Layer | Description |
 |:---|:---|
-| **Personal State** | Signal declaration with exponential/linear decay, lifecycle tracking (`SET`/`STALE`) |
-| **Relational Context** | AI self-model, trust levels, standing, bias detection |
-| **Constitutional Consensus** | Schulze method voting, pairwise matrix, strongest path computation |
-| **Session Handoff (Torch)** | Generation, consumption, lineage tracking across sessions |
+| **VCP/M (Messaging)** | Inter-agent message types: context_share, constitution_announce, constraint_propagate, escalation with severity levels |
+| **VCP/E (Economic Governance)** | Fiduciary constraints, authorization gaps (capability, accountability, compatibility), transaction governance |
 
 ### Protocol
 - **Capability Negotiation** — VCP-Hello/VCP-Ack handshake protocol for feature discovery
@@ -156,25 +154,26 @@ cd rust && cargo test conformance
 
 ## Architecture
 
-### Six-Layer Protocol Stack
+### Six-Layer Protocol Stack (I-T-S-A-M-E)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Layer 6 — VCP/E  ECONOMIC GOVERNANCE                              │
-│  WHO PAYS and transaction governance                                │
-│  Fiduciary constraints · Authorization gaps · Capability decisions  │
+│  WHO PAYS and WHO AUTHORIZES                                        │
+│  Fiduciary constraints · Capability gaps · Accountability · Compat  │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 5 — VCP/M  MESSAGING                                        │
-│  WHO TALKS - Inter-agent message exchange                           │
-│  Message types · Escalation severity · Delivery semantics           │
+│  WHO TALKS                                                          │
+│  Context sharing · Constitution announce · Constraint propagate    │
+│  Escalation with severity levels · Delivery semantics              │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 4 — VCP/A  ADAPTATION                                       │
 │  WHEN and HOW constitutions apply                                   │
-│  Context encoding · State tracking · Messaging · Deterministic hooks│
+│  Context encoding · State tracking · Transition detection           │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 3 — VCP/S  SEMANTICS                                        │
 │  WHAT the values mean                                               │
-│  CSM-1 grammar · Persona composition · Traits · Personal state      │
+│  CSM-1 grammar · Persona composition · Traits                       │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 2 — VCP/T  TRANSPORT                                        │
 │  HOW values travel securely                                         │
@@ -186,24 +185,7 @@ cd rust && cargo test conformance
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### v2.0 Extension Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        VCP v2.0 Extensions                          │
-├──────────────┬──────────────┬──────────────────┬────────────────────┤
-│ Personal     │ Relational   │ Constitutional   │ Session            │
-│ State        │ Context      │ Consensus        │ Handoff            │
-│              │              │                  │                    │
-│ · Signals    │ · Self-model │ · Schulze voting │ · Torch generation │
-│ · Decay      │ · Trust      │ · Pairwise matrix│ · Consumption      │
-│ · Lifecycle  │ · Standing   │ · Strongest paths│ · Lineage          │
-├──────────────┴──────────────┴──────────────────┴────────────────────┤
-│                   Capability Negotiation (VCP-Hello/VCP-Ack)        │
-├─────────────────────────────────────────────────────────────────────┤
-│                          VCP Core (Layers 1-4)                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+**Mnemonic**: **I-T-S-A-M-E** ("It's-a me!")
 
 ---
 

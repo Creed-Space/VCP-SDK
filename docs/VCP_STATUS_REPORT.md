@@ -271,4 +271,4 @@ flags.set_flag("vcp_adaptation_shadow", True)
 
 ---
 
-*VCP: One protocol, six layers, complete constitutional AI.*
+*VCP: I-T-S-A-M-E (It's-a me!) — One protocol, six layers, complete constitutional AI.*

@@ -24,6 +24,8 @@
 - **VCP/T (Transport)**: Bundles are signed containers. Content-agnostic.
 - **VCP/S (Semantics)**: CSM1 codes and constitutions are self-contained.
 - **VCP/A (Adaptation)**: Context encoding is orthogonal to value semantics.
+- **VCP/M (Messaging)**: Inter-agent messages are self-describing.
+- **VCP/E (Economic)**: Authorization governs by capability, not ontology.
 
 **The ontology enables optional enhancements:**
 - Semantic search ("find constitutions about fairness")

@@ -502,4 +502,4 @@ In multi-worker mode, isolation holds per worker; continuity across workers requ
 
 ---
 
-*The Value-Context Protocol: One protocol, six layers, complete constitutional AI.*
+*The Value-Context Protocol: I-T-S-A-M-E (It's-a me!) — One protocol, six layers, complete constitutional AI.*

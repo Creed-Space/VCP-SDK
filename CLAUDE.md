@@ -8,11 +8,19 @@ The **Value Context Protocol (VCP)** is a specification for transporting constit
 
 ---
 
-## Architecture (4 Layers)
+## Architecture (6 Layers — I-T-S-A-M-E)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Layer 4: VCP-ADAPTATION   │  WHEN/HOW values apply         │
+│  Layer 6: VCP-ECONOMIC GOV │  WHO PAYS — governance         │
+│  ─────────────────────────────────────────────────────────  │
+│  Fiduciary constraints, authorization gaps, transactions    │
+├─────────────────────────────────────────────────────────────┤
+│  Layer 5: VCP-MESSAGING    │  WHO TALKS — inter-agent       │
+│  ─────────────────────────────────────────────────────────  │
+│  Message types, escalation severity, delivery semantics     │
+├─────────────────────────────────────────────────────────────┤
+│  Layer 4: VCP-ADAPTATION   │  WHEN values apply             │
 │  ─────────────────────────────────────────────────────────  │
 │  Context encoding, state tracking, inter-agent messaging    │
 ├─────────────────────────────────────────────────────────────┤

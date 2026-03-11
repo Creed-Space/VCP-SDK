@@ -140,7 +140,7 @@ VCP is **one protocol** with six layers—not six separate protocols.
 
 | Layer | Name | Short | Purpose | Key Question |
 |-------|------|-------|---------|--------------|
-| **6** | VCP-Economic Governance | VCP/E | Transaction governance | *Who pays?* |
+| **6** | VCP-Economic Governance | VCP/E | Fiduciary constraints and authorization | *Who pays and who authorizes?* |
 | **5** | VCP-Messaging | VCP/M | Inter-agent message exchange | *Who talks?* |
 | **4** | VCP-Adaptation | VCP/A | Context-aware application | *When and how does it apply?* |
 | **3** | VCP-Semantics | VCP/S | Rule meaning and composition | *What does it mean?* |
@@ -462,7 +462,7 @@ if context.has_children():
 | 2 Data Link | (not needed) | — |
 | 1 Physical | (not needed) | — |
 
-VCP is a 6-layer stack where layers 1-4 handle constitutional delivery, and layers 5-6 add inter-agent messaging and economic governance for multi-agent systems.
+VCP is a 6-layer stack addressing identity, transport, semantics, adaptation, messaging, and economic governance for constitutional AI systems.
 
 ---
 
@@ -679,13 +679,14 @@ Run the export verification snippet in `_contprompts/vcp_remaining_verification_
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.1.0 | 2026-03-11 | **Six-layer architecture**: Added VCP/M (Messaging) and VCP/E (Economic Governance) |
 | 2.2.2 | 2026-01-12 | **Runtime verification complete**: exports, multi-worker, per-session tracking |
 | 2.2.1 | 2026-01-12 | Added VCP_CONTEXT_DATA_FLOW.md, runtime verification contprompt |
 | 2.2.0 | 2026-01-12 | **VCP enabled by default**; all feature flags ON |
 | 2.1.0 | 2026-01-11 | Core implementation complete (VCP/I, VCP/S, VCP/A); 157 tests |
 | 2.0.1 | 2026-01-11 | Clarified Value Ontology is optional; VCP complete without it |
 | 2.0.0 | 2026-01-11 | Unified naming (VCP/I, VCP/T, VCP/S, VCP/A) |
-| 1.0.0 | 2026-01-11 | Initial six-layer architecture (I-T-S-A-M-E) |
+| 1.0.0 | 2026-01-11 | Initial architecture |
 
 ---
 
@@ -746,6 +747,6 @@ A **mapping bridge** (v4.2 → VCP 2.0) enables compatibility. See [`VCP_TORCH_A
 
 ---
 
-*The Value-Context Protocol: One protocol, six layers, complete constitutional AI.*
+*The Value-Context Protocol: I-T-S-A-M-E (It's-a me!) — One protocol, six layers, complete constitutional AI.*
 
 *This document is released under CC BY 4.0. Contributions welcome.*
