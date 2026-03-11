@@ -2,7 +2,7 @@
 
 # VCP SDK — Official SDK for the Value Context Protocol
 
-**Multi-language SDK for VCP v3.1 — parse tokens, encode context, negotiate capabilities, and implement all 6 protocol layers.**
+**Multi-language SDK for VCP v3.1 — parse tokens, encode context, negotiate capabilities across all six protocol layers (I-T-S-A-M-E).**
 
 [![CI](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml)
 [![Python SDK](https://img.shields.io/badge/python-4.0.0-3776AB?style=flat-square&logo=python&logoColor=white)](./python/)
@@ -20,23 +20,28 @@
 
 The **Value-Context Protocol (VCP)** is an open specification for transporting constitutional values, behavioral rules, and personal context to AI systems. The VCP SDK provides production-ready implementations in Python, TypeScript, and Rust with full cross-language parity.
 
-VCP v3.1 defines six protocol layers spanning identity, transport, semantics, adaptation, messaging, and economic governance. Layers 5 and 6 (VCP/M and VCP/E) enable inter-agent communication and fiduciary constraint management.
+VCP v3.1 defines six protocol layers (I-T-S-A-M-E) alongside five opt-in extensions and a capability negotiation handshake, enabling rich context exchange between humans and AI.
 
 ---
 
 ## Features (v3.1)
 
-### Core Layers (1-4)
+### The Six Layers (I-T-S-A-M-E)
 - **VCP/I (Identity)** — Token parsing, naming, namespace management
 - **VCP/T (Transport)** — Signed bundles with Ed25519 signatures and SHA-256 content hashes
 - **VCP/S (Semantics)** — CSM-1 grammar, personas, composition rules
 - **VCP/A (Adaptation)** — Context encoding, state tracking, deterministic hooks
+- **VCP/M (Messaging)** — Inter-agent message types: context_share, constitution_announce, constraint_propagate, escalation with severity levels
+- **VCP/E (Economic Governance)** — Fiduciary constraints, authorization gaps (capability, accountability, compatibility), transaction governance
 
-### Extension Layers (5-6)
-| Layer | Description |
+### Extensions (VCP-X-*)
+| Extension | Description |
 |:---|:---|
-| **VCP/M (Messaging)** | Inter-agent message types: context_share, constitution_announce, constraint_propagate, escalation with severity levels |
-| **VCP/E (Economic Governance)** | Fiduciary constraints, authorization gaps (capability, accountability, compatibility), transaction governance |
+| **VCP-X-Personal** | Signal declaration with exponential/linear decay, lifecycle tracking (`SET`/`STALE`) |
+| **VCP-X-Relational** | AI self-model, trust levels, standing, bias detection |
+| **VCP-X-Consensus** | Schulze method voting, pairwise matrix, strongest path computation |
+| **VCP-X-Torch** | Session handoff: generation, consumption, lineage tracking across sessions |
+| **VCP-X-Intent** | Experimental heuristic intent inference from personal state |
 
 ### Protocol
 - **Capability Negotiation** — VCP-Hello/VCP-Ack handshake protocol for feature discovery
@@ -154,26 +159,25 @@ cd rust && cargo test conformance
 
 ## Architecture
 
-### Six-Layer Protocol Stack (I-T-S-A-M-E)
+### Six-Layer Protocol Stack
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Layer 6 — VCP/E  ECONOMIC GOVERNANCE                              │
-│  WHO PAYS and WHO AUTHORIZES                                        │
-│  Fiduciary constraints · Capability gaps · Accountability · Compat  │
+│  WHO PAYS and transaction governance                                │
+│  Fiduciary constraints · Authorization gaps · Capability decisions  │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 5 — VCP/M  MESSAGING                                        │
-│  WHO TALKS                                                          │
-│  Context sharing · Constitution announce · Constraint propagate    │
-│  Escalation with severity levels · Delivery semantics              │
+│  WHO TALKS - Inter-agent message exchange                           │
+│  Message types · Escalation severity · Delivery semantics           │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 4 — VCP/A  ADAPTATION                                       │
 │  WHEN and HOW constitutions apply                                   │
-│  Context encoding · State tracking · Transition detection           │
+│  Context encoding · State tracking · Messaging · Deterministic hooks│
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 3 — VCP/S  SEMANTICS                                        │
 │  WHAT the values mean                                               │
-│  CSM-1 grammar · Persona composition · Traits                       │
+│  CSM-1 grammar · Persona composition · Traits · Personal state      │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 2 — VCP/T  TRANSPORT                                        │
 │  HOW values travel securely                                         │
@@ -185,7 +189,23 @@ cd rust && cargo test conformance
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-**Mnemonic**: **I-T-S-A-M-E** ("It's-a me!")
+### v3.1 Extensions (VCP-X-*)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      VCP v3.1 Extensions (VCP-X-*)                  │
+├──────────────┬──────────────┬──────────────────┬────────────────────┤
+│ Personal     │ Relational   │ Constitutional   │ Session   │ Intent │
+│ State        │ Context      │ Consensus        │ Handoff   │        │
+│              │              │                  │           │        │
+│ · Signals    │ · Self-model │ · Schulze voting │ · Torch   │ · Heur.│
+│ · Decay      │ · Trust      │ · Pairwise matrix│ · Lineage │ · Infer│
+├──────────────┴──────────────┴──────────────────┴───────────┴────────┤
+│                   Capability Negotiation (VCP-Hello/VCP-Ack)        │
+├─────────────────────────────────────────────────────────────────────┤
+│                    VCP Six-Layer Stack (I-T-S-A-M-E)                │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
