@@ -24,16 +24,6 @@ from .canonicalize import (  # noqa: F401
     verify_content_hash,
 )
 
-# VCP Inter-Agent Messaging
-from .messaging import (  # noqa: F401
-    VcpMessage,
-    check_version_compatibility,
-    create_message,
-    sign_message,
-    validate_message,
-    verify_message,
-)
-
 # VCP/I (Identity Layer)
 from .identity import (  # noqa: F401
     NamespaceConfig,
@@ -46,6 +36,16 @@ from .injection import (  # noqa: F401
     InjectionOptions,
     format_injection,
     format_multi_constitution_injection,
+)
+
+# VCP Inter-Agent Messaging
+from .messaging import (  # noqa: F401
+    VcpMessage,
+    check_version_compatibility,
+    create_message,
+    sign_message,
+    validate_message,
+    verify_message,
 )
 from .negotiation import (  # noqa: F401
     VCPAck,
