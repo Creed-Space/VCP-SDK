@@ -545,11 +545,13 @@ vcp adaptation detect-transition old.json new.json
 
 ### Layer Mnemonics
 
-**I-T-S-A**: *"It's a protocol!"*
+**I-T-S-A-M-E**: *"It's-a me!"*
 - **I**dentity - What is it?
 - **T**ransport - How does it travel?
 - **S**emantics - What does it mean?
 - **A**daptation - How does it apply?
+- **M**essaging - Who talks?
+- **E**conomic Governance - Who pays?
 
 ### Short Forms
 
