@@ -59,11 +59,17 @@ from .trust import TrustAnchor, TrustConfig  # noqa: F401
 from .types import (  # noqa: F401
     AttestationType,
     Budget,
+    CompetenceClaim,
+    CompetenceCriterion,
+    CompetenceMeasurementBasis,
+    CompetenceProfile,
     Composition,
     CompositionMode,
     Scope,
+    SelfRegulationCommitment,
     Timestamps,
     VerificationResult,
+    apply_decay,
 )
 
 __version__ = "3.1.0"  # VCP v3.1: extensions + negotiation
@@ -130,4 +136,11 @@ __all__ = [
     "VCPHello",
     "VCPAck",
     "negotiate",
+    # Competence
+    "CompetenceCriterion",
+    "CompetenceMeasurementBasis",
+    "CompetenceClaim",
+    "SelfRegulationCommitment",
+    "CompetenceProfile",
+    "apply_decay",
 ]
