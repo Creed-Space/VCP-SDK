@@ -16,7 +16,9 @@ The Value-Context Protocol (VCP) is fully implemented and deployed at 100% activ
 | VCP/T (Transport) | ✅ Operational | 62 pass | Active |
 | VCP/S (Semantics) | ✅ Operational | 28 pass | Active |
 | VCP/A (Adaptation) | ✅ Operational | 36 pass | Active |
-| **Total** | **✅** | **195 pass** | **Active** |
+| VCP/M (Messaging) | ✅ Operational | — | Active |
+| VCP/E (Economic Governance) | ✅ Operational | — | Active |
+| **Total** | **✅** | **195+ pass** | **Active** |
 
 ---
 

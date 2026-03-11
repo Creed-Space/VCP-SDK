@@ -150,26 +150,25 @@ cd rust && cargo test conformance
 
 ## Architecture
 
-### Six-Layer Protocol Stack (I-T-S-A-M-E)
+### Six-Layer Protocol Stack
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Layer 6 — VCP/E  ECONOMIC GOVERNANCE                              │
-│  WHO PAYS and WHO AUTHORIZES                                        │
-│  Fiduciary constraints · Capability gaps · Accountability · Compat  │
+│  WHO PAYS and transaction governance                                │
+│  Fiduciary constraints · Authorization gaps · Capability decisions  │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 5 — VCP/M  MESSAGING                                        │
-│  WHO TALKS                                                          │
-│  Context sharing · Constitution announce · Constraint propagate    │
-│  Escalation with severity levels · Delivery semantics              │
+│  WHO TALKS - Inter-agent message exchange                           │
+│  Message types · Escalation severity · Delivery semantics           │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 4 — VCP/A  ADAPTATION                                       │
 │  WHEN and HOW constitutions apply                                   │
-│  Context encoding · State tracking · Transition detection           │
+│  Context encoding · State tracking · Messaging · Deterministic hooks│
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 3 — VCP/S  SEMANTICS                                        │
 │  WHAT the values mean                                               │
-│  CSM-1 grammar · Persona composition · Traits                       │
+│  CSM-1 grammar · Persona composition · Traits · Personal state      │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Layer 2 — VCP/T  TRANSPORT                                        │
 │  HOW values travel securely                                         │

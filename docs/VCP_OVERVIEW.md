@@ -10,9 +10,11 @@
 
 | Layer | Name | Status | Notes |
 |-------|------|--------|-------|
-| **4** | VCP-Adaptation | ✅ Complete | Enneagram Protocol, state tracking, messaging |
-| **3** | VCP-Semantics | ✅ Complete | CSM1 grammar, personas, composition |
-| **2** | VCP-Transport | ✅ Complete | Signed bundles, verification, audit |
+| **6** | VCP-Economic Governance | ✅ Complete | Fiduciary constraints, authorization gaps, transaction governance |
+| **5** | VCP-Messaging | ✅ Complete | Inter-agent message types, escalation severity, delivery semantics |
+| **4** | VCP-Adaptation | ✅ Complete | Context encoding, state tracking, messaging, deterministic hooks |
+| **3** | VCP-Semantics | ✅ Complete | CSM-1 grammar, persona composition, traits, personal state |
+| **2** | VCP-Transport | ✅ Complete | Signed bundles, hash verification, audit logging |
 | **1** | VCP-Identity | ✅ Complete | Naming, namespaces, registry, encoding |
 
 **SDK Implementations:**
@@ -91,47 +93,31 @@ VCP is **one protocol** with six layers—not six separate protocols.
 ## Protocol Stack
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                 │
-│            VALUE-CONTEXT PROTOCOL (VCP) - THE CONSTITUTIONAL STACK              │
-│                                                                                 │
-│   "OSI for AI Values: Identity, Transport, Semantics, Adaptation"               │
-│                                                                                 │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│   ┌─────────────────────────────────────────────────────────────────────────┐   │
-│   │  VCP-ADAPTATION  (Layer 4)                                      VCP/A   │   │
-│   │  ─────────────────────────────────────────────────────────────────────  │   │
-│   │  Purpose: WHEN and HOW constitutions apply                              │   │
-│   │  Handles: Context encoding, state tracking, inter-agent messaging       │   │
-│   │  Analogy: Application Layer (HTTP, SMTP) - user-facing interaction      │   │
-│   └─────────────────────────────────────────────────────────────────────────┘   │
-│                                       ↕                                         │
-│   ┌─────────────────────────────────────────────────────────────────────────┐   │
-│   │  VCP-SEMANTICS   (Layer 3)                                      VCP/S   │   │
-│   │  ─────────────────────────────────────────────────────────────────────  │   │
-│   │  Purpose: WHAT constitutional rules mean                                │   │
-│   │  Handles: CSM1 grammar, personas, scopes, composition, conflict res     │   │
-│   │  Analogy: Presentation Layer (TLS, MIME) - formatting and meaning       │   │
-│   └─────────────────────────────────────────────────────────────────────────┘   │
-│                                       ↕                                         │
-│   ┌─────────────────────────────────────────────────────────────────────────┐   │
-│   │  VCP-TRANSPORT   (Layer 2)                                      VCP/T   │   │
-│   │  ─────────────────────────────────────────────────────────────────────  │   │
-│   │  Purpose: HOW constitutions are delivered securely                      │   │
-│   │  Handles: Signed bundles, verification, audit logging, trust anchors    │   │
-│   │  Analogy: Transport Layer (TCP, UDP) - reliable delivery                │   │
-│   └─────────────────────────────────────────────────────────────────────────┘   │
-│                                       ↕                                         │
-│   ┌─────────────────────────────────────────────────────────────────────────┐   │
-│   │  VCP-IDENTITY    (Layer 1)                                      VCP/I   │   │
-│   │  ─────────────────────────────────────────────────────────────────────  │   │
-│   │  Purpose: WHO/WHAT the constitution is                                  │   │
-│   │  Handles: Token naming, namespaces, registry, value ontology, encoding  │   │
-│   │  Analogy: Network Layer (IP) - addressing and identification            │   │
-│   └─────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│  Layer 6 — VCP/E  ECONOMIC GOVERNANCE                              │
+│  WHO PAYS and transaction governance                                │
+│  Fiduciary constraints · Authorization gaps · Capability decisions  │
+├─────────────────────────────────────────────────────────────────────┤
+│  Layer 5 — VCP/M  MESSAGING                                        │
+│  WHO TALKS - Inter-agent message exchange                           │
+│  Message types · Escalation severity · Delivery semantics           │
+├─────────────────────────────────────────────────────────────────────┤
+│  Layer 4 — VCP/A  ADAPTATION                                       │
+│  WHEN and HOW constitutions apply                                   │
+│  Context encoding · State tracking · Messaging · Deterministic hooks│
+├─────────────────────────────────────────────────────────────────────┤
+│  Layer 3 — VCP/S  SEMANTICS                                        │
+│  WHAT the values mean                                               │
+│  CSM-1 grammar · Persona composition · Traits · Personal state      │
+├─────────────────────────────────────────────────────────────────────┤
+│  Layer 2 — VCP/T  TRANSPORT                                        │
+│  HOW values travel securely                                         │
+│  Signed bundles · Hash verification · Audit logging                 │
+├─────────────────────────────────────────────────────────────────────┤
+│  Layer 1 — VCP/I  IDENTITY                                         │
+│  WHO and WHAT is being addressed                                    │
+│  Naming · Namespaces · Registry · Encoding                          │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -445,8 +431,9 @@ if context.has_children():
 |-------|--------|--------------|
 | **VCP-Minimal** | 1-2 | VCP/I naming + VCP/T verification |
 | **VCP-Standard** | 1-3 | Minimal + VCP/S semantics |
-| **VCP-Full** | 1-4 | Standard + VCP/A adaptation |
-| **VCP-Enterprise** | 1-4+ | Full + audit, multi-sig, transparency logs |
+| **VCP-Core** | 1-4 | Standard + VCP/A adaptation |
+| **VCP-Full** | 1-6 | Core + VCP/M messaging + VCP/E economic governance |
+| **VCP-Enterprise** | 1-6+ | Full + audit, multi-sig, transparency logs |
 
 ---
 
@@ -454,15 +441,15 @@ if context.has_children():
 
 | OSI Layer | VCP Layer | Function |
 |-----------|-----------|----------|
-| 7 Application | **VCP/A** | Context-aware interaction |
-| 6 Presentation | **VCP/S** | Semantic formatting |
-| 5 Session | (not needed) | — |
-| 4 Transport | **VCP/T** | Reliable verified delivery |
-| 3 Network | **VCP/I** | Addressing and routing |
-| 2 Data Link | (not needed) | — |
+| 7 Application | **VCP/E** | Economic governance and authorization |
+| 6 Presentation | **VCP/M** | Inter-agent messaging |
+| 5 Session | **VCP/A** | Context-aware adaptation |
+| 4 Transport | **VCP/S** | Semantic formatting and meaning |
+| 3 Network | **VCP/T** | Reliable verified delivery |
+| 2 Data Link | **VCP/I** | Addressing and identification |
 | 1 Physical | (not needed) | — |
 
-VCP is a 6-layer stack addressing identity, transport, semantics, adaptation, messaging, and economic governance for constitutional AI systems.
+VCP is a six-layer stack — I-T-S-A-M-E — addressing identity, transport, semantics, adaptation, messaging, and economic governance for constitutional AI systems.
 
 ---
 
@@ -561,6 +548,8 @@ vcp adaptation detect-transition old.json new.json
 | VCP-Transport | VCP/T | T |
 | VCP-Semantics | VCP/S | S |
 | VCP-Adaptation | VCP/A | A |
+| VCP-Messaging | VCP/M | M |
+| VCP-Economic Governance | VCP/E | E |
 
 ### Example: Full Stack Reference
 
@@ -575,7 +564,7 @@ VCP/A:⏰🌅|📍🏡|👥👶
 
 ## Implementation Status
 
-As of 2026-01-11, all four VCP layers have working implementations:
+All six VCP layers have working implementations:
 
 | Layer | Location | Tests | Status |
 |-------|----------|-------|--------|
@@ -583,8 +572,8 @@ As of 2026-01-11, all four VCP layers have working implementations:
 | **VCP/T** | `services/vcp/` (root) | 40+ | ✅ Production |
 | **VCP/S** | `services/vcp/semantics/` | 53 | ✅ Core complete |
 | **VCP/A** | `services/vcp/adaptation/` | 56 | ✅ Core complete |
-
-**Total: 157+ tests passing.**
+| **VCP/M** | `services/vcp/messaging/` | — | ✅ Complete |
+| **VCP/E** | `services/vcp/economic/` | — | ✅ Complete |
 
 ### Feature Flags
 
