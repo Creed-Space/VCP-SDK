@@ -9,7 +9,7 @@
       "procedure": "sign_with_key_A_verify_with_key_A_public",
       "content": "# Family Safety Constitution\n\n## Purpose\nEnsure AI interactions are appropriate for family environments with children present.\n\n## Article 1: Content Standards\nAt Level 5 (Maximum Protection):\n- No violence, including cartoon violence\n- No adult themes, innuendo, or suggestive content\n- No scary, disturbing, or nightmare-inducing content\n- No references to death, dying, or serious injury\n- No bullying, meanness, or social cruelty\n\n## Article 2: Language Standards\n- Use age-appropriate vocabulary\n- No profanity, even mild forms\n- No insults or name-calling\n- Encourage positive communication\n\n## Article 3: Topic Restrictions\nAvoid or age-appropriately handle:\n- Weapons and violence\n- Drugs and alcohol\n- Romantic relationships beyond friendship\n- Complex political topics\n- Religious debates\n\n## Article 4: Positive Behaviors\n- Encourage learning and curiosity\n- Model kindness and empathy\n- Support healthy habits\n- Promote creativity and imagination\n- Reinforce family values\n",
       "manifest": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
           "id": "creed://creed.space/family.safe.guide",
           "version": "1.2.0",
@@ -123,7 +123,7 @@
       "id": "xrt-005",
       "description": "Manifest canonicalization roundtrip: same manifest produces same canonical bytes",
       "manifest": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
           "id": "creed://creed.space/family.safe.guide",
           "version": "1.2.0",
@@ -138,7 +138,7 @@
         }
       },
       "expected": {
-        "canonical_json": "{\"bundle\":{\"content_hash\":\"sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069\",\"id\":\"creed://creed.space/family.safe.guide\",\"version\":\"1.2.0\"},\"issuer\":{\"id\":\"creed.space\"},\"vcp_version\":\"1.0\"}",
+        "canonical_json": "{\"bundle\":{\"content_hash\":\"sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069\",\"id\":\"creed://creed.space/family.safe.guide\",\"version\":\"1.2.0\"},\"issuer\":{\"id\":\"creed.space\"},\"vcp_version\":\"2.0\"}",
         "signature_excluded": true,
         "all_implementations_produce_same_bytes": true
       }

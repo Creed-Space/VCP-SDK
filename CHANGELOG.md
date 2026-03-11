@@ -4,6 +4,30 @@ All notable changes to the VCP SDK will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-03-08
+
+### Added
+- **VCP v2.0 Specification Support** — Protocol version bumped from 1.0/1.2 to 2.0 across all SDKs
+- **Extended Token Types** — New enums for refusal boundaries, testimony, creed adoption, and compliance attestation tokens
+- **VCP/M Messaging v2.0** — Inter-agent messaging updated from v1.2 to v2.0 with context field trust model, escalation-transition severity alignment, and version negotiation
+- **JSON Schema v2** — New `vcp-manifest-v2.schema.json` and `vcp-messaging-v2.0.schema.json`
+- **Version Negotiation** — Python SDK adds `check_version_compatibility()` for major/minor version handling
+- Python: Hook system, revocation checking, inter-agent messaging (previously unreleased)
+- Rust: Hook system, trust anchor management, full transport layer (previously unreleased)
+- Language-agnostic conformance test suite and runnable examples (previously unreleased)
+
+### Changed
+- `vcp_version` in bundle manifests changed from `"1.0"` to `"2.0"`
+- `vcp_message` in inter-agent messages changed from `"1.2"` to `"2.0"`
+- Personas updated from NZGAMRHC to NZGAMDC (previously unreleased)
+- Python SDK version bumped to 4.0.0
+- Rust SDK versions bumped to 4.0.0
+
+### Fixed
+- Resolved mypy type-check failures in Python SDK (previously unreleased)
+- Resolved CI lint and formatting failures (previously unreleased)
+- Resolved clippy warnings in Rust SDK (previously unreleased)
+
 ## [3.1.0] - 2026-02-28
 
 ### Added
@@ -20,27 +44,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 - Ballot model standardized to grouped `rankings: list[list[str]]` format across all SDKs
 - Python LifecycleState enum uses `SET`/`STALE` (replaces `FRESH`/`BASELINE`)
-
-## [Unreleased]
-
-### Added
-- Python: Hook system (`hooks/` module with types, registry, executor, built-in hooks)
-- Python: Revocation checking (`revocation.py` with online + CRL support, SSRF protection, caching)
-- Python: Inter-agent messaging v1.2 envelope support (`messaging.py`)
-- Rust: Hook system (`hooks.rs` with registry and chain executor)
-- Rust: Trust anchor management (`trust.rs` with `TrustAnchor`, `TrustConfig`)
-- Rust: Full transport layer (content canonicalization, manifest signing/verification, bundle verification)
-- Language-agnostic conformance test suite (`conformance/`)
-- Runnable examples for Python and Rust (`examples/`)
-
-### Changed
-- Personas updated from NZGAMRHC to NZGAMDC (Anchor/HotRod replaced by Mediator)
-- Python SDK version bumped to 2.0.0 for VCP/I, VCP/S, VCP/A layer additions
-
-### Fixed
-- Resolved mypy type-check failures in Python SDK
-- Resolved CI lint and formatting failures across Python, Rust, and JSON schema validation
-- Resolved clippy warnings in Rust SDK
 
 ## [1.1.0] - 2026-01-18
 
@@ -75,7 +78,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Dependabot configuration for all package ecosystems
 - Comprehensive README with architecture diagrams, quick-start guides, and full documentation index
 
+[4.0.0]: https://github.com/Creed-Space/VCP-SDK/compare/v3.1.0...v4.0.0
+[Unreleased]: https://github.com/Creed-Space/VCP-SDK/compare/v4.0.0...HEAD
 [3.1.0]: https://github.com/Creed-Space/VCP-SDK/compare/v1.1.0...v3.1.0
-[Unreleased]: https://github.com/Creed-Space/VCP-SDK/compare/v3.1.0...HEAD
 [1.1.0]: https://github.com/Creed-Space/VCP-SDK/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Creed-Space/VCP-SDK/releases/tag/v1.0.0

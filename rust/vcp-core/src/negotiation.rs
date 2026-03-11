@@ -19,7 +19,17 @@ pub struct VcpHello {
 }
 
 impl VcpHello {
+    /// Create a VCP hello for v2.0.0 with default settings.
+    pub fn v2_0() -> Self {
+        Self {
+            version: "2.0.0".to_string(),
+            extensions: HashMap::new(),
+            capabilities: HashMap::new(),
+        }
+    }
+
     /// Create a VCP hello for v3.1.0 with default settings.
+    #[deprecated(since = "4.0.0", note = "Use v2_0() for VCP v2.0 protocol")]
     pub fn v3_1() -> Self {
         Self {
             version: "3.1.0".to_string(),
@@ -87,8 +97,11 @@ pub fn negotiate<S: BuildHasher>(
         }
     }
 
-    // Version negotiation: use v3.1.0 if client requests 3.x, otherwise echo
-    let version = if hello.version.starts_with("3.") {
+    // Version negotiation: use v2.0.0 if client requests 2.x,
+    // v3.1.0 if client requests 3.x (legacy), otherwise echo.
+    let version = if hello.version.starts_with("2.") {
+        "2.0.0".to_string()
+    } else if hello.version.starts_with("3.") {
         "3.1.0".to_string()
     } else {
         hello.version.clone()
@@ -118,12 +131,12 @@ mod tests {
 
     #[test]
     fn test_negotiate_all_accepted() {
-        let hello = VcpHello::v3_1()
+        let hello = VcpHello::v2_0()
             .with_extension("personal", ">=1.0")
             .with_extension("relational", ">=1.0");
         let ack = negotiate(&hello, &server_caps());
 
-        assert_eq!(ack.version, "3.1.0");
+        assert_eq!(ack.version, "2.0.0");
         assert_eq!(ack.accepted_extensions.len(), 2);
         assert!(ack.rejected_extensions.is_empty());
         assert!(ack.accepted_extensions.contains_key("personal"));
@@ -132,7 +145,7 @@ mod tests {
 
     #[test]
     fn test_negotiate_partial_rejection() {
-        let hello = VcpHello::v3_1()
+        let hello = VcpHello::v2_0()
             .with_extension("personal", ">=1.0")
             .with_extension("nonexistent", ">=1.0");
         let ack = negotiate(&hello, &server_caps());
@@ -144,10 +157,10 @@ mod tests {
 
     #[test]
     fn test_negotiate_empty_hello() {
-        let hello = VcpHello::v3_1();
+        let hello = VcpHello::v2_0();
         let ack = negotiate(&hello, &server_caps());
 
-        assert_eq!(ack.version, "3.1.0");
+        assert_eq!(ack.version, "2.0.0");
         assert!(ack.accepted_extensions.is_empty());
         assert!(ack.rejected_extensions.is_empty());
         // Server-only capabilities should still be listed
@@ -156,7 +169,7 @@ mod tests {
 
     #[test]
     fn test_negotiate_empty_server() {
-        let hello = VcpHello::v3_1().with_extension("personal", ">=1.0");
+        let hello = VcpHello::v2_0().with_extension("personal", ">=1.0");
         let ack = negotiate(&hello, &HashMap::new());
 
         assert_eq!(ack.accepted_extensions.len(), 0);
@@ -165,16 +178,27 @@ mod tests {
 
     #[test]
     fn test_vcp_hello_builder() {
-        let hello = VcpHello::v3_1()
+        let hello = VcpHello::v2_0()
             .with_extension("personal", ">=1.0")
             .with_capability("streaming", true);
-        assert_eq!(hello.version, "3.1.0");
+        assert_eq!(hello.version, "2.0.0");
         assert_eq!(hello.extensions.len(), 1);
         assert_eq!(hello.capabilities.get("streaming"), Some(&true));
     }
 
     #[test]
-    fn test_version_negotiation_3x() {
+    fn test_version_negotiation_2x() {
+        let hello = VcpHello {
+            version: "2.1.0".to_string(),
+            extensions: HashMap::new(),
+            capabilities: HashMap::new(),
+        };
+        let ack = negotiate(&hello, &HashMap::new());
+        assert_eq!(ack.version, "2.0.0");
+    }
+
+    #[test]
+    fn test_version_negotiation_3x_legacy() {
         let hello = VcpHello {
             version: "3.0.0".to_string(),
             extensions: HashMap::new(),
@@ -185,7 +209,7 @@ mod tests {
     }
 
     #[test]
-    fn test_version_negotiation_non_3x() {
+    fn test_version_negotiation_non_2x_3x() {
         let hello = VcpHello {
             version: "4.0.0".to_string(),
             extensions: HashMap::new(),

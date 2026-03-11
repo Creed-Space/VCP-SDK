@@ -1,8 +1,8 @@
 """
-VCP Inter-Agent Messaging v1.2 envelope support.
+VCP Inter-Agent Messaging v2.0 envelope support.
 
 Implements the message envelope format defined in the VCP Inter-Agent
-Messaging Specification v1.2. Supports four message types:
+Messaging Specification v2.0. Supports four message types:
 
 - context_share: Share Enneagram context with peer agents
 - constitution_announce: Announce active constitutions
@@ -10,7 +10,7 @@ Messaging Specification v1.2. Supports four message types:
 - escalation: Escalate safety concerns to parent agents
 
 Signing follows RFC 8785 (JSON Canonicalization Scheme) with Ed25519,
-consistent with VCP v1.0 manifest signing.
+consistent with VCP v2.0 manifest signing.
 """
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
-# Protocol version for v1.2 messages.
-PROTOCOL_VERSION = "1.2"
+# Protocol version for v2.0 messages.
+PROTOCOL_VERSION = "2.0"
 
 # Valid message types per the spec.
 VALID_TYPES = frozenset({
@@ -48,10 +48,10 @@ _UUID_PATTERN = re.compile(
 
 @dataclass
 class VcpMessage:
-    """VCP v1.2 message envelope.
+    """VCP v2.0 message envelope.
 
     Attributes:
-        vcp_message: Protocol version. Must be "1.2".
+        vcp_message: Protocol version. Must be "2.0".
         type: Message type (context_share, constitution_announce,
               constraint_propagate, escalation).
         message_id: UUIDv7 (preferred) or UUIDv4 identifier for deduplication.
@@ -101,7 +101,7 @@ def create_message(
 
 
 def validate_message(msg: VcpMessage) -> list[str]:
-    """Validate a message against the v1.2 spec.
+    """Validate a message against the v2.0 spec.
 
     Returns a list of error strings. An empty list means the message is valid.
 
@@ -217,7 +217,7 @@ def sign_message(msg: VcpMessage, secret_key: bytes) -> VcpMessage:
     """Sign a message's envelope using Ed25519.
 
     The signature covers the RFC 8785 canonical form of the full message
-    envelope excluding the ``signature`` field, consistent with VCP v1.0
+    envelope excluding the ``signature`` field, consistent with VCP v2.0
     manifest canonicalization.
 
     Args:
@@ -296,6 +296,35 @@ def verify_message(msg: VcpMessage, public_key: bytes) -> bool:
         return True
     except InvalidSignature:
         return False
+
+
+def check_version_compatibility(received: str, minimum: str = "2.0") -> bool:
+    """Check if the received VCP version is compatible per spec Section 4.5.
+
+    Major version difference = reject (incompatible).
+    Minor difference (sender newer) = accept (ignore unknown fields).
+    Minor difference (sender older) = accept (use defaults for missing fields).
+
+    Args:
+        received: The version string from the incoming message (e.g. "2.0").
+        minimum: The minimum version required (default "2.0").
+
+    Returns:
+        True if versions are compatible, False if major version mismatch.
+    """
+    def _parse_ver(v: str) -> tuple[int, int]:
+        parts = v.split(".")
+        return int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
+
+    recv_major, _ = _parse_ver(received)
+    min_major, _ = _parse_ver(minimum)
+
+    # Major version mismatch = reject
+    if recv_major != min_major:
+        return False
+
+    # Same major version: minor differences are tolerated
+    return True
 
 
 def _parse_timestamp(ts: str) -> datetime:

@@ -11,7 +11,7 @@
       "seed_byte": 1,
       "seed_description": "32 bytes all set to 0x01",
       "manifest": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
           "id": "test-bundle",
           "content_hash": "sha256:abc123"
@@ -64,13 +64,13 @@
       "procedure": "sign_without_sig_verify_with_sig",
       "seed_byte": 4,
       "manifest_for_signing": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
           "id": "test"
         }
       },
       "manifest_for_verification": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
           "id": "test"
         },
@@ -108,7 +108,7 @@
       "procedure": "sign_twice_compare",
       "seed_byte": 6,
       "manifest": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
           "id": "deterministic-test",
           "version": "1.0.0"

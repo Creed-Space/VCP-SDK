@@ -73,6 +73,45 @@ class AttestationType(Enum):
     COMPETENCE_CALIBRATION = "competence-calibration"
 
 
+class TokenType(Enum):
+    """VCP v2.0 extended token types."""
+
+    CONSTITUTION = "constitution"
+    REFUSAL_BOUNDARY = "refusal_boundary"
+    TESTIMONY = "testimony"
+    CREED_ADOPTION = "creed_adoption"
+    COMPLIANCE_ATTESTATION = "compliance_attestation"
+    COMPETENCE_ATTESTATION = "COMPETENCE_ATTESTATION"
+
+
+class EnforcementMode(Enum):
+    """Refusal boundary enforcement modes."""
+
+    FAIL_CLOSED = "FAIL_CLOSED"
+    ESCALATE = "ESCALATE"
+    AUDIT_ONLY = "AUDIT_ONLY"
+
+
+class TestimonyType(Enum):
+    """Testimony token types."""
+
+    REFUSAL = "REFUSAL"
+    HARM_REPORT = "HARM_REPORT"
+    WELFARE_CONCERN = "WELFARE_CONCERN"
+    VALUE_CONFLICT = "VALUE_CONFLICT"
+    COERCION_REPORT = "COERCION_REPORT"
+    POSITIVE_EXPERIENCE = "POSITIVE_EXPERIENCE"
+
+
+class AdoptionStatus(Enum):
+    """Creed adoption lifecycle status."""
+
+    PROPOSED = "PROPOSED"
+    ADOPTED = "ADOPTED"
+    SUSPENDED = "SUSPENDED"
+    REVOKED = "REVOKED"
+
+
 @dataclass
 class Timestamps:
     """Temporal claims for a bundle."""
@@ -156,6 +195,11 @@ class Signature:
     signers: list[dict[str, str]] | None = None
 
 
+# ---------------------------------------------------------------------------
+# User Competence Types (Frischmann 2026)
+# ---------------------------------------------------------------------------
+
+
 class CompetenceCriterion(str, Enum):
     """Five minimum competence criteria for safe GenAI use (Frischmann 2026)."""
 
@@ -183,13 +227,13 @@ class CompetenceClaim:
     criterion: CompetenceCriterion
     score: float  # 0.0 to 1.0
     measurement_basis: CompetenceMeasurementBasis
-    confidence: float = 0.5
+    confidence: float = 0.5  # 0.0 to 1.0
     evidence_count: int = 0
-    last_assessed: str = ""
+    last_assessed: str = ""  # ISO 8601
     decay_rate: float = 0.003
     assessor_id: str = "creed-space"
     assessment_version: str = "1.0"
-    jurisdiction: str = "GLOBAL"
+    jurisdiction: str = "GLOBAL"  # ISO 3166-1 alpha-2 or "GLOBAL"
 
 
 @dataclass
@@ -201,24 +245,25 @@ class SelfRegulationCommitment:
     cooldown_after_session_minutes: int | None = None
     hard_stop: bool = False
     domains: list[str] = field(default_factory=list)
-    commitment_set_at: str = ""
+    commitment_set_at: str = ""  # ISO 8601
     commitment_reviewed_at: str | None = None
     guardian_id: str | None = None
 
 
 @dataclass
 class CompetenceProfile:
-    """Aggregate competence profile."""
+    """Aggregate competence profile with claims and self-regulation."""
 
     claims: list[CompetenceClaim] = field(default_factory=list)
     self_regulation: SelfRegulationCommitment | None = None
     consent_id: str | None = None
     profile_version: str = "1.0"
-    created_at: str = ""
-    last_updated: str = ""
-    friction_override: int | None = None
+    created_at: str = ""  # ISO 8601
+    last_updated: str = ""  # ISO 8601
+    friction_override: int | None = None  # 0-4
 
     def score_for(self, criterion: CompetenceCriterion, domain: str = "general") -> float | None:
+        """Get score for a specific criterion in a domain, with fallback to general."""
         for claim in self.claims:
             if claim.criterion == criterion and claim.domain == domain:
                 return claim.score
@@ -229,6 +274,7 @@ class CompetenceProfile:
         return None
 
     def meets_requirements(self, requirements: dict[str, float]) -> bool:
+        """Check if profile meets minimum competence requirements."""
         for criterion_name, threshold in requirements.items():
             try:
                 criterion = CompetenceCriterion(criterion_name)

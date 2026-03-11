@@ -15,7 +15,7 @@ fn main() {
 
     // A minimal manifest as a JSON value.
     let manifest: serde_json::Value = serde_json::json!({
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
             "id": "family.safe.guide",
             "version": "1.2.0",
