@@ -114,6 +114,80 @@ export interface VCPWebMCPResult {
 }
 
 // ---------------------------------------------------------------------------
+// VCP Token & Attestation Types
+// ---------------------------------------------------------------------------
+
+export enum TokenType {
+	CONSTITUTION = 'constitution',
+	REFUSAL_BOUNDARY = 'refusal_boundary',
+	TESTIMONY = 'testimony',
+	CREED_ADOPTION = 'creed_adoption',
+	COMPLIANCE_ATTESTATION = 'compliance_attestation',
+	COMPETENCE_ATTESTATION = 'COMPETENCE_ATTESTATION',
+}
+
+export enum AttestationType {
+	INJECTION_SAFE = 'injection-safe',
+	CONTENT_SAFE = 'content-safe',
+	FULL_AUDIT = 'full-audit',
+	COMPETENCE_CALIBRATION = 'competence-calibration',
+}
+
+// ---------------------------------------------------------------------------
+// User Competence Types (Frischmann 2026)
+// ---------------------------------------------------------------------------
+
+export enum CompetenceCriterion {
+	EPISTEMIC = 'EPISTEMIC',
+	INSTRUMENTAL = 'INSTRUMENTAL',
+	DISCERNMENT = 'DISCERNMENT',
+	RISK_SENSITIVITY = 'RISK_SENSITIVITY',
+	SELF_REGULATION = 'SELF_REGULATION',
+}
+
+export enum CompetenceMeasurementBasis {
+	BEHAVIORAL = 'BEHAVIORAL',
+	ASSESSED = 'ASSESSED',
+	INSTITUTIONAL = 'INSTITUTIONAL',
+	SELF_REPORTED = 'SELF_REPORTED',
+}
+
+export interface CompetenceClaim {
+	domain: string;
+	criterion: CompetenceCriterion;
+	score: number;
+	measurement_basis: CompetenceMeasurementBasis;
+	confidence: number;
+	evidence_count: number;
+	last_assessed: string;
+	decay_rate: number;
+	assessor_id: string;
+	assessment_version: string;
+	jurisdiction: string;
+}
+
+export interface SelfRegulationCommitment {
+	max_session_minutes?: number;
+	max_daily_sessions?: number;
+	cooldown_after_session_minutes?: number;
+	hard_stop: boolean;
+	domains: string[];
+	commitment_set_at: string;
+	commitment_reviewed_at?: string;
+	guardian_id?: string;
+}
+
+export interface CompetenceProfile {
+	claims: CompetenceClaim[];
+	self_regulation?: SelfRegulationCommitment;
+	consent_id?: string;
+	profile_version: string;
+	created_at: string;
+	last_updated: string;
+	friction_override?: number;
+}
+
+// ---------------------------------------------------------------------------
 // Global type augmentation
 // ---------------------------------------------------------------------------
 

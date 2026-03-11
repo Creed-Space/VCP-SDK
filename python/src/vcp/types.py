@@ -2,6 +2,7 @@
 VCP Type Definitions
 """
 
+import math
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -69,6 +70,7 @@ class AttestationType(Enum):
     INJECTION_SAFE = "injection-safe"
     CONTENT_SAFE = "content-safe"
     FULL_AUDIT = "full-audit"
+    COMPETENCE_CALIBRATION = "competence-calibration"
 
 
 class TokenType(Enum):
@@ -79,6 +81,7 @@ class TokenType(Enum):
     TESTIMONY = "testimony"
     CREED_ADOPTION = "creed_adoption"
     COMPLIANCE_ATTESTATION = "compliance_attestation"
+    COMPETENCE_ATTESTATION = "COMPETENCE_ATTESTATION"
 
 
 class EnforcementMode(Enum):
@@ -137,6 +140,7 @@ class Scope:
     environments: list[str] = field(default_factory=list)
     audiences: list[str] = field(default_factory=list)
     regions: list[str] = field(default_factory=list)
+    competence_requirements: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -189,3 +193,108 @@ class Signature:
     signed_fields: list[str]
     threshold: int | None = None
     signers: list[dict[str, str]] | None = None
+
+
+# ---------------------------------------------------------------------------
+# User Competence Types (Frischmann 2026)
+# ---------------------------------------------------------------------------
+
+
+class CompetenceCriterion(str, Enum):
+    """Five minimum competence criteria for safe GenAI use (Frischmann 2026)."""
+
+    EPISTEMIC = "EPISTEMIC"
+    INSTRUMENTAL = "INSTRUMENTAL"
+    DISCERNMENT = "DISCERNMENT"
+    RISK_SENSITIVITY = "RISK_SENSITIVITY"
+    SELF_REGULATION = "SELF_REGULATION"
+
+
+class CompetenceMeasurementBasis(str, Enum):
+    """How competence was measured."""
+
+    BEHAVIORAL = "BEHAVIORAL"
+    ASSESSED = "ASSESSED"
+    INSTITUTIONAL = "INSTITUTIONAL"
+    SELF_REPORTED = "SELF_REPORTED"
+
+
+@dataclass
+class CompetenceClaim:
+    """Domain-specific competence attestation."""
+
+    domain: str
+    criterion: CompetenceCriterion
+    score: float  # 0.0 to 1.0
+    measurement_basis: CompetenceMeasurementBasis
+    confidence: float = 0.5  # 0.0 to 1.0
+    evidence_count: int = 0
+    last_assessed: str = ""  # ISO 8601
+    decay_rate: float = 0.003
+    assessor_id: str = "creed-space"
+    assessment_version: str = "1.0"
+    jurisdiction: str = "GLOBAL"  # ISO 3166-1 alpha-2 or "GLOBAL"
+
+
+@dataclass
+class SelfRegulationCommitment:
+    """User-defined engagement constraints."""
+
+    max_session_minutes: int | None = None
+    max_daily_sessions: int | None = None
+    cooldown_after_session_minutes: int | None = None
+    hard_stop: bool = False
+    domains: list[str] = field(default_factory=list)
+    commitment_set_at: str = ""  # ISO 8601
+    commitment_reviewed_at: str | None = None
+    guardian_id: str | None = None
+
+
+@dataclass
+class CompetenceProfile:
+    """Aggregate competence profile with claims and self-regulation."""
+
+    claims: list[CompetenceClaim] = field(default_factory=list)
+    self_regulation: SelfRegulationCommitment | None = None
+    consent_id: str | None = None
+    profile_version: str = "1.0"
+    created_at: str = ""  # ISO 8601
+    last_updated: str = ""  # ISO 8601
+    friction_override: int | None = None  # 0-4
+
+    def score_for(self, criterion: CompetenceCriterion, domain: str = "general") -> float | None:
+        """Get score for a specific criterion in a domain, with fallback to general."""
+        for claim in self.claims:
+            if claim.criterion == criterion and claim.domain == domain:
+                return claim.score
+        if domain != "general":
+            for claim in self.claims:
+                if claim.criterion == criterion and claim.domain == "general":
+                    return claim.score
+        return None
+
+    def meets_requirements(self, requirements: dict[str, float]) -> bool:
+        """Check if profile meets minimum competence requirements."""
+        for criterion_name, threshold in requirements.items():
+            try:
+                criterion = CompetenceCriterion(criterion_name)
+            except ValueError:
+                return False
+            score = self.score_for(criterion)
+            if score is None or score < threshold:
+                return False
+        return True
+
+
+def apply_decay(
+    score: float,
+    days_elapsed: float,
+    decay_rate: float = 0.003,
+    evidence_count: int = 0,
+) -> float:
+    """Apply time-based decay to a competence score, decaying toward 0.5."""
+    if days_elapsed <= 0:
+        return score
+    dampening = 1 / (1 + math.log(1 + evidence_count))
+    effective_rate = decay_rate * dampening
+    return 0.5 + (score - 0.5) * math.exp(-effective_rate * days_elapsed)

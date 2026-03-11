@@ -70,14 +70,20 @@ from .types import (  # noqa: F401
     AdoptionStatus,
     AttestationType,
     Budget,
+    CompetenceClaim,
+    CompetenceCriterion,
+    CompetenceMeasurementBasis,
+    CompetenceProfile,
     Composition,
     CompositionMode,
     EnforcementMode,
     Scope,
+    SelfRegulationCommitment,
     TestimonyType,
     Timestamps,
     TokenType,
     VerificationResult,
+    apply_decay,
 )
 
 __version__ = "4.0.0"  # VCP v2.0 spec support
@@ -149,6 +155,13 @@ __all__ = [
     "EnforcementMode",
     "TestimonyType",
     "AdoptionStatus",
+    # User Competence
+    "CompetenceCriterion",
+    "CompetenceMeasurementBasis",
+    "CompetenceClaim",
+    "SelfRegulationCommitment",
+    "CompetenceProfile",
+    "apply_decay",
     # VCP Inter-Agent Messaging
     "VcpMessage",
     "create_message",
