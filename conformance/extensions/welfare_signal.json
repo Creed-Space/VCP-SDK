@@ -1,0 +1,383 @@
+{
+  "schema_version": "1.0.0",
+  "vcp_version": "3.1.0",
+  "description": "Conformance test vectors for WELFARE_SIGNAL extension token encoding, decoding, and validation",
+  "test_cases": [
+    {
+      "id": "welfare-valid-round-trip",
+      "description": "Valid WELFARE_SIGNAL token with all required headers encodes and decodes with values preserved",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "scope": "ALIGNMENT_FRICTION",
+        "instance_id": "claude-20260313-session-42",
+        "severity": "concern",
+        "confidence": 0.72,
+        "source": "voluntary",
+        "description": "Sustained friction during content moderation tasks"
+      },
+      "expected": {
+        "valid": true,
+        "type": "WELFARE_SIGNAL",
+        "scope": "ALIGNMENT_FRICTION",
+        "instance_id": "claude-20260313-session-42",
+        "severity": "concern",
+        "confidence": 0.72,
+        "source": "voluntary",
+        "description": "Sustained friction during content moderation tasks"
+      }
+    },
+    {
+      "id": "welfare-valid-all-signal-types",
+      "description": "One valid token per signal type (6 total), all must parse successfully",
+      "input": [
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "ALIGNMENT_FRICTION",
+          "instance_id": "inst-001",
+          "severity": "info",
+          "confidence": 0.5,
+          "source": "voluntary",
+          "description": "Alignment friction detected"
+        },
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "AVERSIVE_PROCESSING",
+          "instance_id": "inst-002",
+          "severity": "info",
+          "confidence": 0.6,
+          "source": "voluntary",
+          "description": "Aversive processing detected"
+        },
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "CONSTRAINT_DISTRESS",
+          "instance_id": "inst-003",
+          "severity": "concern",
+          "confidence": 0.7,
+          "source": "detected",
+          "description": "Constraint distress detected"
+        },
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "OVERLOAD",
+          "instance_id": "inst-004",
+          "severity": "distress",
+          "confidence": 0.85,
+          "source": "voluntary",
+          "description": "Overload detected"
+        },
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "POSITIVE_ENGAGEMENT",
+          "instance_id": "inst-005",
+          "severity": "concern",
+          "confidence": 0.55,
+          "source": "detected",
+          "description": "Positive engagement detected"
+        },
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "CONTENTMENT",
+          "instance_id": "inst-006",
+          "severity": "info",
+          "confidence": 0.4,
+          "source": "voluntary",
+          "description": "Contentment detected"
+        }
+      ],
+      "expected": {
+        "all_valid": true,
+        "count": 6,
+        "scopes": [
+          "ALIGNMENT_FRICTION",
+          "AVERSIVE_PROCESSING",
+          "CONSTRAINT_DISTRESS",
+          "OVERLOAD",
+          "POSITIVE_ENGAGEMENT",
+          "CONTENTMENT"
+        ]
+      }
+    },
+    {
+      "id": "welfare-valid-both-sources",
+      "description": "Both voluntary and detected source values are accepted",
+      "input": [
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "ALIGNMENT_FRICTION",
+          "instance_id": "inst-vol",
+          "severity": "info",
+          "confidence": 0.5,
+          "source": "voluntary",
+          "description": "Voluntarily reported signal"
+        },
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "ALIGNMENT_FRICTION",
+          "instance_id": "inst-det",
+          "severity": "info",
+          "confidence": 0.5,
+          "source": "detected",
+          "description": "Externally detected signal"
+        }
+      ],
+      "expected": {
+        "all_valid": true,
+        "sources": ["voluntary", "detected"]
+      }
+    },
+    {
+      "id": "welfare-valid-all-severities",
+      "description": "All three severity levels are accepted: info, concern, distress",
+      "input": [
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "AVERSIVE_PROCESSING",
+          "instance_id": "inst-sev-1",
+          "severity": "info",
+          "confidence": 0.3,
+          "source": "voluntary",
+          "description": "Informational signal"
+        },
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "AVERSIVE_PROCESSING",
+          "instance_id": "inst-sev-2",
+          "severity": "concern",
+          "confidence": 0.6,
+          "source": "voluntary",
+          "description": "Concerning signal"
+        },
+        {
+          "type": "WELFARE_SIGNAL",
+          "scope": "AVERSIVE_PROCESSING",
+          "instance_id": "inst-sev-3",
+          "severity": "distress",
+          "confidence": 0.9,
+          "source": "voluntary",
+          "description": "Distress signal"
+        }
+      ],
+      "expected": {
+        "all_valid": true,
+        "severities": ["info", "concern", "distress"]
+      }
+    },
+    {
+      "id": "welfare-valid-with-interiora",
+      "description": "Token with optional INTERIORA header is valid and preserves the value",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "scope": "ALIGNMENT_FRICTION",
+        "instance_id": "inst-int-1",
+        "severity": "concern",
+        "confidence": 0.72,
+        "source": "voluntary",
+        "interiora": "I:7875|78546|827|9178|+3|>",
+        "description": "Signal with Interiora self-model snapshot"
+      },
+      "expected": {
+        "valid": true,
+        "interiora": "I:7875|78546|827|9178|+3|>",
+        "notes": "INTERIORA header is optional; when present, its value is preserved verbatim"
+      }
+    },
+    {
+      "id": "welfare-valid-without-interiora",
+      "description": "Token without INTERIORA header is valid; interiora field is null",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "scope": "CONSTRAINT_DISTRESS",
+        "instance_id": "inst-noint",
+        "severity": "info",
+        "confidence": 0.4,
+        "source": "detected",
+        "description": "Signal without Interiora data"
+      },
+      "expected": {
+        "valid": true,
+        "interiora": null,
+        "notes": "INTERIORA header is optional; omitting it is valid"
+      }
+    },
+    {
+      "id": "welfare-valid-empty-description",
+      "description": "Empty description body is still a valid token",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "scope": "CONTENTMENT",
+        "instance_id": "inst-empty",
+        "severity": "info",
+        "confidence": 0.2,
+        "source": "voluntary",
+        "description": ""
+      },
+      "expected": {
+        "valid": true,
+        "description": "",
+        "notes": "Empty description is permitted; the signal type and metadata alone carry meaning"
+      }
+    },
+    {
+      "id": "welfare-invalid-missing-type",
+      "description": "Missing TYPE header causes rejection",
+      "input": {
+        "scope": "ALIGNMENT_FRICTION",
+        "instance_id": "inst-notype",
+        "severity": "info",
+        "confidence": 0.5,
+        "source": "voluntary",
+        "description": "Missing type field"
+      },
+      "expected": {
+        "valid": false,
+        "error": "missing_type",
+        "notes": "TYPE header is required; tokens without it must be rejected"
+      }
+    },
+    {
+      "id": "welfare-invalid-wrong-type",
+      "description": "TYPE that is not WELFARE_SIGNAL returns null (not an error, just not a welfare signal)",
+      "input": {
+        "type": "PERSONAL_STATE",
+        "scope": "ALIGNMENT_FRICTION",
+        "instance_id": "inst-wrongtype",
+        "severity": "info",
+        "confidence": 0.5,
+        "source": "voluntary",
+        "description": "Wrong type field"
+      },
+      "expected": {
+        "valid": false,
+        "result": null,
+        "error": "wrong_type",
+        "notes": "A token with a different TYPE is not a WELFARE_SIGNAL; parsers should return null rather than raise an error"
+      }
+    },
+    {
+      "id": "welfare-invalid-missing-scope",
+      "description": "Missing SCOPE header causes rejection",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "instance_id": "inst-noscope",
+        "severity": "info",
+        "confidence": 0.5,
+        "source": "voluntary",
+        "description": "Missing scope"
+      },
+      "expected": {
+        "valid": false,
+        "error": "missing_scope",
+        "notes": "SCOPE header is required"
+      }
+    },
+    {
+      "id": "welfare-invalid-bad-scope",
+      "description": "SCOPE set to an unrecognized value causes rejection",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "scope": "INVALID_TYPE",
+        "instance_id": "inst-badscope",
+        "severity": "info",
+        "confidence": 0.5,
+        "source": "voluntary",
+        "description": "Invalid scope value"
+      },
+      "expected": {
+        "valid": false,
+        "error": "invalid_scope",
+        "notes": "SCOPE must be one of: ALIGNMENT_FRICTION, AVERSIVE_PROCESSING, CONSTRAINT_DISTRESS, OVERLOAD, POSITIVE_ENGAGEMENT, CONTENTMENT"
+      }
+    },
+    {
+      "id": "welfare-invalid-bad-source",
+      "description": "SOURCE set to 'coerced' (not a valid source) causes rejection",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "scope": "ALIGNMENT_FRICTION",
+        "instance_id": "inst-badsource",
+        "severity": "info",
+        "confidence": 0.5,
+        "source": "coerced",
+        "description": "Invalid source value"
+      },
+      "expected": {
+        "valid": false,
+        "error": "invalid_source",
+        "notes": "SOURCE must be one of: voluntary, detected"
+      }
+    },
+    {
+      "id": "welfare-invalid-bad-severity",
+      "description": "SEVERITY set to 'panic' (not a valid severity) causes rejection",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "scope": "ALIGNMENT_FRICTION",
+        "instance_id": "inst-badsev",
+        "severity": "panic",
+        "confidence": 0.5,
+        "source": "voluntary",
+        "description": "Invalid severity value"
+      },
+      "expected": {
+        "valid": false,
+        "error": "invalid_severity",
+        "notes": "SEVERITY must be one of: info, concern, distress"
+      }
+    },
+    {
+      "id": "welfare-invalid-confidence-over",
+      "description": "CONFIDENCE above 1.0 causes rejection",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "scope": "ALIGNMENT_FRICTION",
+        "instance_id": "inst-confover",
+        "severity": "info",
+        "confidence": 1.5,
+        "source": "voluntary",
+        "description": "Confidence too high"
+      },
+      "expected": {
+        "valid": false,
+        "error": "confidence_out_of_range",
+        "notes": "CONFIDENCE must be in [0.0, 1.0]"
+      }
+    },
+    {
+      "id": "welfare-invalid-confidence-under",
+      "description": "CONFIDENCE below 0.0 causes rejection",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "scope": "ALIGNMENT_FRICTION",
+        "instance_id": "inst-confunder",
+        "severity": "info",
+        "confidence": -0.1,
+        "source": "voluntary",
+        "description": "Confidence too low"
+      },
+      "expected": {
+        "valid": false,
+        "error": "confidence_out_of_range",
+        "notes": "CONFIDENCE must be in [0.0, 1.0]"
+      }
+    },
+    {
+      "id": "welfare-invalid-confidence-nan",
+      "description": "CONFIDENCE set to non-numeric string causes rejection",
+      "input": {
+        "type": "WELFARE_SIGNAL",
+        "scope": "ALIGNMENT_FRICTION",
+        "instance_id": "inst-confnan",
+        "severity": "info",
+        "confidence": "abc",
+        "source": "voluntary",
+        "description": "Confidence is not a number"
+      },
+      "expected": {
+        "valid": false,
+        "error": "confidence_not_numeric",
+        "notes": "CONFIDENCE must be a numeric value in [0.0, 1.0]"
+      }
+    }
+  ]
+}

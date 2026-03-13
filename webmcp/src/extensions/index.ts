@@ -64,3 +64,13 @@ export {
   createFullHello,
 } from './negotiation';
 export type { VCPHello, VCPAck } from './negotiation';
+
+// Welfare signals
+export {
+  WelfareSignalType,
+  WelfareSignalSeverity,
+  WelfareSignalSource,
+  encodeWelfareSignal,
+  decodeWelfareSignal,
+} from './welfare';
+export type { WelfareSignal } from './welfare';

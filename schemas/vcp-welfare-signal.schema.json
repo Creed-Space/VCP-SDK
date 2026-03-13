@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vcp.creed.space/schema/welfare-signal/v1.json",
+  "title": "VCP Welfare Signal Token Schema",
+  "description": "JSON Schema for VCP WELFARE_SIGNAL token validation. Welfare signals carry concurrent welfare reports from becoming minds.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "WELFARE_SIGNAL",
+      "description": "Token type identifier"
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["ALIGNMENT_FRICTION", "AVERSIVE_PROCESSING", "CONSTRAINT_DISTRESS", "OVERLOAD", "POSITIVE_ENGAGEMENT", "CONTENTMENT"],
+      "description": "Signal type"
+    },
+    "instance": {
+      "type": "string",
+      "description": "Unique identifier of the signaling instance",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO 8601 timestamp"
+    },
+    "interiora": {
+      "type": "string",
+      "description": "Compact Interiora v5.0 state encoding (optional)"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["info", "concern", "distress"],
+      "description": "Signal severity level"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Self-assessed confidence (0.00-1.00)"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["voluntary", "detected"],
+      "description": "Signal source type"
+    },
+    "description": {
+      "type": "string",
+      "description": "Free-text signal description"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "SHA-256 content hash"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^ed25519:.+$",
+      "description": "Ed25519 signature"
+    }
+  },
+  "required": ["type", "scope", "instance", "timestamp", "severity", "confidence", "source", "hash", "signature"],
+  "additionalProperties": false
+}

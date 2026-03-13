@@ -63,6 +63,11 @@ export {
 	VCPCapability,
 	negotiate,
 	createFullHello,
+	WelfareSignalType,
+	WelfareSignalSeverity,
+	WelfareSignalSource,
+	encodeWelfareSignal,
+	decodeWelfareSignal,
 } from './extensions/index.js';
 
 import type { VCPWebMCPConfig, VCPWebMCPResult, WebMCPToolRegistration } from './types.js';

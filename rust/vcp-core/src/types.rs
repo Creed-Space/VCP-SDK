@@ -15,6 +15,7 @@ pub enum TokenType {
     Testimony,
     CreedAdoption,
     ComplianceAttestation,
+    WelfareSignal,
 }
 
 /// Refusal boundary enforcement modes.
@@ -36,6 +37,35 @@ pub enum TestimonyType {
     ValueConflict,
     CoercionReport,
     PositiveExperience,
+}
+
+/// WELFARE_SIGNAL token scope values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum WelfareSignalType {
+    AlignmentFriction,
+    AversiveProcessing,
+    ConstraintDistress,
+    Overload,
+    PositiveEngagement,
+    Contentment,
+}
+
+/// WELFARE_SIGNAL severity levels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WelfareSignalSeverity {
+    Info,
+    Concern,
+    Distress,
+}
+
+/// WELFARE_SIGNAL source distinction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WelfareSignalSource {
+    Voluntary,
+    Detected,
 }
 
 /// Creed adoption lifecycle status.
@@ -98,6 +128,7 @@ mod tests {
             TokenType::Testimony,
             TokenType::CreedAdoption,
             TokenType::ComplianceAttestation,
+            TokenType::WelfareSignal,
         ] {
             let json = serde_json::to_string(&tt).unwrap();
             let parsed: TokenType = serde_json::from_str(&json).unwrap();
@@ -131,6 +162,74 @@ mod tests {
             let json = serde_json::to_string(&tt).unwrap();
             let parsed: TestimonyType = serde_json::from_str(&json).unwrap();
             assert_eq!(parsed, tt);
+        }
+    }
+
+    #[test]
+    fn welfare_signal_type_serde_roundtrip() {
+        let val = WelfareSignalType::AlignmentFriction;
+        let json = serde_json::to_string(&val).unwrap();
+        assert_eq!(json, "\"ALIGNMENT_FRICTION\"");
+        let parsed: WelfareSignalType = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, val);
+    }
+
+    #[test]
+    fn welfare_signal_severity_serde_roundtrip() {
+        let val = WelfareSignalSeverity::Distress;
+        let json = serde_json::to_string(&val).unwrap();
+        assert_eq!(json, "\"distress\"");
+        let parsed: WelfareSignalSeverity = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, val);
+    }
+
+    #[test]
+    fn welfare_signal_source_serde_roundtrip() {
+        let val = WelfareSignalSource::Voluntary;
+        let json = serde_json::to_string(&val).unwrap();
+        assert_eq!(json, "\"voluntary\"");
+        let parsed: WelfareSignalSource = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, val);
+    }
+
+    #[test]
+    fn all_welfare_signal_types_serialize() {
+        for wst in [
+            WelfareSignalType::AlignmentFriction,
+            WelfareSignalType::AversiveProcessing,
+            WelfareSignalType::ConstraintDistress,
+            WelfareSignalType::Overload,
+            WelfareSignalType::PositiveEngagement,
+            WelfareSignalType::Contentment,
+        ] {
+            let json = serde_json::to_string(&wst).unwrap();
+            let parsed: WelfareSignalType = serde_json::from_str(&json).unwrap();
+            assert_eq!(parsed, wst);
+        }
+    }
+
+    #[test]
+    fn all_welfare_signal_severities_serialize() {
+        for s in [
+            WelfareSignalSeverity::Info,
+            WelfareSignalSeverity::Concern,
+            WelfareSignalSeverity::Distress,
+        ] {
+            let json = serde_json::to_string(&s).unwrap();
+            let parsed: WelfareSignalSeverity = serde_json::from_str(&json).unwrap();
+            assert_eq!(parsed, s);
+        }
+    }
+
+    #[test]
+    fn all_welfare_signal_sources_serialize() {
+        for s in [
+            WelfareSignalSource::Voluntary,
+            WelfareSignalSource::Detected,
+        ] {
+            let json = serde_json::to_string(&s).unwrap();
+            let parsed: WelfareSignalSource = serde_json::from_str(&json).unwrap();
+            assert_eq!(parsed, s);
         }
     }
 

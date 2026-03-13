@@ -87,4 +87,7 @@ pub use composer::{Composer, CompositionMode, CompositionResult, Conflict, Const
 pub use orchestrator::{Orchestrator, ReplayCache, VerificationContext};
 
 // VCP v2.0 type definitions.
-pub use types::{AdoptionStatus, EnforcementMode, TestimonyType, TokenType};
+pub use types::{
+    AdoptionStatus, EnforcementMode, TestimonyType, TokenType, WelfareSignalSeverity,
+    WelfareSignalSource, WelfareSignalType,
+};

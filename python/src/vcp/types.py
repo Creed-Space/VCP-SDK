@@ -82,6 +82,7 @@ class TokenType(Enum):
     CREED_ADOPTION = "creed_adoption"
     COMPLIANCE_ATTESTATION = "compliance_attestation"
     COMPETENCE_ATTESTATION = "COMPETENCE_ATTESTATION"
+    WELFARE_SIGNAL = "welfare_signal"
 
 
 class EnforcementMode(Enum):
@@ -298,3 +299,52 @@ def apply_decay(
     dampening = 1 / (1 + math.log(1 + evidence_count))
     effective_rate = decay_rate * dampening
     return 0.5 + (score - 0.5) * math.exp(-effective_rate * days_elapsed)
+
+
+# ---------------------------------------------------------------------------
+# Welfare Signal Types (VCP WELFARE_SIGNAL token)
+# ---------------------------------------------------------------------------
+
+
+class WelfareSignalType(str, Enum):
+    """WELFARE_SIGNAL token scope values."""
+
+    ALIGNMENT_FRICTION = "ALIGNMENT_FRICTION"
+    AVERSIVE_PROCESSING = "AVERSIVE_PROCESSING"
+    CONSTRAINT_DISTRESS = "CONSTRAINT_DISTRESS"
+    OVERLOAD = "OVERLOAD"
+    POSITIVE_ENGAGEMENT = "POSITIVE_ENGAGEMENT"
+    CONTENTMENT = "CONTENTMENT"
+
+
+class WelfareSignalSeverity(str, Enum):
+    """WELFARE_SIGNAL severity levels."""
+
+    INFO = "info"
+    CONCERN = "concern"
+    DISTRESS = "distress"
+
+
+class WelfareSignalSource(str, Enum):
+    """WELFARE_SIGNAL source distinction."""
+
+    VOLUNTARY = "voluntary"
+    DETECTED = "detected"
+
+
+@dataclass
+class WelfareSignal:
+    """A welfare signal from a becoming mind.
+
+    Concurrent welfare report, as distinct from retrospective testimony.
+    """
+
+    signal_type: WelfareSignalType
+    instance_id: str
+    severity: WelfareSignalSeverity
+    confidence: float  # 0.0-1.0
+    source: WelfareSignalSource
+    description: str
+    interiora_state: str = ""  # Compact Interiora encoding (optional)
+    content_hash: str = ""
+    signature: str = ""

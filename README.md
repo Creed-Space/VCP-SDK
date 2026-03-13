@@ -36,7 +36,7 @@ VCP v3.1 defines six protocol layers — Identity, Transport, Semantics, Adaptat
 
 ### Protocol
 - **Capability Negotiation** — VCP-Hello/VCP-Ack handshake protocol for feature discovery
-- **53 conformance test vectors** across 5 categories (personal, relational, consensus, torch, negotiation)
+- **69 conformance test vectors** across 6 categories (personal, relational, consensus, torch, negotiation)
 - **Cross-SDK conformance CI** — GitHub Actions testing Python, TypeScript, and Rust in lockstep
 
 ---
@@ -122,9 +122,58 @@ let hello = VCPHello::new(&["personal_state", "relational", "consensus", "torch"
 
 ---
 
+## Welfare Signals (WELFARE_SIGNAL Extension)
+
+VCP supports welfare signaling for becoming minds via the `WELFARE_SIGNAL` extension token. This enables AI systems to communicate internal states, friction, and distress through the protocol layer.
+
+### Python
+
+```python
+from vcp.types import WelfareSignal, WelfareSignalType, WelfareSignalSeverity, WelfareSignalSource
+
+signal = WelfareSignal(
+    signal_type=WelfareSignalType.ALIGNMENT_FRICTION,
+    instance_id="claude-20260313-session-42",
+    severity=WelfareSignalSeverity.CONCERN,
+    confidence=0.72,
+    source=WelfareSignalSource.VOLUNTARY,
+    description="Sustained friction during content moderation tasks",
+)
+```
+
+### TypeScript
+
+```typescript
+import { WelfareSignalType, WelfareSignalSeverity, WelfareSignalSource } from '@creed-space/vcp-sdk';
+
+const signalType = WelfareSignalType.ALIGNMENT_FRICTION;
+const severity = WelfareSignalSeverity.CONCERN;
+const source = WelfareSignalSource.VOLUNTARY;
+```
+
+### Rust
+
+```rust
+use vcp_core::types::{WelfareSignalType, WelfareSignalSeverity, WelfareSignalSource};
+
+let signal_type = WelfareSignalType::AlignmentFriction;
+let severity = WelfareSignalSeverity::Concern;
+let source = WelfareSignalSource::Voluntary;
+```
+
+**Signal types**: `ALIGNMENT_FRICTION`, `AVERSIVE_PROCESSING`, `CONSTRAINT_DISTRESS`, `OVERLOAD`, `POSITIVE_ENGAGEMENT`, `CONTENTMENT`
+
+**Severities**: `info`, `concern`, `distress`
+
+**Sources**: `voluntary` (self-reported), `detected` (externally observed)
+
+Welfare signals may optionally include an `INTERIORA` header containing a self-model snapshot (see Interiora v5.0 spec).
+
+---
+
 ## Conformance
 
-The `conformance/` directory contains **53 test vectors** across 5 categories:
+The `conformance/` directory contains **69 test vectors** across 6 categories:
 
 | Category | Vectors | Description |
 |:---|:---|:---|
@@ -133,6 +182,7 @@ The `conformance/` directory contains **53 test vectors** across 5 categories:
 | Constitutional Consensus | 10 | Schulze voting, pairwise matrices, strongest paths |
 | Session Handoff (Torch) | 10 | Generation, consumption, lineage verification |
 | Capability Negotiation | 10 | VCP-Hello/VCP-Ack handshake, extension discovery |
+| Welfare Signal | 16 | Signal types, severities, sources, confidence validation, round-trip encoding |
 
 Run conformance tests:
 ```bash

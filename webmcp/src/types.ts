@@ -124,6 +124,7 @@ export enum TokenType {
 	CREED_ADOPTION = 'creed_adoption',
 	COMPLIANCE_ATTESTATION = 'compliance_attestation',
 	COMPETENCE_ATTESTATION = 'COMPETENCE_ATTESTATION',
+	WELFARE_SIGNAL = 'welfare_signal',
 }
 
 export enum AttestationType {

@@ -28,6 +28,13 @@ conformance/
     context_encoding.json
     state_machine.json
     messaging.json
+  extensions/         VCP Extensions
+    capability_negotiation.json
+    consensus_voting.json
+    personal_state.json
+    relational_context.json
+    torch_handoff.json
+    welfare_signal.json
   interop/            Cross-implementation
     cross_impl_roundtrip.json
     complete_bundle.json
