@@ -34,6 +34,7 @@ from vcp.extensions.personal import (
 from vcp.extensions.relational import (
     AISelfModel,
     DimensionReport,
+    PreferenceModelMeta,
     RelationalContext,
     RelationalNorm,
     StandingLevel,
@@ -67,6 +68,7 @@ __all__ = [
     "StandingLevel",
     "DimensionReport",
     "AISelfModel",
+    "PreferenceModelMeta",
     "RelationalContext",
     "RelationalNorm",
     # Consensus
