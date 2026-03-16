@@ -70,6 +70,7 @@ export const SignalSource = {
   DECLARED: 'declared',
   INFERRED: 'inferred',
   INFERRED_LOCAL: 'inferred_local',
+  ELICITATION: 'elicitation',
   PRESET: 'preset',
   DECAYED: 'decayed',
 } as const;

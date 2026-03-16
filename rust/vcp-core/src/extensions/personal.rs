@@ -37,6 +37,8 @@ pub enum SignalSource {
     Declared,
     Inferred,
     InferredLocal,
+    /// User self-reported via MCP elicitation dialog.
+    Elicitation,
     Preset,
     Decayed,
 }

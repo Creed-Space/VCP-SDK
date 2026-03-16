@@ -64,7 +64,7 @@ class PersonalSignal:
     Args:
         category: Categorical value (e.g., 'focused', 'calm', 'rested').
         intensity: Signal intensity 1-5 (1=minimal, 5=strong). Defaults to 3.
-        source: How this signal was obtained ('declared', 'inferred', 'preset').
+        source: How this signal was obtained ('declared', 'inferred', 'elicitation', 'preset').
         confidence: Confidence in this signal (0.0-1.0). Defaults to 1.0.
         declared_at: When signal was declared (ISO 8601 string or datetime).
     """
