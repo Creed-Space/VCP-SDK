@@ -6,20 +6,17 @@ from __future__ import annotations
 
 import textwrap
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
 from vcp.hooks.config import (
     DeploymentConfig,
     HookConfigError,
-    HookEntryConfig,
     build_registry,
     load_from_dict,
 )
 from vcp.hooks.registry import HookRegistry
-from vcp.hooks.types import HookType, ResultStatus
-
+from vcp.hooks.types import HookType
 
 # ---------------------------------------------------------------------------
 # Fixtures

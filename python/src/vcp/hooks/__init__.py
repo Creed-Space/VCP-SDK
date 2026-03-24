@@ -27,6 +27,12 @@ Exceptions:
     HookError, HookValidationError, DuplicateHookError
 """
 
+from .builtin import (
+    adherence_escalate_hook,
+    audit_hook,
+    persona_select_hook,
+    scope_filter_hook,
+)
 from .config import (
     DeploymentConfig,
     HookConfigError,
@@ -34,12 +40,6 @@ from .config import (
     build_registry,
     load_from_dict,
     load_from_yaml,
-)
-from .builtin import (
-    adherence_escalate_hook,
-    audit_hook,
-    persona_select_hook,
-    scope_filter_hook,
 )
 from .executor import HookExecutor
 from .registry import HookRegistry

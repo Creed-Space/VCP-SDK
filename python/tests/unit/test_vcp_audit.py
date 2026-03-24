@@ -13,7 +13,6 @@ from datetime import datetime
 
 from vcp.audit import AuditEntry, AuditLevel, AuditLogger, _hash_for_privacy
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

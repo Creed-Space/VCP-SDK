@@ -16,7 +16,11 @@ from typing import TYPE_CHECKING, Any
 
 from .bundle import Bundle
 from .canonicalize import canonicalize_manifest, verify_content_hash
-from .metrics import track_duration, vcp_bundle_verifications_total, vcp_bundle_verify_duration_seconds
+from .metrics import (
+    track_duration,
+    vcp_bundle_verifications_total,
+    vcp_bundle_verify_duration_seconds,
+)
 from .revocation import RevocationChecker
 from .trust import TrustConfig
 from .types import VerificationResult

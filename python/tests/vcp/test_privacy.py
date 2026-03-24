@@ -16,8 +16,8 @@ from vcp.privacy import (
     CONSENT_REQUIRED_FIELDS,
     PRIVATE_FIELDS,
     PUBLIC_FIELDS,
-    ConstraintFlags,
     ConsentRecord,
+    ConstraintFlags,
     FilteredContext,
     PlatformManifest,
     PrivacyTier,
@@ -32,7 +32,6 @@ from vcp.privacy import (
     get_stakeholder_visible_fields,
     is_private_field,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -504,7 +503,7 @@ class TestStakeholderFiltering:
             assert cf in hidden
 
     def test_hidden_does_not_contain_public_fields(self) -> None:
-        hidden = get_stakeholder_hidden_fields({}, "manager")
+        get_stakeholder_hidden_fields({}, "manager")
         visible = get_stakeholder_visible_fields({}, "manager")
         # Public fields should be visible, not in hidden
         for pf in PUBLIC_FIELDS:

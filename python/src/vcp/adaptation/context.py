@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from ..metrics import track_duration, vcp_context_encode_duration_seconds, vcp_context_encodes_total
+from ..metrics import vcp_context_encodes_total
 
 
 class Dimension(Enum):

@@ -15,7 +15,6 @@ import pytest
 
 import vcp.metrics as m
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -191,9 +190,7 @@ def test_importable_from_vcp_package() -> None:
         get_metrics_summary,
         is_prometheus_available,
         track_duration,
-        vcp_bundle_verifications_total,
         vcp_context_encodes_total,
-        vcp_transitions_total,
     )
 
     assert callable(is_prometheus_available)
