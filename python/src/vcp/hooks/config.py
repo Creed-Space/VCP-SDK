@@ -124,7 +124,7 @@ def load_from_yaml(path: str | Path) -> DeploymentConfig:
         HookConfigError: If the YAML structure is invalid.
     """
     try:
-        import yaml  # type: ignore[import-untyped]
+        import yaml
     except ImportError:
         raise ImportError(
             "PyYAML is required to load hook configs from YAML. "

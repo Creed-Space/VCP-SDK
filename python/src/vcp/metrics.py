@@ -28,11 +28,11 @@ from typing import Any
 # ---------------------------------------------------------------------------
 
 try:
-    import prometheus_client as _prom  # type: ignore[import-untyped]
+    import prometheus_client as _prom
 
     _PROMETHEUS_AVAILABLE: bool = True
 except ImportError:
-    _prom = None  # type: ignore[assignment,import-untyped]
+    _prom = None  # type: ignore[assignment]
     _PROMETHEUS_AVAILABLE = False
 
 
