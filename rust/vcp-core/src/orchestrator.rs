@@ -618,7 +618,7 @@ mod tests {
         let iat = now.to_rfc3339();
 
         serde_json::json!({
-            "vcp_version": "1.0",
+            "vcp_version": "2.0",
             "bundle": {
                 "id": "test-bundle",
                 "version": "1.0.0",

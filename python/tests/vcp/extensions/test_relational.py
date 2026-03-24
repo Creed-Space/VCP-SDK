@@ -7,6 +7,7 @@ import pytest
 from vcp.extensions.relational import (
     AISelfModel,
     DimensionReport,
+    PreferenceModelMeta,
     RelationalContext,
     RelationalNorm,
     StandingLevel,
@@ -74,10 +75,27 @@ class TestDimensionReport:
         with pytest.raises(AttributeError):
             report.value = 6.0  # type: ignore[misc]
 
+    def test_with_confidence(self) -> None:
+        report = DimensionReport(value=7.0, uncertain=True, confidence=0.85)
+        assert report.confidence == 0.85
+
+    def test_confidence_too_low(self) -> None:
+        with pytest.raises(ValueError):
+            DimensionReport(value=5.0, uncertain=True, confidence=-0.1)
+
+    def test_confidence_too_high(self) -> None:
+        with pytest.raises(ValueError):
+            DimensionReport(value=5.0, uncertain=True, confidence=1.5)
+
     def test_to_dict(self) -> None:
         report = DimensionReport(value=7.0, uncertain=True, label="test", trend="stable")
         d = report.to_dict()
         assert d == {"value": 7.0, "uncertain": True, "label": "test", "trend": "stable"}
+
+    def test_to_dict_with_confidence(self) -> None:
+        report = DimensionReport(value=7.0, uncertain=True, confidence=0.9)
+        d = report.to_dict()
+        assert d["confidence"] == 0.9
 
     def test_to_dict_minimal(self) -> None:
         report = DimensionReport(value=5.0, uncertain=False)
@@ -90,6 +108,11 @@ class TestDimensionReport:
         assert report.value == 3.0
         assert report.uncertain is True
         assert report.label == "low"
+
+    def test_from_dict_with_confidence(self) -> None:
+        data = {"value": 7.0, "uncertain": True, "confidence": 0.75}
+        report = DimensionReport.from_dict(data)
+        assert report.confidence == 0.75
 
 
 class TestAISelfModel:
@@ -203,6 +226,96 @@ class TestRelationalNorm:
         assert restored.weight == 0.8
 
 
+class TestPreferenceModelMeta:
+    """Tests for PreferenceModelMeta dataclass."""
+
+    def test_valid_meta(self) -> None:
+        meta = PreferenceModelMeta(
+            overall_confidence=0.8,
+            preference_source="explicit",
+        )
+        assert meta.overall_confidence == 0.8
+        assert meta.preference_source == "explicit"
+
+    def test_full_meta(self) -> None:
+        meta = PreferenceModelMeta(
+            overall_confidence=0.9,
+            preference_source="inferred",
+            last_confirmed="2026-03-14T12:00:00Z",
+            exploratory_appetite=0.6,
+            domain_specificity="coding",
+        )
+        assert meta.last_confirmed == "2026-03-14T12:00:00Z"
+        assert meta.exploratory_appetite == 0.6
+        assert meta.domain_specificity == "coding"
+
+    def test_confidence_too_low(self) -> None:
+        with pytest.raises(ValueError):
+            PreferenceModelMeta(overall_confidence=-0.1, preference_source="explicit")
+
+    def test_confidence_too_high(self) -> None:
+        with pytest.raises(ValueError):
+            PreferenceModelMeta(overall_confidence=1.5, preference_source="explicit")
+
+    def test_appetite_too_high(self) -> None:
+        with pytest.raises(ValueError):
+            PreferenceModelMeta(
+                overall_confidence=0.5,
+                preference_source="explicit",
+                exploratory_appetite=2.0,
+            )
+
+    def test_to_dict_minimal(self) -> None:
+        meta = PreferenceModelMeta(overall_confidence=0.7, preference_source="default")
+        d = meta.to_dict()
+        assert d == {"overall_confidence": 0.7, "preference_source": "default"}
+
+    def test_to_dict_full(self) -> None:
+        meta = PreferenceModelMeta(
+            overall_confidence=0.9,
+            preference_source="explicit",
+            last_confirmed="2026-03-14T12:00:00Z",
+            exploratory_appetite=0.4,
+            domain_specificity="writing",
+        )
+        d = meta.to_dict()
+        assert d["last_confirmed"] == "2026-03-14T12:00:00Z"
+        assert d["exploratory_appetite"] == 0.4
+        assert d["domain_specificity"] == "writing"
+
+    def test_from_dict(self) -> None:
+        data = {
+            "overall_confidence": 0.85,
+            "preference_source": "inferred",
+            "exploratory_appetite": 0.3,
+        }
+        meta = PreferenceModelMeta.from_dict(data)
+        assert meta.overall_confidence == 0.85
+        assert meta.preference_source == "inferred"
+        assert meta.exploratory_appetite == 0.3
+        assert meta.last_confirmed is None
+
+    def test_roundtrip(self) -> None:
+        original = PreferenceModelMeta(
+            overall_confidence=0.75,
+            preference_source="explicit",
+            last_confirmed="2026-01-01T00:00:00Z",
+            exploratory_appetite=0.5,
+            domain_specificity="general",
+        )
+        restored = PreferenceModelMeta.from_dict(original.to_dict())
+        assert restored.overall_confidence == original.overall_confidence
+        assert restored.preference_source == original.preference_source
+        assert restored.last_confirmed == original.last_confirmed
+        assert restored.exploratory_appetite == original.exploratory_appetite
+        assert restored.domain_specificity == original.domain_specificity
+
+    def test_frozen(self) -> None:
+        meta = PreferenceModelMeta(overall_confidence=0.5, preference_source="default")
+        with pytest.raises(AttributeError):
+            meta.overall_confidence = 0.9  # type: ignore[misc]
+
+
 class TestRelationalContext:
     """Tests for RelationalContext dataclass."""
 
@@ -213,6 +326,7 @@ class TestRelationalContext:
         assert ctx.self_model is None
         assert ctx.interaction_count == 0
         assert ctx.norms == []
+        assert ctx.preference_model is None
 
     def test_active_norms(self) -> None:
         ctx = RelationalContext(
@@ -251,6 +365,42 @@ class TestRelationalContext:
         assert ctx.standing_level == StandingLevel.BILATERAL
         assert len(ctx.norms) == 1
 
+    def test_with_preference_model(self) -> None:
+        ctx = RelationalContext(
+            preference_model=PreferenceModelMeta(
+                overall_confidence=0.8,
+                preference_source="explicit",
+            ),
+        )
+        assert ctx.preference_model is not None
+        assert ctx.preference_model.overall_confidence == 0.8
+
+    def test_to_dict_with_preference_model(self) -> None:
+        ctx = RelationalContext(
+            preference_model=PreferenceModelMeta(
+                overall_confidence=0.9,
+                preference_source="inferred",
+            ),
+        )
+        d = ctx.to_dict()
+        assert "preference_model" in d
+        assert d["preference_model"]["overall_confidence"] == 0.9
+
+    def test_from_dict_with_preference_model(self) -> None:
+        data = {
+            "trust_level": "established",
+            "standing_level": "collaborative",
+            "interaction_count": 100,
+            "norms": [],
+            "preference_model": {
+                "overall_confidence": 0.85,
+                "preference_source": "explicit",
+            },
+        }
+        ctx = RelationalContext.from_dict(data)
+        assert ctx.preference_model is not None
+        assert ctx.preference_model.overall_confidence == 0.85
+
     def test_roundtrip(self) -> None:
         original = RelationalContext(
             trust_level=TrustLevel.DEVELOPING,
@@ -262,6 +412,11 @@ class TestRelationalContext:
             norms=[
                 RelationalNorm(norm_id="n1", description="Be direct"),
             ],
+            preference_model=PreferenceModelMeta(
+                overall_confidence=0.75,
+                preference_source="explicit",
+                exploratory_appetite=0.4,
+            ),
         )
         restored = RelationalContext.from_dict(original.to_dict())
         assert restored.trust_level == TrustLevel.DEVELOPING
@@ -269,3 +424,6 @@ class TestRelationalContext:
         assert restored.self_model.valence is not None
         assert restored.self_model.valence.value == 7.0
         assert len(restored.norms) == 1
+        assert restored.preference_model is not None
+        assert restored.preference_model.overall_confidence == 0.75
+        assert restored.preference_model.exploratory_appetite == 0.4

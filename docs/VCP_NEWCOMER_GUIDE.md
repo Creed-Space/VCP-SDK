@@ -14,10 +14,18 @@ The **Value-Context Protocol (VCP)** is a unified protocol stack for expressing,
 
 ---
 
-## The Four Layers
+## The Six Layers
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
+│  Layer 6: VCP-ECONOMIC GOVERNANCE (VCP/E)                       │
+│  "Who Pays" - Fiduciary constraints, authorization gaps         │
+│  Handles: Transaction governance, capability/accountability     │
+├─────────────────────────────────────────────────────────────────┤
+│  Layer 5: VCP-MESSAGING (VCP/M)                                 │
+│  "Who Talks" - Inter-agent message exchange, escalation         │
+│  Handles: Context sharing, constitution announce, escalation    │
+├─────────────────────────────────────────────────────────────────┤
 │  Layer 4: VCP-ADAPTATION (VCP/A)                                │
 │  "When and How" - Context encoding, state tracking              │
 │  Maps to: VCL (Values Communication Layer)                      │
@@ -43,6 +51,8 @@ The **Value-Context Protocol (VCP)** is a unified protocol stack for expressing,
 | **UVC** (Universal Values Corpus) | Layer 1: Identity | Curated cross-cultural corpus of values, "What3Words for ethics" |
 | **CSM** (Constitutional Safety Minicode) | Layer 3: Semantics | Compact grammar for safety rules, adherence proofs |
 | **VCL** (Values Communication Layer) | Layer 4: Adaptation | Emoji-based symbolic encoding for context |
+| **VCP/M** (Messaging) | Layer 5: Messaging | Inter-agent message types, escalation, delivery semantics |
+| **VCP/E** (Economic Governance) | Layer 6: Economic | Fiduciary constraints, authorization, transaction governance |
 
 ---
 

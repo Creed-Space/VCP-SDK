@@ -76,7 +76,7 @@ def _make_valid_bundle(content: str = "Be helpful and harmless.") -> Bundle:
     content_hash = compute_content_hash(content)
 
     manifest = Manifest(
-        vcp_version="1.0",
+        vcp_version="2.0",
         bundle=BundleInfo(
             id="test-bundle",
             version="1.0.0",

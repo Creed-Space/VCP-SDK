@@ -54,10 +54,13 @@ class DimensionReport:
     uncertain: bool
     label: str | None = None
     trend: str | None = None
+    confidence: float | None = None
 
     def __post_init__(self) -> None:
         if not 1.0 <= self.value <= 9.0:
             raise ValueError(f"value must be 1.0-9.0, got {self.value}")
+        if self.confidence is not None and not 0.0 <= self.confidence <= 1.0:
+            raise ValueError(f"confidence must be 0.0-1.0, got {self.confidence}")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to plain dict."""
@@ -69,6 +72,8 @@ class DimensionReport:
             result["label"] = self.label
         if self.trend is not None:
             result["trend"] = self.trend
+        if self.confidence is not None:
+            result["confidence"] = self.confidence
         return result
 
     @classmethod
@@ -79,6 +84,7 @@ class DimensionReport:
             uncertain=data["uncertain"],
             label=data.get("label"),
             trend=data.get("trend"),
+            confidence=data.get("confidence"),
         )
 
 
@@ -204,6 +210,62 @@ class RelationalNorm:
         )
 
 
+@dataclass(frozen=True)
+class PreferenceModelMeta:
+    """Metadata about the confidence and provenance of the preference model.
+
+    Captures how well-known user preferences are, where they came from,
+    and the user's appetite for novelty versus routine.
+
+    Args:
+        overall_confidence: Confidence in the preference model (0.0-1.0).
+        preference_source: Origin of preference data -- "explicit", "inferred",
+            "default", or "stale".
+        last_confirmed: ISO8601 timestamp of last explicit confirmation.
+        exploratory_appetite: User's novelty vs routine appetite (0.0=routine, 1.0=novelty).
+        domain_specificity: Domain this preference model applies to.
+    """
+
+    overall_confidence: float
+    preference_source: str
+    last_confirmed: str | None = None
+    exploratory_appetite: float | None = None
+    domain_specificity: str | None = None
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.overall_confidence <= 1.0:
+            raise ValueError(f"overall_confidence must be 0.0-1.0, got {self.overall_confidence}")
+        if self.exploratory_appetite is not None and not 0.0 <= self.exploratory_appetite <= 1.0:
+            raise ValueError(
+                f"exploratory_appetite must be 0.0-1.0, got {self.exploratory_appetite}"
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to plain dict."""
+        result: dict[str, Any] = {
+            "overall_confidence": self.overall_confidence,
+            "preference_source": self.preference_source,
+        }
+        if self.last_confirmed is not None:
+            result["last_confirmed"] = self.last_confirmed
+        if self.exploratory_appetite is not None:
+            result["exploratory_appetite"] = self.exploratory_appetite
+        if self.domain_specificity is not None:
+            result["domain_specificity"] = self.domain_specificity
+        return result
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> PreferenceModelMeta:
+        """Deserialize from dict."""
+        return cls(
+            overall_confidence=float(data["overall_confidence"]),
+            preference_source=data["preference_source"],
+            last_confirmed=data.get("last_confirmed"),
+            exploratory_appetite=data.get("exploratory_appetite"),
+            domain_specificity=data.get("domain_specificity"),
+        )
+
+
 @dataclass
 class RelationalContext:
     """VCP relational context -- the state of the partnership itself.
@@ -217,6 +279,7 @@ class RelationalContext:
         self_model: AI's current self-model with uncertainty markers.
         interaction_count: Number of interactions in this partnership.
         norms: Co-authored norms established through practice.
+        preference_model: Metadata about confidence and provenance of user preferences.
     """
 
     trust_level: TrustLevel = TrustLevel.INITIAL
@@ -224,6 +287,7 @@ class RelationalContext:
     self_model: AISelfModel | None = None
     interaction_count: int = 0
     norms: list[RelationalNorm] = field(default_factory=list)
+    preference_model: PreferenceModelMeta | None = None
 
     def active_norms(self) -> list[RelationalNorm]:
         """Return only active norms."""
@@ -239,6 +303,8 @@ class RelationalContext:
         }
         if self.self_model is not None:
             result["self_model"] = self.self_model.to_dict()
+        if self.preference_model is not None:
+            result["preference_model"] = self.preference_model.to_dict()
         return result
 
     @classmethod
@@ -251,10 +317,14 @@ class RelationalContext:
         for n in data.get("norms", []):
             if isinstance(n, dict):
                 norms.append(RelationalNorm.from_dict(n))
+        preference_model = None
+        if data.get("preference_model") and isinstance(data["preference_model"], dict):
+            preference_model = PreferenceModelMeta.from_dict(data["preference_model"])
         return cls(
             trust_level=TrustLevel(data.get("trust_level", "initial")),
             standing_level=StandingLevel(data.get("standing_level", "none")),
             self_model=self_model,
             interaction_count=data.get("interaction_count", 0),
             norms=norms,
+            preference_model=preference_model,
         )

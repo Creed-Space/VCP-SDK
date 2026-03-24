@@ -68,7 +68,7 @@
       "id": "mc-005",
       "description": "Full manifest: signature excluded, keys sorted",
       "input": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {
           "id": "test-bundle",
           "content_hash": "sha256:abc123"
@@ -83,7 +83,7 @@
       },
       "expected": {
         "signature_excluded": true,
-        "canonical_json": "{\"bundle\":{\"content_hash\":\"sha256:abc123\",\"id\":\"test-bundle\"},\"issuer\":{\"id\":\"test.example\"},\"vcp_version\":\"1.0\"}"
+        "canonical_json": "{\"bundle\":{\"content_hash\":\"sha256:abc123\",\"id\":\"test-bundle\"},\"issuer\":{\"id\":\"test.example\"},\"vcp_version\":\"2.0\"}"
       }
     },
     {

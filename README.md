@@ -2,12 +2,12 @@
 
 # VCP SDK — Official SDK for the Value Context Protocol
 
-**Multi-language SDK for VCP v3.1 — parse tokens, encode context, negotiate capabilities, and implement all 4 extension modules.**
+**Multi-language SDK for VCP v3.1 — parse tokens, encode context, negotiate capabilities across all six protocol layers (I-T-S-A-M-E).**
 
 [![CI](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml)
-[![Python SDK](https://img.shields.io/badge/python-3.1.0-3776AB?style=flat-square&logo=python&logoColor=white)](./python/)
-[![TypeScript SDK](https://img.shields.io/badge/typescript-3.1.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](./webmcp/)
-[![Rust SDK](https://img.shields.io/badge/rust-3.1.0-DEA584?style=flat-square&logo=rust&logoColor=white)](./rust/)
+[![Python SDK](https://img.shields.io/badge/python-4.0.0-3776AB?style=flat-square&logo=python&logoColor=white)](./python/)
+[![TypeScript SDK](https://img.shields.io/badge/typescript-4.0.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](./webmcp/)
+[![Rust SDK](https://img.shields.io/badge/rust-4.0.0-DEA584?style=flat-square&logo=rust&logoColor=white)](./rust/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](./LICENSE)
 
 [Spec](https://github.com/Creed-Space/VCP-Spec) · [Inspector](https://inspector.valuecontextprotocol.org/) · [Website](https://valuecontextprotocol.org/)
@@ -20,25 +20,28 @@
 
 The **Value-Context Protocol (VCP)** is an open specification for transporting constitutional values, behavioral rules, and personal context to AI systems. The VCP SDK provides production-ready implementations in Python, TypeScript, and Rust with full cross-language parity.
 
-VCP v3.1 introduces four **extension modules** — Personal State, Relational Context, Constitutional Consensus, and Session Handoff — alongside a capability negotiation handshake, enabling richer context exchange between humans and AI.
+VCP v3.1 defines six protocol layers (I-T-S-A-M-E) alongside five opt-in extensions and a capability negotiation handshake, enabling rich context exchange between humans and AI.
 
 ---
 
 ## Features (v3.1)
 
-### Core
-- **Token parsing** — CSM-1 compact state message encoding/decoding
-- **Bundle verification** — Signed bundles with Ed25519 signatures and SHA-256 content hashes
-- **Content hashing** — Deterministic canonicalization for integrity verification
-- **Identity resolution** — Universal Value Codes (UVC) naming and namespace management
+### The Six Layers (I-T-S-A-M-E)
+- **VCP/I (Identity)** — Token parsing, naming, namespace management
+- **VCP/T (Transport)** — Signed bundles with Ed25519 signatures and SHA-256 content hashes
+- **VCP/S (Semantics)** — CSM-1 grammar, personas, composition rules
+- **VCP/A (Adaptation)** — Context encoding, state tracking, deterministic hooks
+- **VCP/M (Messaging)** — Inter-agent message types: context_share, constitution_announce, constraint_propagate, escalation with severity levels
+- **VCP/E (Economic Governance)** — Fiduciary constraints, authorization gaps (capability, accountability, compatibility), transaction governance
 
-### Extension Modules
-| Module | Description |
+### Extensions (VCP-X-*)
+| Extension | Description |
 |:---|:---|
-| **Personal State** | Signal declaration with exponential/linear decay, lifecycle tracking (`SET`/`STALE`) |
-| **Relational Context** | AI self-model, trust levels, standing, bias detection |
-| **Constitutional Consensus** | Schulze method voting, pairwise matrix, strongest path computation |
-| **Session Handoff (Torch)** | Generation, consumption, lineage tracking across sessions |
+| **VCP-X-Personal** | Signal declaration with exponential/linear decay, lifecycle tracking (`SET`/`STALE`) |
+| **VCP-X-Relational** | AI self-model, trust levels, standing, bias detection |
+| **VCP-X-Consensus** | Schulze method voting, pairwise matrix, strongest path computation |
+| **VCP-X-Torch** | Session handoff: generation, consumption, lineage tracking across sessions |
+| **VCP-X-Intent** | Experimental heuristic intent inference from personal state |
 
 ### Protocol
 - **Capability Negotiation** — VCP-Hello/VCP-Ack handshake protocol for feature discovery
@@ -156,10 +159,18 @@ cd rust && cargo test conformance
 
 ## Architecture
 
-### Four-Layer Protocol Stack
+### Six-Layer Protocol Stack
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
+│  Layer 6 — VCP/E  ECONOMIC GOVERNANCE                              │
+│  WHO PAYS and transaction governance                                │
+│  Fiduciary constraints · Authorization gaps · Capability decisions  │
+├─────────────────────────────────────────────────────────────────────┤
+│  Layer 5 — VCP/M  MESSAGING                                        │
+│  WHO TALKS - Inter-agent message exchange                           │
+│  Message types · Escalation severity · Delivery semantics           │
+├─────────────────────────────────────────────────────────────────────┤
 │  Layer 4 — VCP/A  ADAPTATION                                       │
 │  WHEN and HOW constitutions apply                                   │
 │  Context encoding · State tracking · Messaging · Deterministic hooks│
@@ -178,22 +189,21 @@ cd rust && cargo test conformance
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### v3.1 Extension Architecture
+### v3.1 Extensions (VCP-X-*)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        VCP v3.1 Extensions                          │
+│                      VCP v3.1 Extensions (VCP-X-*)                  │
 ├──────────────┬──────────────┬──────────────────┬────────────────────┤
-│ Personal     │ Relational   │ Constitutional   │ Session            │
-│ State        │ Context      │ Consensus        │ Handoff            │
-│              │              │                  │                    │
-│ · Signals    │ · Self-model │ · Schulze voting │ · Torch generation │
-│ · Decay      │ · Trust      │ · Pairwise matrix│ · Consumption      │
-│ · Lifecycle  │ · Standing   │ · Strongest paths│ · Lineage          │
-├──────────────┴──────────────┴──────────────────┴────────────────────┤
+│ Personal     │ Relational   │ Constitutional   │ Session   │ Intent │
+│ State        │ Context      │ Consensus        │ Handoff   │        │
+│              │              │                  │           │        │
+│ · Signals    │ · Self-model │ · Schulze voting │ · Torch   │ · Heur.│
+│ · Decay      │ · Trust      │ · Pairwise matrix│ · Lineage │ · Infer│
+├──────────────┴──────────────┴──────────────────┴───────────┴────────┤
 │                   Capability Negotiation (VCP-Hello/VCP-Ack)        │
 ├─────────────────────────────────────────────────────────────────────┤
-│                          VCP Core (Layers 1-4)                      │
+│                    VCP Six-Layer Stack (I-T-S-A-M-E)                │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 

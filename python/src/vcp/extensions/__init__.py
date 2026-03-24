@@ -7,6 +7,14 @@ Provides pure-Python data structures and algorithms for:
 - Torch session handoff
 """
 
+from vcp.extensions.competence import (
+    CompetenceClaim,
+    CompetenceCriterion,
+    CompetenceMeasurementBasis,
+    CompetenceProfile,
+    SelfRegulationCommitment,
+    apply_decay,
+)
 from vcp.extensions.consensus import (
     Ballot,
     ElectionResult,
@@ -26,6 +34,7 @@ from vcp.extensions.personal import (
 from vcp.extensions.relational import (
     AISelfModel,
     DimensionReport,
+    PreferenceModelMeta,
     RelationalContext,
     RelationalNorm,
     StandingLevel,
@@ -39,6 +48,13 @@ from vcp.extensions.torch import (
 )
 
 __all__ = [
+    # Competence
+    "CompetenceCriterion",
+    "CompetenceMeasurementBasis",
+    "CompetenceClaim",
+    "SelfRegulationCommitment",
+    "CompetenceProfile",
+    "apply_decay",
     # Personal
     "PersonalDimension",
     "PersonalSignal",
@@ -52,6 +68,7 @@ __all__ = [
     "StandingLevel",
     "DimensionReport",
     "AISelfModel",
+    "PreferenceModelMeta",
     "RelationalContext",
     "RelationalNorm",
     # Consensus

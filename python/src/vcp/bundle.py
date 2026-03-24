@@ -362,7 +362,7 @@ class BundleBuilder:
 
         # Build manifest without signature
         manifest_dict: dict[str, Any] = {
-            "vcp_version": "1.0",
+            "vcp_version": "2.0",
             "bundle": {
                 "id": self.bundle_id,
                 "version": self.version,

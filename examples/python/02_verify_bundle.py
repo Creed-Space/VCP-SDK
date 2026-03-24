@@ -39,7 +39,7 @@ content_hash = compute_content_hash(content)
 
 bundle = Bundle.from_dict({
     "manifest": {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "bundle": {"id": "family.safe.guide", "version": "1.2.0",
                    "content_hash": content_hash},
         "issuer": {"id": "creed-space",

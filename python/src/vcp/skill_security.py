@@ -220,7 +220,7 @@ def sign_skill(
     # -- Build manifest (without signature value) -------------------------
     now = datetime.now(tz=timezone.utc)
     manifest: dict[str, Any] = {
-        "vcp_version": "1.0",
+        "vcp_version": "2.0",
         "type": "skill",
         "skill": {
             "name": skill_name,
