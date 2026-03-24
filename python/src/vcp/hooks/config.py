@@ -124,7 +124,7 @@ def load_from_yaml(path: str | Path) -> DeploymentConfig:
         HookConfigError: If the YAML structure is invalid.
     """
     try:
-        import yaml  # type: ignore[import]
+        import yaml  # type: ignore[import-untyped]
     except ImportError:
         raise ImportError(
             "PyYAML is required to load hook configs from YAML. "
@@ -292,7 +292,7 @@ def _instantiate_builtin(cfg: HookEntryConfig, hook_type: HookType) -> Hook:
         )
 
     # Factory sets sensible defaults; config values override them
-    hook = factory(priority=cfg.priority, timeout_ms=cfg.timeout_ms)
+    hook: Hook = factory(priority=cfg.priority, timeout_ms=cfg.timeout_ms)
 
     # Override mutable fields from config
     hook.name = cfg.name

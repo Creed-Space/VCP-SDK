@@ -177,7 +177,7 @@ class Orchestrator:
         bundle: Bundle,
         context: VerificationContext,
         manifest: Any,
-        manifest_dict: dict,
+        manifest_dict: dict[str, Any],
     ) -> VerificationResult:
         """Internal verification logic."""
         # 1. Size limits
