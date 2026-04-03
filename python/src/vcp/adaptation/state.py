@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -83,6 +83,7 @@ class StateTracker:
             s: [] for s in TransitionSeverity
         }
         self._hook_executor = hook_executor
+        self._session_counted = False
 
     def record(self, context: VCPContext) -> Transition | None:
         """Record new context state, return transition if any.
@@ -93,11 +94,13 @@ class StateTracker:
         Returns:
             Transition if state changed, None if first record or no change
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         if not self._history:
             self._history.append((now, context))
-            vcp_active_sessions.inc()
+            if not self._session_counted:
+                vcp_active_sessions.inc()
+                self._session_counted = True
             return None
 
         previous = self._history[-1][1]
@@ -197,7 +200,7 @@ class StateTracker:
             changed_dimensions=changed,
             previous=previous,
             current=current,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
 
     def register_handler(
@@ -269,8 +272,9 @@ class StateTracker:
 
     def clear(self) -> None:
         """Clear all history."""
-        if self._history:
+        if self._session_counted:
             vcp_active_sessions.dec()
+            self._session_counted = False
         self._history.clear()
 
     def find_transitions(

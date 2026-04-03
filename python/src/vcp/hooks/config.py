@@ -55,6 +55,11 @@ from .types import Hook, HookType
 
 logger = logging.getLogger(__name__)
 
+# Allowlist of module prefixes permitted for custom hook imports.
+# If hook configs ever come from an untrusted source, this prevents
+# arbitrary code execution via the ``action`` field.
+ALLOWED_IMPORT_PREFIXES: tuple[str, ...] = ("vcp.",)
+
 # Map YAML string → built-in factory callable
 _BUILTIN_FACTORIES: dict[str, Any] = {
     "persona_select_hook": persona_select_hook,
@@ -306,12 +311,28 @@ def _instantiate_builtin(cfg: HookEntryConfig, hook_type: HookType) -> Hook:
     return hook
 
 
-def _import_dotted_path(dotted: str, hook_name: str) -> Any:
-    """Import a callable from a dotted Python module path."""
+def _import_dotted_path(
+    dotted: str,
+    hook_name: str,
+    allowed_prefixes: tuple[str, ...] = ALLOWED_IMPORT_PREFIXES,
+) -> Any:
+    """Import a callable from a dotted Python module path.
+
+    Only modules whose dotted path starts with one of *allowed_prefixes*
+    are permitted.  Pass an explicit *allowed_prefixes* to widen the
+    allowlist for trusted deployment configs.
+    """
     if "." not in dotted:
         raise HookConfigError(
             f"Hook '{hook_name}': action '{dotted}' must be a dotted path "
             f"to a callable (e.g. 'mypackage.hooks.my_action')."
+        )
+
+    if not any(dotted.startswith(prefix) for prefix in allowed_prefixes):
+        raise HookConfigError(
+            f"Hook '{hook_name}': import '{dotted}' is not under any "
+            f"allowed module prefix ({', '.join(allowed_prefixes)}). "
+            f"Add the prefix to ALLOWED_IMPORT_PREFIXES if this is intentional."
         )
 
     module_path, attr = dotted.rsplit(".", 1)

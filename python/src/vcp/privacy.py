@@ -75,7 +75,7 @@ CONSENT_REQUIRED_FIELDS: list[str] = [
     "workload_level",
 ]
 
-PRIVATE_FIELDS: list[str] = [
+PRIVATE_FIELDS: frozenset[str] = frozenset([
     "family_status",
     "dependents",
     "dependent_ages",
@@ -88,7 +88,7 @@ PRIVATE_FIELDS: list[str] = [
     "schedule",
     "housing",
     "neighbor_situation",
-]
+])
 
 
 # ---------------------------------------------------------------------------
@@ -187,14 +187,17 @@ def get_field_value(ctx: dict[str, Any], field_name: str) -> Any:
     """
     Extract a field value from nested context structure.
 
-    Searches across all context sub-sections in priority order.
+    Searches across public context sub-sections in priority order.
+    The ``constraints`` dict is excluded because it holds boolean flags
+    derived from private data; including it could leak private values
+    if a public field name collides with a constraints key.
+
     Returns None if the field is not present in any section.
     """
     sources = [
         ctx.get("public_profile"),
         ctx.get("portable_preferences"),
         ctx.get("current_skills"),
-        ctx.get("constraints"),
         ctx.get("availability"),
         ctx.get("shared_with_manager"),
     ]
@@ -249,6 +252,17 @@ def extract_constraint_flags(ctx: dict[str, Any]) -> ConstraintFlags:
     constraints = ctx.get("constraints") or {}
     private = ctx.get("private_context") or {}
 
+    # Schedule values that imply irregular/shift patterns (energy + scheduling impact).
+    # Regular schedules like "9-5" should NOT trigger these flags.
+    _IRREGULAR_SCHEDULE_KEYWORDS = {"shift", "rotating", "night", "variable", "irregular", "on-call"}
+
+    def _is_irregular_schedule(schedule_value: Any) -> bool:
+        if not isinstance(schedule_value, str):
+            return bool(schedule_value)  # non-string truthy = flag it
+        return any(kw in schedule_value.lower() for kw in _IRREGULAR_SCHEDULE_KEYWORDS)
+
+    schedule_val = private.get("schedule")
+
     return ConstraintFlags(
         time_limited=(
             bool(constraints.get("time_limited"))
@@ -267,11 +281,11 @@ def extract_constraint_flags(ctx: dict[str, Any]) -> ConstraintFlags:
         energy_variable=(
             bool(constraints.get("energy_variable"))
             or bool(private.get("health_conditions"))
-            or bool(private.get("schedule"))  # shift work affects energy
+            or _is_irregular_schedule(schedule_val)
         ),
         schedule_irregular=(
             bool(constraints.get("schedule_irregular"))
-            or bool(private.get("schedule"))
+            or _is_irregular_schedule(schedule_val)
             or bool(private.get("childcare_hours"))
         ),
         mobility_limited=(

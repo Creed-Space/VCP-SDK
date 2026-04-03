@@ -6,9 +6,10 @@ Privacy-preserving audit logging for VCP operations.
 
 import hashlib
 import json
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
@@ -199,7 +200,7 @@ class AuditLogger:
         sig_truncated = sig[:32] + "..." if len(sig) > 32 else sig
 
         entry = AuditEntry(
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             session_id_hash=_hash_for_privacy(session_id),
             verification_result=result.name,
             checks_passed=checks,
@@ -274,9 +275,16 @@ class AuditLogger:
         Returns:
             Created audit entry
         """
+        # Only include session_id_hash at FULL+ tier. At STANDARD, the
+        # privacy-filter event (which records that context was *withheld*)
+        # should not itself emit a linkable session identifier.
+        include_session = self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC)
+
         entry = AuditEntry(
-            timestamp=datetime.utcnow(),
-            session_id_hash=_hash_for_privacy(session_id),
+            timestamp=datetime.now(timezone.utc),
+            session_id_hash=(
+                _hash_for_privacy(session_id) if include_session else "redacted"
+            ),
             verification_result="PRIVACY_FILTER",
             checks_passed=[
                 f"shared:{fields_shared}",
@@ -304,14 +312,23 @@ class AuditLogger:
         """Clear stored entries."""
         self._entries.clear()
 
-    def purge_by_session(self, session_id: str) -> int:
+    def purge_by_session(self, session_id: str) -> dict[str, Any]:
         """Purge all audit entries for a session (GDPR right to erasure).
+
+        **Scope**: This method purges the in-memory entry list only. It does
+        NOT touch data previously written via :meth:`export_json`, delivered
+        via ``log_callback``, or persisted to external stores (Redis, database).
+        Callers are responsible for propagating the purge to those sinks.
+
+        A tombstone receipt is returned so that compliance can be demonstrated
+        to a regulator.
 
         Args:
             session_id: Raw session identifier (will be hashed for comparison)
 
         Returns:
-            Number of entries removed
+            Tombstone receipt dict with purge_id, timestamp, entries_removed,
+            session_id_hash, and scope description.
         """
         target_hash = _hash_for_privacy(session_id)
         before = len(self._entries)
@@ -321,7 +338,38 @@ class AuditLogger:
         removed = before - len(self._entries)
         if removed > 0:
             vcp_audit_events_total.labels(event_type="purge").inc()
-        return removed
+
+        tombstone = {
+            "purge_id": str(uuid.uuid4()),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "session_id_hash": target_hash,
+            "entries_removed": removed,
+            "scope": "in-memory audit entries only",
+            "note": (
+                "This purge covers the in-memory audit log. Data previously "
+                "exported via export_json(), delivered via log_callback, or "
+                "persisted to external stores must be purged separately."
+            ),
+        }
+
+        if self._log_callback and removed > 0:
+            # Emit a synthetic audit entry so the callback sink knows
+            # a purge occurred and can act on it.
+            purge_entry = AuditEntry(
+                timestamp=datetime.now(timezone.utc),
+                session_id_hash=target_hash,
+                verification_result="PURGE_TOMBSTONE",
+                checks_passed=[f"removed:{removed}"],
+                bundle_id_hash=tombstone["purge_id"],
+                content_hash="n/a",
+                issuer_hash="n/a",
+                version="n/a",
+                manifest_signature="n/a",
+                audit_level=self.level,
+            )
+            self._log_callback(purge_entry)
+
+        return tombstone
 
     def export_json(self, path: str) -> None:
         """Export entries to JSON file."""

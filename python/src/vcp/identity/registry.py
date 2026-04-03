@@ -475,7 +475,9 @@ class LocalRegistry(Registry):
     def resolve(self, token: Token) -> RegistryEntry | None:
         """Resolve exact token (always allowed, reveals nothing about siblings)."""
         result = self._entries.get(token.canonical)
-        vcp_token_lookups_total.labels(status="ok" if result else "miss").inc()
+        # Always increment with the same label so /metrics doesn't reveal
+        # whether a token exists (undermines bloom filter anti-enumeration).
+        vcp_token_lookups_total.labels(status="resolved").inc()
         return result
 
     def exists(self, token: Token) -> bool:

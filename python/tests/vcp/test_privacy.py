@@ -643,20 +643,21 @@ class TestPrivacyGuarantee:
         flags = extract_constraint_flags(ctx)
         constraint_dict = flags.as_dict()
         for k, v in constraint_dict.items():
-            assert v is not "single_parent", f"{k} leaked private value"  # noqa: F632
+            assert v != "single_parent", f"{k} leaked private value"
 
     def test_full_private_context_no_exposure(self) -> None:
         ctx = {
             "public_profile": {"display_name": "Test", "goal": "test"},
             "private_context": {f: f"private-{f}" for f in PRIVATE_FIELDS},
         }
+        private_list = sorted(PRIVATE_FIELDS)
         manifest = _make_manifest(
-            required=PRIVATE_FIELDS[:5],
-            optional=PRIVATE_FIELDS[5:],
+            required=private_list[:5],
+            optional=private_list[5:],
         )
         consent = _make_consent(
-            required=PRIVATE_FIELDS[:5],
-            optional=PRIVATE_FIELDS[5:],
+            required=private_list[:5],
+            optional=private_list[5:],
         )
         result = filter_context_for_platform(ctx, manifest, consent)
         for pf in PRIVATE_FIELDS:
