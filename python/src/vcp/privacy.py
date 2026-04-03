@@ -226,6 +226,19 @@ def is_private_field(ctx: dict[str, Any], field_name: str) -> bool:
 # Constraint flag extraction — core privacy mechanism
 # ---------------------------------------------------------------------------
 
+# Schedule values that imply irregular/shift patterns (energy + scheduling
+# impact).  Regular schedules like "9-5" should NOT trigger these flags.
+_IRREGULAR_SCHEDULE_KEYWORDS = frozenset({
+    "shift", "rotating", "night", "variable", "irregular", "on-call",
+})
+
+
+def _is_irregular_schedule(schedule_value: Any) -> bool:
+    """Return True if *schedule_value* indicates an irregular schedule."""
+    if not isinstance(schedule_value, str):
+        return bool(schedule_value)
+    return any(kw in schedule_value.lower() for kw in _IRREGULAR_SCHEDULE_KEYWORDS)
+
 
 def extract_constraint_flags(ctx: dict[str, Any]) -> ConstraintFlags:
     """
@@ -251,16 +264,6 @@ def extract_constraint_flags(ctx: dict[str, Any]) -> ConstraintFlags:
     """
     constraints = ctx.get("constraints") or {}
     private = ctx.get("private_context") or {}
-
-    # Schedule values that imply irregular/shift patterns (energy + scheduling impact).
-    # Regular schedules like "9-5" should NOT trigger these flags.
-    _IRREGULAR_SCHEDULE_KEYWORDS = {"shift", "rotating", "night", "variable", "irregular", "on-call"}
-
-    def _is_irregular_schedule(schedule_value: Any) -> bool:
-        if not isinstance(schedule_value, str):
-            return bool(schedule_value)  # non-string truthy = flag it
-        return any(kw in schedule_value.lower() for kw in _IRREGULAR_SCHEDULE_KEYWORDS)
-
     schedule_val = private.get("schedule")
 
     return ConstraintFlags(
