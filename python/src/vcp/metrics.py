@@ -32,7 +32,7 @@ try:
 
     _PROMETHEUS_AVAILABLE: bool = True
 except ImportError:
-    _prom = None  # type: ignore[assignment]
+    _prom = None
     _PROMETHEUS_AVAILABLE = False
 
 
