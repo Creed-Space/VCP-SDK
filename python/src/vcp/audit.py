@@ -339,8 +339,9 @@ class AuditLogger:
         if removed > 0:
             vcp_audit_events_total.labels(event_type="purge").inc()
 
-        tombstone = {
-            "purge_id": str(uuid.uuid4()),
+        purge_id = str(uuid.uuid4())
+        tombstone: dict[str, Any] = {
+            "purge_id": purge_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "session_id_hash": target_hash,
             "entries_removed": removed,
@@ -360,7 +361,7 @@ class AuditLogger:
                 session_id_hash=target_hash,
                 verification_result="PURGE_TOMBSTONE",
                 checks_passed=[f"removed:{removed}"],
-                bundle_id_hash=tombstone["purge_id"],
+                bundle_id_hash=purge_id,
                 content_hash="n/a",
                 issuer_hash="n/a",
                 version="n/a",
