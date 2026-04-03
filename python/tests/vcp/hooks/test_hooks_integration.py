@@ -7,7 +7,7 @@ opt-in semantics work correctly (no hooks = no change in behaviour).
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -67,7 +67,7 @@ def _make_executor_with_hook(
 
 def _make_valid_bundle(content: str = "Be helpful and harmless.") -> Bundle:
     """Create a minimal bundle that passes Orchestrator.verify()."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     jti = str(uuid.uuid4())
 
     # Compute a real content hash
@@ -119,7 +119,7 @@ def _make_valid_bundle(content: str = "Be helpful and harmless.") -> Bundle:
 
 def _make_trust_config() -> TrustConfig:
     """Create a TrustConfig that trusts the test issuer and auditor."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     config = TrustConfig()
     config.add_issuer(
         "test-issuer",
@@ -257,7 +257,7 @@ class TestOrchestratorPreInjectHook:
 
         # Create an expired bundle
         bundle = _make_valid_bundle()
-        bundle.manifest.timestamps.exp = datetime.utcnow() - timedelta(days=1)
+        bundle.manifest.timestamps.exp = datetime.now(timezone.utc) - timedelta(days=1)
         result = orchestrator.verify(bundle)
 
         assert result == VerificationResult.EXPIRED

@@ -210,22 +210,31 @@ class TestBuildRegistry:
         with pytest.raises(HookConfigError, match="Unknown builtin"):
             build_registry(config)
 
-    def test_custom_action_from_stdlib(self) -> None:
-        """os.path.join is callable — use it as a smoke test for dotted import."""
+    def test_custom_action_from_vcp_module(self) -> None:
+        """Smoke test for dotted import using an allowed vcp.* callable."""
         config = load_from_dict({"hooks": [{
             "name": "custom",
             "type": "pre_inject",
-            "action": "os.path.join",
+            "action": "vcp.audit._hash_for_privacy",
         }]})
         registry = build_registry(config)
         chain = registry.get_chain(HookType.PRE_INJECT, "s1")
         assert len(chain) == 1
 
+    def test_custom_action_outside_allowlist_raises(self) -> None:
+        config = load_from_dict({"hooks": [{
+            "name": "bad",
+            "type": "pre_inject",
+            "action": "os.path.join",
+        }]})
+        with pytest.raises(HookConfigError, match="not under any allowed module prefix"):
+            build_registry(config)
+
     def test_custom_action_bad_module_raises(self) -> None:
         config = load_from_dict({"hooks": [{
             "name": "bad",
             "type": "pre_inject",
-            "action": "no_such_module.action",
+            "action": "vcp.no_such_module.action",
         }]})
         with pytest.raises(HookConfigError, match="cannot import"):
             build_registry(config)
@@ -234,7 +243,7 @@ class TestBuildRegistry:
         config = load_from_dict({"hooks": [{
             "name": "bad",
             "type": "pre_inject",
-            "action": "os.no_such_attr",
+            "action": "vcp.audit.no_such_attr",
         }]})
         with pytest.raises(HookConfigError, match="no attribute"):
             build_registry(config)

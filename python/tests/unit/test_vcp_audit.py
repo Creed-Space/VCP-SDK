@@ -159,8 +159,11 @@ class TestGDPRPurge:
         logger._entries.append(_make_entry(session_id_hash=_hash_for_privacy("user-B")))
         logger._entries.append(_make_entry(session_id_hash=_hash_for_privacy("user-A")))
 
-        removed = logger.purge_by_session("user-A")
-        assert removed == 2
+        tombstone = logger.purge_by_session("user-A")
+        assert tombstone["entries_removed"] == 2
+        assert "purge_id" in tombstone
+        assert "timestamp" in tombstone
+        assert tombstone["scope"] == "in-memory audit entries only"
         assert len(logger._entries) == 1
         assert logger._entries[0].session_id_hash == _hash_for_privacy("user-B")
 
@@ -168,12 +171,14 @@ class TestGDPRPurge:
         logger = AuditLogger(level=AuditLevel.STANDARD)
         logger._entries.append(_make_entry(session_id_hash=_hash_for_privacy("user-B")))
 
-        assert logger.purge_by_session("user-Z") == 0
+        tombstone = logger.purge_by_session("user-Z")
+        assert tombstone["entries_removed"] == 0
         assert len(logger._entries) == 1
 
     def test_purge_on_empty_log(self) -> None:
         logger = AuditLogger(level=AuditLevel.STANDARD)
-        assert logger.purge_by_session("any") == 0
+        tombstone = logger.purge_by_session("any")
+        assert tombstone["entries_removed"] == 0
 
 
 # ---------------------------------------------------------------------------
