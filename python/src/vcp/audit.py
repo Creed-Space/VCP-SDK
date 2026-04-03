@@ -15,12 +15,12 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
+from .metrics import vcp_audit_events_total
+
 # Per-process random salt for privacy hashing. Makes hashes non-reversible
 # from known inputs while remaining deterministic within a process lifetime
 # (required for purge_by_session matching).
 _PRIVACY_SALT: bytes = os.urandom(32)
-
-from .metrics import vcp_audit_events_total
 
 
 class AuditLevel(Enum):
