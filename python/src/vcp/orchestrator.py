@@ -11,7 +11,7 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
 
 from .bundle import Bundle
@@ -69,7 +69,7 @@ class ReplayCache:
 
     def _cleanup(self) -> None:
         """Remove expired entries."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expired = [jti for jti, exp in self.seen.items() if exp < now]
         for jti in expired:
             del self.seen[jti]
@@ -247,7 +247,7 @@ class Orchestrator:
                 )
 
         # 7. Temporal claims
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         ts = manifest.timestamps
 
         # Not before check

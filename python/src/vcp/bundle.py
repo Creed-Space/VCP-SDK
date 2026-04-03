@@ -8,7 +8,7 @@ import json
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from .canonicalize import canonicalize_manifest, compute_content_hash
@@ -336,7 +336,7 @@ class BundleBuilder:
         if not self.auditor or not self.auditor_key_id:
             raise ValueError("Auditor information is required")
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         from datetime import timedelta
 
         # Compute content hash

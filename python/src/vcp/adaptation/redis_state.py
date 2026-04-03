@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, cast
 
 from .context import Dimension, VCPContext
@@ -96,7 +96,7 @@ class RedisStateTracker:
         Returns:
             Transition if state changed, None if first record or no change
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         now_iso = now.isoformat()
 
         # Get current history from Redis
@@ -204,7 +204,7 @@ class RedisStateTracker:
             changed_dimensions=changed,
             previous=previous,
             current=current,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
 
     def register_handler(
