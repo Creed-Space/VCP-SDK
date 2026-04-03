@@ -210,12 +210,12 @@ class TestBuildRegistry:
         with pytest.raises(HookConfigError, match="Unknown builtin"):
             build_registry(config)
 
-    def test_custom_action_from_vcp_module(self) -> None:
-        """Smoke test for dotted import using an allowed vcp.* callable."""
+    def test_custom_action_from_vcp_hooks_module(self) -> None:
+        """Smoke test for dotted import using an allowed vcp.hooks.* callable."""
         config = load_from_dict({"hooks": [{
             "name": "custom",
             "type": "pre_inject",
-            "action": "vcp.audit._hash_for_privacy",
+            "action": "vcp.hooks.config.load_from_dict",
         }]})
         registry = build_registry(config)
         chain = registry.get_chain(HookType.PRE_INJECT, "s1")
@@ -230,11 +230,21 @@ class TestBuildRegistry:
         with pytest.raises(HookConfigError, match="not under any allowed module prefix"):
             build_registry(config)
 
+    def test_custom_action_vcp_non_hooks_rejected(self) -> None:
+        """Imports under vcp.* but outside vcp.hooks.* must be rejected."""
+        config = load_from_dict({"hooks": [{
+            "name": "bad",
+            "type": "pre_inject",
+            "action": "vcp.audit._hash_for_privacy",
+        }]})
+        with pytest.raises(HookConfigError, match="not under any allowed module prefix"):
+            build_registry(config)
+
     def test_custom_action_bad_module_raises(self) -> None:
         config = load_from_dict({"hooks": [{
             "name": "bad",
             "type": "pre_inject",
-            "action": "vcp.no_such_module.action",
+            "action": "vcp.hooks.no_such_module.action",
         }]})
         with pytest.raises(HookConfigError, match="cannot import"):
             build_registry(config)
@@ -243,7 +253,7 @@ class TestBuildRegistry:
         config = load_from_dict({"hooks": [{
             "name": "bad",
             "type": "pre_inject",
-            "action": "vcp.audit.no_such_attr",
+            "action": "vcp.hooks.config.no_such_attr",
         }]})
         with pytest.raises(HookConfigError, match="no attribute"):
             build_registry(config)

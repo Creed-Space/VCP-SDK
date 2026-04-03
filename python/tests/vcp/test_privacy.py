@@ -630,6 +630,7 @@ class TestPrivacyGuarantee:
         consent = _make_consent(required=PRIVATE_FIELDS)
         result = filter_context_for_platform(ctx, manifest, consent)
         for pf in PRIVATE_FIELDS:
+            assert pf not in result.public
             assert pf not in result.preferences
 
     def test_constraint_flags_are_all_booleans(self) -> None:

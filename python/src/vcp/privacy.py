@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 # Field tier constants
 # ---------------------------------------------------------------------------
 
-PUBLIC_FIELDS: list[str] = [
+PUBLIC_FIELDS: tuple[str, ...] = (
     "display_name",
     "goal",
     "experience",
@@ -58,9 +58,9 @@ PUBLIC_FIELDS: list[str] = [
     "role",
     "team",
     "career_goal",
-]
+)
 
-CONSENT_REQUIRED_FIELDS: list[str] = [
+CONSENT_REQUIRED_FIELDS: tuple[str, ...] = (
     "noise_mode",
     "session_length",
     "pressure_tolerance",
@@ -73,7 +73,7 @@ CONSENT_REQUIRED_FIELDS: list[str] = [
     "avoid_times",
     "budget_remaining_eur",
     "workload_level",
-]
+)
 
 PRIVATE_FIELDS: frozenset[str] = frozenset([
     "family_status",

@@ -24,8 +24,6 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from ..metrics import vcp_token_lookups_total
-
 if TYPE_CHECKING:
     from typing_extensions import Self
 
@@ -87,7 +85,6 @@ class Token:
             ValueError: If token format is invalid
         """
         if not raw:
-            vcp_token_lookups_total.labels(status="error").inc()
             raise ValueError("Token cannot be empty")
 
         if len(raw) > cls.MAX_LENGTH:
@@ -98,7 +95,6 @@ class Token:
 
         match = cls.TOKEN_PATTERN.match(raw)
         if not match:
-            vcp_token_lookups_total.labels(status="error").inc()
             raise ValueError(f"Invalid VCP/I token format: {raw}")
 
         groups = match.groupdict()
@@ -120,7 +116,6 @@ class Token:
                     f"{cls.MAX_SEGMENT}: {seg}"
                 )
 
-        vcp_token_lookups_total.labels(status="ok").inc()
         return cls(
             segments=segments,
             version=groups.get("version"),

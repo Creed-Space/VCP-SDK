@@ -6,12 +6,19 @@ Privacy-preserving audit logging for VCP operations.
 
 import hashlib
 import json
+import os
+import threading
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
+
+# Per-process random salt for privacy hashing. Makes hashes non-reversible
+# from known inputs while remaining deterministic within a process lifetime
+# (required for purge_by_session matching).
+_PRIVACY_SALT: bytes = os.urandom(32)
 
 from .metrics import vcp_audit_events_total
 
@@ -106,8 +113,14 @@ class AuditEntry:
 
 
 def _hash_for_privacy(value: str) -> str:
-    """Hash a value for privacy-preserving logging."""
-    return f"sha256:{hashlib.sha256(value.encode()).hexdigest()[:32]}"
+    """Hash a value for privacy-preserving logging.
+
+    Uses a per-process random salt so hashes are not reversible from
+    known inputs, but remain deterministic within the same process
+    (required for purge_by_session matching).
+    """
+    salted = _PRIVACY_SALT + value.encode()
+    return f"sha256:{hashlib.sha256(salted).hexdigest()[:32]}"
 
 
 class AuditLogger:
@@ -129,6 +142,7 @@ class AuditLogger:
         self.level = level
         self._log_callback = log_callback
         self._entries: list[AuditEntry] = []
+        self._lock = threading.Lock()
 
     def log_verification(
         self,
@@ -331,11 +345,12 @@ class AuditLogger:
             session_id_hash, and scope description.
         """
         target_hash = _hash_for_privacy(session_id)
-        before = len(self._entries)
-        self._entries = [
-            e for e in self._entries if e.session_id_hash != target_hash
-        ]
-        removed = before - len(self._entries)
+        with self._lock:
+            before = len(self._entries)
+            self._entries = [
+                e for e in self._entries if e.session_id_hash != target_hash
+            ]
+            removed = before - len(self._entries)
         if removed > 0:
             vcp_audit_events_total.labels(event_type="purge").inc()
 
@@ -343,7 +358,6 @@ class AuditLogger:
         tombstone: dict[str, Any] = {
             "purge_id": purge_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "session_id_hash": target_hash,
             "entries_removed": removed,
             "scope": "in-memory audit entries only",
             "note": (

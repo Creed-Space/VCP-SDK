@@ -164,6 +164,8 @@ class TestGDPRPurge:
         assert "purge_id" in tombstone
         assert "timestamp" in tombstone
         assert tombstone["scope"] == "in-memory audit entries only"
+        # Tombstone must NOT contain session_id_hash (GDPR: the hash itself is PII)
+        assert "session_id_hash" not in tombstone
         assert len(logger._entries) == 1
         assert logger._entries[0].session_id_hash == _hash_for_privacy("user-B")
 
