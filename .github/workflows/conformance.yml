@@ -7,12 +7,15 @@ on:
   pull_request:
     paths: ['sdk/**']
 
+permissions:
+  contents: read
+
 concurrency:
   group: conformance-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # ── Python Conformance ────────────────────────────────────────────────
+  # -- Python Conformance -------------------------------------------------
   python-conformance:
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -22,10 +25,10 @@ jobs:
         python-version: ['3.11', '3.12']
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -38,12 +41,12 @@ jobs:
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: conformance-python-${{ matrix.python-version }}
           path: sdk/conformance/results/python.json
 
-  # ── TypeScript Conformance ────────────────────────────────────────────
+  # -- TypeScript Conformance ---------------------------------------------
   typescript-conformance:
     name: TypeScript (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
@@ -53,43 +56,43 @@ jobs:
         node-version: ['20', '22']
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: Install TypeScript SDK dependencies
         working-directory: sdk/typescript
-        run: npm install
+        run: npm ci
 
       - name: Install tsx runner
-        run: npm install -g tsx
+        run: npm install -g tsx@4
 
       - name: Run conformance tests
         run: npx tsx sdk/conformance/runners/typescript_runner.ts
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: conformance-typescript-node${{ matrix.node-version }}
           path: sdk/conformance/results/typescript.json
 
-  # ── Rust Conformance ──────────────────────────────────────────────────
+  # -- Rust Conformance ---------------------------------------------------
   rust-conformance:
     name: Rust (stable)
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
 
       - name: Cache cargo
-        uses: actions/cache@v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         with:
           path: |
             ~/.cargo/registry
@@ -107,12 +110,12 @@ jobs:
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: conformance-rust
           path: sdk/conformance/results/rust.json
 
-  # ── Cross-SDK Parity Check ───────────────────────────────────────────
+  # -- Cross-SDK Parity Check --------------------------------------------
   cross-sdk-parity:
     name: Cross-SDK Parity
     runs-on: ubuntu-latest
@@ -120,16 +123,16 @@ jobs:
     if: always()
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Download all results
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: conformance-*
           path: sdk/conformance/results/artifacts
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: '3.12'
 
@@ -142,7 +145,7 @@ jobs:
 
       - name: Upload badges
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: conformance-badges
           path: sdk/conformance/badges/
