@@ -14,6 +14,7 @@ import threading
 import time
 from typing import Any
 
+from ..metrics import vcp_hook_duration_seconds, vcp_hook_executions_total
 from .registry import HookRegistry
 from .types import (
     ChainResult,
@@ -146,10 +147,21 @@ class HookExecutor:
                 result = HookResult(status=ResultStatus.CONTINUE)
                 errors += 1
 
-            # Record duration
+            # Record duration and metrics
             duration_ms = (time.monotonic_ns() - start_ns) // 1_000_000
             result.duration_ms = duration_ms
             results.append((hook.name, result))
+            status_label = (
+                result.status.value
+                if isinstance(result.status, ResultStatus)
+                else str(result.status)
+            )
+            vcp_hook_executions_total.labels(
+                hook_type=hook_type.value, status=status_label,
+            ).inc()
+            vcp_hook_duration_seconds.labels(
+                hook_type=hook_type.value,
+            ).observe(duration_ms / 1000.0)
 
             logger.debug(
                 "hook.completed: name=%s status=%s duration_ms=%d",

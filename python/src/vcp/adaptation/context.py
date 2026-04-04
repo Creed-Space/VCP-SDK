@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from ..metrics import track_duration, vcp_context_encode_duration_seconds, vcp_context_encodes_total
+
 
 class Dimension(Enum):
     """9 context dimensions for VCP/A encoding."""
@@ -288,31 +290,33 @@ class ContextEncoder:
         Returns:
             Encoded VCPContext
         """
-        dimensions: dict[Dimension, list[str]] = {}
+        vcp_context_encodes_total.inc()
+        with track_duration(vcp_context_encode_duration_seconds):
+            dimensions: dict[Dimension, list[str]] = {}
 
-        mappings = [
-            (Dimension.TIME, time),
-            (Dimension.SPACE, space),
-            (Dimension.COMPANY, company),
-            (Dimension.CULTURE, culture),
-            (Dimension.OCCASION, occasion),
-            (Dimension.STATE, state),
-            (Dimension.ENVIRONMENT, environment),
-            (Dimension.AGENCY, agency),
-            (Dimension.CONSTRAINTS, constraints),
-        ]
+            mappings = [
+                (Dimension.TIME, time),
+                (Dimension.SPACE, space),
+                (Dimension.COMPANY, company),
+                (Dimension.CULTURE, culture),
+                (Dimension.OCCASION, occasion),
+                (Dimension.STATE, state),
+                (Dimension.ENVIRONMENT, environment),
+                (Dimension.AGENCY, agency),
+                (Dimension.CONSTRAINTS, constraints),
+            ]
 
-        for dim, value in mappings:
-            if value:
-                if isinstance(value, str):
-                    emoji = self._lookup_emoji(dim, value)
-                    if emoji:
-                        dimensions[dim] = [emoji]
-                elif isinstance(value, list):
-                    emojis = [self._lookup_emoji(dim, v) for v in value]
-                    dimensions[dim] = [e for e in emojis if e]
+            for dim, value in mappings:
+                if value:
+                    if isinstance(value, str):
+                        emoji = self._lookup_emoji(dim, value)
+                        if emoji:
+                            dimensions[dim] = [emoji]
+                    elif isinstance(value, list):
+                        emojis = [self._lookup_emoji(dim, v) for v in value]
+                        dimensions[dim] = [e for e in emojis if e]
 
-        return VCPContext(dimensions=dimensions)
+            return VCPContext(dimensions=dimensions)
 
     def _lookup_emoji(self, dim: Dimension, value: str) -> str | None:
         """Look up emoji for a value.

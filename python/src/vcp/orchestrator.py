@@ -11,11 +11,16 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Any
 
 from .bundle import Bundle
 from .canonicalize import canonicalize_manifest, verify_content_hash
+from .metrics import (
+    track_duration,
+    vcp_bundle_verifications_total,
+    vcp_bundle_verify_duration_seconds,
+)
 from .revocation import RevocationChecker
 from .trust import TrustConfig
 from .types import VerificationResult
@@ -64,7 +69,7 @@ class ReplayCache:
 
     def _cleanup(self) -> None:
         """Remove expired entries."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expired = [jti for jti, exp in self.seen.items() if exp < now]
         for jti in expired:
             del self.seen[jti]
@@ -161,6 +166,20 @@ class Orchestrator:
         manifest = bundle.manifest
         manifest_dict = manifest.to_dict()
 
+        with track_duration(vcp_bundle_verify_duration_seconds):
+            result = self._verify_inner(bundle, context, manifest, manifest_dict)
+
+        vcp_bundle_verifications_total.labels(result=result.name).inc()
+        return result
+
+    def _verify_inner(
+        self,
+        bundle: Bundle,
+        context: VerificationContext,
+        manifest: Any,
+        manifest_dict: dict[str, Any],
+    ) -> VerificationResult:
+        """Internal verification logic."""
         # 1. Size limits
         manifest_json = json.dumps(manifest_dict)
         if len(manifest_json.encode()) > self.MAX_MANIFEST_SIZE:
@@ -228,7 +247,7 @@ class Orchestrator:
                 )
 
         # 7. Temporal claims
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         ts = manifest.timestamps
 
         # Not before check

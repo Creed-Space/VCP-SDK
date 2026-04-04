@@ -5,7 +5,7 @@ Formats verified bundles for LLM injection.
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from .bundle import Bundle
@@ -47,7 +47,7 @@ def format_injection(
         Formatted string for system prompt injection
     """
     options = options or InjectionOptions()
-    verified_at = verified_at or datetime.utcnow()
+    verified_at = verified_at or datetime.now(timezone.utc)
 
     if options.format == InjectionFormat.HEADER_DELIMITED:
         return _format_header_delimited(bundle, options, verified_at)
@@ -175,7 +175,7 @@ def format_multi_constitution_injection(
         Formatted string with all constitutions
     """
     options = options or InjectionOptions()
-    verified_at = verified_at or datetime.utcnow()
+    verified_at = verified_at or datetime.now(timezone.utc)
 
     if not bundles:
         raise ValueError("At least one bundle required")

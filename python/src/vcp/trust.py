@@ -6,7 +6,7 @@ Manages trust anchors for issuers and auditors.
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -25,7 +25,7 @@ class TrustAnchor:
 
     def is_valid(self, at_time: datetime | None = None) -> bool:
         """Check if anchor is valid at the given time."""
-        at_time = at_time or datetime.utcnow()
+        at_time = at_time or datetime.now(timezone.utc)
         if self.state not in ("active", "rotating"):
             return False
         return self.valid_from <= at_time <= self.valid_until
@@ -64,7 +64,7 @@ class TrustConfig:
             TrustAnchor if found and valid, None otherwise
         """
         anchors = self.issuers.get(issuer_id, [])
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         for anchor in anchors:
             if key_id and anchor.key_id != key_id:
@@ -86,7 +86,7 @@ class TrustConfig:
             TrustAnchor if found and valid, None otherwise
         """
         anchors = self.auditors.get(auditor_id, [])
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         for anchor in anchors:
             if key_id and anchor.key_id != key_id:

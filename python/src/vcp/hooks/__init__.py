@@ -33,6 +33,14 @@ from .builtin import (
     persona_select_hook,
     scope_filter_hook,
 )
+from .config import (
+    DeploymentConfig,
+    HookConfigError,
+    HookEntryConfig,
+    build_registry,
+    load_from_dict,
+    load_from_yaml,
+)
 from .executor import HookExecutor
 from .registry import HookRegistry
 from .types import (
@@ -80,4 +88,11 @@ __all__ = [
     "HookError",
     "HookValidationError",
     "DuplicateHookError",
+    "HookConfigError",
+    # Config loader
+    "load_from_yaml",
+    "load_from_dict",
+    "build_registry",
+    "DeploymentConfig",
+    "HookEntryConfig",
 ]

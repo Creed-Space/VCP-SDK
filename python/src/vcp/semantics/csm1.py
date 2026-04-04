@@ -24,6 +24,8 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum
 
+from ..metrics import vcp_csm1_parses_total
+
 
 class Persona(Enum):
     """6+1 archetypal personas for constitutional profiles."""
@@ -137,10 +139,12 @@ class CSM1Code:
             ValueError: If code format is invalid
         """
         if not raw:
+            vcp_csm1_parses_total.labels(status="error").inc()
             raise ValueError("CSM1 code cannot be empty")
 
         match = cls.PATTERN.match(raw.upper())
         if not match:
+            vcp_csm1_parses_total.labels(status="error").inc()
             raise ValueError(f"Invalid CSM1 code: {raw}")
 
         groups = match.groupdict()
@@ -157,6 +161,7 @@ class CSM1Code:
             scope_chars = groups["scopes"].replace("+", "")
             scopes = [Scope.from_char(c) for c in scope_chars]
 
+        vcp_csm1_parses_total.labels(status="ok").inc()
         return cls(
             persona=persona,
             adherence_level=level,
