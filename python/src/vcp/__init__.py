@@ -20,6 +20,17 @@ from .adaptation import (  # noqa: F401
 )
 from .audit import AuditEntry, AuditLevel, AuditLogger  # noqa: F401
 from .bundle import Bundle, BundleBuilder, Manifest  # noqa: F401
+from .enforcement import (  # noqa: F401
+    AdherenceLevelPlugin,
+    BundleExpiryPlugin,
+    DecisionType,
+    EnforcementResult,
+    EvaluationContext,
+    PDPDecision,
+    PDPEnforcer,
+    PDPPlugin,
+    RefusalBoundaryPlugin,
+)
 from .canonicalize import (  # noqa: F401
     canonicalize_content,
     canonicalize_manifest,
@@ -229,4 +240,14 @@ __all__ = [
     "get_field_privacy_level",
     "format_field_name",
     "generate_privacy_summary",
+    # PDP Enforcement
+    "PDPPlugin",
+    "PDPEnforcer",
+    "PDPDecision",
+    "DecisionType",
+    "EnforcementResult",
+    "EvaluationContext",
+    "RefusalBoundaryPlugin",
+    "AdherenceLevelPlugin",
+    "BundleExpiryPlugin",
 ]

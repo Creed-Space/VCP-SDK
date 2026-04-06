@@ -163,7 +163,7 @@ class TestGDPRPurge:
         assert tombstone["entries_removed"] == 2
         assert "purge_id" in tombstone
         assert "timestamp" in tombstone
-        assert tombstone["scope"] == "in-memory audit entries only"
+        assert tombstone["scope"] == "in-memory audit entries + tracked exported JSON files"
         # Tombstone must NOT contain session_id_hash (GDPR: the hash itself is PII)
         assert "session_id_hash" not in tombstone
         assert len(logger._entries) == 1
@@ -181,6 +181,45 @@ class TestGDPRPurge:
         logger = AuditLogger(level=AuditLevel.STANDARD)
         tombstone = logger.purge_by_session("any")
         assert tombstone["entries_removed"] == 0
+
+    def test_purge_scrubs_exported_json_file(self, tmp_path) -> None:
+        logger = AuditLogger(level=AuditLevel.STANDARD)
+        hash_a = _hash_for_privacy("user-A")
+        hash_b = _hash_for_privacy("user-B")
+        logger._entries.append(_make_entry(session_id_hash=hash_a))
+        logger._entries.append(_make_entry(session_id_hash=hash_b))
+        logger._entries.append(_make_entry(session_id_hash=hash_a))
+
+        export_path = str(tmp_path / "audit_export.json")
+        logger.export_json(export_path)
+
+        # Clear in-memory so we test file-only purge
+        logger._entries.clear()
+        tombstone = logger.purge_by_session("user-A")
+
+        assert tombstone["entries_removed"] == 0  # already cleared
+        assert tombstone["file_entries_removed"] == 2
+        assert export_path in tombstone["files_purged"]
+
+        import json
+        with open(export_path) as f:
+            data = json.load(f)
+        remaining = data["entries"]
+        assert len(remaining) == 1
+        # Remaining entry should be user-B (at STANDARD+, session_id_hash is present)
+        assert remaining[0].get("session_id_hash") == hash_b
+
+    def test_export_json_tracks_path(self, tmp_path) -> None:
+        logger = AuditLogger(level=AuditLevel.STANDARD)
+        p = str(tmp_path / "out.json")
+        logger.export_json(p)
+        assert p in logger._exported_paths
+
+    def test_purge_handles_missing_export_file(self, tmp_path) -> None:
+        logger = AuditLogger(level=AuditLevel.STANDARD)
+        logger._exported_paths.append(str(tmp_path / "gone.json"))
+        tombstone = logger.purge_by_session("user-X")
+        assert tombstone["file_entries_removed"] == 0
 
 
 # ---------------------------------------------------------------------------

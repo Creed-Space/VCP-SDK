@@ -142,6 +142,7 @@ class AuditLogger:
         self.level = level
         self._log_callback = log_callback
         self._entries: list[AuditEntry] = []
+        self._exported_paths: list[str] = []
         self._lock = threading.Lock()
 
     def log_verification(
@@ -329,20 +330,24 @@ class AuditLogger:
     def purge_by_session(self, session_id: str) -> dict[str, Any]:
         """Purge all audit entries for a session (GDPR right to erasure).
 
-        **Scope**: This method purges the in-memory entry list only. It does
-        NOT touch data previously written via :meth:`export_json`, delivered
-        via ``log_callback``, or persisted to external stores (Redis, database).
-        Callers are responsible for propagating the purge to those sinks.
+        Purges matching entries from:
+        1. The in-memory entry list
+        2. Any JSON files previously written via :meth:`export_json`
 
-        A tombstone receipt is returned so that compliance can be demonstrated
-        to a regulator.
+        Data delivered via ``log_callback`` or persisted to external stores
+        (Redis, database) is NOT covered. Callers are responsible for
+        propagating the purge to those sinks — the ``PURGE_TOMBSTONE``
+        callback entry is emitted to facilitate this.
+
+        A tombstone receipt is returned so that compliance can be
+        demonstrated to a regulator.
 
         Args:
             session_id: Raw session identifier (will be hashed for comparison)
 
         Returns:
             Tombstone receipt dict with purge_id, timestamp, entries_removed,
-            session_id_hash, and scope description.
+            files_purged, and scope description.
         """
         target_hash = _hash_for_privacy(session_id)
         with self._lock:
@@ -351,7 +356,12 @@ class AuditLogger:
                 e for e in self._entries if e.session_id_hash != target_hash
             ]
             removed = before - len(self._entries)
-        if removed > 0:
+
+        # Scrub exported JSON files
+        files_purged = self._purge_exported_files(target_hash)
+        total_file_entries = sum(files_purged.values())
+
+        if removed > 0 or total_file_entries > 0:
             vcp_audit_events_total.labels(event_type="purge").inc()
 
         purge_id = str(uuid.uuid4())
@@ -359,22 +369,26 @@ class AuditLogger:
             "purge_id": purge_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "entries_removed": removed,
-            "scope": "in-memory audit entries only",
+            "file_entries_removed": total_file_entries,
+            "files_purged": files_purged,
+            "scope": "in-memory audit entries + tracked exported JSON files",
             "note": (
-                "This purge covers the in-memory audit log. Data previously "
-                "exported via export_json(), delivered via log_callback, or "
-                "persisted to external stores must be purged separately."
+                "This purge covers the in-memory audit log and all JSON files "
+                "previously exported via export_json(). Data delivered via "
+                "log_callback or persisted to external stores (Redis, database) "
+                "must be purged separately by the caller."
             ),
         }
 
-        if self._log_callback and removed > 0:
-            # Emit a synthetic audit entry so the callback sink knows
-            # a purge occurred and can act on it.
+        if self._log_callback and (removed > 0 or total_file_entries > 0):
             purge_entry = AuditEntry(
                 timestamp=datetime.now(timezone.utc),
                 session_id_hash=target_hash,
                 verification_result="PURGE_TOMBSTONE",
-                checks_passed=[f"removed:{removed}"],
+                checks_passed=[
+                    f"memory_removed:{removed}",
+                    f"file_removed:{total_file_entries}",
+                ],
                 bundle_id_hash=purge_id,
                 content_hash="n/a",
                 issuer_hash="n/a",
@@ -387,7 +401,52 @@ class AuditLogger:
         return tombstone
 
     def export_json(self, path: str) -> None:
-        """Export entries to JSON file."""
+        """Export entries to JSON file.
+
+        The path is tracked so that :meth:`purge_by_session` can also
+        scrub session data from previously exported files.
+        """
         with open(path, "w", encoding="utf-8") as f:
             entries = [e.to_dict() for e in self._entries]
             json.dump({"entries": entries}, f, indent=2)
+        if path not in self._exported_paths:
+            self._exported_paths.append(path)
+
+    def _purge_exported_files(self, session_id_hash: str) -> dict[str, int]:
+        """Remove entries matching session_id_hash from all exported JSON files.
+
+        Rewrites each file in-place (atomic replace). Files that no longer
+        exist are silently skipped and removed from the tracking list.
+
+        Returns:
+            Dict mapping file path to number of entries removed from that file.
+        """
+        results: dict[str, int] = {}
+        surviving_paths: list[str] = []
+
+        for path in self._exported_paths:
+            if not os.path.isfile(path):
+                continue
+            surviving_paths.append(path)
+
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            entries = data.get("entries", [])
+            before = len(entries)
+            filtered = [
+                e for e in entries
+                if e.get("session_id_hash") != session_id_hash
+            ]
+            removed = before - len(filtered)
+
+            if removed > 0:
+                tmp_path = path + ".purge.tmp"
+                data["entries"] = filtered
+                with open(tmp_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2)
+                os.replace(tmp_path, path)
+                results[path] = removed
+
+        self._exported_paths = surviving_paths
+        return results
