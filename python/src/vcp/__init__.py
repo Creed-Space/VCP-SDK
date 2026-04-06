@@ -20,6 +20,12 @@ from .adaptation import (  # noqa: F401
 )
 from .audit import AuditEntry, AuditLevel, AuditLogger  # noqa: F401
 from .bundle import Bundle, BundleBuilder, Manifest  # noqa: F401
+from .canonicalize import (  # noqa: F401
+    canonicalize_content,
+    canonicalize_manifest,
+    compute_content_hash,
+    verify_content_hash,
+)
 from .enforcement import (  # noqa: F401
     AdherenceLevelPlugin,
     BundleExpiryPlugin,
@@ -30,12 +36,6 @@ from .enforcement import (  # noqa: F401
     PDPEnforcer,
     PDPPlugin,
     RefusalBoundaryPlugin,
-)
-from .canonicalize import (  # noqa: F401
-    canonicalize_content,
-    canonicalize_manifest,
-    compute_content_hash,
-    verify_content_hash,
 )
 
 # VCP/I (Identity Layer)

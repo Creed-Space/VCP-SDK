@@ -5,7 +5,7 @@ These test vectors can be used to verify implementations of VCP v2.0.
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 # ==============================================================================
 # TEST VECTOR 1: Valid Minimal Bundle
@@ -533,7 +533,7 @@ def export_test_vectors(path: str = "vcp_test_vectors.json") -> None:
     # Convert to JSON-serializable format
     vectors = {
         "version": "1.0",
-        "generated": datetime.utcnow().isoformat() + "Z",
+        "generated": datetime.now(timezone.utc).isoformat() + "Z",
         "vectors": ALL_TEST_VECTORS,
     }
     with open(path, "w", encoding="utf-8") as f:

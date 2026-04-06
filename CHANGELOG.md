@@ -4,6 +4,17 @@ All notable changes to the VCP SDK will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-04-06
+
+### Added
+- **PDP Enforcement Module** (`vcp/enforcement.py`) — Standalone policy enforcement for VCP bundles without requiring a full safety stack. Includes `PDPPlugin` interface, `PDPEnforcer` orchestrator, and three built-in plugins: `RefusalBoundaryPlugin`, `AdherenceLevelPlugin`, `BundleExpiryPlugin`.
+- **Purge Handler Registration** — `AuditLogger.register_purge_handler()` lets external sinks (Redis, database) register GDPR purge logic. Warns if `log_callback` is set without a handler.
+
+### Fixed
+- **GDPR Purge Persistence Gap** — `purge_by_session()` now scrubs exported JSON files (not just in-memory entries), with thread-safe file rewriting and tombstone receipts that include file-level evidence.
+- **`datetime.utcnow()` Deprecation** — All remaining instances replaced with `datetime.now(timezone.utc)` across source and test files.
+- **Thread Safety** — `export_json()` path tracking and `_purge_exported_files()` now run inside `self._lock`, closing TOCTOU race conditions.
+
 ## [4.0.0] - 2026-03-08
 
 ### Added

@@ -28,7 +28,6 @@ from vcp.enforcement import (
 )
 from vcp.types import EnforcementMode, VerificationResult
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
