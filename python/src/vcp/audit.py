@@ -357,8 +357,9 @@ class AuditLogger:
             ]
             removed = before - len(self._entries)
 
-        # Scrub exported JSON files
-        files_purged = self._purge_exported_files(target_hash)
+            # Scrub exported JSON files while still holding the lock so
+            # concurrent export_json() calls cannot interleave.
+            files_purged = self._purge_exported_files(target_hash)
         total_file_entries = sum(files_purged.values())
 
         if removed > 0 or total_file_entries > 0:
@@ -406,11 +407,12 @@ class AuditLogger:
         The path is tracked so that :meth:`purge_by_session` can also
         scrub session data from previously exported files.
         """
-        with open(path, "w", encoding="utf-8") as f:
-            entries = [e.to_dict() for e in self._entries]
-            json.dump({"entries": entries}, f, indent=2)
-        if path not in self._exported_paths:
-            self._exported_paths.append(path)
+        with self._lock:
+            with open(path, "w", encoding="utf-8") as f:
+                entries = [e.to_dict() for e in self._entries]
+                json.dump({"entries": entries}, f, indent=2)
+            if path not in self._exported_paths:
+                self._exported_paths.append(path)
 
     def _purge_exported_files(self, session_id_hash: str) -> dict[str, int]:
         """Remove entries matching session_id_hash from all exported JSON files.

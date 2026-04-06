@@ -292,6 +292,14 @@ class TestAdherenceLevelPlugin:
         with pytest.raises(ValueError):
             AdherenceLevelPlugin(min_adherence=6)
 
+    def test_require_declaration_blocks_when_missing(self) -> None:
+        plugin = AdherenceLevelPlugin(min_adherence=3, require_declaration=True)
+        ctx = EvaluationContext(bundle=_make_bundle(), content="hi")
+        decision = plugin.evaluate(ctx)
+        assert decision is not None
+        assert decision.blocked
+        assert "does not declare" in decision.reason
+
     def test_adherence_from_metadata_kwarg(self) -> None:
         plugin = AdherenceLevelPlugin(min_adherence=3)
         ctx = EvaluationContext(

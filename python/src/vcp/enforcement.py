@@ -184,17 +184,22 @@ class AdherenceLevelPlugin(PDPPlugin):
     def priority(self) -> int:
         return 20
 
-    def __init__(self, min_adherence: int = 3) -> None:
+    def __init__(
+        self,
+        min_adherence: int = 3,
+        require_declaration: bool = False,
+    ) -> None:
         if not 0 <= min_adherence <= 5:
             raise ValueError(f"min_adherence must be 0-5, got {min_adherence}")
         self._min_adherence = min_adherence
+        self._require_declaration = require_declaration
 
     def evaluate(self, ctx: EvaluationContext) -> PDPDecision | None:
         bundle = ctx.bundle
         if bundle is None:
             return None
 
-        # Extract adherence level from bundle metadata or manifest
+        # Extract adherence level from metadata kwargs or bundle manifest
         adherence = ctx.metadata.get("adherence_level")
         if adherence is None:
             manifest_meta = getattr(bundle, "manifest", None)
@@ -204,6 +209,12 @@ class AdherenceLevelPlugin(PDPPlugin):
                 )
 
         if adherence is None:
+            if self._require_declaration:
+                return PDPDecision(
+                    decision=DecisionType.BLOCK,
+                    reason="Bundle does not declare an adherence level",
+                    plugin_id=self.plugin_id,
+                )
             return None
 
         try:
@@ -260,7 +271,7 @@ class BundleExpiryPlugin(PDPPlugin):
             return None
 
         now = datetime.now(timezone.utc)
-        if hasattr(exp, "tzinfo") and exp.tzinfo is None:
+        if exp.tzinfo is None:
             exp = exp.replace(tzinfo=timezone.utc)
 
         if now > exp:
@@ -377,7 +388,12 @@ class PDPEnforcer:
                 final = DecisionType.BLOCK
                 break
             if d.decision == DecisionType.ESCALATE:
-                final = DecisionType.BLOCK  # No escalation handler → fail-closed
+                logger.warning(
+                    "Plugin %s requested escalation but no handler is set — "
+                    "promoting to BLOCK (fail-closed)",
+                    d.plugin_id,
+                )
+                final = DecisionType.BLOCK
             if d.decision == DecisionType.TRANSFORM and final == DecisionType.ALLOW:
                 final = DecisionType.TRANSFORM
 
