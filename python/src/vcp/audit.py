@@ -6,6 +6,7 @@ Privacy-preserving audit logging for VCP operations.
 
 import hashlib
 import json
+import logging
 import os
 import threading
 import uuid
@@ -16,6 +17,8 @@ from enum import Enum
 from typing import Any
 
 from .metrics import vcp_audit_events_total
+
+logger = logging.getLogger(__name__)
 
 # Per-process random salt for privacy hashing. Makes hashes non-reversible
 # from known inputs while remaining deterministic within a process lifetime
@@ -143,6 +146,7 @@ class AuditLogger:
         self._log_callback = log_callback
         self._entries: list[AuditEntry] = []
         self._exported_paths: list[str] = []
+        self._purge_handlers: list[Callable[[str, str], dict[str, Any]]] = []
         self._lock = threading.Lock()
 
     def log_verification(
@@ -327,17 +331,33 @@ class AuditLogger:
         """Clear stored entries."""
         self._entries.clear()
 
+    def register_purge_handler(
+        self,
+        handler: Callable[[str, str], dict[str, Any]],
+    ) -> None:
+        """Register an external sink's purge handler.
+
+        When :meth:`purge_by_session` runs, each registered handler is
+        called with ``(session_id_hash, purge_id)`` and should delete
+        that session's data from its store, returning a dict describing
+        what was removed (included in the tombstone receipt).
+
+        If ``log_callback`` is set without any purge handler, purge_by_session
+        will log a warning — the callback sink likely holds data that won't
+        be reached.
+
+        Args:
+            handler: ``(session_id_hash: str, purge_id: str) -> dict[str, Any]``
+        """
+        self._purge_handlers.append(handler)
+
     def purge_by_session(self, session_id: str) -> dict[str, Any]:
         """Purge all audit entries for a session (GDPR right to erasure).
 
         Purges matching entries from:
         1. The in-memory entry list
         2. Any JSON files previously written via :meth:`export_json`
-
-        Data delivered via ``log_callback`` or persisted to external stores
-        (Redis, database) is NOT covered. Callers are responsible for
-        propagating the purge to those sinks — the ``PURGE_TOMBSTONE``
-        callback entry is emitted to facilitate this.
+        3. Any external sinks via registered purge handlers
 
         A tombstone receipt is returned so that compliance can be
         demonstrated to a regulator.
@@ -347,9 +367,11 @@ class AuditLogger:
 
         Returns:
             Tombstone receipt dict with purge_id, timestamp, entries_removed,
-            files_purged, and scope description.
+            files_purged, external_sink_results, and scope description.
         """
         target_hash = _hash_for_privacy(session_id)
+        purge_id = str(uuid.uuid4())
+
         with self._lock:
             before = len(self._entries)
             self._entries = [
@@ -362,26 +384,45 @@ class AuditLogger:
             files_purged = self._purge_exported_files(target_hash)
         total_file_entries = sum(files_purged.values())
 
-        if removed > 0 or total_file_entries > 0:
+        # Propagate purge to registered external sinks
+        external_results: list[dict[str, Any]] = []
+        for handler in self._purge_handlers:
+            try:
+                result = handler(target_hash, purge_id)
+                external_results.append(result)
+            except Exception:
+                logger.exception(
+                    "[GDPR] External purge handler failed for purge_id=%s",
+                    purge_id,
+                )
+                external_results.append({"error": "handler raised exception"})
+
+        # Warn if log_callback is set but no purge handler covers it
+        if self._log_callback and not self._purge_handlers:
+            logger.warning(
+                "[GDPR] log_callback is set but no purge handlers are registered. "
+                "Data delivered to the callback sink may not be purged. "
+                "Use register_purge_handler() to close this gap."
+            )
+
+        if removed > 0 or total_file_entries > 0 or external_results:
             vcp_audit_events_total.labels(event_type="purge").inc()
 
-        purge_id = str(uuid.uuid4())
+        scope_parts = ["in-memory audit entries", "tracked exported JSON files"]
+        if self._purge_handlers:
+            scope_parts.append(f"{len(self._purge_handlers)} external sink(s)")
+
         tombstone: dict[str, Any] = {
             "purge_id": purge_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "entries_removed": removed,
             "file_entries_removed": total_file_entries,
             "files_purged": files_purged,
-            "scope": "in-memory audit entries + tracked exported JSON files",
-            "note": (
-                "This purge covers the in-memory audit log and all JSON files "
-                "previously exported via export_json(). Data delivered via "
-                "log_callback or persisted to external stores (Redis, database) "
-                "must be purged separately by the caller."
-            ),
+            "external_sink_results": external_results,
+            "scope": " + ".join(scope_parts),
         }
 
-        if self._log_callback and (removed > 0 or total_file_entries > 0):
+        if self._log_callback and (removed > 0 or total_file_entries > 0 or external_results):
             purge_entry = AuditEntry(
                 timestamp=datetime.now(timezone.utc),
                 session_id_hash=target_hash,
@@ -389,6 +430,7 @@ class AuditLogger:
                 checks_passed=[
                     f"memory_removed:{removed}",
                     f"file_removed:{total_file_entries}",
+                    f"external_sinks:{len(external_results)}",
                 ],
                 bundle_id_hash=purge_id,
                 content_hash="n/a",

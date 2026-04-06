@@ -364,7 +364,9 @@ class PDPEnforcer:
         )
 
         decisions: list[PDPDecision] = []
+        evaluated = 0
         for plugin in self._plugins:
+            evaluated += 1
             try:
                 decision = plugin.evaluate(ctx)
                 if decision is not None:
@@ -403,5 +405,5 @@ class PDPEnforcer:
             final_decision=final,
             decisions=decisions,
             duration_ms=duration_ms,
-            plugins_evaluated=len(self._plugins),
+            plugins_evaluated=evaluated,
         )
