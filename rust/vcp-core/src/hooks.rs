@@ -301,7 +301,7 @@ impl HookRegistry {
 
                 hooks.push(hook);
                 // Sort descending by priority (higher runs first).
-                hooks.sort_by(|a, b| b.priority.cmp(&a.priority));
+                hooks.sort_by_key(|b| std::cmp::Reverse(b.priority));
             }
             HookScope::Session => {
                 let sid = session_id.ok_or_else(|| {
@@ -320,7 +320,7 @@ impl HookRegistry {
                 }
 
                 hooks.push(hook);
-                hooks.sort_by(|a, b| b.priority.cmp(&a.priority));
+                hooks.sort_by_key(|b| std::cmp::Reverse(b.priority));
             }
         }
 
