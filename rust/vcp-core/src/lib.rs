@@ -66,7 +66,7 @@ pub mod negotiation;
 pub mod types;
 
 // Re-export commonly used types at crate root.
-pub use context::FullContext;
+pub use context::{ConformanceLevel, FullContext};
 pub use csm1::{Csm1Code, Csm1Token, Persona, Scope};
 pub use error::{VcpError, VcpResult};
 pub use hooks::{
@@ -76,7 +76,7 @@ pub use hooks::{
 pub use identity::VcpToken;
 pub use personal::{PersonalDimension, PersonalState};
 pub use revocation::{RevocationChecker, RevocationStatus};
-pub use situational::SituationalContext;
+pub use situational::{SituationalContext, SituationalDimension};
 pub use transport::{
     compute_content_hash, sign_manifest, verify_content_hash, verify_manifest_signature,
 };

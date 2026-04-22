@@ -130,8 +130,8 @@ class TestStateTracker:
 
     def test_multiple_changes_is_major(self, tracker, encoder):
         """Three or more dimension changes should be MAJOR."""
-        ctx1 = encoder.encode(time="morning", space="home", state="happy")
-        ctx2 = encoder.encode(time="evening", space="office", state="anxious")
+        ctx1 = encoder.encode(time="morning", space="home", culture="casual")
+        ctx2 = encoder.encode(time="evening", space="office", culture="formal")
         tracker.record(ctx1)
         transition = tracker.record(ctx2)
         assert transition.severity == TransitionSeverity.MAJOR
@@ -287,7 +287,7 @@ class TestFindTransitions:
         tracker.record(encoder.encode(time="evening"))
 
         # Record a major change (3+ dimensions)
-        tracker.record(encoder.encode(time="night", space="office", state="tired"))
+        tracker.record(encoder.encode(time="night", space="office", culture="formal"))
 
         minor = tracker.find_transitions(TransitionSeverity.MINOR)
         major = tracker.find_transitions(TransitionSeverity.MAJOR)

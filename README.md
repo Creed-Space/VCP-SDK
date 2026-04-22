@@ -2,7 +2,7 @@
 
 # VCP SDK — Official SDK for the Value Context Protocol
 
-**Multi-language SDK for VCP v3.1 — parse tokens, encode context, negotiate capabilities across all six protocol layers (I-T-S-A-M-E).**
+**Multi-language SDK for VCP v3.2 (incl. VEP-0004) — parse tokens, encode context, negotiate capabilities across all six protocol layers (I-T-S-A-M-E).**
 
 [![CI](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml)
 [![Python SDK](https://img.shields.io/badge/python-4.0.0-3776AB?style=flat-square&logo=python&logoColor=white)](./python/)
@@ -20,17 +20,17 @@
 
 The **Value-Context Protocol (VCP)** is an open specification for transporting constitutional values, behavioral rules, and personal context to AI systems. The VCP SDK provides production-ready implementations in Python, TypeScript, and Rust with full cross-language parity.
 
-VCP v3.1 defines six protocol layers (I-T-S-A-M-E) alongside five opt-in extensions and a capability negotiation handshake, enabling rich context exchange between humans and AI.
+VCP v3.2 defines six protocol layers (I-T-S-A-M-E) alongside five opt-in extensions and a capability negotiation handshake, enabling rich context exchange between humans and AI. The adaptation layer (VCP/A) encodes situational context in 13 dimensions (9 core + 4 VEP-0004) plus 5 personal-state dimensions on the R-line.
 
 ---
 
-## Features (v3.1)
+## Features (v3.2)
 
 ### The Six Layers (I-T-S-A-M-E)
 - **VCP/I (Identity)** — Token parsing, naming, namespace management
 - **VCP/T (Transport)** — Signed bundles with Ed25519 signatures and SHA-256 content hashes
 - **VCP/S (Semantics)** — CSM-1 grammar, personas, composition rules
-- **VCP/A (Adaptation)** — Context encoding, state tracking, deterministic hooks
+- **VCP/A (Adaptation)** — Context encoding (13 situational + 5 personal-state dimensions, incl. VEP-0004: embodiment, proximity, relationship, formality), state tracking, deterministic hooks. Three conformance tiers: **VCP-Minimal** (core 9), **VCP-Standard** (core + R-line), **VCP-Extended** (any VEP-0004 dim).
 - **VCP/M (Messaging)** — Inter-agent message types: context_share, constitution_announce, constraint_propagate, escalation with severity levels
 - **VCP/E (Economic Governance)** — Fiduciary constraints, authorization gaps (capability, accountability, compatibility), transaction governance
 
@@ -189,11 +189,11 @@ cd rust && cargo test conformance
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### v3.1 Extensions (VCP-X-*)
+### v3.2 Extensions (VCP-X-*)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      VCP v3.1 Extensions (VCP-X-*)                  │
+│                      VCP v3.2 Extensions (VCP-X-*)                  │
 ├──────────────┬──────────────┬──────────────────┬────────────────────┤
 │ Personal     │ Relational   │ Constitutional   │ Session   │ Intent │
 │ State        │ Context      │ Consensus        │ Handoff   │        │

@@ -223,15 +223,27 @@ async def _handle_encode_context(arguments: dict):
 
     encoder = ContextEncoder()
     context = encoder.encode(
+        # Situational (VCP v3.2, 13 dims)
         time=arguments.get("time"),
         space=arguments.get("space"),
         company=arguments.get("company"),
         culture=arguments.get("culture"),
         occasion=arguments.get("occasion"),
-        state=arguments.get("state"),
         environment=arguments.get("environment"),
         agency=arguments.get("agency"),
         constraints=arguments.get("constraints"),
+        system_context=arguments.get("system_context"),
+        # VEP-0004
+        embodiment=arguments.get("embodiment"),
+        proximity=arguments.get("proximity"),
+        relationship=arguments.get("relationship"),
+        formality=arguments.get("formality"),
+        # Personal state (R-line)
+        cognitive_state=arguments.get("cognitive_state"),
+        emotional_tone=arguments.get("emotional_tone"),
+        energy_level=arguments.get("energy_level"),
+        perceived_urgency=arguments.get("perceived_urgency"),
+        body_signals=arguments.get("body_signals"),
     )
 
     result = {

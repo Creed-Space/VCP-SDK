@@ -64,3 +64,35 @@ export {
   createFullHello,
 } from './negotiation';
 export type { VCPHello, VCPAck } from './negotiation';
+
+// VCP/A Situational + Personal-state context encoder (v3.2, incl. VEP-0004)
+export {
+  SituationalDimension,
+  PersonalStateDimension,
+  SITUATIONAL_SPECS,
+  SITUATIONAL_ORDER,
+  PERSONAL_STATE_SPECS,
+  PERSONAL_STATE_ORDER,
+  PERSONAL_SEPARATOR,
+  DIM_SEPARATOR,
+  INTENSITY_SEPARATOR,
+  makePersonalState,
+  encodePersonalState,
+  decodePersonalState,
+  emptyContext,
+  encodeContext,
+  decodeContext,
+  contextToJSON,
+  contextFromJSON,
+  conformanceLevel,
+  buildContext,
+} from './context';
+export type {
+  SituationalDimensionSpec,
+  PersonalStateDimensionSpec,
+  PersonalState,
+  VCPContext,
+  VCPContextJSON,
+  ConformanceLevel,
+  EncoderInput,
+} from './context';

@@ -100,10 +100,6 @@ class ContextEncodeRequest(BaseModel):
         None,
         description="Occasion (normal, celebration, mourning, emergency)",
     )
-    state: str | None = Field(
-        None,
-        description="Mental state (happy, anxious, tired, contemplative)",
-    )
     environment: str | None = Field(
         None, description="Physical environment"
     )
@@ -113,6 +109,48 @@ class ContextEncodeRequest(BaseModel):
     )
     constraints: list[str] | None = Field(
         None, description="Active constraints"
+    )
+    system_context: str | None = Field(
+        None,
+        description="System context (online, degraded, offline, sandboxed, testing)",
+    )
+    # ── VEP-0004 ────────────────────────────────────────────────────────
+    embodiment: str | None = Field(
+        None,
+        description="Embodiment (stationary, navigating, manipulating, carrying, emergency_stop)",
+    )
+    proximity: str | None = Field(
+        None,
+        description="Proximity (distant, same_room, nearby, close, contact)",
+    )
+    relationship: str | None = Field(
+        None,
+        description="Relationship (compound '{tie}:{function}', e.g. 'colleague:professional')",
+    )
+    formality: str | None = Field(
+        None,
+        description="Formality (casual, professional, formal, ceremonial)",
+    )
+    # ── Personal state (R-line, v3.1+) ──────────────────────────────────
+    cognitive_state: str | None = Field(
+        None,
+        description="Cognitive state, optional 'value:intensity' (e.g. 'focused:4')",
+    )
+    emotional_tone: str | None = Field(
+        None,
+        description="Emotional tone, optional 'value:intensity' (e.g. 'calm:5')",
+    )
+    energy_level: str | None = Field(
+        None,
+        description="Energy level, optional 'value:intensity' (e.g. 'rested:4')",
+    )
+    perceived_urgency: str | None = Field(
+        None,
+        description="Perceived urgency, optional 'value:intensity' (e.g. 'unhurried:2')",
+    )
+    body_signals: str | None = Field(
+        None,
+        description="Body signals, optional 'value:intensity' (e.g. 'neutral:1')",
     )
 
 
@@ -237,21 +275,36 @@ async def encode_context(
 
     encoder = ContextEncoder()
     context = encoder.encode(
+        # Situational (VCP v3.2, 13 dims)
         time=request.time,
         space=request.space,
         company=request.company,
         culture=request.culture,
         occasion=request.occasion,
-        state=request.state,
         environment=request.environment,
         agency=request.agency,
         constraints=request.constraints,
+        system_context=request.system_context,
+        # VEP-0004
+        embodiment=request.embodiment,
+        proximity=request.proximity,
+        relationship=request.relationship,
+        formality=request.formality,
+        # Personal state (R-line)
+        cognitive_state=request.cognitive_state,
+        emotional_tone=request.emotional_tone,
+        energy_level=request.energy_level,
+        perceived_urgency=request.perceived_urgency,
+        body_signals=request.body_signals,
     )
+
+    dimensions_set = [dim._name for dim in context.situational.keys()]
+    dimensions_set += [f"personal:{dim._name}" for dim in context.personal.keys()]
 
     return ContextEncodeResponse(
         wire_format=context.encode(),
         json_format=context.to_json(),
-        dimensions_set=[dim._name for dim in context.dimensions.keys()],
+        dimensions_set=dimensions_set,
     )
 
 
