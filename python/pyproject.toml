@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "value-context-protocol"
-version = "1.0.0"
+version = "4.2.0"
 description = "Value-Context Protocol - A specification for transporting constitutional values to AI systems"
 readme = "README.md"
 license = {text = "MIT"}

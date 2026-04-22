@@ -2,7 +2,7 @@
 
 Register VCP capabilities as discoverable tools for AI agents via the [WebMCP API](https://webmcp.org) (`navigator.modelContext`).
 
-**Status**: 0.1.0 — Used in production on [VCP Demo](https://vcp-demo.onrender.com) and [Creed Space](https://creed.space).
+**Status**: 4.2.0 — Used in production on [VCP Demo](https://vcp-demo.onrender.com) and [Creed Space](https://creed.space).
 
 ## Quick Start
 

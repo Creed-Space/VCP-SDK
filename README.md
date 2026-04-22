@@ -5,9 +5,9 @@
 **Multi-language SDK for VCP v3.2 (incl. VEP-0004) — parse tokens, encode context, negotiate capabilities across all six protocol layers (I-T-S-A-M-E).**
 
 [![CI](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml)
-[![Python SDK](https://img.shields.io/badge/python-4.0.0-3776AB?style=flat-square&logo=python&logoColor=white)](./python/)
-[![TypeScript SDK](https://img.shields.io/badge/typescript-4.0.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](./webmcp/)
-[![Rust SDK](https://img.shields.io/badge/rust-4.0.0-DEA584?style=flat-square&logo=rust&logoColor=white)](./rust/)
+[![Python SDK](https://img.shields.io/badge/python-4.2.0-3776AB?style=flat-square&logo=python&logoColor=white)](./python/)
+[![TypeScript SDK](https://img.shields.io/badge/typescript-4.2.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](./webmcp/)
+[![Rust SDK](https://img.shields.io/badge/rust-4.2.0-DEA584?style=flat-square&logo=rust&logoColor=white)](./rust/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](./LICENSE)
 
 [Spec](https://github.com/Creed-Space/VCP-Spec) · [Inspector](https://inspector.valuecontextprotocol.org/) · [Website](https://valuecontextprotocol.org/)

@@ -138,7 +138,7 @@ from .types import (  # noqa: F401
     apply_decay,
 )
 
-__version__ = "4.0.0"  # VCP v4.0: v2.0 spec + robustness layer
+__version__ = "4.2.0"  # VCP v3.2 / VEP-0004 adaptation layer
 __all__ = [
     # Bundle
     "Bundle",
