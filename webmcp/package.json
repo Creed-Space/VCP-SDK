@@ -1,14 +1,19 @@
 {
   "name": "@vcp/webmcp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Register VCP capabilities as discoverable tools for AI agents via the WebMCP API (navigator.modelContext)",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./extensions": {
+      "types": "./dist/extensions/index.d.ts",
+      "import": "./dist/extensions/index.js"
     },
     "./polyfill": {
       "types": "./dist/polyfill.d.ts",
@@ -24,7 +29,8 @@
     "build": "tsc",
     "check": "tsc --noEmit",
     "test": "vitest run",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build && npm run test"
   },
   "keywords": [
     "vcp",
@@ -35,11 +41,19 @@
     "chrome-extensions",
     "constitutional-ai"
   ],
+  "author": "Creed Space <https://github.com/Creed-Space>",
   "license": "MIT",
+  "homepage": "https://github.com/Creed-Space/VCP-SDK/tree/main/webmcp",
   "repository": {
     "type": "git",
     "url": "https://github.com/Creed-Space/VCP-SDK.git",
     "directory": "webmcp"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
