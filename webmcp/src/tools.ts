@@ -1,5 +1,5 @@
 /**
- * @vcp/webmcp — Tool Factory
+ * @creed-space/vcp-sdk — Tool Factory
  *
  * Creates VCP tool definitions from a config object.
  * Framework-agnostic — no SvelteKit or framework-specific imports.

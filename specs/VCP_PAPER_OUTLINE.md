@@ -17,7 +17,7 @@
 
 As AI systems assume increasingly autonomous roles, the absence of a shared representational substrate for values risks compounding cultural bias, semantic drift, and coordination failure. Current alignment methods optimize for compliance in limited contexts rather than mutual interpretability across pluralistic systems. We introduce Value Context Protocols (VCP): a modular three-layer stack for AI self-modeling and inter-agent value communication.
 
-The protocol comprises: (1) Universal Values Corpus (UVC), a curated cross-cultural ontology enabling semantic addressing of normative content; (2) Constitutional Safety Minicode (CSM), a grammar linking alignment metadata to model context with adherence proofs; and (3) Values Communication Layer (VCL), compact symbolic encodings simultaneously interpretable by humans and machines.
+The protocol comprises: (1) Universal Value Coding (UVC), a curated cross-cultural ontology enabling semantic addressing of normative content; (2) Constitutional Safety Minicode (CSM), a grammar linking alignment metadata to model context with adherence proofs; and (3) Values Communication Layer (VCL), compact symbolic encodings simultaneously interpretable by humans and machines.
 
 We present the theoretical foundations for AI self-modeling—drawing on the "vagal tone" analogy for qualia-adjacent states—and demonstrate three interoperable implementations: VCP 2.0 for AI self-sensing, Gemini Metric Bridge for cross-architecture exchange, and MillOS VCL for human-AI workplace contexts. Validation shows ≥90% semantic fidelity in round-trip translations and successful state exchange across architecturally distinct AI systems.
 
@@ -79,7 +79,7 @@ VCP provides foundational infrastructure for bilateral alignment, enabling AI sy
 │  ├── Adherence proofs                                │
 │  └── Conflict resolution mechanisms                  │
 │                                                      │
-│  Layer 1: UVC (Universal Values Corpus)              │
+│  Layer 1: UVC (Universal Value Coding)              │
 │  ├── Cross-cultural value ontology                   │
 │  ├── "What3Words-style" semantic addressing          │
 │  └── Version-locked reference corpus                 │
@@ -87,7 +87,7 @@ VCP provides foundational infrastructure for bilateral alignment, enabling AI sy
 └─────────────────────────────────────────────────────┘
 ```
 
-### 2.2 Universal Values Corpus (UVC)
+### 2.2 Universal Value Coding (UVC)
 
 **Source:** Nell's VCP proposal document
 

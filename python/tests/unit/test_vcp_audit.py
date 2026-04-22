@@ -163,7 +163,8 @@ class TestGDPRPurge:
         assert tombstone["entries_removed"] == 2
         assert "purge_id" in tombstone
         assert "timestamp" in tombstone
-        assert tombstone["scope"] == "in-memory audit entries only"
+        assert tombstone["scope"] == "in-memory audit entries + tracked exported JSON files"
+        assert tombstone["external_sink_results"] == []
         # Tombstone must NOT contain session_id_hash (GDPR: the hash itself is PII)
         assert "session_id_hash" not in tombstone
         assert len(logger._entries) == 1
@@ -181,6 +182,104 @@ class TestGDPRPurge:
         logger = AuditLogger(level=AuditLevel.STANDARD)
         tombstone = logger.purge_by_session("any")
         assert tombstone["entries_removed"] == 0
+
+    def test_purge_scrubs_exported_json_file(self, tmp_path) -> None:
+        logger = AuditLogger(level=AuditLevel.STANDARD)
+        hash_a = _hash_for_privacy("user-A")
+        hash_b = _hash_for_privacy("user-B")
+        logger._entries.append(_make_entry(session_id_hash=hash_a))
+        logger._entries.append(_make_entry(session_id_hash=hash_b))
+        logger._entries.append(_make_entry(session_id_hash=hash_a))
+
+        export_path = str(tmp_path / "audit_export.json")
+        logger.export_json(export_path)
+
+        # Clear in-memory so we test file-only purge
+        logger._entries.clear()
+        tombstone = logger.purge_by_session("user-A")
+
+        assert tombstone["entries_removed"] == 0  # already cleared
+        assert tombstone["file_entries_removed"] == 2
+        assert export_path in tombstone["files_purged"]
+
+        import json
+        with open(export_path) as f:
+            data = json.load(f)
+        remaining = data["entries"]
+        assert len(remaining) == 1
+        # Remaining entry should be user-B (at STANDARD+, session_id_hash is present)
+        assert remaining[0].get("session_id_hash") == hash_b
+
+    def test_export_json_tracks_path(self, tmp_path) -> None:
+        logger = AuditLogger(level=AuditLevel.STANDARD)
+        p = str(tmp_path / "out.json")
+        logger.export_json(p)
+        assert p in logger._exported_paths
+
+    def test_purge_handles_missing_export_file(self, tmp_path) -> None:
+        logger = AuditLogger(level=AuditLevel.STANDARD)
+        logger._exported_paths.append(str(tmp_path / "gone.json"))
+        tombstone = logger.purge_by_session("user-X")
+        assert tombstone["file_entries_removed"] == 0
+
+    def test_purge_handler_called_with_hash_and_id(self) -> None:
+        calls = []
+
+        def handler(session_hash: str, purge_id: str) -> dict:
+            calls.append((session_hash, purge_id))
+            return {"redis_keys_deleted": 3}
+
+        logger = AuditLogger(level=AuditLevel.STANDARD)
+        logger.register_purge_handler(handler)
+        logger._entries.append(_make_entry(session_id_hash=_hash_for_privacy("user-A")))
+
+        tombstone = logger.purge_by_session("user-A")
+
+        assert len(calls) == 1
+        assert calls[0][0] == _hash_for_privacy("user-A")
+        assert calls[0][1] == tombstone["purge_id"]
+        assert tombstone["external_sink_results"] == [{"redis_keys_deleted": 3}]
+        assert "1 external sink(s)" in tombstone["scope"]
+
+    def test_purge_handler_exception_does_not_crash(self) -> None:
+        def bad_handler(session_hash: str, purge_id: str) -> dict:
+            raise RuntimeError("redis down")
+
+        logger = AuditLogger(level=AuditLevel.STANDARD)
+        logger.register_purge_handler(bad_handler)
+
+        tombstone = logger.purge_by_session("user-A")
+        assert len(tombstone["external_sink_results"]) == 1
+        assert "error" in tombstone["external_sink_results"][0]
+
+    def test_warns_when_callback_set_without_purge_handler(self, caplog) -> None:
+        import logging as _logging
+
+        captured = []
+        logger = AuditLogger(
+            level=AuditLevel.STANDARD,
+            log_callback=captured.append,
+        )
+        logger._entries.append(_make_entry(session_id_hash=_hash_for_privacy("user-A")))
+
+        with caplog.at_level(_logging.WARNING, logger="vcp.audit"):
+            logger.purge_by_session("user-A")
+
+        assert any("no purge handlers are registered" in r.message for r in caplog.records)
+
+    def test_no_warning_when_purge_handler_registered(self, caplog) -> None:
+        import logging as _logging
+
+        logger = AuditLogger(
+            level=AuditLevel.STANDARD,
+            log_callback=lambda _: None,
+        )
+        logger.register_purge_handler(lambda h, p: {"ok": True})
+
+        with caplog.at_level(_logging.WARNING, logger="vcp.audit"):
+            logger.purge_by_session("user-A")
+
+        assert not any("no purge handlers" in r.message for r in caplog.records)
 
 
 # ---------------------------------------------------------------------------

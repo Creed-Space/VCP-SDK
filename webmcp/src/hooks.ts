@@ -1,5 +1,5 @@
 /**
- * @vcp/webmcp — VCP Hook System
+ * @creed-space/vcp-sdk — VCP Hook System
  *
  * Lightweight browser-side implementation of the VCP Hook System
  * (VCP/A Layer 4) for intercepting and modifying the constitutional

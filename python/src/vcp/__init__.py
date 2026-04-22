@@ -26,6 +26,17 @@ from .canonicalize import (  # noqa: F401
     compute_content_hash,
     verify_content_hash,
 )
+from .enforcement import (  # noqa: F401
+    AdherenceLevelPlugin,
+    BundleExpiryPlugin,
+    DecisionType,
+    EnforcementResult,
+    EvaluationContext,
+    PDPDecision,
+    PDPEnforcer,
+    PDPPlugin,
+    RefusalBoundaryPlugin,
+)
 
 # VCP/I (Identity Layer)
 from .identity import (  # noqa: F401
@@ -127,7 +138,7 @@ from .types import (  # noqa: F401
     apply_decay,
 )
 
-__version__ = "4.0.0"  # VCP v4.0: v2.0 spec + robustness layer
+__version__ = "4.2.0"  # VCP v3.2 / VEP-0004 adaptation layer
 __all__ = [
     # Bundle
     "Bundle",
@@ -229,4 +240,14 @@ __all__ = [
     "get_field_privacy_level",
     "format_field_name",
     "generate_privacy_summary",
+    # PDP Enforcement
+    "PDPPlugin",
+    "PDPEnforcer",
+    "PDPDecision",
+    "DecisionType",
+    "EnforcementResult",
+    "EvaluationContext",
+    "RefusalBoundaryPlugin",
+    "AdherenceLevelPlugin",
+    "BundleExpiryPlugin",
 ]

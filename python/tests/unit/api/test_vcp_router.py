@@ -124,11 +124,12 @@ class TestContextEncodeRequestModel:
             space="home",
             company=["children", "family"],
             occasion="normal",
-            state="happy",
+            cognitive_state="focused:4",
             agency="leader",
         )
         assert model.time == "morning"
         assert model.company == ["children", "family"]
+        assert model.cognitive_state == "focused:4"
 
     def test_minimal_request(self) -> None:
         """Test creating minimal request."""

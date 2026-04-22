@@ -1,0 +1,240 @@
+{
+  "suite": "adaptation/context_encoding_extended",
+  "version": "3.2.0",
+  "description": "VCP v3.2 conformance fixtures for the VEP-0004 situational dimensions (positions 10-13): EMBODIMENT, PROXIMITY, RELATIONSHIP, FORMALITY. These vectors target the VCP-Extended conformance tier. Personal-state (R-line) field names are 'value' + 'intensity' (1-5). The band separator between situational and personal wire halves is U+2016 (\u2016 DOUBLE VERTICAL LINE). Situational dims are joined with '|'. RELATIONSHIP is free-form: its value is a compound '{tie}:{function}' string rather than an emoji from a fixed vocabulary.",
+  "conformance_level": "VCP-Extended",
+  "vectors": [
+    {
+      "id": "vep-001",
+      "description": "EMBODIMENT alone (standing person + manipulating hand): VEP-0004 minimum, no core/personal",
+      "input": {
+        "situational": {
+          "embodiment": ["\u270B"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire": "\ud83e\uddcd\u270b",
+        "wire_contains": "\ud83e\uddcd",
+        "conformance_level": "VCP-Extended",
+        "has_situational": true,
+        "has_vep_0004": true,
+        "has_personal": false,
+        "note": "EMBODIMENT symbol 🧍 (U+1F9CD) + manipulating hand ✋ (U+270B). One dim only → no pipe."
+      }
+    },
+    {
+      "id": "vep-002",
+      "description": "PROXIMITY alone (left-right arrow + pinching hand): VS16 symbol handling",
+      "input": {
+        "situational": {
+          "proximity": ["\ud83e\udd0f"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire": "\u2194\ufe0f\ud83e\udd0f",
+        "wire_contains": "\u2194\ufe0f",
+        "conformance_level": "VCP-Extended",
+        "has_vep_0004": true,
+        "note": "PROXIMITY symbol ↔️ is U+2194 + U+FE0F (VS16). Value 🤏 (U+1F90F) = intimate distance. Parsers MUST accept both the VS16-qualified and bare (U+2194 only) forms."
+      }
+    },
+    {
+      "id": "vep-003",
+      "description": "RELATIONSHIP free-form compound: colleague:professional",
+      "input": {
+        "situational": {
+          "relationship": ["colleague:professional"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire": "\ud83e\udea2colleague:professional",
+        "wire_contains": "\ud83e\udea2colleague:professional",
+        "conformance_level": "VCP-Extended",
+        "has_vep_0004": true,
+        "roundtrip_preserves_relationship_compound": true,
+        "note": "RELATIONSHIP 🪢 (U+1FAA2) carries free-form '{tie}:{function}' strings, NOT emoji. The internal colon is part of the value and MUST NOT be interpreted as an intensity separator (intensity is R-line only)."
+      }
+    },
+    {
+      "id": "vep-004",
+      "description": "RELATIONSHIP alternates: stranger:service, family:caregiving, friend:social",
+      "input": {
+        "situational": {
+          "relationship": ["stranger:service"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire": "\ud83e\udea2stranger:service",
+        "roundtrip_preserves_relationship_compound": true,
+        "note": "Any non-empty '{tie}:{function}' pair is valid; there is no closed vocabulary for RELATIONSHIP."
+      }
+    },
+    {
+      "id": "vep-005",
+      "description": "FORMALITY alone (top hat + briefcase): professional register",
+      "input": {
+        "situational": {
+          "formality": ["\ud83d\udcbc"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire": "\ud83c\udfa9\ud83d\udcbc",
+        "wire_contains": "\ud83c\udfa9",
+        "conformance_level": "VCP-Extended",
+        "has_vep_0004": true,
+        "note": "FORMALITY symbol 🎩 (U+1F3A9) + professional value 💼 (U+1F4BC)."
+      }
+    },
+    {
+      "id": "vep-006",
+      "description": "All four VEP-0004 dims in canonical position order (10, 11, 12, 13)",
+      "input": {
+        "situational": {
+          "embodiment": ["\u270B"],
+          "proximity": ["\ud83e\udd0f"],
+          "relationship": ["colleague:professional"],
+          "formality": ["\ud83d\udcbc"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire": "\ud83e\uddcd\u270b|\u2194\ufe0f\ud83e\udd0f|\ud83e\udea2colleague:professional|\ud83c\udfa9\ud83d\udcbc",
+        "conformance_level": "VCP-Extended",
+        "dimension_order": ["embodiment", "proximity", "relationship", "formality"],
+        "note": "VEP-0004 dims encode in strict position order. EMBODIMENT=10, PROXIMITY=11, RELATIONSHIP=12, FORMALITY=13."
+      }
+    },
+    {
+      "id": "vep-007",
+      "description": "Core situational + all VEP-0004 dims, no personal (Extended without R-line)",
+      "input": {
+        "situational": {
+          "time": ["\ud83c\udf05"],
+          "space": ["\ud83c\udfe2"],
+          "company": ["\ud83d\udc54"],
+          "occasion": ["\ud83d\udcbc"],
+          "embodiment": ["\u270B"],
+          "proximity": ["\ud83e\udd0f"],
+          "relationship": ["colleague:professional"],
+          "formality": ["\ud83d\udcbc"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire": "\u23f0\ud83c\udf05|\ud83d\udccd\ud83c\udfe2|\ud83d\udc65\ud83d\udc54|\ud83c\udfad\ud83d\udcbc|\ud83e\uddcd\u270b|\u2194\ufe0f\ud83e\udd0f|\ud83e\udea2colleague:professional|\ud83c\udfa9\ud83d\udcbc",
+        "conformance_level": "VCP-Extended",
+        "has_personal": false,
+        "has_vep_0004": true,
+        "separator_u2016_present": false,
+        "note": "Extended is triggered by ANY VEP-0004 dim regardless of personal presence. Here the \u2016 band separator is absent because personal is empty."
+      }
+    },
+    {
+      "id": "vep-008",
+      "description": "Canonical VCP v3.2 18-dim example (spec §2 + §A.3): full Extended with R-line",
+      "input": {
+        "situational": {
+          "time": ["\ud83c\udf05"],
+          "space": ["\ud83c\udfe2"],
+          "company": ["\ud83d\udc54"],
+          "occasion": ["\ud83d\udcbc"],
+          "embodiment": ["\u270B"],
+          "proximity": ["\ud83e\udd0f"],
+          "relationship": ["colleague:professional"],
+          "formality": ["\ud83d\udcbc"]
+        },
+        "personal": {
+          "cognitive_state": { "value": "focused", "intensity": 4 },
+          "emotional_tone": { "value": "calm", "intensity": 5 },
+          "energy_level": { "value": "rested", "intensity": 4 },
+          "perceived_urgency": { "value": "unhurried", "intensity": 2 },
+          "body_signals": { "value": "neutral", "intensity": 1 }
+        }
+      },
+      "expected": {
+        "wire": "\u23f0\ud83c\udf05|\ud83d\udccd\ud83c\udfe2|\ud83d\udc65\ud83d\udc54|\ud83c\udfad\ud83d\udcbc|\ud83e\uddcd\u270b|\u2194\ufe0f\ud83e\udd0f|\ud83e\udea2colleague:professional|\ud83c\udfa9\ud83d\udcbc\u2016\ud83e\udde0focused:4|\ud83d\udcadcalm:5|\ud83d\udd0brested:4|\u26a1unhurried:2|\ud83e\ude7aneutral:1",
+        "conformance_level": "VCP-Extended",
+        "has_personal": true,
+        "has_vep_0004": true,
+        "separator_u2016_present": true,
+        "note": "Canonical v3.2 worst-case fixture. 8 situational (4 core + 4 VEP-0004) joined by '|', then \u2016 (U+2016 DOUBLE VERTICAL LINE) band separator, then 5 personal-state dims with intensity suffix. Matches the example in schemas/vcp-adaptation-context.schema.json."
+      }
+    },
+    {
+      "id": "vep-009",
+      "description": "RELATIONSHIP containing an emoji in the tie slot",
+      "input": {
+        "situational": {
+          "relationship": ["parent:caregiving"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire": "\ud83e\udea2parent:caregiving",
+        "roundtrip_preserves_relationship_compound": true,
+        "note": "RELATIONSHIP values are arbitrary strings. Implementations MUST NOT validate against a closed vocabulary for the tie or function slot."
+      }
+    },
+    {
+      "id": "vep-010",
+      "description": "Single VEP-0004 dim (FORMALITY) with personal R-line: Extended (not Standard)",
+      "input": {
+        "situational": {
+          "formality": ["\ud83c\udf93"]
+        },
+        "personal": {
+          "cognitive_state": { "value": "focused", "intensity": 3 }
+        }
+      },
+      "expected": {
+        "wire_contains": "\ud83c\udfa9\ud83c\udf93",
+        "wire_contains_separator_u2016": true,
+        "conformance_level": "VCP-Extended",
+        "classification_precedence": "extended_over_standard",
+        "note": "Extended precedence rule: the presence of any VEP-0004 dim makes the context Extended, even if personal-state dims are also present (which would otherwise make it Standard). 🎓 (U+1F393) = academic register."
+      }
+    },
+    {
+      "id": "vep-011",
+      "description": "PROXIMITY parse compatibility: VS16-qualified vs bare",
+      "input": {
+        "situational": {
+          "proximity": ["\ud83c\udf10"]
+        },
+        "personal": {},
+        "alternate_wire_forms": [
+          "\u2194\ufe0f\ud83c\udf10",
+          "\u2194\ud83c\udf10"
+        ]
+      },
+      "expected": {
+        "wire": "\u2194\ufe0f\ud83c\udf10",
+        "decoder_must_accept_both_forms": true,
+        "note": "Canonical encoder emits the VS16-qualified form ↔️ (U+2194 U+FE0F). Parsers MUST also accept the bare form (U+2194 only). 🌐 (U+1F310) = remote/global distance."
+      }
+    },
+    {
+      "id": "vep-012",
+      "description": "EMBODIMENT emergency signal 🛑 (stop): risk-aware encoding",
+      "input": {
+        "situational": {
+          "embodiment": ["\ud83d\uded1"]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire": "\ud83e\uddcd\ud83d\uded1",
+        "conformance_level": "VCP-Extended",
+        "metadata": {
+          "has_emergency": true
+        },
+        "note": "🛑 (U+1F6D1) on EMBODIMENT signals an emergency halt (see schema metadata.has_emergency). Implementations MAY elevate risk_level accordingly."
+      }
+    }
+  ]
+}
