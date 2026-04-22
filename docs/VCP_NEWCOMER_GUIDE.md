@@ -40,7 +40,7 @@ The **Value-Context Protocol (VCP)** is a unified protocol stack for expressing,
 ├─────────────────────────────────────────────────────────────────┤
 │  Layer 1: VCP-IDENTITY (VCP/I)                                  │
 │  "What it's Called" - Token naming, namespaces, registry        │
-│  Maps to: UVC (Universal Values Corpus)                         │
+│  Maps to: UVC (Universal Value Coding)                         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -48,7 +48,7 @@ The **Value-Context Protocol (VCP)** is a unified protocol stack for expressing,
 
 | Research Concept | VCP Layer | Purpose |
 |------------------|-----------|---------|
-| **UVC** (Universal Values Corpus) | Layer 1: Identity | Curated cross-cultural corpus of values, "What3Words for ethics" |
+| **UVC** (Universal Value Coding) | Layer 1: Identity | Curated cross-cultural corpus of values, "What3Words for ethics" |
 | **CSM** (Constitutional Safety Minicode) | Layer 3: Semantics | Compact grammar for safety rules, adherence proofs |
 | **VCL** (Values Communication Layer) | Layer 4: Adaptation | Emoji-based symbolic encoding for context |
 | **VCP/M** (Messaging) | Layer 5: Messaging | Inter-agent message types, escalation, delivery semantics |
