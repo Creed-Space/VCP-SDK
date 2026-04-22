@@ -15,7 +15,7 @@ from typing import Annotated, Any
 from api_routers.auth_dependencies import get_current_user
 from core.config.logging_config import get_logger
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 try:
     from services.feature_flags import is_feature_enabled
@@ -81,6 +81,8 @@ class CSM1ParseResponse(BaseModel):
 
 class ContextEncodeRequest(BaseModel):
     """Request to encode context dimensions."""
+
+    model_config = ConfigDict(extra="forbid")
 
     time: str | None = Field(
         None, description="Time context (morning, midday, evening, night)"

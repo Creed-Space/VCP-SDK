@@ -2,7 +2,7 @@
 VCP PDP Enforcement Module
 
 Standalone policy enforcement for VCP bundles. Allows SDK consumers to
-enforce PDP-like decisions (allow/block/transform) against constitutional
+enforce PDP-like decisions (allow/block/modify/escalate) against constitutional
 rules without depending on a full safety stack.
 
 This module provides:
@@ -44,7 +44,7 @@ class DecisionType(Enum):
 
     ALLOW = "allow"
     BLOCK = "block"
-    TRANSFORM = "transform"
+    MODIFY = "modify"
     ESCALATE = "escalate"
 
 
@@ -396,8 +396,8 @@ class PDPEnforcer:
                     d.plugin_id,
                 )
                 final = DecisionType.BLOCK
-            if d.decision == DecisionType.TRANSFORM and final == DecisionType.ALLOW:
-                final = DecisionType.TRANSFORM
+            if d.decision == DecisionType.MODIFY and final == DecisionType.ALLOW:
+                final = DecisionType.MODIFY
 
         duration_ms = int((time.monotonic() - start) * 1000)
 
