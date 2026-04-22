@@ -44,12 +44,11 @@ Conformance levels (per VEP-0004):
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
 from ..metrics import track_duration, vcp_context_encode_duration_seconds, vcp_context_encodes_total
-
 
 # ────────────────────────────────────────────────────────────────────────────
 # Wire-format constants

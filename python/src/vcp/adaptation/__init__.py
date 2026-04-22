@@ -8,8 +8,8 @@ transition handling.
 from .context import (
     ContextEncoder,
     Dimension,  # backwards-compat alias → SituationalDimension
-    PersonalStateDimension,
     PersonalState,
+    PersonalStateDimension,
     SituationalDimension,
     VCPContext,
 )

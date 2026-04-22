@@ -67,10 +67,10 @@ impl SituationalDimension {
             Self::Constraints => "\u{1F536}",         // 🔶 large orange diamond
             Self::SystemContext => "\u{1F4E1}",       // 📡 satellite antenna
             // VEP-0004
-            Self::Embodiment => "\u{1F9CD}",          // 🧍 standing person
-            Self::Proximity => "\u{2194}\u{FE0F}",    // ↔️ left-right arrow (+ VS16)
-            Self::Relationship => "\u{1FAA2}",        // 🪢 knot
-            Self::Formality => "\u{1F3A9}",           // 🎩 top hat
+            Self::Embodiment => "\u{1F9CD}", // 🧍 standing person
+            Self::Proximity => "\u{2194}\u{FE0F}", // ↔️ left-right arrow (+ VS16)
+            Self::Relationship => "\u{1FAA2}", // 🪢 knot
+            Self::Formality => "\u{1F3A9}",  // 🎩 top hat
         }
     }
 
@@ -456,8 +456,10 @@ mod tests {
 
     #[test]
     fn thirteen_dimensions_unique_positions() {
-        let mut positions: Vec<u8> =
-            SituationalDimension::all().iter().map(|d| d.position()).collect();
+        let mut positions: Vec<u8> = SituationalDimension::all()
+            .iter()
+            .map(|d| d.position())
+            .collect();
         positions.sort_unstable();
         assert_eq!(positions, (1u8..=13).collect::<Vec<_>>());
     }
@@ -561,13 +563,22 @@ mod tests {
         assert!(wire.contains("\u{1F3A9}\u{1F4BC}"));
 
         let parsed = SituationalContext::from_wire(&wire).unwrap();
-        assert_eq!(parsed.embodiment.as_deref(), Some(&["\u{270B}".to_string()][..]));
-        assert_eq!(parsed.proximity.as_deref(), Some(&["\u{1F90F}".to_string()][..]));
+        assert_eq!(
+            parsed.embodiment.as_deref(),
+            Some(&["\u{270B}".to_string()][..])
+        );
+        assert_eq!(
+            parsed.proximity.as_deref(),
+            Some(&["\u{1F90F}".to_string()][..])
+        );
         assert_eq!(
             parsed.relationship.as_deref(),
             Some(&["colleague:professional".to_string()][..])
         );
-        assert_eq!(parsed.formality.as_deref(), Some(&["\u{1F4BC}".to_string()][..]));
+        assert_eq!(
+            parsed.formality.as_deref(),
+            Some(&["\u{1F4BC}".to_string()][..])
+        );
     }
 
     #[test]

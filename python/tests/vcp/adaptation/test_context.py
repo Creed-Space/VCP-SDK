@@ -5,12 +5,11 @@ import pytest
 from vcp.adaptation import (
     ContextEncoder,
     Dimension,
-    PersonalStateDimension,
     PersonalState,
+    PersonalStateDimension,
     SituationalDimension,
     VCPContext,
 )
-
 
 # ────────────────────────────────────────────────────────────────────────────
 # SituationalDimension
