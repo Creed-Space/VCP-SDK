@@ -54,7 +54,7 @@ VCP v3.1 defines six protocol layers (I-T-S-A-M-E) alongside five opt-in extensi
 
 | Language | Directory | Install | Status |
 |:---|:---|:---|:---|
-| **Python** | [`python/`](./python/) | `pip install vcp-sdk` | Stable |
+| **Python** | [`python/`](./python/) | `uv add vcp-sdk` | Stable |
 | **TypeScript** | [`webmcp/`](./webmcp/) | `npm install @creed-space/vcp-sdk` | Stable |
 | **Rust** | [`rust/`](./rust/) | `cargo add vcp-core` | Stable |
 
@@ -67,7 +67,7 @@ All SDKs implement the same core protocol and validate against shared conformanc
 ### Python
 
 ```bash
-pip install vcp-sdk
+uv add vcp-sdk
 ```
 
 ```python

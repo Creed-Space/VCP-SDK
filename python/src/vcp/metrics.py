@@ -14,7 +14,7 @@ Usage::
 
 Install optional dependency::
 
-    pip install prometheus_client
+    uv add prometheus_client
 """
 
 from __future__ import annotations

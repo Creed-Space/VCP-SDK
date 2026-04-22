@@ -5,7 +5,7 @@ The Python reference implementation of the Value Context Protocol.
 ## Installation
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ## Structure

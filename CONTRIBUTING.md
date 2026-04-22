@@ -38,8 +38,8 @@ This project adheres to the [Contributor Covenant Code of Conduct](./CODE_OF_CON
 cd python
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-pip install -e ".[dev]"
+uv sync
+uv pip install -e ".[dev]"
 pytest tests/
 ```
 

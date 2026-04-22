@@ -6,7 +6,7 @@ Runnable examples demonstrating the VCP SDK across Python and Rust.
 
 ```bash
 # Install the SDK in editable mode
-cd python && pip install -e .
+cd python && uv pip install -e .
 
 # Run individual examples
 python ../examples/python/01_parse_token.py

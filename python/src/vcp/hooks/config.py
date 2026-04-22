@@ -133,7 +133,7 @@ def load_from_yaml(path: str | Path) -> DeploymentConfig:
     except ImportError:
         raise ImportError(
             "PyYAML is required to load hook configs from YAML. "
-            "Install it: pip install pyyaml"
+            "Install it: uv add pyyaml"
         ) from None
 
     path = Path(path)
