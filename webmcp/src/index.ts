@@ -1,11 +1,11 @@
 /**
- * @vcp/webmcp
+ * @creed-space/vcp-sdk
  *
  * Register VCP capabilities as discoverable tools for AI agents via
  * the navigator.modelContext API (Chrome 145+, W3C Draft 2026-02-10).
  *
  * Usage:
- *   import { registerVCPTools } from '@vcp/webmcp';
+ *   import { registerVCPTools } from '@creed-space/vcp-sdk';
  *   const { registered, cleanup } = await registerVCPTools({
  *     chatEndpoint: '/api/chat',
  *     tokenEncoder: encodeContextToCSM1,
@@ -101,13 +101,13 @@ export async function registerVCPTools(
 			registrations.push(reg);
 			registered.push(tool.name);
 		} catch (err) {
-			console.warn(`[@vcp/webmcp] Failed to register ${tool.name}:`, err);
+			console.warn(`[@creed-space/vcp-sdk] Failed to register ${tool.name}:`, err);
 		}
 	}
 
 	if (registered.length > 0) {
 		console.log(
-			`[@vcp/webmcp] Registered ${registered.length} tools: ${registered.join(', ')}`
+			`[@creed-space/vcp-sdk] Registered ${registered.length} tools: ${registered.join(', ')}`
 		);
 	}
 

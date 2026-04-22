@@ -1,4 +1,4 @@
-# @vcp/webmcp
+# @creed-space/vcp-sdk
 
 Register VCP capabilities as discoverable tools for AI agents via the [WebMCP API](https://webmcp.org) (`navigator.modelContext`).
 
@@ -7,7 +7,7 @@ Register VCP capabilities as discoverable tools for AI agents via the [WebMCP AP
 ## Quick Start
 
 ```typescript
-import { registerVCPTools } from '@vcp/webmcp';
+import { registerVCPTools } from '@creed-space/vcp-sdk';
 
 const { registered, cleanup } = await registerVCPTools({
   chatEndpoint: '/api/chat',
@@ -65,7 +65,7 @@ Use this to show "Agent Active" indicators in your UI.
 For browsers without native WebMCP support, use the MCP-B polyfill:
 
 ```typescript
-import { loadPolyfillIfRequested } from '@vcp/webmcp/polyfill';
+import { loadPolyfillIfRequested } from '@creed-space/vcp-sdk/polyfill';
 
 // Loads @mcp-b/global from CDN when ?webmcp=polyfill is in the URL
 await loadPolyfillIfRequested();

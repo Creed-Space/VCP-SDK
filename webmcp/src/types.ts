@@ -1,5 +1,5 @@
 /**
- * @vcp/webmcp — Type Definitions
+ * @creed-space/vcp-sdk — Type Definitions
  *
  * Framework-agnostic types for registering VCP tools with the
  * navigator.modelContext API (Chrome 145+, W3C Draft 2026-02-10).

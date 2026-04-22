@@ -82,7 +82,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 - **VCP Specification v1.1** -- R-line (Line 8) for real-time personal state in CSM-1 tokens
 - **Rust SDK** (`vcp-core`, `vcp-wasm`, `vcp-cli`) -- High-performance parsing with `no_std` support and WASM bindings
-- **TypeScript/WebMCP SDK** (`@vcp/webmcp`) -- Browser-side VCP tool registration via `navigator.modelContext` (Chrome 145+)
+- **TypeScript/WebMCP SDK** (`@creed-space/vcp-sdk`) -- Browser-side VCP tool registration via `navigator.modelContext` (Chrome 145+)
 - MCP-B polyfill for non-Chrome browsers
 - Five WebMCP tools: `vcp_chat`, `vcp_build_token`, `vcp_parse_token`, `vcp_transmission_summary`, `vcp_list_personas`
 - JSON Schema definitions for all protocol layers

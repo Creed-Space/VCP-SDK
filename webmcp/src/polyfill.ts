@@ -1,5 +1,5 @@
 /**
- * @vcp/webmcp — MCP-B Polyfill Loader
+ * @creed-space/vcp-sdk — MCP-B Polyfill Loader
  *
  * Conditionally loads the @mcp-b/global polyfill to populate
  * navigator.modelContext in browsers without native WebMCP support.
@@ -52,10 +52,10 @@ export async function loadPolyfillIfRequested(): Promise<boolean> {
 			});
 
 			polyfillLoaded = true;
-			console.log('[@vcp/webmcp] MCP-B polyfill loaded via ?webmcp=polyfill');
+			console.log('[@creed-space/vcp-sdk] MCP-B polyfill loaded via ?webmcp=polyfill');
 			return true;
 		} catch (err) {
-			console.warn('[@vcp/webmcp] MCP-B polyfill failed to load:', err);
+			console.warn('[@creed-space/vcp-sdk] MCP-B polyfill failed to load:', err);
 			return false;
 		}
 	})();

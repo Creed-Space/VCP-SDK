@@ -1,5 +1,5 @@
 {
-  "name": "@vcp/webmcp",
+  "name": "@creed-space/vcp-sdk",
   "version": "4.2.0",
   "description": "Register VCP capabilities as discoverable tools for AI agents via the WebMCP API (navigator.modelContext)",
   "type": "module",
