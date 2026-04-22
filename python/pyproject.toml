@@ -51,9 +51,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/creed-space/Value-Context-Protocol"
-Documentation = "https://github.com/creed-space/Value-Context-Protocol#readme"
-Repository = "https://github.com/creed-space/Value-Context-Protocol"
+Homepage = "https://github.com/Creed-Space/VCP-SDK"
+Documentation = "https://github.com/Creed-Space/VCP-SDK/tree/main/python"
+Repository = "https://github.com/Creed-Space/VCP-SDK"
 
 [tool.setuptools.packages.find]
 where = ["src"]
