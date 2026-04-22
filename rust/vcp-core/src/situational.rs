@@ -5,21 +5,21 @@
 //!
 //! **VCP v3.2 (incl. VEP-0004) dimension map**
 //!
-//! | # | dim            | symbol     | notes                              |
-//! |---|----------------|------------|------------------------------------|
-//! | 1 | time           | ⏰          |                                    |
-//! | 2 | space          | 📍          |                                    |
-//! | 3 | company        | 👥          |                                    |
-//! | 4 | culture        | 🌍          | communication styles, NOT nations |
-//! | 5 | occasion       | 🎭          |                                    |
-//! | 6 | environment    | 🌡️ (VS16)  |                                    |
-//! | 7 | agency         | 🔷          |                                    |
-//! | 8 | constraints    | 🔶          |                                    |
-//! | 9 | `system_context` | 📡          | replaces deprecated STATE (v3.0)   |
-//! |10 | embodiment     | 🧍          | VEP-0004                           |
-//! |11 | proximity      | ↔️ (VS16)  | VEP-0004                           |
-//! |12 | relationship   | 🪢          | VEP-0004, free-form `{tie}:{fn}`  |
-//! |13 | formality      | 🎩          | VEP-0004                           |
+//! | #  | dim              | symbol     | notes                              |
+//! |----|------------------|------------|------------------------------------|
+//! |  1 | time             | ⏰          |                                    |
+//! |  2 | space            | 📍          |                                    |
+//! |  3 | company          | 👥          |                                    |
+//! |  4 | culture          | 🌍          | communication styles, NOT nations  |
+//! |  5 | occasion         | 🎭          |                                    |
+//! |  6 | environment      | 🌡️ (VS16)  |                                    |
+//! |  7 | agency           | 🔷          |                                    |
+//! |  8 | constraints      | 🔶          |                                    |
+//! |  9 | `system_context` | 📡          | replaces deprecated STATE (v3.0)   |
+//! | 10 | embodiment       | 🧍          | VEP-0004                           |
+//! | 11 | proximity        | ↔️ (VS16)  | VEP-0004                           |
+//! | 12 | relationship     | 🪢          | VEP-0004, free-form `{tie}:{fn}`   |
+//! | 13 | formality        | 🎩          | VEP-0004                           |
 //!
 //! Wire format example (core-only):
 //! `⏰🌅|📍🏡|👥👶`
