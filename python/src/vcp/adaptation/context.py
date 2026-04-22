@@ -177,7 +177,7 @@ class SituationalDimension(Enum):
         # Compound grammar: "{tie}:{function}" — stored as raw string values.
         # Example values: "colleague:professional", "friend:social",
         # "family:caregiving", "stranger:service".
-        {},
+        dict[str, str](),
     )
     FORMALITY = (
         "formality",
@@ -364,6 +364,9 @@ class VCPContext:
 
     __slots__ = ("situational", "personal")
 
+    situational: dict[SituationalDimension, list[str]]
+    personal: dict[PersonalStateDimension, PersonalState]
+
     def __init__(
         self,
         situational: dict[SituationalDimension, list[str]] | None = None,
@@ -414,10 +417,10 @@ class VCPContext:
             return situational
 
         per_parts: list[str] = []
-        for dim in PersonalStateDimension:
-            if dim in self.personal:
-                state = self.personal[dim]
-                per_parts.append(f"{dim.symbol}{state.encode()}")
+        for pdim in PersonalStateDimension:
+            if pdim in self.personal:
+                state = self.personal[pdim]
+                per_parts.append(f"{pdim.symbol}{state.encode()}")
         personal = DIM_SEPARATOR.join(per_parts)
 
         if not situational:
@@ -464,11 +467,11 @@ class VCPContext:
         for part in per_part.split(DIM_SEPARATOR):
             if not part:
                 continue
-            for dim in PersonalStateDimension:
-                if part.startswith(dim.symbol):
-                    raw = part[len(dim.symbol):]
+            for pdim in PersonalStateDimension:
+                if part.startswith(pdim.symbol):
+                    raw = part[len(pdim.symbol):]
                     if raw:
-                        personal[dim] = PersonalState.decode(raw)
+                        personal[pdim] = PersonalState.decode(raw)
                     break
 
         return cls(situational=situational, personal=personal)
@@ -512,12 +515,12 @@ class VCPContext:
                 dim._name: self.situational.get(dim, []) for dim in SituationalDimension
             },
             "personal": {
-                dim._name: {
-                    "value": self.personal[dim].value,
-                    "intensity": self.personal[dim].intensity,
+                pdim._name: {
+                    "value": self.personal[pdim].value,
+                    "intensity": self.personal[pdim].intensity,
                 }
-                for dim in PersonalStateDimension
-                if dim in self.personal
+                for pdim in PersonalStateDimension
+                if pdim in self.personal
             },
         }
         return out
@@ -549,14 +552,14 @@ class VCPContext:
                 values = sit_src[key] if isinstance(sit_src[key], list) else [sit_src[key]]
                 situational[dim] = list(values)
 
-        for dim in PersonalStateDimension:
-            key = dim._name
+        for pdim in PersonalStateDimension:
+            key = pdim._name
             if key in per_src and per_src[key]:
                 entry = per_src[key]
                 if isinstance(entry, str):
-                    personal[dim] = PersonalState.decode(entry)
+                    personal[pdim] = PersonalState.decode(entry)
                 elif isinstance(entry, dict):
-                    personal[dim] = PersonalState(
+                    personal[pdim] = PersonalState(
                         value=entry["value"],
                         intensity=entry.get("intensity"),
                     )
@@ -718,14 +721,14 @@ class ContextEncoder:
                 (PersonalStateDimension.BODY_SIGNALS, body_signals),
             ]
 
-            for dim, raw in per_map:
+            for pdim, raw in per_map:
                 if raw is None:
                     continue
                 if isinstance(raw, tuple):
                     val, intensity = raw
-                    personal[dim] = PersonalState(value=val, intensity=intensity)
+                    personal[pdim] = PersonalState(value=val, intensity=intensity)
                 elif isinstance(raw, str):
-                    personal[dim] = PersonalState.decode(raw)
+                    personal[pdim] = PersonalState.decode(raw)
 
             return VCPContext(situational=situational, personal=personal)
 

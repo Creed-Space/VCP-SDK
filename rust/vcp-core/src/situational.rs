@@ -15,7 +15,7 @@
 //! | 6 | environment    | 🌡️ (VS16)  |                                    |
 //! | 7 | agency         | 🔷          |                                    |
 //! | 8 | constraints    | 🔶          |                                    |
-//! | 9 | system_context | 📡          | replaces deprecated STATE (v3.0)   |
+//! | 9 | `system_context` | 📡          | replaces deprecated STATE (v3.0)   |
 //! |10 | embodiment     | 🧍          | VEP-0004                           |
 //! |11 | proximity      | ↔️ (VS16)  | VEP-0004                           |
 //! |12 | relationship   | 🪢          | VEP-0004, free-form `{tie}:{fn}`  |
@@ -390,6 +390,20 @@ impl fmt::Display for SituationalContext {
 /// Proximity uses a two-codepoint emoji (`↔️` = U+2194 U+FE0F), so
 /// these must be checked before their single-codepoint base forms.
 fn split_situational_symbol(s: &str) -> VcpResult<(SituationalDimension, &str)> {
+    static SYMBOLS: &[(SituationalDimension, &str)] = &[
+        (SituationalDimension::Space, "\u{1F4CD}"),
+        (SituationalDimension::Company, "\u{1F465}"),
+        (SituationalDimension::Culture, "\u{1F30D}"),
+        (SituationalDimension::Occasion, "\u{1F3AD}"),
+        (SituationalDimension::Agency, "\u{1F537}"),
+        (SituationalDimension::Constraints, "\u{1F536}"),
+        (SituationalDimension::SystemContext, "\u{1F4E1}"),
+        (SituationalDimension::Embodiment, "\u{1F9CD}"),
+        (SituationalDimension::Relationship, "\u{1FAA2}"),
+        (SituationalDimension::Formality, "\u{1F3A9}"),
+        (SituationalDimension::Time, "\u{23F0}"),
+    ];
+
     // Two-codepoint (VS16) symbols — check first.
     let env_sym = "\u{1F321}\u{FE0F}";
     if let Some(rest) = s.strip_prefix(env_sym) {
@@ -408,21 +422,6 @@ fn split_situational_symbol(s: &str) -> VcpResult<(SituationalDimension, &str)> 
     if let Some(rest) = s.strip_prefix(prox_bare) {
         return Ok((SituationalDimension::Proximity, rest));
     }
-
-    // Single-codepoint symbols.
-    static SYMBOLS: &[(SituationalDimension, &str)] = &[
-        (SituationalDimension::Space, "\u{1F4CD}"),
-        (SituationalDimension::Company, "\u{1F465}"),
-        (SituationalDimension::Culture, "\u{1F30D}"),
-        (SituationalDimension::Occasion, "\u{1F3AD}"),
-        (SituationalDimension::Agency, "\u{1F537}"),
-        (SituationalDimension::Constraints, "\u{1F536}"),
-        (SituationalDimension::SystemContext, "\u{1F4E1}"),
-        (SituationalDimension::Embodiment, "\u{1F9CD}"),
-        (SituationalDimension::Relationship, "\u{1FAA2}"),
-        (SituationalDimension::Formality, "\u{1F3A9}"),
-        (SituationalDimension::Time, "\u{23F0}"),
-    ];
 
     for (dim, sym) in SYMBOLS {
         if let Some(rest) = s.strip_prefix(sym) {
