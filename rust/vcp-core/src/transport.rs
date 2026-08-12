@@ -229,6 +229,20 @@ pub fn verify_manifest_signature(
     public_key: &[u8],
     signature_b64: &str,
 ) -> VcpResult<bool> {
+    let canonical = canonicalize_manifest(manifest)?;
+    verify_ed25519_signature(&canonical, public_key, signature_b64)
+}
+
+/// Verify an Ed25519 signature over arbitrary canonical bytes.
+///
+/// # Errors
+///
+/// Returns [`VcpError::SignatureError`] when the public key or signature is malformed.
+pub fn verify_ed25519_signature(
+    message: &[u8],
+    public_key: &[u8],
+    signature_b64: &str,
+) -> VcpResult<bool> {
     let key_bytes: [u8; 32] = public_key.try_into().map_err(|_| {
         VcpError::SignatureError(format!(
             "public key must be exactly 32 bytes, got {}",
@@ -253,9 +267,7 @@ pub fn verify_manifest_signature(
         .map_err(|_| VcpError::SignatureError("signature must be exactly 64 bytes".into()))?;
 
     let signature = ed25519_dalek::Signature::from_bytes(&sig_array);
-    let canonical = canonicalize_manifest(manifest)?;
-
-    match verifying_key.verify(&canonical, &signature) {
+    match verifying_key.verify(message, &signature) {
         Ok(()) => Ok(true),
         Err(_) => Ok(false),
     }

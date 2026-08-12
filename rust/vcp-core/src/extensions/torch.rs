@@ -311,7 +311,7 @@ mod tests {
     fn test_torch_consumer_developing() {
         let consumer = TorchConsumer;
         let torch = TorchState {
-            quality_description: "".to_string(),
+            quality_description: String::new(),
             trajectory: None,
             primes: Vec::new(),
             gift: None,
@@ -327,7 +327,7 @@ mod tests {
     fn test_torch_consumer_established() {
         let consumer = TorchConsumer;
         let torch = TorchState {
-            quality_description: "".to_string(),
+            quality_description: String::new(),
             trajectory: None,
             primes: Vec::new(),
             gift: None,
@@ -343,7 +343,7 @@ mod tests {
     fn test_torch_consumer_deep() {
         let consumer = TorchConsumer;
         let torch = TorchState {
-            quality_description: "".to_string(),
+            quality_description: String::new(),
             trajectory: None,
             primes: Vec::new(),
             gift: None,

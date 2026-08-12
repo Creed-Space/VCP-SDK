@@ -75,20 +75,22 @@ CONSENT_REQUIRED_FIELDS: tuple[str, ...] = (
     "workload_level",
 )
 
-PRIVATE_FIELDS: frozenset[str] = frozenset([
-    "family_status",
-    "dependents",
-    "dependent_ages",
-    "childcare_hours",
-    "health_conditions",
-    "health_appointments",
-    "financial_constraint",
-    "evening_available_after",
-    "work_type",
-    "schedule",
-    "housing",
-    "neighbor_situation",
-])
+PRIVATE_FIELDS: frozenset[str] = frozenset(
+    [
+        "family_status",
+        "dependents",
+        "dependent_ages",
+        "childcare_hours",
+        "health_conditions",
+        "health_appointments",
+        "financial_constraint",
+        "evening_available_after",
+        "work_type",
+        "schedule",
+        "housing",
+        "neighbor_situation",
+    ]
+)
 
 
 # ---------------------------------------------------------------------------
@@ -228,9 +230,16 @@ def is_private_field(ctx: dict[str, Any], field_name: str) -> bool:
 
 # Schedule values that imply irregular/shift patterns (energy + scheduling
 # impact).  Regular schedules like "9-5" should NOT trigger these flags.
-_IRREGULAR_SCHEDULE_KEYWORDS = frozenset({
-    "shift", "rotating", "night", "variable", "irregular", "on-call",
-})
+_IRREGULAR_SCHEDULE_KEYWORDS = frozenset(
+    {
+        "shift",
+        "rotating",
+        "night",
+        "variable",
+        "irregular",
+        "on-call",
+    }
+)
 
 
 def _is_irregular_schedule(schedule_value: Any) -> bool:
@@ -273,8 +282,7 @@ def extract_constraint_flags(ctx: dict[str, Any]) -> ConstraintFlags:
             or bool(private.get("schedule_irregular"))
         ),
         budget_limited=(
-            bool(constraints.get("budget_limited"))
-            or bool(private.get("financial_constraint"))
+            bool(constraints.get("budget_limited")) or bool(private.get("financial_constraint"))
         ),
         noise_restricted=(
             bool(constraints.get("noise_restricted"))
@@ -292,8 +300,7 @@ def extract_constraint_flags(ctx: dict[str, Any]) -> ConstraintFlags:
             or bool(private.get("childcare_hours"))
         ),
         mobility_limited=(
-            bool(constraints.get("mobility_limited"))
-            or bool(private.get("mobility_limited"))
+            bool(constraints.get("mobility_limited")) or bool(private.get("mobility_limited"))
         ),
         health_considerations=(
             bool(constraints.get("health_considerations"))

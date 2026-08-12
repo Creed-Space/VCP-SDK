@@ -19,7 +19,7 @@
         },
         "issuer": {
           "id": "creed.space",
-          "public_key": "ed25519:IMPL_GENERATED",
+          "public_key": "ed25519:AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
           "key_id": "creed-space-2026"
         },
         "timestamps": {
@@ -104,8 +104,8 @@
       "codes": [
         "N5+F+E",
         "Z4+P+W",
-        "N5:ELEM+F+E@1.2.0",
-        "C3:ACME+W@1.0.0",
+        "N5+F+E:ELEM@1.2.0",
+        "C3+W:ACME@1.0.0",
         "D4+S"
       ],
       "expected": {

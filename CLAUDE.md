@@ -175,3 +175,11 @@ If something is unclear:
 2. Read the relevant layer documentation
 3. Look at tests for usage examples
 4. Check `specs/VCP_SPECIFICATION_v1.0.md` for authoritative answers
+
+---
+
+## Wiki Knowledge Base
+
+Compiled knowledge at `_wiki/`. Schema: `~/.claude/wiki/SCHEMA.md`. Shared concepts: `~/.claude/wiki/concepts/`. Maintain via `/wiki` (catchup + health check) or `/wiki bootstrap` (new repo). Provenance rule: every claim cites source.
+
+---

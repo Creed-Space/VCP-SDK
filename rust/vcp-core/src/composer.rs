@@ -788,7 +788,7 @@ mod tests {
             "test",
             vec![
                 "  Rule one.  ".into(),
-                "".into(),
+                String::new(),
                 "   ".into(),
                 "Rule two.".into(),
             ],

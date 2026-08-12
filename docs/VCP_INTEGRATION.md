@@ -263,7 +263,7 @@ code = persona level *("+" scope) [":" namespace] ["@" version]
 | time | ⏰ | morning, midday, evening, night |
 | space | 📍 | home, office, school, hospital, transit |
 | company | 👥 | alone, children, colleagues, family, strangers |
-| culture | 🌍 | global, american, european, japanese |
+| culture | 🌍 | high_context, low_context, formal, casual, mixed |
 | occasion | 🎭 | normal, celebration, mourning, emergency |
 | state | 🧠 | happy, anxious, tired, contemplative, frustrated |
 | environment | 🌡️ | comfortable, hot, cold, quiet, noisy |

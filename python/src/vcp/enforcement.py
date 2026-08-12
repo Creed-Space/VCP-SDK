@@ -204,9 +204,7 @@ class AdherenceLevelPlugin(PDPPlugin):
         if adherence is None:
             manifest_meta = getattr(bundle, "manifest", None)
             if manifest_meta:
-                adherence = getattr(manifest_meta, "metadata", {}).get(
-                    "adherence_level"
-                )
+                adherence = getattr(manifest_meta, "metadata", {}).get("adherence_level")
 
         if adherence is None:
             if self._require_declaration:
@@ -229,9 +227,7 @@ class AdherenceLevelPlugin(PDPPlugin):
         if adherence < self._min_adherence:
             return PDPDecision(
                 decision=DecisionType.BLOCK,
-                reason=(
-                    f"Adherence level {adherence} below minimum {self._min_adherence}"
-                ),
+                reason=(f"Adherence level {adherence} below minimum {self._min_adherence}"),
                 plugin_id=self.plugin_id,
                 evidence={
                     "adherence_level": adherence,
@@ -304,9 +300,7 @@ class EnforcementResult:
 
     @property
     def blocking_reasons(self) -> list[str]:
-        return [
-            d.reason for d in self.decisions if d.decision == DecisionType.BLOCK
-        ]
+        return [d.reason for d in self.decisions if d.decision == DecisionType.BLOCK]
 
 
 class PDPEnforcer:

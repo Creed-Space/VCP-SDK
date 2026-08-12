@@ -100,10 +100,7 @@ def compute_skill_hash(skill_dir: Path) -> str:
 def _list_skill_files(skill_dir: Path) -> list[str]:
     """Return sorted relative POSIX paths of all ``.md`` files in *skill_dir*."""
     skill_dir = skill_dir.resolve()
-    return sorted(
-        p.relative_to(skill_dir).as_posix()
-        for p in skill_dir.rglob("*.md")
-    )
+    return sorted(p.relative_to(skill_dir).as_posix() for p in skill_dir.rglob("*.md"))
 
 
 # ---------------------------------------------------------------------------
@@ -129,10 +126,7 @@ def _load_private_key(key_path: Path) -> Ed25519PrivateKey:
 
     pem_data = key_path.read_bytes()
     # Strip any trailing comments (e.g. pragma lines)
-    lines = [
-        line for line in pem_data.split(b"\n")
-        if not line.startswith(b"#")
-    ]
+    lines = [line for line in pem_data.split(b"\n") if not line.startswith(b"#")]
     pem_clean = b"\n".join(lines)
 
     private_key = serialization.load_pem_private_key(pem_clean, password=None)
@@ -403,20 +397,31 @@ def main(argv: list[str] | None = None) -> int:
     sign_parser = subparsers.add_parser("sign", help="Sign a skill directory")
     sign_parser.add_argument("skill_dir", type=Path, help="Path to skill directory")
     sign_parser.add_argument(
-        "--key", type=Path, required=True, help="Path to Ed25519 signing key (PEM)",
+        "--key",
+        type=Path,
+        required=True,
+        help="Path to Ed25519 signing key (PEM)",
     )
     sign_parser.add_argument(
-        "--issuer", default="creed.space", help="Issuer identifier (default: creed.space)",
+        "--issuer",
+        default="creed.space",
+        help="Issuer identifier (default: creed.space)",
     )
     sign_parser.add_argument(
-        "--expires", type=int, default=90, help="Days until expiration (default: 90)",
+        "--expires",
+        type=int,
+        default=90,
+        help="Days until expiration (default: 90)",
     )
 
     # -- verify -----------------------------------------------------------
     verify_parser = subparsers.add_parser("verify", help="Verify a signed skill directory")
     verify_parser.add_argument("skill_dir", type=Path, help="Path to skill directory")
     verify_parser.add_argument(
-        "--trust-config", type=Path, default=None, help="Path to trust config JSON",
+        "--trust-config",
+        type=Path,
+        default=None,
+        help="Path to trust config JSON",
     )
 
     args = parser.parse_args(argv)

@@ -278,7 +278,7 @@ decoded = VCPContext.decode("⏰🌅|📍🏡|👥👶")
 | 1 | ⏰ | TIME | 🌅morning, ☀️midday, 🌆evening, 🌙night |
 | 2 | 📍 | SPACE | 🏡home, 🏢office, 🏫school, 🏥hospital |
 | 3 | 👥 | COMPANY | 👤alone, 👶children, 👔colleagues, 👨‍👩‍👧family |
-| 4 | 🌍 | CULTURE | 🌍global, 🇺🇸american, 🇪🇺european, 🇯🇵japanese |
+| 4 | 🌍 | CULTURE | 🔇high_context, 📢low_context, 🎩formal, 😎casual |
 | 5 | 🎭 | OCCASION | ➖normal, 🎂celebration, 😢mourning, 🚨emergency |
 | 6 | 🧠 | STATE | 😊happy, 😰anxious, 😴tired, 🤔contemplative |
 | 7 | 🌡️ | ENVIRONMENT | ☀️comfortable, 🥵hot, 🥶cold, 🔇quiet |

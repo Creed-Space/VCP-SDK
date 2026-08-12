@@ -481,16 +481,16 @@ Examples:
 ### 6.3 Tier B: MICRO Format
 
 ```
-MICRO: persona + adherence + ":" + namespace [ + scopes ]
-Example: N5:ELEM+F
+MICRO: persona + adherence [ + scopes ] + ":" + namespace
+Example: N5+F:ELEM
 
 Grammar:
-  micro = persona adherence ":" namespace *("+" scope)
+  micro = persona adherence *("+" scope) ":" namespace
 
 Examples:
   N5:ELEM       → Nanny, level 5, ELEM namespace
-  N5:ELEM+F+E   → Nanny, level 5, ELEM namespace, Family + Education
-  C3:ACME+W     → Custom, level 3, ACME namespace, Work scope
+  N5+F+E:ELEM   → Nanny, level 5, ELEM namespace, Family + Education
+  C3+W:ACME     → Custom, level 3, ACME namespace, Work scope
 ```
 
 ### 6.4 Tier C: COMPACT Format
@@ -649,7 +649,7 @@ class CSM1Parser:
         )
 
     def _parse_micro(self, code: str) -> CSM1Code:
-        """Parse MICRO format: N5:ELEM+F@1.2.0"""
+        """Parse MICRO format: N5+F:ELEM@1.2.0"""
         match = self.MICRO_PATTERN.match(code)
         if not match:
             raise ValueError(f"Invalid MICRO CSM1 code: {code}")
@@ -804,8 +804,8 @@ def canonical_csm1(parsed: CSM1Code) -> str:
 
 # MICRO format
 "N5:ELEM"         # ✓ Nanny, level 5, ELEM namespace
-"N5:ELEM+F+E"     # ✓ With scopes
-"C3:ACME+W"       # ✓ Custom, ACME namespace, Work
+"N5+F+E:ELEM"     # ✓ With scopes
+"C3+W:ACME"       # ✓ Custom, ACME namespace, Work
 "D3:DISP@1.2.0"   # ✓ Mediator, DISP namespace, version 1.2.0
 "A3:CORP@latest"  # ✓ Ambassador, CORP namespace, latest version
 
@@ -1039,7 +1039,7 @@ T = Technical
 FORMAT
 ------
 NANO:    N5+F+E
-MICRO:   N5:ELEM+F+E@1.2.0
+MICRO:   N5+F+E:ELEM@1.2.0
 COMPACT: CS1|nanny|5|family.safe.guide|F,E
 ```
 

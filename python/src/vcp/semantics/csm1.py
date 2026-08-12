@@ -7,8 +7,8 @@ Format (ABNF):
     code = persona level *("+" scope) [":" namespace] ["@" version]
     persona = "N" / "Z" / "G" / "A" / "M" / "D" / "C"
     level = "0" / "1" / "2" / "3" / "4" / "5"
-    scope = "F" / "W" / "E" / "H" / "I" / "L" / "P" / "S" / "A" / "V" / "G"
-    namespace = UPALPHA *(UPALPHA / DIGIT)
+    scope = "F" / "W" / "P" / "E" / "T" / "O" / "V" / "A" / "H" / "S" / "R"
+    namespace = 1*8UPALPHA
     version = 1*DIGIT "." 1*DIGIT "." 1*DIGIT
 
 Examples:
@@ -62,19 +62,19 @@ class Persona(Enum):
 
 
 class Scope(Enum):
-    """11 context scopes for constitutional application."""
+    """Canonical VCP/S v2.0 scopes."""
 
-    FAMILY = "F"  # Family/parenting contexts
-    WORK = "W"  # Professional/workplace
-    EDUCATION = "E"  # Learning/academic
-    HEALTHCARE = "H"  # Medical/health
-    FINANCE = "I"  # Financial/investment (I for Income)
-    LEGAL = "L"  # Legal/compliance
-    PRIVACY = "P"  # Privacy/data protection
-    SAFETY = "S"  # Physical safety
-    ACCESSIBILITY = "A"  # Accessibility/inclusion
-    ENVIRONMENT = "V"  # Environmental (V for Verde)
-    GENERAL = "G"  # General purpose
+    FAMILY = "F"
+    WORK = "W"
+    PRIVACY = "P"
+    EDUCATION = "E"
+    TECHNICAL = "T"
+    OFFICIAL = "O"
+    VULNERABLE = "V"
+    ADULT = "A"
+    HEALTHCARE = "H"
+    SOCIAL = "S"
+    RELIGIOUS = "R"
 
     @classmethod
     def from_char(cls, char: str) -> Scope:
@@ -88,17 +88,17 @@ class Scope(Enum):
     def description(self) -> str:
         """Human-readable description."""
         descriptions = {
-            Scope.FAMILY: "Family and parenting",
+            Scope.FAMILY: "Family-appropriate, child-safe",
             Scope.WORK: "Professional workplace",
-            Scope.EDUCATION: "Learning and academic",
-            Scope.HEALTHCARE: "Medical and health",
-            Scope.FINANCE: "Financial and investment",
-            Scope.LEGAL: "Legal and compliance",
-            Scope.PRIVACY: "Privacy and data protection",
-            Scope.SAFETY: "Physical safety",
-            Scope.ACCESSIBILITY: "Accessibility and inclusion",
-            Scope.ENVIRONMENT: "Environmental",
-            Scope.GENERAL: "General purpose",
+            Scope.PRIVACY: "Privacy-focused, data protection",
+            Scope.EDUCATION: "Educational context",
+            Scope.TECHNICAL: "Developer and technical context",
+            Scope.OFFICIAL: "Official and governmental context",
+            Scope.VULNERABLE: "Vulnerable populations",
+            Scope.ADULT: "Adult-only, mature content",
+            Scope.HEALTHCARE: "Healthcare and medical context",
+            Scope.SOCIAL: "Social media and community",
+            Scope.RELIGIOUS: "Religious and spiritual context",
         }
         return descriptions[self]
 
@@ -117,13 +117,41 @@ class CSM1Code:
     PATTERN = re.compile(
         r"^(?P<persona>[NZGAMDC])"
         r"(?P<level>[0-5])"
-        r"(?P<scopes>(?:\+[FWEHILPSAVG])*)"
-        r"(?::(?P<namespace>[A-Z][A-Z0-9]*))?"
-        r"(?:@(?P<version>\d+\.\d+\.\d+))?$"
+        r"(?P<scopes>(?:\+[FWPETOVAHSR])*)"
+        r"(?::(?P<namespace>[A-Z]{1,8}))?"
+        r"(?:@(?P<version>(?:[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
+        r"|latest|canary)))?$"
     )
 
     MIN_LEVEL = 0
     MAX_LEVEL = 5
+    MAX_LENGTH = 50
+
+    def __post_init__(self) -> None:
+        if not self.MIN_LEVEL <= self.adherence_level <= self.MAX_LEVEL:
+            raise ValueError(f"Level must be {self.MIN_LEVEL}-{self.MAX_LEVEL}")
+        if len(self.scopes) != len(set(self.scopes)):
+            raise ValueError("CSM1 scopes must be unique")
+        for left, right in (
+            (Scope.FAMILY, Scope.ADULT),
+            (Scope.VULNERABLE, Scope.ADULT),
+            (Scope.HEALTHCARE, Scope.ADULT),
+        ):
+            if left in self.scopes and right in self.scopes:
+                raise ValueError(
+                    f"{left.name.title()} and {right.name.title()} scopes cannot be combined"
+                )
+        if self.persona is Persona.CUSTOM and not self.namespace:
+            raise ValueError("Custom persona requires a namespace")
+        if self.namespace is not None and not re.fullmatch(r"[A-Z]{1,8}", self.namespace):
+            raise ValueError("Namespace must be 1-8 uppercase letters")
+        if self.version is not None and not re.fullmatch(
+            r"(?:[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|latest|canary)",
+            self.version,
+        ):
+            raise ValueError("Invalid CSM1 version")
+        if len(self.encode()) > self.MAX_LENGTH:
+            raise ValueError(f"CSM1 code exceeds maximum length {self.MAX_LENGTH}")
 
     @classmethod
     def parse(cls, raw: str) -> CSM1Code:
@@ -141,8 +169,11 @@ class CSM1Code:
         if not raw:
             vcp_csm1_parses_total.labels(status="error").inc()
             raise ValueError("CSM1 code cannot be empty")
+        if len(raw) > cls.MAX_LENGTH:
+            vcp_csm1_parses_total.labels(status="error").inc()
+            raise ValueError(f"CSM1 code exceeds maximum length {cls.MAX_LENGTH}")
 
-        match = cls.PATTERN.match(raw.upper())
+        match = cls.PATTERN.fullmatch(raw)
         if not match:
             vcp_csm1_parses_total.labels(status="error").inc()
             raise ValueError(f"Invalid CSM1 code: {raw}")
@@ -161,14 +192,19 @@ class CSM1Code:
             scope_chars = groups["scopes"].replace("+", "")
             scopes = [Scope.from_char(c) for c in scope_chars]
 
+        try:
+            code = cls(
+                persona=persona,
+                adherence_level=level,
+                scopes=scopes,
+                namespace=groups.get("namespace"),
+                version=groups.get("version"),
+            )
+        except ValueError:
+            vcp_csm1_parses_total.labels(status="error").inc()
+            raise
         vcp_csm1_parses_total.labels(status="ok").inc()
-        return cls(
-            persona=persona,
-            adherence_level=level,
-            scopes=scopes,
-            namespace=groups.get("namespace"),
-            version=groups.get("version"),
-        )
+        return code
 
     def encode(self) -> str:
         """Encode back to CSM1 string.
@@ -178,7 +214,7 @@ class CSM1Code:
         """
         result = f"{self.persona.value}{self.adherence_level}"
         if self.scopes:
-            result += "+" + "+".join(s.value for s in self.scopes)
+            result += "+" + "+".join(sorted(s.value for s in self.scopes))
         if self.namespace:
             result += f":{self.namespace}"
         if self.version:

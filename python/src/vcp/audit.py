@@ -229,24 +229,16 @@ class AuditLogger:
             version=manifest.bundle.version,
             manifest_signature=sig_truncated,
             audit_level=self.level,
-            request_id=(
-                _hash_for_privacy(request_id) if request_id else None
-            ),
+            request_id=(_hash_for_privacy(request_id) if request_id else None),
             duration_ms=(
-                duration_ms
-                if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC)
-                else None
+                duration_ms if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC) else None
             ),
             token_count=(
                 manifest.budget.token_count
                 if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC)
                 else None
             ),
-            content_preview=(
-                bundle.content[:100]
-                if self.level == AuditLevel.DIAGNOSTIC
-                else None
-            ),
+            content_preview=(bundle.content[:100] if self.level == AuditLevel.DIAGNOSTIC else None),
         )
 
         self._entries.append(entry)
@@ -301,9 +293,7 @@ class AuditLogger:
 
         entry = AuditEntry(
             timestamp=datetime.now(timezone.utc),
-            session_id_hash=(
-                _hash_for_privacy(session_id) if include_session else "redacted"
-            ),
+            session_id_hash=(_hash_for_privacy(session_id) if include_session else "redacted"),
             verification_result="PRIVACY_FILTER",
             checks_passed=[
                 f"shared:{fields_shared}",
@@ -374,9 +364,7 @@ class AuditLogger:
 
         with self._lock:
             before = len(self._entries)
-            self._entries = [
-                e for e in self._entries if e.session_id_hash != target_hash
-            ]
+            self._entries = [e for e in self._entries if e.session_id_hash != target_hash]
             removed = before - len(self._entries)
 
             # Scrub exported JSON files while still holding the lock so
@@ -478,10 +466,7 @@ class AuditLogger:
 
             entries = data.get("entries", [])
             before = len(entries)
-            filtered = [
-                e for e in entries
-                if e.get("session_id_hash") != session_id_hash
-            ]
+            filtered = [e for e in entries if e.get("session_id_hash") != session_id_hash]
             removed = before - len(filtered)
 
             if removed > 0:

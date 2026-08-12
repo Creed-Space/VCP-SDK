@@ -40,7 +40,7 @@
 //!         hook_type: HookType::PreInject,
 //!         priority: 50,
 //!         handler: Box::new(LoggingHook),
-//!         timeout: Duration::from_millis(5000),
+//!         timeout: Duration::from_secs(5),
 //!         enabled: true,
 //!         description: "Logs pre-inject events".into(),
 //!     },
@@ -615,7 +615,7 @@ mod tests {
             hook_type,
             priority,
             handler,
-            timeout: Duration::from_millis(5000),
+            timeout: Duration::from_secs(5),
             enabled: true,
             description: format!("Test hook: {name}"),
         }

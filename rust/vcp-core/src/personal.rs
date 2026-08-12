@@ -380,9 +380,11 @@ mod tests {
 
     #[test]
     fn personal_state_wire_roundtrip() {
-        let mut ps = PersonalState::default();
-        ps.cognitive = Some(PersonalDimension::new("focused", 4).unwrap());
-        ps.emotional = Some(PersonalDimension::new("calm", 3).unwrap());
+        let ps = PersonalState {
+            cognitive: Some(PersonalDimension::new("focused", 4).unwrap()),
+            emotional: Some(PersonalDimension::new("calm", 3).unwrap()),
+            ..Default::default()
+        };
 
         let wire = ps.to_wire();
         assert!(wire.contains("focused:4"));
@@ -397,12 +399,13 @@ mod tests {
 
     #[test]
     fn personal_state_all_dimensions() {
-        let mut ps = PersonalState::default();
-        ps.cognitive = Some(PersonalDimension::new("overloaded", 5).unwrap());
-        ps.emotional = Some(PersonalDimension::new("tense", 4).unwrap());
-        ps.energy = Some(PersonalDimension::new("depleted", 4).unwrap());
-        ps.urgency = Some(PersonalDimension::new("critical", 5).unwrap());
-        ps.body = Some(PersonalDimension::with_extended("pain", 4, "migraine").unwrap());
+        let ps = PersonalState {
+            cognitive: Some(PersonalDimension::new("overloaded", 5).unwrap()),
+            emotional: Some(PersonalDimension::new("tense", 4).unwrap()),
+            energy: Some(PersonalDimension::new("depleted", 4).unwrap()),
+            urgency: Some(PersonalDimension::new("critical", 5).unwrap()),
+            body: Some(PersonalDimension::with_extended("pain", 4, "migraine").unwrap()),
+        };
 
         let wire = ps.to_wire();
         let parsed = PersonalState::from_wire(&wire).unwrap();
@@ -444,9 +447,11 @@ mod tests {
 
     #[test]
     fn serde_roundtrip() {
-        let mut ps = PersonalState::default();
-        ps.cognitive = Some(PersonalDimension::new("focused", 4).unwrap());
-        ps.body = Some(PersonalDimension::with_extended("pain", 3, "headache").unwrap());
+        let ps = PersonalState {
+            cognitive: Some(PersonalDimension::new("focused", 4).unwrap()),
+            body: Some(PersonalDimension::with_extended("pain", 3, "headache").unwrap()),
+            ..Default::default()
+        };
 
         let json = serde_json::to_string(&ps).unwrap();
         let parsed: PersonalState = serde_json::from_str(&json).unwrap();

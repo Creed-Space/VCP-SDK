@@ -41,6 +41,20 @@ class TestTokenParsing:
         assert t.namespace == "ELEM"
         assert t.full == "family.safe.guide@1.2.0:ELEM"
 
+    @pytest.mark.parametrize(
+        ("selector", "constraint"),
+        [
+            ("^2.0.0", "compatible"),
+            ("~2.1.0-beta.1", "approximate"),
+            ("latest", "alias"),
+            ("canary", "alias"),
+        ],
+    )
+    def test_schema_version_selectors(self, selector, constraint):
+        token = Token.parse(f"family.safe.guide@{selector}")
+        assert token.version == selector
+        assert token.version_constraint == constraint
+
     def test_hyphenated_segments(self):
         """Parse token with hyphenated segments."""
         t = Token.parse("work-life.balanced-approach.team-lead")
@@ -94,6 +108,16 @@ class TestTokenValidation:
         """Uppercase in domain should fail."""
         with pytest.raises(ValueError, match="Invalid VCP/I token"):
             Token.parse("Family.safe.guide")
+
+    def test_namespace_length_is_bounded(self):
+        with pytest.raises(ValueError, match="Invalid VCP/I token"):
+            Token.parse(f"family.safe.guide:{'A' * 33}")
+
+    def test_direct_construction_validates_segments_and_version(self):
+        with pytest.raises(ValueError, match="Invalid segment"):
+            Token(segments=("family", "UPPER", "guide"))
+        with pytest.raises(ValueError, match="Invalid version"):
+            Token(segments=("family", "safe", "guide"), version="1.2")
 
 
 class TestTokenImmutability:

@@ -6,15 +6,19 @@ Handles bundle verification and injection.
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import logging
+import math
 import re
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
 
-from .bundle import Bundle
+from .bundle import Bundle, canonicalize_safety_attestation
 from .canonicalize import canonicalize_manifest, verify_content_hash
 from .metrics import (
     track_duration,
@@ -29,6 +33,44 @@ if TYPE_CHECKING:
     from .hooks.executor import HookExecutor
 
 logger = logging.getLogger(__name__)
+
+
+def _verify_ed25519_signature(
+    public_key_bytes: bytes,
+    message_bytes: bytes,
+    signature_bytes: bytes,
+) -> bool:
+    """Verify an Ed25519 signature using the SDK's required crypto backend."""
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    try:
+        Ed25519PublicKey.from_public_bytes(public_key_bytes).verify(
+            signature_bytes,
+            message_bytes,
+        )
+    except (InvalidSignature, ValueError):
+        return False
+    return True
+
+
+def _decode_ed25519_public_key(value: str) -> bytes:
+    """Decode an ``ed25519:<base64>`` trust-anchor key."""
+    prefix, separator, encoded = value.partition(":")
+    if separator != ":" or prefix.lower() != "ed25519" or not encoded:
+        raise ValueError("Expected an ed25519:<base64> public key")
+    key_bytes = base64.b64decode(encoded, validate=True)
+    if len(key_bytes) != 32:
+        raise ValueError("Ed25519 public keys must be exactly 32 bytes")
+    return key_bytes
+
+
+def _decode_signature(value: str) -> bytes:
+    """Decode a ``base64:<signature>`` value using strict base64 parsing."""
+    prefix, separator, encoded = value.partition(":")
+    if separator != ":" or prefix.lower() != "base64" or not encoded:
+        raise ValueError("Expected a base64:<signature> value")
+    return base64.b64decode(encoded, validate=True)
 
 
 class VerificationError(Exception):
@@ -57,18 +99,48 @@ class ReplayCache:
 
     seen: dict[str, datetime] = field(default_factory=dict)
     max_entries: int = 100000
+    _lock: threading.Lock = field(
+        default_factory=threading.Lock,
+        init=False,
+        repr=False,
+        compare=False,
+    )
+
+    def __post_init__(self) -> None:
+        if self.max_entries < 1:
+            raise ValueError("Replay cache max_entries must be positive")
 
     def is_seen(self, jti: str) -> bool:
         """Check if JTI has been seen."""
-        self._cleanup()
-        return jti in self.seen
+        with self._lock:
+            self._cleanup_locked()
+            return jti in self.seen
 
     def record(self, jti: str, exp: datetime) -> None:
         """Record a JTI as seen."""
-        self.seen[jti] = exp
+        if not self.check_and_record(jti, exp):
+            raise RuntimeError("Replay cache rejected duplicate or capacity-exhausted JTI")
+
+    def check_and_record(self, jti: str, exp: datetime) -> bool:
+        """Atomically record a new JTI, failing closed at capacity."""
+        with self._lock:
+            self._cleanup_locked()
+            if jti in self.seen or len(self.seen) >= self.max_entries:
+                return False
+            self.seen[jti] = exp
+            return True
+
+    def discard(self, jti: str) -> None:
+        """Remove a reserved JTI after a downstream verification failure."""
+        with self._lock:
+            self.seen.pop(jti, None)
 
     def _cleanup(self) -> None:
         """Remove expired entries."""
+        with self._lock:
+            self._cleanup_locked()
+
+    def _cleanup_locked(self) -> None:
         now = datetime.now(timezone.utc)
         expired = [jti for jti, exp in self.seen.items() if exp < now]
         for jti in expired:
@@ -84,6 +156,8 @@ INJECTION_PATTERNS = [
     r"^(user|assistant|system|human|ai):\s*",
     r"<\|?(system|user|assistant)\|?>",
     r"```system",
+    r"---(?:BEGIN|END)-CONSTITUTION---",
+    r"^\[VCP:[0-9.]+\]",
 ]
 
 FORBIDDEN_CHARS = {
@@ -131,8 +205,8 @@ class Orchestrator:
         Args:
             trust_config: Trust configuration with issuer/auditor keys
             replay_cache: Cache for JTI tracking (created if None)
-            verify_signature: Function to verify Ed25519 signatures
-                             (public_key_bytes, message_bytes, signature_bytes) -> bool
+            verify_signature: Optional custom Ed25519 verifier. The SDK's
+                              cryptography-backed verifier is used by default.
             revocation_checker: Optional checker for bundle revocation status.
                                When provided, bundles are checked against
                                check_uri / CRL between attestation and
@@ -143,7 +217,7 @@ class Orchestrator:
         """
         self.trust_config = trust_config
         self.replay_cache = replay_cache or ReplayCache()
-        self._verify_signature = verify_signature
+        self._verify_signature = verify_signature or _verify_ed25519_signature
         self.revocation_checker = revocation_checker
         self._hook_executor = hook_executor
 
@@ -164,10 +238,13 @@ class Orchestrator:
         """
         context = context or VerificationContext(trust_config=self.trust_config)
         manifest = bundle.manifest
-        manifest_dict = manifest.to_dict()
-
-        with track_duration(vcp_bundle_verify_duration_seconds):
-            result = self._verify_inner(bundle, context, manifest, manifest_dict)
+        try:
+            manifest_dict = manifest.to_dict()
+            with track_duration(vcp_bundle_verify_duration_seconds):
+                result = self._verify_inner(bundle, context, manifest, manifest_dict)
+        except (AttributeError, OverflowError, TypeError, ValueError):
+            logger.exception("Malformed bundle rejected during verification")
+            result = VerificationResult.INVALID_SCHEMA
 
         vcp_bundle_verifications_total.labels(result=result.name).inc()
         return result
@@ -197,17 +274,41 @@ class Orchestrator:
             return VerificationResult.UNTRUSTED_ISSUER
 
         # 4. Issuer signature verification
-        if self._verify_signature:
-            sig_value = manifest.signature.value
-            if sig_value.startswith("base64:"):
-                sig_value = sig_value[7:]
-            import base64
-
-            sig_bytes = base64.b64decode(sig_value)
-            key_bytes = base64.b64decode(issuer_key.public_key.split(":")[1])
-            canonical = canonicalize_manifest(manifest_dict)
-            if not self._verify_signature(key_bytes, canonical, sig_bytes):
-                return VerificationResult.INVALID_SIGNATURE
+        expected_signed_fields = set(manifest_dict) - {"signature"}
+        declared_signed_fields = manifest.signature.signed_fields
+        if (
+            len(declared_signed_fields) != len(expected_signed_fields)
+            or set(declared_signed_fields) != expected_signed_fields
+        ):
+            return VerificationResult.INVALID_SIGNATURE
+        if manifest.signature.algorithm.lower() != "ed25519":
+            return VerificationResult.INVALID_SIGNATURE
+        if issuer_key.algorithm.lower() != "ed25519":
+            return VerificationResult.INVALID_SIGNATURE
+        try:
+            sig_bytes = _decode_signature(manifest.signature.value)
+            key_bytes = _decode_ed25519_public_key(issuer_key.public_key)
+            claimed_key_bytes = _decode_ed25519_public_key(manifest.issuer.public_key)
+        except (binascii.Error, ValueError):
+            return VerificationResult.INVALID_SIGNATURE
+        # The manifest carries an issuer key as well as a key id.  Binding both
+        # prevents a valid signer from publishing a bundle that verifies under
+        # the trust anchor while advertising an unrelated key to downstream
+        # consumers.
+        if claimed_key_bytes != key_bytes:
+            return VerificationResult.UNTRUSTED_ISSUER
+        canonical = canonicalize_manifest(manifest_dict)
+        try:
+            issuer_signature_valid = self._verify_signature(
+                key_bytes,
+                canonical,
+                sig_bytes,
+            )
+        except Exception:
+            logger.exception("Issuer signature verifier raised an exception")
+            return VerificationResult.INVALID_SIGNATURE
+        if not issuer_signature_valid:
+            return VerificationResult.INVALID_SIGNATURE
 
         # 5. Auditor trust check
         auditor_key = context.trust_config.get_auditor_key(
@@ -218,12 +319,28 @@ class Orchestrator:
             return VerificationResult.UNTRUSTED_AUDITOR
 
         # 6. Safety attestation signature verification
-        if self._verify_signature:
-            attestation_sig = manifest.safety_attestation.signature
-            if attestation_sig.startswith("base64:"):
-                attestation_sig = attestation_sig[7:]
-            # Note: In production, reconstruct attestation payload and verify
-            # For now, we trust the presence of the attestation
+        if auditor_key.algorithm.lower() != "ed25519":
+            return VerificationResult.INVALID_ATTESTATION
+        try:
+            attestation_sig = _decode_signature(manifest.safety_attestation.signature)
+            auditor_key_bytes = _decode_ed25519_public_key(auditor_key.public_key)
+            attestation_payload = canonicalize_safety_attestation(
+                manifest_dict["safety_attestation"],
+                manifest.bundle.content_hash,
+            )
+        except (binascii.Error, KeyError, TypeError, ValueError):
+            return VerificationResult.INVALID_ATTESTATION
+        try:
+            attestation_signature_valid = self._verify_signature(
+                auditor_key_bytes,
+                attestation_payload,
+                attestation_sig,
+            )
+        except Exception:
+            logger.exception("Auditor signature verifier raised an exception")
+            return VerificationResult.INVALID_ATTESTATION
+        if not attestation_signature_valid:
+            return VerificationResult.INVALID_ATTESTATION
 
         # 6b. Revocation check (between attestation and temporal — spec step 10)
         if self.revocation_checker:
@@ -238,17 +355,24 @@ class Orchestrator:
                     )
                     return VerificationResult.REVOKED
             except Exception:
-                # Fail-open on revocation check errors: log and continue.
-                # The spec requires fail-closed for most checks, but revocation
-                # network errors should not block all bundles.
                 logger.exception(
-                    "Revocation check error for jti=%s; continuing verification",
+                    "Revocation check error for jti=%s; rejecting bundle",
                     manifest.timestamps.jti,
                 )
+                return VerificationResult.REVOKED
 
         # 7. Temporal claims
         now = datetime.now(timezone.utc)
         ts = manifest.timestamps
+
+        temporal_values = (ts.iat, ts.nbf, ts.exp)
+        if any(
+            not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None
+            for value in temporal_values
+        ):
+            return VerificationResult.INVALID_SCHEMA
+        if not isinstance(ts.jti, str) or not ts.jti.strip():
+            return VerificationResult.INVALID_SCHEMA
 
         # Not before check
         if now < ts.nbf:
@@ -266,14 +390,26 @@ class Orchestrator:
         if ts.exp > ts.iat + timedelta(days=self.MAX_EXP_DAYS):
             return VerificationResult.EXPIRED  # Exp too far from iat
 
-        # 8. Replay prevention
+        # 8. Replay prevention is reserved after all pure validation succeeds.
         if self.replay_cache.is_seen(ts.jti):
             return VerificationResult.REPLAY_DETECTED
-        self.replay_cache.record(ts.jti, ts.exp)
 
         # 9. Token budget verification
         declared_tokens = manifest.budget.token_count
         max_share = manifest.budget.max_context_share
+        if (
+            not isinstance(context.model_context_limit, int)
+            or isinstance(context.model_context_limit, bool)
+            or context.model_context_limit <= 0
+            or not isinstance(declared_tokens, int)
+            or isinstance(declared_tokens, bool)
+            or declared_tokens < 1
+            or not isinstance(max_share, (int, float))
+            or isinstance(max_share, bool)
+            or not math.isfinite(max_share)
+            or not 0.01 <= max_share <= 0.5
+        ):
+            return VerificationResult.INVALID_SCHEMA
         max_tokens = int(context.model_context_limit * max_share)
         if declared_tokens > max_tokens:
             return VerificationResult.BUDGET_EXCEEDED
@@ -303,9 +439,15 @@ class Orchestrator:
         # 11. Content safety scan (additional check even with attestation)
         safety_issues = self._scan_for_injection(bundle.content)
         if safety_issues:
-            # Log warning but don't fail if attestation present
-            # In strict mode, could return INVALID_ATTESTATION
-            pass
+            logger.warning(
+                "Bundle jti=%s failed content injection scan: %s",
+                manifest.timestamps.jti,
+                "; ".join(safety_issues),
+            )
+            return VerificationResult.INVALID_ATTESTATION
+
+        if not self.replay_cache.check_and_record(ts.jti, ts.exp):
+            return VerificationResult.REPLAY_DETECTED
 
         # 12. Fire pre_inject hooks (if executor configured)
         if self._hook_executor is not None:
@@ -333,10 +475,16 @@ class Orchestrator:
                         hook_result.reason,
                         hook_result.aborted_by,
                     )
+                    self.replay_cache.discard(ts.jti)
+                    return VerificationResult.INVALID_ATTESTATION
+                if hook_result.cascade_failure:
+                    logger.error("pre_inject hook chain failed; rejecting bundle")
+                    self.replay_cache.discard(ts.jti)
                     return VerificationResult.INVALID_ATTESTATION
             except Exception:
-                # Fail-open: if hook execution itself throws, continue normally
-                logger.exception("pre_inject hook execution error; continuing verification")
+                logger.exception("pre_inject hook execution error; rejecting bundle")
+                self.replay_cache.discard(ts.jti)
+                return VerificationResult.INVALID_ATTESTATION
 
         return VerificationResult.VALID
 

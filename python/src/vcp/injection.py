@@ -69,8 +69,7 @@ def _format_header_delimited(
     content_hash = manifest.bundle.content_hash
     hash_value = content_hash.split(":")[1]
     hash_display = (
-        f"{hash_value[: options.hash_prefix_length]}"
-        f"...{hash_value[-options.hash_suffix_length :]}"
+        f"{hash_value[: options.hash_prefix_length]}...{hash_value[-options.hash_suffix_length :]}"
     )
 
     lines = [
@@ -85,9 +84,7 @@ def _format_header_delimited(
     if options.include_attestation:
         attestation = manifest.safety_attestation
         att_type = attestation.attestation_type.value
-        lines.append(
-            f"[ATTESTED:{att_type}:{attestation.auditor}]"
-        )
+        lines.append(f"[ATTESTED:{att_type}:{attestation.auditor}]")
 
     lines.append(f"[VERIFIED:{verified_at.isoformat()}Z]")
     lines.append("---BEGIN-CONSTITUTION---")
@@ -108,8 +105,7 @@ def _format_xml_tagged(
     content_hash = manifest.bundle.content_hash
     hash_value = content_hash.split(":")[1]
     hash_display = (
-        f"{hash_value[: options.hash_prefix_length]}"
-        f"...{hash_value[-options.hash_suffix_length :]}"
+        f"{hash_value[: options.hash_prefix_length]}...{hash_value[-options.hash_suffix_length :]}"
     )
 
     attrs = [
@@ -132,11 +128,7 @@ def _format_xml_tagged(
 
     attrs_str = " ".join(attrs)
 
-    return (
-        f"<vcp-constitution {attrs_str}>"
-        f"\n{bundle.content.rstrip()}"
-        "\n</vcp-constitution>"
-    )
+    return f"<vcp-constitution {attrs_str}>\n{bundle.content.rstrip()}\n</vcp-constitution>"
 
 
 def _format_minimal(
@@ -150,10 +142,7 @@ def _format_minimal(
     content_hash = manifest.bundle.content_hash
     hash_value = content_hash.split(":")[1][:8]
 
-    header = (
-        f"# Constitution: {manifest.bundle.id}"
-        f"@{manifest.bundle.version} [{hash_value}]"
-    )
+    header = f"# Constitution: {manifest.bundle.id}@{manifest.bundle.version} [{hash_value}]"
 
     return f"{header}\n\n{bundle.content.rstrip()}"
 
@@ -201,21 +190,14 @@ def format_multi_constitution_injection(
         layer = manifest.composition.layer if manifest.composition else i
         hash_value = manifest.bundle.content_hash.split(":")[1]
         hash_short = f"{hash_value[:8]}...{hash_value[-4:]}"
-        lines.append(
-            f"[LAYER:{layer}:{manifest.bundle.id}"
-            f"@{manifest.bundle.version}:{hash_short}]"
-        )
+        lines.append(f"[LAYER:{layer}:{manifest.bundle.id}@{manifest.bundle.version}:{hash_short}]")
 
     # Precedence (higher layer overrides lower)
     layers = [
-        b.manifest.composition.layer
-        if b.manifest.composition
-        else i
+        b.manifest.composition.layer if b.manifest.composition else i
         for i, b in enumerate(sorted_bundles, 1)
     ]
-    precedence = ">".join(
-        str(layer) for layer in sorted(set(layers))
-    )
+    precedence = ">".join(str(layer) for layer in sorted(set(layers)))
     lines.append(f"[PRECEDENCE:{precedence}]")
 
     lines.append(f"[VERIFIED:{verified_at.isoformat()}Z]")
@@ -227,12 +209,8 @@ def format_multi_constitution_injection(
         layer = manifest.composition.layer if manifest.composition else i
         mode = manifest.composition.mode.value if manifest.composition else "extend"
 
-        title = manifest.metadata.get(
-            'title', manifest.bundle.id
-        )
-        lines.append(
-            f"\n## Layer {layer}: {title} ({mode.upper()})"
-        )
+        title = manifest.metadata.get("title", manifest.bundle.id)
+        lines.append(f"\n## Layer {layer}: {title} ({mode.upper()})")
         lines.append(bundle.content.rstrip())
 
     lines.append("\n---END-CONSTITUTION---")

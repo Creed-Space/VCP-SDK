@@ -65,6 +65,11 @@ def _make_executor_with_hook(
     return HookExecutor(registry)
 
 
+def _accept_test_signature(*_args: object) -> bool:
+    """Keep hook integration tests focused on hook behavior."""
+    return True
+
+
 def _make_valid_bundle(content: str = "Be helpful and harmless.") -> Bundle:
     """Create a minimal bundle that passes Orchestrator.verify()."""
     now = datetime.now(timezone.utc)
@@ -109,8 +114,12 @@ def _make_valid_bundle(content: str = "Be helpful and harmless.") -> Bundle:
             algorithm="ed25519",
             value="base64:AAAA",
             signed_fields=[
-                "vcp_version", "bundle", "issuer",
-                "timestamps", "budget", "safety_attestation",
+                "vcp_version",
+                "bundle",
+                "issuer",
+                "timestamps",
+                "budget",
+                "safety_attestation",
             ],
         ),
     )
@@ -139,7 +148,7 @@ def _make_trust_config() -> TrustConfig:
             id="test-auditor",
             key_id="auditor-key-1",
             algorithm="ed25519",
-            public_key="ed25519:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+            public_key="ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
             anchor_type="auditor",
             valid_from=now - timedelta(days=365),
             valid_until=now + timedelta(days=365),
@@ -182,6 +191,7 @@ class TestOrchestratorPreInjectHook:
         executor = _make_executor_with_hook(HookType.PRE_INJECT, capture_hook)
         orchestrator = Orchestrator(
             trust_config=trust_config,
+            verify_signature=_accept_test_signature,
             hook_executor=executor,
         )
         bundle = _make_valid_bundle()
@@ -196,9 +206,7 @@ class TestOrchestratorPreInjectHook:
         assert isinstance(fired[0].event, PreInjectEvent)
         assert fired[0].event.injection_format == "system_prompt"
 
-    def test_pre_inject_hook_abort_blocks_verification(
-        self, trust_config: TrustConfig
-    ) -> None:
+    def test_pre_inject_hook_abort_blocks_verification(self, trust_config: TrustConfig) -> None:
         """Hook returning ABORT should cause orchestrator to return non-VALID."""
 
         def abort_hook(inp: HookInput) -> HookResult:
@@ -207,6 +215,7 @@ class TestOrchestratorPreInjectHook:
         executor = _make_executor_with_hook(HookType.PRE_INJECT, abort_hook)
         orchestrator = Orchestrator(
             trust_config=trust_config,
+            verify_signature=_accept_test_signature,
             hook_executor=executor,
         )
         bundle = _make_valid_bundle()
@@ -216,14 +225,17 @@ class TestOrchestratorPreInjectHook:
 
     def test_no_executor_skips_hooks(self, trust_config: TrustConfig) -> None:
         """When no hook_executor is provided, verification works without hooks."""
-        orchestrator = Orchestrator(trust_config=trust_config)
+        orchestrator = Orchestrator(
+            trust_config=trust_config,
+            verify_signature=_accept_test_signature,
+        )
         bundle = _make_valid_bundle()
         result = orchestrator.verify(bundle)
 
         assert result == VerificationResult.VALID
 
-    def test_hook_exception_is_fail_open(self, trust_config: TrustConfig) -> None:
-        """If hook itself raises, orchestrator should still return VALID (fail-open)."""
+    def test_hook_exception_is_fail_closed(self, trust_config: TrustConfig) -> None:
+        """A hook crash must block injection rather than bypass the hook."""
 
         def exploding_hook(inp: HookInput) -> HookResult:
             raise RuntimeError("Hook crashed")
@@ -231,17 +243,15 @@ class TestOrchestratorPreInjectHook:
         executor = _make_executor_with_hook(HookType.PRE_INJECT, exploding_hook)
         orchestrator = Orchestrator(
             trust_config=trust_config,
+            verify_signature=_accept_test_signature,
             hook_executor=executor,
         )
         bundle = _make_valid_bundle()
         result = orchestrator.verify(bundle)
 
-        # Fail-open: hook crash does not block verification
-        assert result == VerificationResult.VALID
+        assert result == VerificationResult.INVALID_ATTESTATION
 
-    def test_hook_does_not_fire_on_failed_verification(
-        self, trust_config: TrustConfig
-    ) -> None:
+    def test_hook_does_not_fire_on_failed_verification(self, trust_config: TrustConfig) -> None:
         """Hook should NOT fire when verification fails early (e.g. expired)."""
         fired: list[bool] = []
 
@@ -252,6 +262,7 @@ class TestOrchestratorPreInjectHook:
         executor = _make_executor_with_hook(HookType.PRE_INJECT, tracking_hook)
         orchestrator = Orchestrator(
             trust_config=trust_config,
+            verify_signature=_accept_test_signature,
             hook_executor=executor,
         )
 
@@ -295,9 +306,7 @@ class TestStateTrackerOnTransitionHook:
         assert fired[0].event.trigger == transition.severity.value
         assert "time" in fired[0].event.transition_metadata["changed_dimensions"]
 
-    def test_on_transition_hook_not_fired_for_first_record(
-        self, encoder: ContextEncoder
-    ) -> None:
+    def test_on_transition_hook_not_fired_for_first_record(self, encoder: ContextEncoder) -> None:
         """First record has no transition, so hook should NOT fire."""
         fired: list[bool] = []
 
@@ -314,9 +323,7 @@ class TestStateTrackerOnTransitionHook:
         assert result is None
         assert fired == []
 
-    def test_on_transition_hook_not_fired_for_no_change(
-        self, encoder: ContextEncoder
-    ) -> None:
+    def test_on_transition_hook_not_fired_for_no_change(self, encoder: ContextEncoder) -> None:
         """Same context recorded twice should produce NONE severity and not fire hook."""
         fired: list[bool] = []
 

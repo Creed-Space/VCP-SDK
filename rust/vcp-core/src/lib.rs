@@ -36,7 +36,7 @@
 //! // Parse a CSM-1 compact code.
 //! let code = Csm1Code::parse("N5+F+E").unwrap();
 //! assert_eq!(code.persona, Persona::Nanny);
-//! assert_eq!(code.encode(), "N5+F+E");
+//! assert_eq!(code.encode(), "N5+E+F");
 //!
 //! // Hash constitution content.
 //! let hash = compute_content_hash("Be kind to everyone.").unwrap();
@@ -75,7 +75,7 @@ pub use hooks::{
 };
 pub use identity::VcpToken;
 pub use personal::{PersonalDimension, PersonalState};
-pub use revocation::{RevocationChecker, RevocationStatus};
+pub use revocation::{Crl, CrlEntry, RevocationChecker, RevocationStatus};
 pub use situational::{SituationalContext, SituationalDimension};
 pub use transport::{
     compute_content_hash, sign_manifest, verify_content_hash, verify_manifest_signature,

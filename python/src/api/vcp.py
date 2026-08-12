@@ -20,9 +20,11 @@ from pydantic import BaseModel, ConfigDict, Field
 try:
     from services.feature_flags import is_feature_enabled
 except ImportError:
+
     def is_feature_enabled(flag: str) -> bool:  # type: ignore[misc]
         """Stub: feature flags unavailable outside Creed Space."""
         return False
+
 
 try:
     from services.persona_manager import SessionToken
@@ -84,9 +86,7 @@ class ContextEncodeRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    time: str | None = Field(
-        None, description="Time context (morning, midday, evening, night)"
-    )
+    time: str | None = Field(None, description="Time context (morning, midday, evening, night)")
     space: str | None = Field(
         None,
         description="Space context (home, office, school, hospital, transit)",
@@ -95,23 +95,17 @@ class ContextEncodeRequest(BaseModel):
         None,
         description="Company context (alone, children, colleagues, family)",
     )
-    culture: str | None = Field(
-        None, description="Cultural context"
-    )
+    culture: str | None = Field(None, description="Cultural context")
     occasion: str | None = Field(
         None,
         description="Occasion (normal, celebration, mourning, emergency)",
     )
-    environment: str | None = Field(
-        None, description="Physical environment"
-    )
+    environment: str | None = Field(None, description="Physical environment")
     agency: str | None = Field(
         None,
         description="Agency level (leader, peer, subordinate, limited)",
     )
-    constraints: list[str] | None = Field(
-        None, description="Active constraints"
-    )
+    constraints: list[str] | None = Field(None, description="Active constraints")
     system_context: str | None = Field(
         None,
         description="System context (online, degraded, offline, sandboxed, testing)",

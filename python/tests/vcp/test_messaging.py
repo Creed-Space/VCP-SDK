@@ -1,4 +1,5 @@
 """Tests for VCP Inter-Agent Messaging v2.0 envelope support."""
+
 from __future__ import annotations
 
 import json

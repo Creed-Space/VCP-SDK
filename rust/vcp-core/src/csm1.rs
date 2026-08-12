@@ -119,20 +119,20 @@ impl fmt::Display for Persona {
 
 // ── Scope ───────────────────────────────────────────────────
 
-/// Eleven context scopes for constitutional application.
+/// Eleven canonical VCP/S v2.0 scopes for constitutional application.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Scope {
     Family,
     Work,
-    Education,
-    Healthcare,
-    Finance,
-    Legal,
     Privacy,
-    Safety,
-    Accessibility,
-    Environment,
-    General,
+    Education,
+    Technical,
+    Official,
+    Vulnerable,
+    Adult,
+    Healthcare,
+    Social,
+    Religious,
 }
 
 impl Scope {
@@ -141,15 +141,15 @@ impl Scope {
         match self {
             Self::Family => 'F',
             Self::Work => 'W',
-            Self::Education => 'E',
-            Self::Healthcare => 'H',
-            Self::Finance => 'I',
-            Self::Legal => 'L',
             Self::Privacy => 'P',
-            Self::Safety => 'S',
-            Self::Accessibility => 'A',
-            Self::Environment => 'V',
-            Self::General => 'G',
+            Self::Education => 'E',
+            Self::Technical => 'T',
+            Self::Official => 'O',
+            Self::Vulnerable => 'V',
+            Self::Adult => 'A',
+            Self::Healthcare => 'H',
+            Self::Social => 'S',
+            Self::Religious => 'R',
         }
     }
 
@@ -163,15 +163,15 @@ impl Scope {
         match c.to_ascii_uppercase() {
             'F' => Ok(Self::Family),
             'W' => Ok(Self::Work),
-            'E' => Ok(Self::Education),
-            'H' => Ok(Self::Healthcare),
-            'I' => Ok(Self::Finance),
-            'L' => Ok(Self::Legal),
             'P' => Ok(Self::Privacy),
-            'S' => Ok(Self::Safety),
-            'A' => Ok(Self::Accessibility),
-            'V' => Ok(Self::Environment),
-            'G' => Ok(Self::General),
+            'E' => Ok(Self::Education),
+            'T' => Ok(Self::Technical),
+            'O' => Ok(Self::Official),
+            'V' => Ok(Self::Vulnerable),
+            'A' => Ok(Self::Adult),
+            'H' => Ok(Self::Healthcare),
+            'S' => Ok(Self::Social),
+            'R' => Ok(Self::Religious),
             _ => Err(VcpError::InvalidScope(c)),
         }
     }
@@ -181,15 +181,15 @@ impl Scope {
         match self {
             Self::Family => "Family and parenting",
             Self::Work => "Professional workplace",
-            Self::Education => "Learning and academic",
-            Self::Healthcare => "Medical and health",
-            Self::Finance => "Financial and investment",
-            Self::Legal => "Legal and compliance",
             Self::Privacy => "Privacy and data protection",
-            Self::Safety => "Physical safety",
-            Self::Accessibility => "Accessibility and inclusion",
-            Self::Environment => "Environmental",
-            Self::General => "General purpose",
+            Self::Education => "Learning and academic",
+            Self::Technical => "Developer and technical context",
+            Self::Official => "Official and governmental context",
+            Self::Vulnerable => "Vulnerable populations",
+            Self::Adult => "Adult-only context",
+            Self::Healthcare => "Medical and health",
+            Self::Social => "Social media and community",
+            Self::Religious => "Religious and spiritual context",
         }
     }
 }
@@ -216,6 +216,98 @@ pub struct Csm1Code {
 }
 
 impl Csm1Code {
+    fn split_version(raw: &str) -> VcpResult<(&str, Option<String>)> {
+        if raw.matches('@').count() > 1 {
+            return Err(VcpError::ParseError(
+                "CSM1 code contains multiple version separators".into(),
+            ));
+        }
+        let Some(at_idx) = raw.find('@') else {
+            return Ok((raw, None));
+        };
+        let version = &raw[at_idx + 1..];
+        let parts: Vec<&str> = version.split('.').collect();
+        let valid_semver = parts.len() == 3
+            && parts.iter().all(|part| {
+                !part.is_empty()
+                    && part.len() <= 3
+                    && part.as_bytes().iter().all(u8::is_ascii_digit)
+            });
+        if !matches!(version, "latest" | "canary") && !valid_semver {
+            return Err(VcpError::ParseError(format!("invalid version: {version}")));
+        }
+        Ok((&raw[..at_idx], Some(version.to_string())))
+    }
+
+    fn split_namespace(raw: &str) -> VcpResult<(&str, Option<String>)> {
+        if raw.matches(':').count() > 1 {
+            return Err(VcpError::ParseError(
+                "CSM1 code contains multiple namespace separators".into(),
+            ));
+        }
+        let Some(colon_idx) = raw.find(':') else {
+            return Ok((raw, None));
+        };
+        let namespace = &raw[colon_idx + 1..];
+        let valid = !namespace.is_empty()
+            && namespace.len() <= 8
+            && namespace.as_bytes().iter().all(u8::is_ascii_uppercase);
+        if !valid {
+            return Err(VcpError::ParseError(format!(
+                "invalid namespace: {namespace}"
+            )));
+        }
+        Ok((&raw[..colon_idx], Some(namespace.to_string())))
+    }
+
+    fn parse_scopes(raw: &str) -> VcpResult<Vec<Scope>> {
+        if raw.is_empty() {
+            return Ok(Vec::new());
+        }
+        if !raw.starts_with('+') {
+            return Err(VcpError::ParseError(
+                "CSM1 scopes must use +X syntax".into(),
+            ));
+        }
+        let mut scopes = Vec::new();
+        for scope_str in raw[1..].split('+') {
+            if scope_str.len() != 1 {
+                return Err(VcpError::ParseError(format!(
+                    "invalid scope token: {scope_str}"
+                )));
+            }
+            let scope_char = char::from(scope_str.as_bytes()[0]);
+            if !scope_char.is_ascii_uppercase() {
+                return Err(VcpError::ParseError(format!(
+                    "scope must be uppercase: {scope_char}"
+                )));
+            }
+            let scope = Scope::from_char(scope_char)?;
+            if scopes.contains(&scope) {
+                return Err(VcpError::ParseError("CSM1 scopes must be unique".into()));
+            }
+            scopes.push(scope);
+        }
+        Ok(scopes)
+    }
+
+    fn validate_scope_compatibility(scopes: &[Scope]) -> VcpResult<()> {
+        for (left, right) in [
+            (Scope::Family, Scope::Adult),
+            (Scope::Vulnerable, Scope::Adult),
+            (Scope::Healthcare, Scope::Adult),
+        ] {
+            if scopes.contains(&left) && scopes.contains(&right) {
+                return Err(VcpError::ParseError(format!(
+                    "conflicting scopes {} and {} cannot be combined",
+                    left.code(),
+                    right.code()
+                )));
+            }
+        }
+        Ok(())
+    }
+
     /// Parse a compact CSM-1 code string.
     ///
     /// # Errors
@@ -238,15 +330,29 @@ impl Csm1Code {
         if raw.is_empty() {
             return Err(VcpError::ParseError("CSM1 code cannot be empty".into()));
         }
+        if raw.len() > 50 {
+            return Err(VcpError::ParseError(
+                "CSM1 code exceeds maximum length 50".into(),
+            ));
+        }
+        if !raw.is_ascii() {
+            return Err(VcpError::ParseError(
+                "CSM1 code must contain only ASCII characters".into(),
+            ));
+        }
 
-        let upper = raw.to_uppercase();
-        let chars: Vec<char> = upper.chars().collect();
+        let chars: Vec<char> = raw.chars().collect();
 
         if chars.len() < 2 {
             return Err(VcpError::ParseError(format!("CSM1 code too short: {raw}")));
         }
 
         // Parse persona (first char).
+        if !chars[0].is_ascii_uppercase() {
+            return Err(VcpError::ParseError(
+                "CSM1 persona must be uppercase".into(),
+            ));
+        }
         let persona = Persona::from_char(chars[0])?;
 
         // Parse level (second char).
@@ -263,51 +369,19 @@ impl Csm1Code {
             ))?;
 
         // Remaining string after persona + level.
-        let remaining = &upper[2..];
+        let remaining = &raw[2..];
 
         // Split into parts: scopes (+X), namespace (:NS), version (@X.Y.Z).
-        let mut scopes = Vec::new();
+        let (before_version, version) = Self::split_version(remaining)?;
+        let (before_namespace, namespace) = Self::split_namespace(before_version)?;
+        let scopes = Self::parse_scopes(before_namespace)?;
 
-        // Extract version if present.
-        let (before_version, version) = if let Some(at_idx) = remaining.find('@') {
-            let v = &remaining[at_idx + 1..];
-            // Validate version format.
-            let parts: Vec<&str> = v.split('.').collect();
-            if parts.len() != 3 || parts.iter().any(|p| p.parse::<u32>().is_err()) {
-                return Err(VcpError::ParseError(format!("invalid version: {v}")));
-            }
-            (&remaining[..at_idx], Some(v.to_string()))
-        } else {
-            (remaining, None)
-        };
-
-        // Extract namespace if present.
-        let (before_ns, namespace) = if let Some(colon_idx) = before_version.find(':') {
-            let n = &before_version[colon_idx + 1..];
-            if n.is_empty() || !n.as_bytes().first().is_some_and(u8::is_ascii_uppercase) {
-                return Err(VcpError::ParseError(format!("invalid namespace: {n}")));
-            }
-            (&before_version[..colon_idx], Some(n.to_string()))
-        } else {
-            (before_version, None)
-        };
-
-        // Parse scopes from remaining (e.g. "+F+E+H").
-        if !before_ns.is_empty() {
-            for scope_str in before_ns.split('+') {
-                if scope_str.is_empty() {
-                    continue;
-                }
-                if scope_str.len() != 1 {
-                    return Err(VcpError::ParseError(format!(
-                        "invalid scope token: {scope_str}"
-                    )));
-                }
-                if let Some(scope_char) = scope_str.chars().next() {
-                    scopes.push(Scope::from_char(scope_char)?);
-                }
-            }
+        if persona == Persona::Custom && namespace.is_none() {
+            return Err(VcpError::ParseError(
+                "custom persona requires a namespace".into(),
+            ));
         }
+        Self::validate_scope_compatibility(&scopes)?;
 
         Ok(Csm1Code {
             persona,
@@ -323,12 +397,13 @@ impl Csm1Code {
         let mut s = format!("{}{}", self.persona.code(), self.adherence_level);
 
         if !self.scopes.is_empty() {
+            let mut scope_codes: Vec<char> = self.scopes.iter().map(|scope| scope.code()).collect();
+            scope_codes.sort_unstable();
             s.push('+');
             s.push_str(
-                &self
-                    .scopes
+                &scope_codes
                     .iter()
-                    .map(|sc| String::from(sc.code()))
+                    .map(|scope| String::from(*scope))
                     .collect::<Vec<_>>()
                     .join("+"),
             );
@@ -708,15 +783,15 @@ mod tests {
         let cases = [
             ('F', Scope::Family),
             ('W', Scope::Work),
-            ('E', Scope::Education),
-            ('H', Scope::Healthcare),
-            ('I', Scope::Finance),
-            ('L', Scope::Legal),
             ('P', Scope::Privacy),
-            ('S', Scope::Safety),
-            ('A', Scope::Accessibility),
-            ('V', Scope::Environment),
-            ('G', Scope::General),
+            ('E', Scope::Education),
+            ('T', Scope::Technical),
+            ('O', Scope::Official),
+            ('V', Scope::Vulnerable),
+            ('A', Scope::Adult),
+            ('H', Scope::Healthcare),
+            ('S', Scope::Social),
+            ('R', Scope::Religious),
         ];
         for (ch, expected) in &cases {
             assert_eq!(Scope::from_char(*ch).unwrap(), *expected);
@@ -725,7 +800,9 @@ mod tests {
 
     #[test]
     fn scope_from_char_invalid() {
-        assert!(Scope::from_char('X').is_err());
+        for legacy_or_invalid in ['I', 'L', 'G', 'X'] {
+            assert!(Scope::from_char(legacy_or_invalid).is_err());
+        }
     }
 
     // ── Compact Code Parsing ────────────────────────────
@@ -777,16 +854,18 @@ mod tests {
     }
 
     #[test]
-    fn parse_lowercase() {
-        let code = Csm1Code::parse("n5+f+e").unwrap();
-        assert_eq!(code.persona, Persona::Nanny);
-        assert_eq!(code.scopes, vec![Scope::Family, Scope::Education]);
+    fn parse_rejects_lowercase() {
+        assert!(Csm1Code::parse("n5+f+e").is_err());
     }
 
     #[test]
     fn parse_all_personas() {
         for p in Persona::all() {
-            let raw = format!("{}3", p.code());
+            let raw = if *p == Persona::Custom {
+                "C3:TEST".to_string()
+            } else {
+                format!("{}3", p.code())
+            };
             let code = Csm1Code::parse(&raw).unwrap();
             assert_eq!(code.persona, *p);
         }
@@ -825,6 +904,78 @@ mod tests {
     }
 
     #[test]
+    fn parse_all_canonical_scopes() {
+        let code = Csm1Code::parse("N5+F+W+P+E+T+O+V+H+S+R").unwrap();
+        assert_eq!(
+            code.scopes,
+            vec![
+                Scope::Family,
+                Scope::Work,
+                Scope::Privacy,
+                Scope::Education,
+                Scope::Technical,
+                Scope::Official,
+                Scope::Vulnerable,
+                Scope::Healthcare,
+                Scope::Social,
+                Scope::Religious,
+            ]
+        );
+    }
+
+    #[test]
+    fn parse_rejects_legacy_scopes() {
+        for legacy_scope in ['I', 'L', 'G'] {
+            assert!(Csm1Code::parse(&format!("N5+{legacy_scope}")).is_err());
+        }
+    }
+
+    #[test]
+    fn custom_persona_requires_namespace() {
+        assert!(Csm1Code::parse("C3").is_err());
+        assert_eq!(
+            Csm1Code::parse("C3:ACME").unwrap().namespace.as_deref(),
+            Some("ACME")
+        );
+    }
+
+    #[test]
+    fn duplicate_scopes_are_rejected() {
+        assert!(Csm1Code::parse("N5+F+F").is_err());
+    }
+
+    #[test]
+    fn conflicting_scopes_are_rejected() {
+        for code in ["N5+F+A", "N5+V+A", "N5+H+A"] {
+            assert!(Csm1Code::parse(code).is_err());
+        }
+    }
+
+    #[test]
+    fn namespace_and_version_bounds_are_enforced() {
+        assert!(Csm1Code::parse("N5:TOOLONGNS").is_err());
+        assert!(Csm1Code::parse("N5:lower").is_err());
+        assert!(Csm1Code::parse("N5:A1").is_err());
+        assert!(Csm1Code::parse("N5@1000.2.3").is_err());
+        for version in ["latest", "canary", "1.2.3"] {
+            assert_eq!(
+                Csm1Code::parse(&format!("N5@{version}"))
+                    .unwrap()
+                    .version
+                    .as_deref(),
+                Some(version)
+            );
+        }
+    }
+
+    #[test]
+    fn malformed_scope_separators_are_rejected() {
+        for code in ["N5F", "N5+F+", "N5++F"] {
+            assert!(Csm1Code::parse(code).is_err());
+        }
+    }
+
+    #[test]
     fn parse_missing_level() {
         assert!(Csm1Code::parse("N").is_err());
     }
@@ -838,7 +989,7 @@ mod tests {
 
     #[test]
     fn encode_with_scopes() {
-        assert_eq!(Csm1Code::parse("N5+F+E").unwrap().encode(), "N5+F+E");
+        assert_eq!(Csm1Code::parse("N5+F+E").unwrap().encode(), "N5+E+F");
     }
 
     #[test]
@@ -854,7 +1005,10 @@ mod tests {
     #[test]
     fn roundtrip_full() {
         let original = "G4+F+E+H:ELEM@2.1.0";
-        assert_eq!(Csm1Code::parse(original).unwrap().encode(), original);
+        assert_eq!(
+            Csm1Code::parse(original).unwrap().encode(),
+            "G4+E+F+H:ELEM@2.1.0"
+        );
     }
 
     // ── Compact Code Methods ────────────────────────────

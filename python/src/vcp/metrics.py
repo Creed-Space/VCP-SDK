@@ -21,15 +21,18 @@ from __future__ import annotations
 
 import contextlib
 from collections.abc import Generator
+from types import ModuleType
 from typing import Any
 
 # ---------------------------------------------------------------------------
 # Optional prometheus_client import with no-op fallback
 # ---------------------------------------------------------------------------
 
+_prom: ModuleType | None
 try:
-    import prometheus_client as _prom
+    import prometheus_client as _prometheus_client
 
+    _prom = _prometheus_client
     _PROMETHEUS_AVAILABLE: bool = True
 except ImportError:
     _prom = None
@@ -59,7 +62,7 @@ _NOOP = _NoOpMetric()
 
 
 def _counter(name: str, documentation: str, labelnames: list[str] | None = None) -> Any:
-    if _PROMETHEUS_AVAILABLE:
+    if _prom is not None:
         return _prom.Counter(name, documentation, labelnames or [])
     return _NOOP
 
@@ -70,7 +73,7 @@ def _histogram(
     labelnames: list[str] | None = None,
     buckets: tuple[float, ...] | None = None,
 ) -> Any:
-    if _PROMETHEUS_AVAILABLE:
+    if _prom is not None:
         kwargs: dict[str, Any] = {}
         if buckets:
             kwargs["buckets"] = buckets
@@ -79,7 +82,7 @@ def _histogram(
 
 
 def _gauge(name: str, documentation: str, labelnames: list[str] | None = None) -> Any:
-    if _PROMETHEUS_AVAILABLE:
+    if _prom is not None:
         return _prom.Gauge(name, documentation, labelnames or [])
     return _NOOP
 

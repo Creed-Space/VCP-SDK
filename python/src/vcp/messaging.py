@@ -12,6 +12,7 @@ Messaging Specification v2.0. Supports four message types:
 Signing follows RFC 8785 (JSON Canonicalization Scheme) with Ed25519,
 consistent with VCP v2.0 manifest signing.
 """
+
 from __future__ import annotations
 
 import base64
@@ -26,12 +27,14 @@ from typing import Any
 PROTOCOL_VERSION = "2.0"
 
 # Valid message types per the spec.
-VALID_TYPES = frozenset({
-    "context_share",
-    "constitution_announce",
-    "constraint_propagate",
-    "escalation",
-})
+VALID_TYPES = frozenset(
+    {
+        "context_share",
+        "constitution_announce",
+        "constraint_propagate",
+        "escalation",
+    }
+)
 
 # Severities that require acknowledgment.
 ACK_REQUIRED_SEVERITIES = frozenset({"critical", "emergency"})
@@ -115,17 +118,13 @@ def validate_message(msg: VcpMessage) -> list[str]:
 
     # vcp_message version check.
     if msg.vcp_message != PROTOCOL_VERSION:
-        errors.append(
-            f"vcp_message must be '{PROTOCOL_VERSION}', got '{msg.vcp_message}'"
-        )
+        errors.append(f"vcp_message must be '{PROTOCOL_VERSION}', got '{msg.vcp_message}'")
 
     # Type check.
     if not msg.type:
         errors.append("type is required")
     elif msg.type not in VALID_TYPES:
-        errors.append(
-            f"type must be one of {sorted(VALID_TYPES)}, got '{msg.type}'"
-        )
+        errors.append(f"type must be one of {sorted(VALID_TYPES)}, got '{msg.type}'")
 
     # message_id format (UUID).
     if not msg.message_id:
@@ -159,9 +158,7 @@ def validate_message(msg: VcpMessage) -> list[str]:
         severity = msg.payload.get("severity")
         if severity and severity in ACK_REQUIRED_SEVERITIES:
             if msg.payload.get("requires_ack") is not True:
-                errors.append(
-                    f"requires_ack must be true for severity '{severity}'"
-                )
+                errors.append(f"requires_ack must be true for severity '{severity}'")
 
     return errors
 
@@ -312,6 +309,7 @@ def check_version_compatibility(received: str, minimum: str = "2.0") -> bool:
     Returns:
         True if versions are compatible, False if major version mismatch.
     """
+
     def _parse_ver(v: str) -> tuple[int, int]:
         parts = v.split(".")
         return int(parts[0]), int(parts[1]) if len(parts) > 1 else 0

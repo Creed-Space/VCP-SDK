@@ -497,9 +497,11 @@ mod tests {
 
     #[test]
     fn wire_roundtrip_single() {
-        let mut ctx = SituationalContext::default();
-        ctx.time = Some(vec!["\u{1F305}".to_string()]); // sunrise
-        ctx.space = Some(vec!["\u{1F3E1}".to_string()]); // house
+        let ctx = SituationalContext {
+            time: Some(vec!["\u{1F305}".to_string()]),  // sunrise
+            space: Some(vec!["\u{1F3E1}".to_string()]), // house
+            ..Default::default()
+        };
 
         let wire = ctx.to_wire();
         assert!(wire.contains("\u{23F0}\u{1F305}"));
@@ -536,9 +538,11 @@ mod tests {
 
     #[test]
     fn serde_roundtrip() {
-        let mut ctx = SituationalContext::default();
-        ctx.time = Some(vec!["morning".to_string()]);
-        ctx.company = Some(vec!["alone".to_string()]);
+        let ctx = SituationalContext {
+            time: Some(vec!["morning".to_string()]),
+            company: Some(vec!["alone".to_string()]),
+            ..Default::default()
+        };
 
         let json = serde_json::to_string(&ctx).unwrap();
         let parsed: SituationalContext = serde_json::from_str(&json).unwrap();
@@ -549,11 +553,13 @@ mod tests {
 
     #[test]
     fn vep_0004_symbols_encode_and_parse() {
-        let mut ctx = SituationalContext::default();
-        ctx.embodiment = Some(vec!["\u{270B}".to_string()]); // ✋
-        ctx.proximity = Some(vec!["\u{1F90F}".to_string()]); // 🤏
-        ctx.relationship = Some(vec!["colleague:professional".to_string()]);
-        ctx.formality = Some(vec!["\u{1F4BC}".to_string()]); // 💼
+        let ctx = SituationalContext {
+            embodiment: Some(vec!["\u{270B}".to_string()]), // ✋
+            proximity: Some(vec!["\u{1F90F}".to_string()]), // 🤏
+            relationship: Some(vec!["colleague:professional".to_string()]),
+            formality: Some(vec!["\u{1F4BC}".to_string()]), // 💼
+            ..Default::default()
+        };
 
         let wire = ctx.to_wire();
         assert!(wire.contains("\u{1F9CD}\u{270B}"));
@@ -582,8 +588,10 @@ mod tests {
 
     #[test]
     fn has_vep_0004_is_true_when_vep_dim_set() {
-        let mut ctx = SituationalContext::default();
-        ctx.time = Some(vec!["\u{1F305}".to_string()]);
+        let mut ctx = SituationalContext {
+            time: Some(vec!["\u{1F305}".to_string()]),
+            ..Default::default()
+        };
         assert!(!ctx.has_vep_0004());
 
         ctx.formality = Some(vec!["\u{1F4BC}".to_string()]);
@@ -592,15 +600,17 @@ mod tests {
 
     #[test]
     fn canonical_thirteen_dim_example_encodes() {
-        let mut ctx = SituationalContext::default();
-        ctx.time = Some(vec!["\u{1F305}".to_string()]); // 🌅
-        ctx.space = Some(vec!["\u{1F3E2}".to_string()]); // 🏢
-        ctx.company = Some(vec!["\u{1F454}".to_string()]); // 👔
-        ctx.occasion = Some(vec!["\u{1F4BC}".to_string()]); // 💼
-        ctx.embodiment = Some(vec!["\u{270B}".to_string()]); // ✋
-        ctx.proximity = Some(vec!["\u{1F90F}".to_string()]); // 🤏
-        ctx.relationship = Some(vec!["colleague:professional".to_string()]);
-        ctx.formality = Some(vec!["\u{1F4BC}".to_string()]); // 💼
+        let ctx = SituationalContext {
+            time: Some(vec!["\u{1F305}".to_string()]),      // 🌅
+            space: Some(vec!["\u{1F3E2}".to_string()]),     // 🏢
+            company: Some(vec!["\u{1F454}".to_string()]),   // 👔
+            occasion: Some(vec!["\u{1F4BC}".to_string()]),  // 💼
+            embodiment: Some(vec!["\u{270B}".to_string()]), // ✋
+            proximity: Some(vec!["\u{1F90F}".to_string()]), // 🤏
+            relationship: Some(vec!["colleague:professional".to_string()]),
+            formality: Some(vec!["\u{1F4BC}".to_string()]), // 💼
+            ..Default::default()
+        };
 
         let expected = "\u{23F0}\u{1F305}\
                         |\u{1F4CD}\u{1F3E2}\

@@ -63,6 +63,7 @@ INTENSITY_SEPARATOR = ":"
 # Situational dimensions (positions 1-13)
 # ────────────────────────────────────────────────────────────────────────────
 
+
 class SituationalDimension(Enum):
     """13 situational context dimensions for VCP/A encoding (VCP v3.2)."""
 
@@ -240,6 +241,7 @@ Dimension = SituationalDimension
 # Personal-state dimensions (R-line; v3.1+)
 # ────────────────────────────────────────────────────────────────────────────
 
+
 class PersonalStateDimension(Enum):
     """5 personal-state dimensions (VCP v3.1+ R-line).
 
@@ -326,9 +328,7 @@ class PersonalState:
 
     def __post_init__(self) -> None:
         if self.intensity is not None and not (1 <= self.intensity <= 5):
-            raise ValueError(
-                f"PersonalState intensity must be 1-5 or None, got {self.intensity}"
-            )
+            raise ValueError(f"PersonalState intensity must be 1-5 or None, got {self.intensity}")
 
     def encode(self) -> str:
         """Encode to wire segment (without dimension symbol)."""
@@ -353,6 +353,7 @@ class PersonalState:
 # ────────────────────────────────────────────────────────────────────────────
 # VCPContext
 # ────────────────────────────────────────────────────────────────────────────
+
 
 class VCPContext:
     """Encoded VCP/A context state (v3.2).
@@ -379,9 +380,7 @@ class VCPContext:
                 "VCPContext: pass either 'situational' or the deprecated "
                 "'dimensions' alias — not both."
             )
-        object.__setattr__(
-            self, "situational", dict(situational or dimensions or {})
-        )
+        object.__setattr__(self, "situational", dict(situational or dimensions or {}))
         object.__setattr__(self, "personal", dict(personal or {}))
 
     # Backwards-compat alias: older v3.0 code used `ctx.dimensions[Dimension.TIME]`
@@ -448,7 +447,7 @@ class VCPContext:
                 continue
             for dim in SituationalDimension:
                 if part.startswith(dim.symbol):
-                    raw = part[len(dim.symbol):]
+                    raw = part[len(dim.symbol) :]
                     if not raw:
                         break
                     if dim.is_free_form:
@@ -469,7 +468,7 @@ class VCPContext:
                 continue
             for pdim in PersonalStateDimension:
                 if part.startswith(pdim.symbol):
-                    raw = part[len(pdim.symbol):]
+                    raw = part[len(pdim.symbol) :]
                     if raw:
                         personal[pdim] = PersonalState.decode(raw)
                     break
@@ -575,9 +574,7 @@ class VCPContext:
         """Get value for a personal-state dimension."""
         return self.personal.get(dimension)
 
-    def set(
-        self, dimension: SituationalDimension, values: list[str]
-    ) -> VCPContext:
+    def set(self, dimension: SituationalDimension, values: list[str]) -> VCPContext:
         """Return new context with situational dimension values set."""
         new_sit = dict(self.situational)
         new_sit[dimension] = list(values)
@@ -635,6 +632,7 @@ class VCPContext:
 # ────────────────────────────────────────────────────────────────────────────
 # ContextEncoder
 # ────────────────────────────────────────────────────────────────────────────
+
 
 class ContextEncoder:
     """Build VCP/A contexts from keyword inputs.

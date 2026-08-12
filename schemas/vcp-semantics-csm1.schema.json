@@ -9,7 +9,7 @@
     "code": {
       "type": "string",
       "description": "The CSM1 code string",
-      "pattern": "^[NZGAMDC][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?(?:@(?:[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}|latest|canary))?$",
+      "pattern": "^(?![^:@]*(?:\\+F[^:@]*\\+A|\\+A[^:@]*\\+F|\\+V[^:@]*\\+A|\\+A[^:@]*\\+V|\\+H[^:@]*\\+A|\\+A[^:@]*\\+H))(?![^:@]*\\+([FWPETOVAHSR])(?:\\+[FWPETOVAHSR])*\\+\\1(?=\\+|[:@]|$))(?:C[0-5](?:\\+[FWPETOVAHSR])*:[A-Z]{1,8}|[NZGAMD][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?)(?:@(?:[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}|latest|canary))?$",
       "minLength": 2,
       "maxLength": 50,
       "examples": [
@@ -17,21 +17,21 @@
         "N5+F",
         "N5+F+E",
         "Z4+P+W",
-        "N5:ELEM+F@1.2.0",
-        "C3:ACME+W"
+        "N5+F:ELEM@1.2.0",
+        "C3+W:ACME"
       ]
     },
 
     "persona": {
       "type": "string",
       "description": "Persona code (single character)",
-      "enum": ["N", "Z", "G", "A", "M", "R", "H", "C"]
+      "enum": ["N", "Z", "G", "A", "M", "D", "C"]
     },
 
     "persona_name": {
       "type": "string",
       "description": "Full persona name",
-      "enum": ["nanny", "sentinel", "godparent", "ambassador", "muse", "anchor", "hotrod", "custom"]
+      "enum": ["nanny", "sentinel", "godparent", "ambassador", "muse", "mediator", "custom"]
     },
 
     "adherence": {
@@ -90,7 +90,7 @@
       "properties": {
         "code": {
           "type": "string",
-          "enum": ["N", "Z", "G", "A", "M", "R", "H", "C"]
+          "enum": ["N", "Z", "G", "A", "M", "D", "C"]
         },
         "name": {
           "type": "string"
@@ -171,6 +171,7 @@
     },
     {
       "if": {
+        "required": ["scopes"],
         "properties": {
           "scopes": {
             "contains": { "const": "F" }
@@ -178,9 +179,47 @@
         }
       },
       "then": {
-        "not": {
-          "properties": {
-            "scopes": {
+        "properties": {
+          "scopes": {
+            "not": {
+              "contains": { "const": "A" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["scopes"],
+        "properties": {
+          "scopes": {
+            "contains": { "const": "V" }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "scopes": {
+            "not": {
+              "contains": { "const": "A" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["scopes"],
+        "properties": {
+          "scopes": {
+            "contains": { "const": "H" }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "scopes": {
+            "not": {
               "contains": { "const": "A" }
             }
           }
@@ -209,7 +248,7 @@
       "version": "1.0.0"
     },
     {
-      "code": "C3:ACME+W+O",
+      "code": "C3+W+O:ACME",
       "persona": "C",
       "persona_name": "custom",
       "adherence": 3,

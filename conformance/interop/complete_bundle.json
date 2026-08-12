@@ -18,7 +18,7 @@
         },
         "issuer": {
           "id": "creed.space",
-          "public_key": "ed25519:MC4CAQAwBQYDK2VwBCIEIHKhpwMdqgQwCXzLJv",
+          "public_key": "ed25519:AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
           "key_id": "creed-space-2026"
         },
         "timestamps": {
@@ -87,7 +87,7 @@
               {
                 "id": "creed-space-2026",
                 "algorithm": "ed25519",
-                "public_key": "MC4CAQAwBQYDK2VwBCIEIHKhpwMdqgQwCXzLJv",
+                "public_key": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
                 "state": "active",
                 "valid_from": "2026-01-01T00:00:00Z",
                 "valid_until": "2027-01-01T00:00:00Z"

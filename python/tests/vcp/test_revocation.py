@@ -10,7 +10,7 @@ from __future__ import annotations
 import socket
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -39,8 +39,14 @@ class _StubTimestamps:
 
 
 @dataclass
+class _StubIssuer:
+    id: str = "creed.space"
+
+
+@dataclass
 class _StubManifest:
     timestamps: _StubTimestamps = field(default_factory=_StubTimestamps)
+    issuer: _StubIssuer = field(default_factory=_StubIssuer)
     revocation: dict[str, Any] | None = None
 
 
@@ -67,10 +73,11 @@ def _crl_response(
     next_update: str | None = None,
 ) -> dict[str, Any]:
     """Build a CRL JSON response body."""
+    now = datetime.now(timezone.utc)
     return {
         "issuer": "creed.space",
-        "updated_at": "2026-02-15T10:00:00Z",
-        "next_update": next_update or "2026-02-16T10:00:00Z",
+        "updated_at": now.isoformat().replace("+00:00", "Z"),
+        "next_update": next_update or (now + timedelta(hours=1)).isoformat().replace("+00:00", "Z"),
         "revoked": revoked_entries or [],
     }
 
@@ -93,9 +100,29 @@ class TestValidateUri:
         assert not ok
         assert "scheme" in reason.lower()
 
+    def test_rejects_plain_http(self) -> None:
+        ok, reason = validate_uri("http://example.com/revoked")
+        assert not ok
+        assert "https" in reason.lower()
+
     def test_rejects_no_hostname(self) -> None:
         ok, _ = validate_uri("http://")
         assert not ok
+
+    def test_rejects_embedded_credentials(self) -> None:
+        ok, reason = validate_uri("https://user:secret@example.com/revoked")
+        assert not ok
+        assert "credentials" in reason.lower()
+
+    def test_rejects_invalid_port(self) -> None:
+        ok, reason = validate_uri("https://example.com:not-a-port/revoked")
+        assert not ok
+        assert "port" in reason.lower()
+
+    def test_rejects_http_default_port_for_https(self) -> None:
+        ok, reason = validate_uri("https://example.com:80/revoked")
+        assert not ok
+        assert "port" in reason.lower()
 
     @patch("vcp.revocation.socket.getaddrinfo")
     def test_rejects_private_ip_10(self, mock_gai: MagicMock) -> None:
@@ -205,6 +232,10 @@ class TestIsPrivateIp:
     def test_unparseable_ip(self) -> None:
         assert _is_private_ip("not-an-ip") is True
 
+    @pytest.mark.parametrize("ip", ["192.0.2.1", "198.51.100.1", "203.0.113.1"])
+    def test_reserved_documentation_ips(self, ip: str) -> None:
+        assert _is_private_ip(ip) is True
+
 
 # ---------------------------------------------------------------------------
 # RevocationChecker: online endpoint
@@ -216,9 +247,7 @@ class TestOnlineCheck:
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch("vcp.revocation._fetch_json")
-    def test_not_revoked_online(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_not_revoked_online(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         mock_fetch.return_value = {"revoked": False}
         checker = RevocationChecker(cache_ttl=60)
         manifest = _manifest(check_uri="https://creed.space/api/v1/revoked")
@@ -228,9 +257,7 @@ class TestOnlineCheck:
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch("vcp.revocation._fetch_json")
-    def test_revoked_online(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_revoked_online(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         mock_fetch.return_value = {
             "revoked": True,
             "reason": "key_compromise",
@@ -245,22 +272,52 @@ class TestOnlineCheck:
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch("vcp.revocation._fetch_json")
-    def test_online_cache_hit(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_online_cache_hit(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         mock_fetch.return_value = {"revoked": False}
         checker = RevocationChecker(cache_ttl=300)
         manifest = _manifest(check_uri="https://creed.space/api/v1/revoked")
 
         # First call fetches
-        result1 = checker.check(manifest)
+        result1 = checker.check(manifest, expected_issuer="creed.space")
         assert result1.revoked is False
         assert mock_fetch.call_count == 1
 
         # Second call should hit cache
-        result2 = checker.check(manifest)
+        result2 = checker.check(manifest, expected_issuer="creed.space")
         assert result2.revoked is False
         assert mock_fetch.call_count == 1  # NOT incremented
+
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json")
+    def test_online_cache_is_bound_to_issuer(
+        self, mock_fetch: MagicMock, mock_validate: MagicMock
+    ) -> None:
+        mock_fetch.side_effect = [{"revoked": False}, {"revoked": True, "reason": "rotated"}]
+        checker = RevocationChecker(cache_ttl=300)
+        manifest = _manifest(check_uri="https://creed.space/api/v1/revoked")
+
+        assert not checker.check(manifest, expected_issuer="issuer-a").revoked
+        assert checker.check(manifest, expected_issuer="issuer-b").revoked
+        assert mock_fetch.call_count == 2
+
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json")
+    def test_existing_jti_query_is_replaced(
+        self, mock_fetch: MagicMock, mock_validate: MagicMock
+    ) -> None:
+        mock_fetch.return_value = {"revoked": False}
+        checker = RevocationChecker(cache_ttl=60)
+        manifest = _manifest(
+            jti="real-jti",
+            check_uri="https://creed.space/revoked?jti=attacker-value&mode=full",
+        )
+
+        checker.check(manifest)
+
+        requested_uri = mock_fetch.call_args.args[0]
+        assert requested_uri.count("jti=") == 1
+        assert "jti=real-jti" in requested_uri
+        assert "attacker-value" not in requested_uri
 
 
 # ---------------------------------------------------------------------------
@@ -273,9 +330,7 @@ class TestCRLCheck:
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch("vcp.revocation._fetch_json")
-    def test_revoked_via_crl(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_revoked_via_crl(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         target_jti = "550e8400-e29b-41d4-a716-446655440000"
         mock_fetch.return_value = _crl_response(
             revoked_entries=[
@@ -294,9 +349,7 @@ class TestCRLCheck:
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch("vcp.revocation._fetch_json")
-    def test_not_revoked_via_crl(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_not_revoked_via_crl(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         mock_fetch.return_value = _crl_response(
             revoked_entries=[
                 {
@@ -313,9 +366,7 @@ class TestCRLCheck:
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch("vcp.revocation._fetch_json")
-    def test_crl_cache_hit(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_crl_cache_hit(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         mock_fetch.return_value = _crl_response(revoked_entries=[])
         checker = RevocationChecker(cache_ttl=300)
         manifest = _manifest(crl_uri="https://creed.space/crl/2026.json")
@@ -329,10 +380,10 @@ class TestCRLCheck:
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch("vcp.revocation._fetch_json")
-    def test_crl_expired_warns_but_proceeds(
+    def test_expired_crl_fails_closed(
         self, mock_fetch: MagicMock, mock_validate: MagicMock
     ) -> None:
-        """An expired CRL logs a warning but still returns its data."""
+        """An expired CRL cannot establish non-revocation."""
         mock_fetch.return_value = _crl_response(
             revoked_entries=[],
             next_update="2020-01-01T00:00:00Z",  # long expired
@@ -340,8 +391,132 @@ class TestCRLCheck:
         checker = RevocationChecker(cache_ttl=60)
         manifest = _manifest(crl_uri="https://creed.space/crl/2026.json")
         result = checker.check(manifest)
-        # Not revoked -- the CRL had no matching entry
-        assert result.revoked is False
+        assert result.revoked is True
+        assert result.reason == "revocation_status_unavailable"
+
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json")
+    def test_crl_requires_available_expected_issuer(
+        self, mock_fetch: MagicMock, mock_validate: MagicMock
+    ) -> None:
+        manifest = _manifest(crl_uri="https://creed.space/crl.json")
+        delattr(manifest, "issuer")
+
+        result = RevocationChecker(cache_ttl=60).check(manifest)
+
+        assert result.revoked
+        assert result.reason == "revocation_status_unavailable"
+        mock_fetch.assert_not_called()
+
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json")
+    def test_crl_issuer_must_match_expected_issuer(
+        self, mock_fetch: MagicMock, mock_validate: MagicMock
+    ) -> None:
+        mock_fetch.return_value = _crl_response()
+        checker = RevocationChecker(cache_ttl=60)
+        result = checker.check(
+            _manifest(crl_uri="https://creed.space/crl.json"),
+            expected_issuer="other.example",
+        )
+        assert result.revoked
+        assert result.reason == "revocation_status_unavailable"
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("updated_at", None),
+            ("updated_at", "2026-01-01 00:00:00Z"),
+            ("updated_at", "2026-01-01T00:00:00"),
+            ("next_update", "2026-01-01 00:00:00Z"),
+            ("next_update", "2026-01-01T00:00:00"),
+        ],
+    )
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json")
+    def test_crl_requires_strict_rfc3339_timestamps(
+        self,
+        mock_fetch: MagicMock,
+        mock_validate: MagicMock,
+        field: str,
+        value: str | None,
+    ) -> None:
+        crl = _crl_response()
+        crl[field] = value
+        mock_fetch.return_value = crl
+        checker = RevocationChecker(cache_ttl=60)
+        result = checker.check(_manifest(crl_uri="https://creed.space/crl.json"))
+        assert result.revoked
+        assert result.reason == "revocation_status_unavailable"
+
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json")
+    def test_crl_updated_at_must_not_follow_next_update(
+        self, mock_fetch: MagicMock, mock_validate: MagicMock
+    ) -> None:
+        now = datetime.now(timezone.utc)
+        mock_fetch.return_value = _crl_response(
+            next_update=(now + timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+        )
+        mock_fetch.return_value["updated_at"] = (
+            (now + timedelta(hours=2)).isoformat().replace("+00:00", "Z")
+        )
+        result = RevocationChecker().check(_manifest(crl_uri="https://creed.space/crl.json"))
+        assert result.revoked
+        assert result.reason == "revocation_status_unavailable"
+
+    @pytest.mark.parametrize(
+        "entries",
+        [
+            [{"jti": "", "reason": "invalid", "revoked_at": "2026-01-01T00:00:00Z"}],
+            [
+                {"jti": "duplicate", "reason": "first", "revoked_at": "2026-01-01T00:00:00Z"},
+                {"jti": "duplicate", "reason": "second", "revoked_at": "2026-01-02T00:00:00Z"},
+            ],
+        ],
+    )
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json")
+    def test_crl_rejects_empty_and_duplicate_jtis(
+        self,
+        mock_fetch: MagicMock,
+        mock_validate: MagicMock,
+        entries: list[dict[str, str]],
+    ) -> None:
+        mock_fetch.return_value = _crl_response(revoked_entries=entries)
+        result = RevocationChecker().check(_manifest(crl_uri="https://creed.space/crl.json"))
+        assert result.revoked
+        assert result.reason == "revocation_status_unavailable"
+
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json")
+    def test_omitted_expected_issuer_derives_from_manifest(
+        self, mock_fetch: MagicMock, mock_validate: MagicMock
+    ) -> None:
+        mock_fetch.return_value = _crl_response()
+        manifest = _manifest(crl_uri="https://creed.space/crl.json")
+        manifest.issuer.id = "other.example"
+        result = RevocationChecker().check(manifest)
+        assert result.revoked
+        assert result.reason == "revocation_status_unavailable"
+
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json")
+    def test_every_non_null_crl_revoked_at_requires_strict_rfc3339(
+        self, mock_fetch: MagicMock, mock_validate: MagicMock
+    ) -> None:
+        mock_fetch.return_value = _crl_response(
+            revoked_entries=[
+                {
+                    "jti": "unrelated-jti",
+                    "reason": "bad timestamp",
+                    "revoked_at": "2026-01-01T00:00:00",
+                }
+            ]
+        )
+        result = RevocationChecker().check(_manifest(crl_uri="https://creed.space/crl.json"))
+        assert result.revoked
+        assert result.reason == "revocation_status_unavailable"
 
 
 # ---------------------------------------------------------------------------
@@ -372,8 +547,11 @@ class TestFallbackBehaviour:
             # CRL fetch
             return _crl_response(
                 revoked_entries=[
-                    {"jti": target_jti, "revoked_at": "2026-02-14T08:00:00Z",
-                     "reason": "superseded"}
+                    {
+                        "jti": target_jti,
+                        "revoked_at": "2026-02-14T08:00:00Z",
+                        "reason": "superseded",
+                    }
                 ]
             )
 
@@ -406,8 +584,8 @@ class TestSSRFThroughChecker:
         # Only check_uri, no CRL fallback
         manifest = _manifest(check_uri="https://internal.corp/revoked")
         result = checker.check(manifest)
-        # Should NOT be revoked -- the check failed, treated as not-revoked
-        assert result.revoked is False
+        assert result.revoked is True
+        assert result.reason == "revocation_status_unavailable"
 
     @patch("vcp.revocation.socket.getaddrinfo")
     def test_ssrf_loopback_online(self, mock_gai: MagicMock) -> None:
@@ -417,7 +595,7 @@ class TestSSRFThroughChecker:
         checker = RevocationChecker(cache_ttl=60)
         manifest = _manifest(check_uri="https://localhost/revoked")
         result = checker.check(manifest)
-        assert result.revoked is False
+        assert result.revoked is True
 
     @patch("vcp.revocation.socket.getaddrinfo")
     def test_ssrf_ipv6_loopback_online(self, mock_gai: MagicMock) -> None:
@@ -427,13 +605,13 @@ class TestSSRFThroughChecker:
         checker = RevocationChecker(cache_ttl=60)
         manifest = _manifest(check_uri="https://localhost/revoked")
         result = checker.check(manifest)
-        assert result.revoked is False
+        assert result.revoked is True
 
     def test_ssrf_file_scheme(self) -> None:
         checker = RevocationChecker(cache_ttl=60)
         manifest = _manifest(check_uri="file:///etc/passwd")
         result = checker.check(manifest)
-        assert result.revoked is False
+        assert result.revoked is True
 
 
 # ---------------------------------------------------------------------------
@@ -446,42 +624,54 @@ class TestErrorHandling:
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch("vcp.revocation._fetch_json", side_effect=RevocationError("Request timed out"))
-    def test_timeout_handling(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_timeout_handling(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         checker = RevocationChecker(cache_ttl=60, timeout=0.001)
         manifest = _manifest(check_uri="https://slow.example.com/revoked")
         result = checker.check(manifest)
-        # Timeout fails gracefully -- not revoked
-        assert result.revoked is False
+        assert result.revoked is True
+        assert result.reason == "revocation_status_unavailable"
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch(
         "vcp.revocation._fetch_json",
         side_effect=RevocationError("Invalid JSON response"),
     )
-    def test_malformed_json_response(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_malformed_json_response(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         checker = RevocationChecker(cache_ttl=60)
         manifest = _manifest(check_uri="https://broken.example.com/revoked")
         result = checker.check(manifest)
-        assert result.revoked is False
+        assert result.revoked is True
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch(
         "vcp.revocation._fetch_json",
-        side_effect=RevocationError(
-            f"Response body exceeds limit of {MAX_RESPONSE_BYTES} bytes"
-        ),
+        side_effect=RevocationError(f"Response body exceeds limit of {MAX_RESPONSE_BYTES} bytes"),
     )
-    def test_response_too_large(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_response_too_large(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         checker = RevocationChecker(cache_ttl=60)
         manifest = _manifest(check_uri="https://large.example.com/revoked")
         result = checker.check(manifest)
-        assert result.revoked is False
+        assert result.revoked is True
+
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json", return_value={"revoked": "false"})
+    def test_non_boolean_online_status_fails_closed(
+        self, mock_fetch: MagicMock, mock_validate: MagicMock
+    ) -> None:
+        checker = RevocationChecker(cache_ttl=60)
+        result = checker.check(_manifest(check_uri="https://example.com/revoked"))
+        assert result.revoked is True
+        assert result.reason == "revocation_status_unavailable"
+
+    @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
+    @patch("vcp.revocation._fetch_json", return_value={"next_update": None, "revoked": {}})
+    def test_non_array_crl_fails_closed(
+        self, mock_fetch: MagicMock, mock_validate: MagicMock
+    ) -> None:
+        checker = RevocationChecker(cache_ttl=60)
+        result = checker.check(_manifest(crl_uri="https://example.com/crl.json"))
+        assert result.revoked is True
+        assert result.reason == "revocation_status_unavailable"
 
 
 # ---------------------------------------------------------------------------
@@ -519,9 +709,7 @@ class TestCacheExpiration:
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch("vcp.revocation._fetch_json")
-    def test_online_cache_expires(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_online_cache_expires(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         mock_fetch.return_value = {"revoked": False}
         checker = RevocationChecker(cache_ttl=1)  # 1 second TTL
         manifest = _manifest(check_uri="https://creed.space/api/v1/revoked")
@@ -538,9 +726,7 @@ class TestCacheExpiration:
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     @patch("vcp.revocation._fetch_json")
-    def test_crl_cache_expires(
-        self, mock_fetch: MagicMock, mock_validate: MagicMock
-    ) -> None:
+    def test_crl_cache_expires(self, mock_fetch: MagicMock, mock_validate: MagicMock) -> None:
         mock_fetch.return_value = _crl_response(revoked_entries=[])
         checker = RevocationChecker(cache_ttl=1)
         manifest = _manifest(crl_uri="https://creed.space/crl/2026.json")

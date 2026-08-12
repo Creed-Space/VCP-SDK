@@ -110,15 +110,9 @@ class AuthorizationContext:
 
     requester_id: str | None = None
     requester_pubkey: bytes | None = None
-    org_memberships: set[str] = field(
-        default_factory=set
-    )  # e.g., {"acme", "mit"}
-    community_memberships: set[str] = field(
-        default_factory=set
-    )
-    owned_prefixes: set[str] = field(
-        default_factory=set
-    )  # e.g., {"user.alice"}
+    org_memberships: set[str] = field(default_factory=set)  # e.g., {"acme", "mit"}
+    community_memberships: set[str] = field(default_factory=set)
+    owned_prefixes: set[str] = field(default_factory=set)  # e.g., {"user.alice"}
     is_admin: bool = False
 
 
@@ -139,21 +133,15 @@ class BloomFilter:
     ):
         import math
 
-        self.size = int(
-            -expected_items
-            * math.log(false_positive_rate)
-            / (math.log(2) ** 2)
-        )
-        self.num_hashes = int(
-            self.size / expected_items * math.log(2)
-        )
+        self.size = int(-expected_items * math.log(false_positive_rate) / (math.log(2) ** 2))
+        self.num_hashes = int(self.size / expected_items * math.log(2))
         self.bit_array = bytearray(self.size // 8 + 1)
         self._count = 0
 
     def _hashes(self, item: str) -> Iterator[int]:
         """Generate hash positions for an item."""
         h1 = int(hashlib.sha256(item.encode()).hexdigest(), 16)
-        h2 = int(hashlib.md5(item.encode()).hexdigest(), 16)
+        h2 = int(hashlib.md5(item.encode(), usedforsecurity=False).hexdigest(), 16)
         for i in range(self.num_hashes):
             yield (h1 + i * h2) % self.size
 
@@ -165,10 +153,7 @@ class BloomFilter:
 
     def might_contain(self, item: str) -> bool:
         """Check if item might be in the filter."""
-        return all(
-            self.bit_array[pos // 8] & (1 << (pos % 8))
-            for pos in self._hashes(item)
-        )
+        return all(self.bit_array[pos // 8] & (1 << (pos % 8)) for pos in self._hashes(item))
 
     def __len__(self) -> int:
         return self._count
@@ -330,9 +315,7 @@ class PrefixTree:
                 return
             self._collect_entries_recursive(child, auth, max_results, entries, redacted_holder)
 
-    def _can_access_entry(
-        self, entry: RegistryEntry, auth: AuthorizationContext
-    ) -> bool:
+    def _can_access_entry(self, entry: RegistryEntry, auth: AuthorizationContext) -> bool:
         """Check if requester can access this entry."""
         if entry.privacy_tier == PrivacyTier.PUBLIC:
             return True
@@ -345,9 +328,7 @@ class PrefixTree:
         if entry.privacy_tier == PrivacyTier.ORGANIZATIONAL:
             # Extract org name from token (second segment for company.acme.*)
             segments = entry.token.segments
-            if len(segments) >= 2 and segments[0] in (
-                "company", "school", "ngo", "org"
-            ):
+            if len(segments) >= 2 and segments[0] in ("company", "school", "ngo", "org"):
                 org_name = segments[1]
                 if org_name in auth.org_memberships:
                     return True
@@ -355,17 +336,13 @@ class PrefixTree:
         # Check community membership
         if entry.privacy_tier == PrivacyTier.COMMUNITY:
             segments = entry.token.segments
-            if len(segments) >= 2 and segments[0] in (
-                "religion", "culture", "community"
-            ):
+            if len(segments) >= 2 and segments[0] in ("religion", "culture", "community"):
                 community_name = segments[1]
                 if community_name in auth.community_memberships:
                     return True
 
         # Check owned prefixes for personal/pseudonymous
-        if entry.privacy_tier in (
-            PrivacyTier.PERSONAL, PrivacyTier.PSEUDONYMOUS
-        ):
+        if entry.privacy_tier in (PrivacyTier.PERSONAL, PrivacyTier.PSEUDONYMOUS):
             canonical = entry.token.canonical
             for prefix in auth.owned_prefixes:
                 if canonical.startswith(prefix):
@@ -442,9 +419,7 @@ class LocalRegistry(Registry):
         self._tree = PrefixTree()
         self._bloom = BloomFilter()
         self._entries: dict[str, RegistryEntry] = {}
-        self._subscriptions: dict[
-            str, tuple[str, AuthorizationContext, Callable[..., Any]]
-        ] = {}
+        self._subscriptions: dict[str, tuple[str, AuthorizationContext, Callable[..., Any]]] = {}
 
     def register(
         self,
@@ -587,13 +562,9 @@ class LocalRegistry(Registry):
             return True
         return False
 
-    def _notify_subscribers(
-        self, token: Token, event: str
-    ) -> None:
+    def _notify_subscribers(self, token: Token, event: str) -> None:
         """Notify subscribers of a change."""
-        for sub_id, (pattern, auth, callback) in list(
-            self._subscriptions.items()
-        ):
+        for sub_id, (pattern, auth, callback) in list(self._subscriptions.items()):
             # Check if token matches the subscription pattern
             if not token.matches_pattern(pattern):
                 continue
@@ -606,9 +577,7 @@ class LocalRegistry(Registry):
             else:
                 prefix = pattern
 
-            prefix_segments = (
-                tuple(prefix.split(".")) if prefix else ()
-            )
+            prefix_segments = tuple(prefix.split(".")) if prefix else ()
 
             # Navigate to the prefix node for authorization check
             node = self._tree.root
@@ -618,14 +587,8 @@ class LocalRegistry(Registry):
                 else:
                     break
 
-            prefix_str = (
-                ".".join(prefix_segments)
-                if prefix_segments
-                else ""
-            )
-            if self._tree._can_enumerate(
-                node, prefix_str, auth
-            ):
+            prefix_str = ".".join(prefix_segments) if prefix_segments else ""
+            if self._tree._can_enumerate(node, prefix_str, auth):
                 try:
                     callback(token, event)
                 except Exception as callback_err:

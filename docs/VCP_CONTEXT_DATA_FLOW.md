@@ -281,7 +281,7 @@ tracker.clear()  # Removes all entries
 | 1 | ⏰ | TIME | 🌅morning, ☀️midday, 🌆evening, 🌙night | Time of day |
 | 2 | 📍 | SPACE | 🏡home, 🏢office, 🏫school, 🏥hospital, 🚗transit | Physical location |
 | 3 | 👥 | COMPANY | 👤alone, 👶children, 👔colleagues, 👨‍👩‍👧family, 👥strangers | Who is present |
-| 4 | 🌍 | CULTURE | 🌍global, 🇺🇸american, 🇪🇺european, 🇯🇵japanese | Cultural context |
+| 4 | 🌍 | CULTURE | 🔇high_context, 📢low_context, 🎩formal, 😎casual | Cultural context |
 | 5 | 🎭 | OCCASION | ➖normal, 🎂celebration, 😢mourning, 🚨emergency | Situational context |
 | 6 | 🧠 | STATE | 😊happy, 😰anxious, 😴tired, 🤔contemplative, 😤frustrated | User mental state |
 | 7 | 🌡️ | ENVIRONMENT | ☀️comfortable, 🥵hot, 🥶cold, 🔇quiet, 🔊noisy | Physical environment |
@@ -342,7 +342,7 @@ ctx = encoder.encode(
     time="morning",       # Optional[str]
     space="home",         # Optional[str]
     company=["children"], # Optional[list[str] | str]
-    culture="american",   # Optional[str]
+    culture="high_context", # Optional[str]
     occasion="normal",    # Optional[str]
     state="happy",        # Optional[str]
     environment="quiet",  # Optional[str]

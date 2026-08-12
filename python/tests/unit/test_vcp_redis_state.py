@@ -130,10 +130,12 @@ class TestRedisStateTracker:
         # Set up existing history
         existing_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
         mock_redis.get.return_value = json.dumps(
-            [{
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "context": existing_context.to_json(),
-            }]
+            [
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "context": existing_context.to_json(),
+                }
+            ]
         )
 
         # Record new context with different time
@@ -152,10 +154,12 @@ class TestRedisStateTracker:
         # Set up existing history
         existing_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
         mock_redis.get.return_value = json.dumps(
-            [{
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "context": existing_context.to_json(),
-            }]
+            [
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "context": existing_context.to_json(),
+                }
+            ]
         )
 
         # Record new context with AGENCY change (major dimension)
@@ -172,10 +176,12 @@ class TestRedisStateTracker:
         # Set up existing history
         existing_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
         mock_redis.get.return_value = json.dumps(
-            [{
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "context": existing_context.to_json(),
-            }]
+            [
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "context": existing_context.to_json(),
+                }
+            ]
         )
 
         # Record context with emergency value
@@ -241,10 +247,12 @@ class TestRedisStateTracker:
         # Set up existing history
         existing_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
         mock_redis.get.return_value = json.dumps(
-            [{
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "context": existing_context.to_json(),
-            }]
+            [
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "context": existing_context.to_json(),
+                }
+            ]
         )
 
         # Record transition
@@ -268,10 +276,12 @@ class TestRedisStateTracker:
         # Set up existing history
         existing_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
         mock_redis.get.return_value = json.dumps(
-            [{
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "context": existing_context.to_json(),
-            }]
+            [
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "context": existing_context.to_json(),
+                }
+            ]
         )
 
         # Should not raise
@@ -286,10 +296,12 @@ class TestRedisStateTracker:
 
         context_data = {"time": ["morning"], "space": ["home"]}
         mock_redis.get.return_value = json.dumps(
-            [{
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "context": context_data,
-            }]
+            [
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "context": context_data,
+                }
+            ]
         )
 
         current = tracker.current
@@ -462,10 +474,12 @@ class TestHybridStateTracker:
 
         context_data = {"time": ["evening"]}
         mock_redis.get.return_value = json.dumps(
-            [{
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "context": context_data,
-            }]
+            [
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "context": context_data,
+                }
+            ]
         )
 
         tracker = HybridStateTracker(
@@ -773,10 +787,12 @@ class TestEdgeCases:
 
         existing_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
         mock_redis.get.return_value = json.dumps(
-            [{
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "context": existing_context.to_json(),
-            }]
+            [
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "context": existing_context.to_json(),
+                }
+            ]
         )
 
         tracker = RedisStateTracker(

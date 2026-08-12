@@ -44,20 +44,20 @@
     {
       "id": "enc-005",
       "description": "MICRO roundtrip with namespace, scopes, and version",
-      "input": "N5:ELEM+F+E@1.2.0",
+      "input": "N5+F+E:ELEM@1.2.0",
       "expected": {
         "parse_succeeds": true,
-        "to_micro": "N5:ELEM+E+F@1.2.0",
+        "to_micro": "N5+E+F:ELEM@1.2.0",
         "note": "MICRO format includes namespace and version; scopes sorted alphabetically"
       }
     },
     {
       "id": "enc-006",
       "description": "Custom persona MICRO roundtrip",
-      "input": "C3:ACME+W@1.0.0",
+      "input": "C3+W:ACME@1.0.0",
       "expected": {
         "parse_succeeds": true,
-        "to_micro": "C3:ACME+W@1.0.0"
+        "to_micro": "C3+W:ACME@1.0.0"
       }
     },
     {

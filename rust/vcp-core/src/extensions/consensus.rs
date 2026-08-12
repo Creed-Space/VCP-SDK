@@ -358,7 +358,7 @@ mod tests {
     use super::*;
 
     fn cands(names: &[&str]) -> Vec<String> {
-        names.iter().map(|s| s.to_string()).collect()
+        names.iter().map(ToString::to_string).collect()
     }
 
     #[test]

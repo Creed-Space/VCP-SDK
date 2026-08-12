@@ -334,7 +334,7 @@ Examples:
 | 1 | ⏰ | TIME | 🌅morning, 🌙night, 📅weekday |
 | 2 | 📍 | SPACE | 🏡home, 🏢office, 🏫school |
 | 3 | 👥 | COMPANY | 👤alone, 👶children, 👔colleagues |
-| 4 | 🌍 | CULTURE | 🇺🇸american, 🇯🇵japanese, 🌍global |
+| 4 | 🌍 | CULTURE | 🔇high_context, 📢low_context, 🎩formal |
 | 5 | 🎭 | OCCASION | ➖normal, 🎂celebration, 🚨emergency |
 | 6 | 🧠 | STATE | 😊happy, 😰anxious, 😴tired |
 | 7 | 🌡️ | ENVIRONMENT | ☀️comfortable, 🥵hot, 🔇quiet |

@@ -58,6 +58,7 @@ def _make_hook(
 
         def action(inp: object) -> HookResult:
             return HookResult(status=ResultStatus.CONTINUE)
+
     return Hook(
         name=name,
         type=hook_type,
@@ -225,6 +226,7 @@ class TestPriorityOrdering:
             def action(inp: HookInput) -> HookResult:
                 order.append(name)
                 return HookResult(status=ResultStatus.CONTINUE)
+
             return action
 
         registry.register(_make_hook(name="low", priority=10, action=make_action("low")))
@@ -244,6 +246,7 @@ class TestPriorityOrdering:
             def action(inp: HookInput) -> HookResult:
                 order.append(name)
                 return HookResult(status=ResultStatus.CONTINUE)
+
             return action
 
         registry.register(
@@ -268,22 +271,16 @@ class TestPriorityOrdering:
 class TestChainExecution:
     """Test chain execution: continue, abort, modify."""
 
-    def test_continue_passes_through(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_continue_passes_through(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Hooks returning continue should not alter context."""
         original_ctx = {"key": "original"}
         registry.register(_make_hook(name="noop"))
 
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", original_ctx, None, PreInjectEvent()
-        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", original_ctx, None, PreInjectEvent())
         assert result.status == "completed"
         assert result.context == original_ctx
 
-    def test_abort_halts_chain(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_abort_halts_chain(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Abort should halt chain and return aborted status."""
         order: list[str] = []
 
@@ -295,16 +292,10 @@ class TestChainExecution:
             order.append("after")
             return HookResult(status=ResultStatus.CONTINUE)
 
-        registry.register(
-            _make_hook(name="aborter", priority=90, action=abort_action)
-        )
-        registry.register(
-            _make_hook(name="after", priority=10, action=after_action)
-        )
+        registry.register(_make_hook(name="aborter", priority=90, action=abort_action))
+        registry.register(_make_hook(name="after", priority=10, action=after_action))
 
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", None, None, PreInjectEvent()
-        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert result.status == "aborted"
         assert result.aborted_by == "aborter"
         assert result.reason == "blocked"
@@ -326,12 +317,8 @@ class TestChainExecution:
             received_contexts.append(inp.context)
             return HookResult(status=ResultStatus.CONTINUE)
 
-        registry.register(
-            _make_hook(name="modifier", priority=90, action=modifier)
-        )
-        registry.register(
-            _make_hook(name="checker", priority=10, action=checker)
-        )
+        registry.register(_make_hook(name="modifier", priority=90, action=modifier))
+        registry.register(_make_hook(name="checker", priority=10, action=checker))
 
         result = executor.execute(
             HookType.PRE_INJECT, "s1", {"original": True}, None, PreInjectEvent()
@@ -351,18 +338,14 @@ class TestChainExecution:
                 modified_constitution={"id": "replacement"},
             )
 
-        registry.register(
-            _make_hook(name="const-mod", priority=50, action=modifier)
-        )
+        registry.register(_make_hook(name="const-mod", priority=50, action=modifier))
 
         result = executor.execute(
             HookType.PRE_INJECT, "s1", None, {"id": "original"}, PreInjectEvent()
         )
         assert result.constitution == {"id": "replacement"}
 
-    def test_empty_chain_completes(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_empty_chain_completes(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Empty chain should return completed with original context."""
         result = executor.execute(
             HookType.PRE_INJECT, "s1", {"ctx": 1}, {"const": 1}, PreInjectEvent()
@@ -436,13 +419,9 @@ class TestPredicateEvaluation:
         def bad_condition(inp: HookInput) -> bool:
             raise RuntimeError("predicate boom")
 
-        registry.register(
-            _make_hook(name="cond-err", action=action, condition=bad_condition)
-        )
+        registry.register(_make_hook(name="cond-err", action=action, condition=bad_condition))
 
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", None, None, PreInjectEvent()
-        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert result.status == "completed"
         assert fired == []
 
@@ -464,20 +443,14 @@ class TestTimeoutHandling:
             time.sleep(2)  # 2 seconds, well over timeout
             return HookResult(status=ResultStatus.ABORT, reason="should not reach")
 
-        registry.register(
-            _make_hook(name="slow", action=slow_action, timeout_ms=100)
-        )
+        registry.register(_make_hook(name="slow", action=slow_action, timeout_ms=100))
 
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", {"ctx": 1}, None, PreInjectEvent()
-        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", {"ctx": 1}, None, PreInjectEvent())
         # Should complete, not abort
         assert result.status == "completed"
         assert result.context == {"ctx": 1}
 
-    def test_timeout_chain_continues(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_timeout_chain_continues(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Chain should continue after a timed-out hook."""
         order: list[str] = []
 
@@ -489,16 +462,10 @@ class TestTimeoutHandling:
             order.append("fast")
             return HookResult(status=ResultStatus.CONTINUE)
 
-        registry.register(
-            _make_hook(name="slow", priority=90, action=slow_action, timeout_ms=100)
-        )
-        registry.register(
-            _make_hook(name="fast", priority=10, action=fast_action, timeout_ms=5000)
-        )
+        registry.register(_make_hook(name="slow", priority=90, action=slow_action, timeout_ms=100))
+        registry.register(_make_hook(name="fast", priority=10, action=fast_action, timeout_ms=5000))
 
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", None, None, PreInjectEvent()
-        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert result.status == "completed"
         assert order == ["fast"]
 
@@ -521,9 +488,7 @@ class TestExceptionHandling:
 
         registry.register(_make_hook(name="bad", action=bad_action))
 
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", {"safe": True}, None, PreInjectEvent()
-        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", {"safe": True}, None, PreInjectEvent())
         assert result.status == "completed"
         assert result.context == {"safe": True}
 
@@ -540,16 +505,10 @@ class TestExceptionHandling:
             order.append("good")
             return HookResult(status=ResultStatus.CONTINUE)
 
-        registry.register(
-            _make_hook(name="bad", priority=90, action=bad_action)
-        )
-        registry.register(
-            _make_hook(name="good", priority=10, action=good_action)
-        )
+        registry.register(_make_hook(name="bad", priority=90, action=bad_action))
+        registry.register(_make_hook(name="good", priority=10, action=good_action))
 
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", None, None, PreInjectEvent()
-        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert result.status == "completed"
         assert order == ["good"]
 
@@ -562,9 +521,7 @@ class TestExceptionHandling:
 class TestCascadingFailure:
     """Test cascading failure detection (>50% hooks fail)."""
 
-    def test_cascade_failure_detected(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_cascade_failure_detected(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """If >50% of hooks fail, cascade_failure should be True."""
 
         def bad_action(inp: HookInput) -> HookResult:
@@ -574,19 +531,11 @@ class TestCascadingFailure:
             return HookResult(status=ResultStatus.CONTINUE)
 
         # 2 bad, 1 good => 66% failure rate
-        registry.register(
-            _make_hook(name="bad-1", priority=90, action=bad_action)
-        )
-        registry.register(
-            _make_hook(name="bad-2", priority=80, action=bad_action)
-        )
-        registry.register(
-            _make_hook(name="good-1", priority=10, action=good_action)
-        )
+        registry.register(_make_hook(name="bad-1", priority=90, action=bad_action))
+        registry.register(_make_hook(name="bad-2", priority=80, action=bad_action))
+        registry.register(_make_hook(name="good-1", priority=10, action=good_action))
 
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", None, None, PreInjectEvent()
-        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert result.cascade_failure is True
 
     def test_no_cascade_failure_below_threshold(
@@ -601,19 +550,11 @@ class TestCascadingFailure:
             return HookResult(status=ResultStatus.CONTINUE)
 
         # 1 bad, 2 good => 33% failure rate
-        registry.register(
-            _make_hook(name="bad-1", priority=90, action=bad_action)
-        )
-        registry.register(
-            _make_hook(name="good-1", priority=80, action=good_action)
-        )
-        registry.register(
-            _make_hook(name="good-2", priority=10, action=good_action)
-        )
+        registry.register(_make_hook(name="bad-1", priority=90, action=bad_action))
+        registry.register(_make_hook(name="good-1", priority=80, action=good_action))
+        registry.register(_make_hook(name="good-2", priority=10, action=good_action))
 
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", None, None, PreInjectEvent()
-        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert result.cascade_failure is False
 
 
@@ -625,9 +566,7 @@ class TestCascadingFailure:
 class TestEnabledDisabled:
     """Test that disabled hooks are skipped."""
 
-    def test_disabled_hook_skipped(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_disabled_hook_skipped(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Disabled hook should not fire."""
         fired: list[bool] = []
 
@@ -635,16 +574,12 @@ class TestEnabledDisabled:
             fired.append(True)
             return HookResult(status=ResultStatus.CONTINUE)
 
-        registry.register(
-            _make_hook(name="disabled", action=action, enabled=False)
-        )
+        registry.register(_make_hook(name="disabled", action=action, enabled=False))
 
         executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert fired == []
 
-    def test_enabled_hook_fires(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_enabled_hook_fires(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Enabled hook should fire normally."""
         fired: list[bool] = []
 
@@ -652,9 +587,7 @@ class TestEnabledDisabled:
             fired.append(True)
             return HookResult(status=ResultStatus.CONTINUE)
 
-        registry.register(
-            _make_hook(name="enabled", action=action, enabled=True)
-        )
+        registry.register(_make_hook(name="enabled", action=action, enabled=True))
 
         executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert fired == [True]
@@ -682,12 +615,8 @@ class TestChainState:
             received_state.append(dict(inp.chain_state))
             return HookResult(status=ResultStatus.CONTINUE)
 
-        registry.register(
-            _make_hook(name="writer", priority=90, action=writer)
-        )
-        registry.register(
-            _make_hook(name="reader", priority=10, action=reader)
-        )
+        registry.register(_make_hook(name="writer", priority=90, action=writer))
+        registry.register(_make_hook(name="reader", priority=10, action=reader))
 
         executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert received_state[0]["compliance_checked"] is True
@@ -751,15 +680,10 @@ class TestBuiltinPersonaSelect:
         registry.register(hook)
 
         context = {"company": ["children", "family"]}
-        result = executor.execute(
-            HookType.POST_SELECT, "s1", context, None, PostSelectEvent()
-        )
+        result = executor.execute(HookType.POST_SELECT, "s1", context, None, PostSelectEvent())
         assert result.status == "completed"
         # Check that the hook modified with persona annotation
-        assert any(
-            r.annotations.get("persona_selected") == "nanny"
-            for _, r in result.hook_results
-        )
+        assert any(r.annotations.get("persona_selected") == "nanny" for _, r in result.hook_results)
 
     def test_persona_select_no_children(
         self, registry: HookRegistry, executor: HookExecutor
@@ -769,9 +693,7 @@ class TestBuiltinPersonaSelect:
         registry.register(hook)
 
         context = {"company": ["colleagues"]}
-        result = executor.execute(
-            HookType.POST_SELECT, "s1", context, None, PostSelectEvent()
-        )
+        result = executor.execute(HookType.POST_SELECT, "s1", context, None, PostSelectEvent())
         assert result.status == "completed"
         # Should not have persona annotation
         for _, r in result.hook_results:
@@ -781,9 +703,7 @@ class TestBuiltinPersonaSelect:
 class TestBuiltinAdherenceEscalate:
     """Test the built-in adherence_escalate_hook."""
 
-    def test_escalate_on_emergency(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_escalate_on_emergency(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Should escalate adherence on emergency transition."""
         hook = adherence_escalate_hook()
         registry.register(hook)
@@ -793,17 +713,10 @@ class TestBuiltinAdherenceEscalate:
             new_state="emergency",
             trigger="alarm",
         )
-        result = executor.execute(
-            HookType.ON_TRANSITION, "s1", None, None, event
-        )
-        assert any(
-            r.annotations.get("adherence_escalated") is True
-            for _, r in result.hook_results
-        )
+        result = executor.execute(HookType.ON_TRANSITION, "s1", None, None, event)
+        assert any(r.annotations.get("adherence_escalated") is True for _, r in result.hook_results)
 
-    def test_no_escalate_on_normal(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_no_escalate_on_normal(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Should not escalate on non-emergency transition."""
         hook = adherence_escalate_hook()
         registry.register(hook)
@@ -813,9 +726,7 @@ class TestBuiltinAdherenceEscalate:
             new_state="professional",
             trigger="work_hours",
         )
-        result = executor.execute(
-            HookType.ON_TRANSITION, "s1", None, None, event
-        )
+        result = executor.execute(HookType.ON_TRANSITION, "s1", None, None, event)
         for _, r in result.hook_results:
             assert r.annotations.get("adherence_escalated") is None
 
@@ -823,9 +734,7 @@ class TestBuiltinAdherenceEscalate:
 class TestBuiltinAudit:
     """Test the built-in audit_hook."""
 
-    def test_audit_logs_execution(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_audit_logs_execution(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Audit hook should annotate with audit_logged=True."""
         hook = audit_hook()
         registry.register(hook)
@@ -839,10 +748,7 @@ class TestBuiltinAudit:
             session_info={"id": "s1"},
         )
         assert result.status == "completed"
-        assert any(
-            r.annotations.get("audit_logged") is True
-            for _, r in result.hook_results
-        )
+        assert any(r.annotations.get("audit_logged") is True for _, r in result.hook_results)
 
     def test_audit_captures_session_id(
         self, registry: HookRegistry, executor: HookExecutor
@@ -934,9 +840,7 @@ class TestResultStatus:
 class TestHookResultDuration:
     """Test that hook result duration_ms is set by the executor."""
 
-    def test_duration_set_on_result(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_duration_set_on_result(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Executor should set duration_ms on hook results."""
 
         def action(inp: HookInput) -> HookResult:
@@ -944,9 +848,7 @@ class TestHookResultDuration:
 
         registry.register(_make_hook(name="timed", action=action))
 
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", None, None, PreInjectEvent()
-        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert len(result.hook_results) == 1
         _, hook_result = result.hook_results[0]
         assert hook_result.duration_ms >= 0
@@ -975,9 +877,7 @@ class TestHookTypeIndependence:
             post_fired.append(True)
             return HookResult(status=ResultStatus.CONTINUE)
 
-        registry.register(
-            _make_hook(name="pre", hook_type=HookType.PRE_INJECT, action=pre_action)
-        )
+        registry.register(_make_hook(name="pre", hook_type=HookType.PRE_INJECT, action=pre_action))
         registry.register(
             _make_hook(name="post", hook_type=HookType.POST_SELECT, action=post_action)
         )

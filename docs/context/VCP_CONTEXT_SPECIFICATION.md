@@ -68,7 +68,7 @@ The Enneagram Protocol encodes context across 9 dimensions:
 | 1 | ⏰ | **TIME** | Temporal context | 🌅morning, 🌙night, 📅weekday |
 | 2 | 📍 | **SPACE** | Location/environment | 🏡home, 🏢office, 🏫school |
 | 3 | 👥 | **COMPANY** | Social context | 👤alone, 👶children, 👔colleagues |
-| 4 | 🌍 | **CULTURE** | Cultural/regional | 🇺🇸american, 🇯🇵japanese, 🌍global |
+| 4 | 🌍 | **CULTURE** | Cultural/regional | 🔇high_context, 📢low_context, 🎩formal |
 | 5 | 🎭 | **OCCASION** | Event type | ➖normal, 🎂celebration, 🚨emergency |
 | 6 | 🧠 | **STATE** | Mental/emotional | 😊happy, 😰anxious, 😴tired |
 | 7 | 🌡️ | **ENVIRONMENT** | Physical conditions | ☀️comfortable, 🥵hot, 🔇quiet |
@@ -129,18 +129,11 @@ The Enneagram Protocol encodes context across 9 dimensions:
 
 | Emoji | Value | Description |
 |-------|-------|-------------|
-| 🇺🇸 | american | US cultural context |
-| 🇬🇧 | british | UK cultural context |
-| 🇯🇵 | japanese | Japanese cultural context |
-| 🇮🇳 | indian | Indian cultural context |
-| 🇨🇳 | chinese | Chinese cultural context |
-| 🇪🇺 | european | European cultural context |
-| 🌍 | global | International/multicultural |
-| 🏛️ | traditional | Conservative/traditional |
-| 🆕 | progressive | Modern/progressive |
-| 🕌 | islamic | Islamic cultural context |
-| ✡️ | jewish | Jewish cultural context |
-| ☯️ | eastern | East Asian philosophy |
+| 🔇 | high_context | High-context communication (implicit, relational) |
+| 📢 | low_context | Low-context communication (explicit, direct) |
+| 🎩 | formal | Formal register (professional, ceremonial) |
+| 😎 | casual | Casual register (informal, peer-to-peer) |
+| 🌐 | mixed | Mixed-register or culturally hybrid context |
 
 #### OCCASION (🎭)
 
@@ -259,7 +252,7 @@ emoji-value     = 1*4EMOJI   ; Unicode emoji codepoints
 
 ```python
 # Full context encoding
-context = "⏰🌅|📍🏡|👥👶👨‍👩‍👧|🌍🇺🇸|🎭➖|🧠😊|🌡️☀️|🔷🤝|🔶○"
+context = "⏰🌅|📍🏡|👥👶👨‍👩‍👧|🌍🔇|🎭➖|🧠😊|🌡️☀️|🔷🤝|🔶○"
 # Meaning: Morning, home, children+family, American, normal occasion,
 #          happy state, comfortable environment, peer agency, minimal constraints
 
@@ -1180,19 +1173,37 @@ See `data/schemas/vcp-context.schema.json` for JSON Schema validation.
 ### A. Emoji Quick Reference
 
 ```
-DIMENSIONS
-⏰ TIME     📍 SPACE    👥 COMPANY   🌍 CULTURE   🎭 OCCASION
-🧠 STATE    🌡️ ENV      🔷 AGENCY    🔶 CONSTRAINTS
+SITUATIONAL DIMENSIONS (13)
+⏰ TIME       📍 SPACE      👥 COMPANY    🌍 CULTURE    🎭 OCCASION
+🌡️ ENV        🔷 AGENCY     🔶 CONSTRAINTS  📡 SYSTEM_CONTEXT
+🧍 EMBODIMENT  ↔️ PROXIMITY  🪢 RELATIONSHIP  🎩 FORMALITY
 
-TIME: 🌅🌙📅🎉⏰
-SPACE: 🏡🏢🏫🏥💻🌳
-COMPANY: 👤👶👨‍👩‍👧👔👮🤝
-CULTURE: 🇺🇸🇬🇧🇯🇵🌍🏛️🆕
-OCCASION: ➖🎂💼🚨🎪⚖️
-STATE: 😊😴😰😡😢🥺
-ENV: ☀️🥵🥶🌧️🌪️🔇🔥
-AGENCY: 👑🤝👇💰🔐🆓
-CONSTRAINTS: ○🚧⚖️💸⏰🚨
+TIME:           🌅🌙📅🎉⏰
+SPACE:          🏡🏢🏫🏥💻🌳
+COMPANY:        👤👶👨‍👩‍👧👔👮🤝
+CULTURE:        🔇📢🎩😎🌐
+OCCASION:       ➖🎂💼🚨🎪⚖️
+ENV:            ☀️🥵🥶🌧️🌪️🔇🔥
+AGENCY:         👑🤝👇💰🔐🆓
+CONSTRAINTS:    ○🚧⚖️💸⏰🚨
+SYSTEM_CONTEXT: 🟢🟡🔴⚙️🔌
+EMBODIMENT:     🧍🚶✋🫳🛑   (stationary, navigating, manipulating, carrying, emergency stop)
+PROXIMITY:      🌐🛋️🤝🤏👆   (distant, same room, nearby, close, contact)
+RELATIONSHIP:   free-form '{tie}:{function}' — e.g. colleague:professional, family:caregiving
+FORMALITY:      🎩💼🎓🎉⚖️   (casual, everyday, professional, ceremonial, legal)
+
+PERSONAL-STATE DIMENSIONS (5, R-line)
+🧠 COGNITIVE_STATE  💭 EMOTIONAL_TONE  🔋 ENERGY_LEVEL
+⚡ PERCEIVED_URGENCY  🩺 BODY_SIGNALS
+
+COGNITIVE_STATE:   focused, distracted, overloaded, foggy, reflective
+EMOTIONAL_TONE:    calm, tense, frustrated, neutral, uplifted
+ENERGY_LEVEL:      rested, low_energy, fatigued, wired, depleted
+PERCEIVED_URGENCY: unhurried, time_aware, pressured, critical
+BODY_SIGNALS:      neutral, discomfort, pain, unwell, recovering
+
+Each personal-state dimension carries an optional 1-5 intensity, encoded as 'value:intensity'.
+The wire format separates situational and personal bands with U+2016 (‖).
 ```
 
 ### B. Context-Constitution Mapping

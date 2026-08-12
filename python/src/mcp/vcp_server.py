@@ -50,6 +50,7 @@ Example tokens:
                     },
                 },
                 "required": ["token"],
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -57,7 +58,7 @@ Example tokens:
             description="""Parse a CSM1 constitutional code.
 
 CSM1 (Constitutional Semantics Mark 1) is a compact encoding for constitutional profiles:
-- Persona: N(anny), Z(sentinel), G(odparent), A(mbassador), M(use), R(anchor), H(otrod), C(ustom)
+- Persona: N(anny), Z(sentinel), G(odparent), A(mbassador), M(use), D(mediator), C(ustom)
 - Level: 0-5 adherence level
 - Scopes: F(amily), W(ork), E(ducation), H(ealth), etc.
 
@@ -74,22 +75,29 @@ Example codes:
                     },
                 },
                 "required": ["code"],
+                "additionalProperties": False,
             },
         ),
         Tool(
             name="vcp_encode_context",
             description="""Encode context dimensions to VCP/A format.
 
-Encodes contextual state across 9 dimensions:
+Encodes contextual state across 13 situational and 5 personal-state dimensions:
 - time: morning, midday, evening, night
 - space: home, office, school, hospital, transit
 - company: alone, children, colleagues, family, strangers
-- culture: global, american, european, japanese
-- occasion: normal, celebration, mourning, emergency
-- state: happy, anxious, tired, contemplative, frustrated
+- culture: high_context, low_context, formal, casual, mixed
+- occasion: normal, celebration, mourning, emergency, business
 - environment: comfortable, hot, cold, quiet, noisy
 - agency: leader, peer, subordinate, limited
 - constraints: minimal, legal, economic, time
+- system_context: online, degraded, offline, sandboxed, testing
+- embodiment: stationary, navigating, manipulating, carrying, emergency_stop
+- proximity: distant, same_room, nearby, close, contact
+- relationship: compound tie:function value
+- formality: casual, professional, formal, ceremonial
+- personal state: cognitive_state, emotional_tone, energy_level,
+  perceived_urgency, body_signals (each with optional intensity 1-5)
 
 Returns wire format (emoji-based) and JSON format.""",
             inputSchema={
@@ -106,26 +114,114 @@ Returns wire format (emoji-based) and JSON format.""",
                         "description": "Physical space context",
                     },
                     "company": {
-                        "type": "array",
-                        "items": {"type": "string"},
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "enum": ["alone", "children", "colleagues", "family", "strangers"],
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "alone",
+                                        "children",
+                                        "colleagues",
+                                        "family",
+                                        "strangers",
+                                    ],
+                                },
+                                "uniqueItems": True,
+                            },
+                        ],
                         "description": "Who is present (alone, children, colleagues, family)",
+                    },
+                    "culture": {
+                        "type": "string",
+                        "enum": ["high_context", "low_context", "formal", "casual", "mixed"],
                     },
                     "occasion": {
                         "type": "string",
-                        "enum": ["normal", "celebration", "mourning", "emergency"],
+                        "enum": ["normal", "celebration", "mourning", "emergency", "business"],
                         "description": "Current occasion/event type",
                     },
-                    "state": {
+                    "environment": {
                         "type": "string",
-                        "enum": ["happy", "anxious", "tired", "contemplative", "frustrated"],
-                        "description": "Mental/emotional state",
+                        "enum": ["comfortable", "hot", "cold", "quiet", "noisy"],
                     },
                     "agency": {
                         "type": "string",
                         "enum": ["leader", "peer", "subordinate", "limited"],
                         "description": "Agency/authority level",
                     },
+                    "constraints": {
+                        "oneOf": [
+                            {"type": "string", "enum": ["minimal", "legal", "economic", "time"]},
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "enum": ["minimal", "legal", "economic", "time"],
+                                },
+                                "uniqueItems": True,
+                            },
+                        ],
+                    },
+                    "system_context": {
+                        "type": "string",
+                        "enum": ["online", "degraded", "offline", "sandboxed", "testing"],
+                    },
+                    "embodiment": {
+                        "type": "string",
+                        "enum": [
+                            "stationary",
+                            "navigating",
+                            "manipulating",
+                            "carrying",
+                            "emergency_stop",
+                        ],
+                    },
+                    "proximity": {
+                        "type": "string",
+                        "enum": ["distant", "same_room", "nearby", "close", "contact"],
+                    },
+                    "relationship": {
+                        "type": "string",
+                        "pattern": "^[^:]+:[^:]+$",
+                    },
+                    "formality": {
+                        "type": "string",
+                        "enum": ["casual", "professional", "formal", "ceremonial"],
+                    },
+                    **{
+                        name: {
+                            "oneOf": [
+                                {"type": "string", "minLength": 1},
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "value": {"type": "string", "minLength": 1},
+                                        "intensity": {
+                                            "type": "integer",
+                                            "minimum": 1,
+                                            "maximum": 5,
+                                        },
+                                    },
+                                    "required": ["value"],
+                                    "additionalProperties": False,
+                                },
+                            ],
+                        }
+                        for name in (
+                            "cognitive_state",
+                            "emotional_tone",
+                            "energy_level",
+                            "perceived_urgency",
+                            "body_signals",
+                        )
+                    },
                 },
+                "additionalProperties": False,
             },
         ),
         Tool(
@@ -141,6 +237,7 @@ Returns the current state of all VCP feature flags:
             inputSchema={
                 "type": "object",
                 "properties": {},
+                "additionalProperties": False,
             },
         ),
     ]
@@ -221,6 +318,12 @@ async def _handle_encode_context(arguments: dict):
 
     from vcp import ContextEncoder
 
+    def personal_state(name: str):
+        value = arguments.get(name)
+        if isinstance(value, dict):
+            return (value.get("value", ""), value.get("intensity"))
+        return value
+
     encoder = ContextEncoder()
     context = encoder.encode(
         # Situational (VCP v3.2, 13 dims)
@@ -239,17 +342,20 @@ async def _handle_encode_context(arguments: dict):
         relationship=arguments.get("relationship"),
         formality=arguments.get("formality"),
         # Personal state (R-line)
-        cognitive_state=arguments.get("cognitive_state"),
-        emotional_tone=arguments.get("emotional_tone"),
-        energy_level=arguments.get("energy_level"),
-        perceived_urgency=arguments.get("perceived_urgency"),
-        body_signals=arguments.get("body_signals"),
+        cognitive_state=personal_state("cognitive_state"),
+        emotional_tone=personal_state("emotional_tone"),
+        energy_level=personal_state("energy_level"),
+        perceived_urgency=personal_state("perceived_urgency"),
+        body_signals=personal_state("body_signals"),
     )
 
     result = {
         "wire_format": context.encode(),
         "json_format": context.to_json(),
-        "dimensions_set": [dim._name for dim in context.dimensions.keys()],
+        "dimensions_set": [
+            *(dim._name for dim in context.situational),
+            *(dim._name for dim in context.personal),
+        ],
     }
 
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
@@ -259,9 +365,12 @@ async def _handle_status(arguments: dict):
     """Handle vcp_status tool call."""
     import json
 
+    from vcp import __version__
+
     try:
         from services.feature_flags import is_feature_enabled
     except ImportError:
+
         def is_feature_enabled(flag: str) -> bool:  # type: ignore[misc]
             return True
 
@@ -271,7 +380,7 @@ async def _handle_status(arguments: dict):
         "vcp_adaptation_enabled": is_feature_enabled("vcp_adaptation_enabled"),
         "vcp_full_stack_enabled": is_feature_enabled("vcp_full_stack_enabled"),
         "vcp_strict_mode": is_feature_enabled("vcp_strict_mode"),
-        "version": "2.0.0",
+        "version": __version__,
     }
 
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
