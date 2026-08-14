@@ -45,6 +45,7 @@ def _persona_select_action(hook_input: HookInput) -> HookResult:
     is_vcp_context = False
     try:
         from ..adaptation.context import Dimension, VCPContext
+
         if isinstance(context, VCPContext):
             company_values = context.get(Dimension.COMPANY)
             is_vcp_context = True
@@ -66,8 +67,7 @@ def _persona_select_action(hook_input: HookInput) -> HookResult:
     children_emojis = {"\U0001f476"}  # baby emoji
 
     has_children = bool(
-        (set(company_values) & children_indicators)
-        or (set(company_values) & children_emojis)
+        (set(company_values) & children_indicators) or (set(company_values) & children_emojis)
     )
 
     if has_children:

@@ -174,43 +174,118 @@ class AuditLogger:
 
         manifest = bundle.manifest
 
-        # Determine checks passed
-        checks = []
-        if result == VerificationResult.VALID:
-            checks = [
+        # Map outcomes to checks guaranteed to have completed. Enum ordinals
+        # are wire identifiers, not pipeline-stage indexes, and the same
+        # outcome can occur at more than one stage. Keep this conservative.
+        checks_by_result: dict[VerificationResult, list[str]] = {
+            VerificationResult.VALID: [
                 "size",
-                "schema",
-                "signature",
-                "attestation",
                 "hash",
-                "temporal",
-                "replay",
-                "budget",
-                "scope",
-                "revocation",
-            ]
-        elif result.value > 0:
-            # Partial checks based on error code
-            check_order = [
-                "size",
-                "schema",
                 "issuer",
                 "signature",
                 "auditor",
                 "attestation",
-                "hash",
-                "nbf",
-                "exp",
-                "timestamp",
+                "revocation",
+                "temporal",
                 "replay",
-                "tokens",
                 "budget",
                 "scope",
-                "revoked",
-            ]
-            # All checks before the failing one passed
-            if result.value <= len(check_order):
-                checks = check_order[: result.value - 1]
+                "content_safety",
+            ],
+            VerificationResult.HASH_MISMATCH: ["size"],
+            VerificationResult.UNTRUSTED_ISSUER: ["size", "hash"],
+            VerificationResult.INVALID_SIGNATURE: ["size", "hash", "issuer"],
+            VerificationResult.UNTRUSTED_AUDITOR: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+            ],
+            VerificationResult.INVALID_ATTESTATION: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+            ],
+            VerificationResult.REVOKED: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+            ],
+            VerificationResult.REVOCATION_UNAVAILABLE: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+            ],
+            VerificationResult.NOT_YET_VALID: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+            ],
+            VerificationResult.EXPIRED: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+            ],
+            VerificationResult.FUTURE_TIMESTAMP: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+            ],
+            VerificationResult.REPLAY_DETECTED: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+                "temporal",
+            ],
+            VerificationResult.BUDGET_EXCEEDED: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+                "temporal",
+                "replay",
+            ],
+            VerificationResult.SCOPE_MISMATCH: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+                "temporal",
+                "replay",
+                "budget",
+            ],
+        }
+        checks = checks_by_result.get(result, [])
 
         # Extract signature value (truncated for log)
         sig = manifest.signature.value
@@ -229,24 +304,16 @@ class AuditLogger:
             version=manifest.bundle.version,
             manifest_signature=sig_truncated,
             audit_level=self.level,
-            request_id=(
-                _hash_for_privacy(request_id) if request_id else None
-            ),
+            request_id=(_hash_for_privacy(request_id) if request_id else None),
             duration_ms=(
-                duration_ms
-                if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC)
-                else None
+                duration_ms if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC) else None
             ),
             token_count=(
                 manifest.budget.token_count
                 if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC)
                 else None
             ),
-            content_preview=(
-                bundle.content[:100]
-                if self.level == AuditLevel.DIAGNOSTIC
-                else None
-            ),
+            content_preview=(bundle.content[:100] if self.level == AuditLevel.DIAGNOSTIC else None),
         )
 
         self._entries.append(entry)
@@ -301,9 +368,7 @@ class AuditLogger:
 
         entry = AuditEntry(
             timestamp=datetime.now(timezone.utc),
-            session_id_hash=(
-                _hash_for_privacy(session_id) if include_session else "redacted"
-            ),
+            session_id_hash=(_hash_for_privacy(session_id) if include_session else "redacted"),
             verification_result="PRIVACY_FILTER",
             checks_passed=[
                 f"shared:{fields_shared}",
@@ -374,9 +439,7 @@ class AuditLogger:
 
         with self._lock:
             before = len(self._entries)
-            self._entries = [
-                e for e in self._entries if e.session_id_hash != target_hash
-            ]
+            self._entries = [e for e in self._entries if e.session_id_hash != target_hash]
             removed = before - len(self._entries)
 
             # Scrub exported JSON files while still holding the lock so
@@ -478,10 +541,7 @@ class AuditLogger:
 
             entries = data.get("entries", [])
             before = len(entries)
-            filtered = [
-                e for e in entries
-                if e.get("session_id_hash") != session_id_hash
-            ]
+            filtered = [e for e in entries if e.get("session_id_hash") != session_id_hash]
             removed = before - len(filtered)
 
             if removed > 0:

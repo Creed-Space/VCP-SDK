@@ -87,8 +87,8 @@ class HookEntryConfig:
     timeout_ms: int = 5000
     enabled: bool = True
     description: str = ""
-    builtin: str | None = None   # name of a built-in factory function
-    action: str | None = None    # dotted Python path to a HookAction callable
+    builtin: str | None = None  # name of a built-in factory function
+    action: str | None = None  # dotted Python path to a HookAction callable
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -132,8 +132,7 @@ def load_from_yaml(path: str | Path) -> DeploymentConfig:
         import yaml
     except ImportError:
         raise ImportError(
-            "PyYAML is required to load hook configs from YAML. "
-            "Install it: uv add pyyaml"
+            "PyYAML is required to load hook configs from YAML. Install it: uv add pyyaml"
         ) from None
 
     path = Path(path)
@@ -238,9 +237,7 @@ def _parse_hook_entry(entry: Any, idx: int) -> HookEntryConfig:
     action = entry.get("action")
 
     if not builtin and not action:
-        raise HookConfigError(
-            f"Hook '{name}' must specify either 'builtin' or 'action'."
-        )
+        raise HookConfigError(f"Hook '{name}' must specify either 'builtin' or 'action'.")
     if builtin and action:
         raise HookConfigError(
             f"Hook '{name}' cannot specify both 'builtin' and 'action'. Choose one."
@@ -265,8 +262,7 @@ def _instantiate_hook(cfg: HookEntryConfig) -> Hook:
     if hook_type is None:
         valid = ", ".join(sorted(_HOOK_TYPE_MAP.keys()))
         raise HookConfigError(
-            f"Unknown hook type '{cfg.type}' in hook '{cfg.name}'. "
-            f"Valid types: {valid}"
+            f"Unknown hook type '{cfg.type}' in hook '{cfg.name}'. Valid types: {valid}"
         )
 
     if cfg.builtin:
@@ -292,8 +288,7 @@ def _instantiate_builtin(cfg: HookEntryConfig, hook_type: HookType) -> Hook:
     if factory is None:
         valid = ", ".join(sorted(_BUILTIN_FACTORIES.keys()))
         raise HookConfigError(
-            f"Unknown builtin '{cfg.builtin}' in hook '{cfg.name}'. "
-            f"Available builtins: {valid}"
+            f"Unknown builtin '{cfg.builtin}' in hook '{cfg.name}'. Available builtins: {valid}"
         )
 
     # Factory sets sensible defaults; config values override them
@@ -327,14 +322,17 @@ def _import_dotted_path(
             f"to a callable (e.g. 'mypackage.hooks.my_action')."
         )
 
-    if not any(dotted.startswith(prefix) for prefix in allowed_prefixes):
+    module_path, attr = dotted.rsplit(".", 1)
+    if not any(
+        module_path == prefix.rstrip(".") or module_path.startswith(prefix.rstrip(".") + ".")
+        for prefix in allowed_prefixes
+    ):
         raise HookConfigError(
             f"Hook '{hook_name}': import '{dotted}' is not under any "
             f"allowed module prefix ({', '.join(allowed_prefixes)}). "
             f"Add the prefix to ALLOWED_IMPORT_PREFIXES if this is intentional."
         )
 
-    module_path, attr = dotted.rsplit(".", 1)
     try:
         module = importlib.import_module(module_path)
     except ImportError as exc:

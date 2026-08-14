@@ -62,9 +62,7 @@ class TestComposerBase:
         assert result.merged_rules == base_constitution.rules
         assert result.mode_used == CompositionMode.BASE
 
-    def test_base_extends(
-        self, composer, base_constitution, extension_constitution
-    ):
+    def test_base_extends(self, composer, base_constitution, extension_constitution):
         """Non-conflicting extensions are added."""
         result = composer.compose(
             [base_constitution, extension_constitution],
@@ -99,9 +97,7 @@ class TestComposerBase:
 class TestComposerExtend:
     """Test EXTEND composition mode."""
 
-    def test_extend_combines(
-        self, composer, base_constitution, extension_constitution
-    ):
+    def test_extend_combines(self, composer, base_constitution, extension_constitution):
         """Non-conflicting constitutions combine."""
         result = composer.compose(
             [base_constitution, extension_constitution],
@@ -137,9 +133,7 @@ class TestComposerOverride:
         # Warning recorded
         assert len(result.warnings) > 0
 
-    def test_override_no_conflict(
-        self, composer, base_constitution, extension_constitution
-    ):
+    def test_override_no_conflict(self, composer, base_constitution, extension_constitution):
         """Non-conflicting rules all preserved."""
         result = composer.compose(
             [base_constitution, extension_constitution],
@@ -168,9 +162,7 @@ class TestComposerStrict:
         with pytest.raises(CompositionConflictError):
             composer.compose([const1, const2], CompositionMode.STRICT)
 
-    def test_strict_success(
-        self, composer, base_constitution, extension_constitution
-    ):
+    def test_strict_success(self, composer, base_constitution, extension_constitution):
         """Strict mode succeeds with non-overlapping rules."""
         result = composer.compose(
             [base_constitution, extension_constitution],

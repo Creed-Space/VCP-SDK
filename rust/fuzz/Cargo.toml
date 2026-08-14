@@ -1,0 +1,51 @@
+[package]
+name = "vcp-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+serde_json = "1"
+vcp-core = { path = "../vcp-core" }
+
+[[bin]]
+name = "csm1_code"
+path = "fuzz_targets/csm1_code.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "full_context"
+path = "fuzz_targets/full_context.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "revocation_json"
+path = "fuzz_targets/revocation_json.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "manifest_canonicalization"
+path = "fuzz_targets/manifest_canonicalization.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "identity_scope"
+path = "fuzz_targets/identity_scope.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]

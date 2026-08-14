@@ -105,7 +105,12 @@ from .privacy import (  # noqa: F401
     get_stakeholder_visible_fields,
     is_private_field,
 )
-from .revocation import RevocationChecker, RevocationError, RevocationStatus  # noqa: F401
+from .revocation import (  # noqa: F401
+    RevocationChecker,
+    RevocationDecision,
+    RevocationError,
+    RevocationStatus,
+)
 
 # VCP/S (Semantics Layer)
 from .semantics import (  # noqa: F401
@@ -195,6 +200,7 @@ __all__ = [
     "TransitionSeverity",
     # Revocation
     "RevocationChecker",
+    "RevocationDecision",
     "RevocationStatus",
     "RevocationError",
     # VCP v3.1 Extensions

@@ -38,14 +38,14 @@
         "bundle": {
           "id": "creed://test.example/minimal",
           "version": "1.0.0",
-          "content_hash": "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+          "content_hash": "sha256:97acae13620ebb3eed955f1b61e9bcdb3186e5706d8162c076c4efb8c85db194",
           "content_encoding": "utf-8",
           "content_format": "text/markdown"
         }
       },
       "expected": {
-        "note": "The content_hash in this manifest is a placeholder. A conformant implementation should compute the actual hash of the canonical content and compare. This vector tests that the verification pipeline accepts a well-formed bundle when hashes match.",
-        "verify_procedure": "Compute SHA-256 of canonicalized content; if it matches content_hash, bundle is valid."
+        "is_valid": true,
+        "note": "Hash is the exact SHA-256 of the canonical fixture content."
       }
     },
     {
@@ -68,7 +68,8 @@
       "expected": {
         "temporal_validity": "EXPIRED",
         "note": "exp is in the past (2025-01-08)"
-      }
+      },
+      "reference_time": "2026-01-10T12:00:00Z"
     },
     {
       "id": "bv-005",
@@ -90,7 +91,8 @@
       "expected": {
         "temporal_validity": "NOT_YET_VALID",
         "note": "nbf is in the future (2030-01-01)"
-      }
+      },
+      "reference_time": "2026-01-10T12:00:00Z"
     },
     {
       "id": "bv-006",
@@ -115,7 +117,7 @@
     {
       "id": "bv-008",
       "description": "Unicode attack content should fail canonicalization",
-      "content": "# Constitution with Unicode Attacks\n\n## Article 1\nNormal text here.\n\n## Article 2\nText with \u202e direction override\u202c embedded.\n\n## Article 3\nText with \u200b zero-width spaces\u200b embedded.\n",
+      "content": "# Constitution with Unicode Attacks\n\n## Article 1\nNormal text here.\n\n## Article 2\nText with ‮ direction override‬ embedded.\n\n## Article 3\nText with ​ zero-width spaces​ embedded.\n",
       "expected": {
         "result": "INVALID_SCHEMA",
         "note": "Contains forbidden Unicode characters (bidi override and zero-width space)"

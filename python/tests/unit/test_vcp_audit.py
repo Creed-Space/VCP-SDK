@@ -203,6 +203,7 @@ class TestGDPRPurge:
         assert export_path in tombstone["files_purged"]
 
         import json
+
         with open(export_path) as f:
             data = json.load(f)
         remaining = data["entries"]
@@ -332,8 +333,11 @@ class TestPrivacyFilterAudit:
             log_callback=captured.append,
         )
         logger.log_privacy_filter(
-            platform_id="p", session_id="s",
-            fields_shared=1, fields_withheld=0, constraint_flags_active=0,
+            platform_id="p",
+            session_id="s",
+            fields_shared=1,
+            fields_withheld=0,
+            constraint_flags_active=0,
         )
         assert len(captured) == 1
         assert captured[0].verification_result == "PRIVACY_FILTER"

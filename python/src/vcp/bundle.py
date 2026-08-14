@@ -5,11 +5,14 @@ Represents a signed constitutional bundle.
 """
 
 import json
+import math
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
+
+import rfc8785
 
 from .canonicalize import canonicalize_manifest, compute_content_hash
 from .types import (
@@ -24,6 +27,44 @@ from .types import (
     Signature,
     Timestamps,
 )
+
+_ATTESTATION_SIGNED_FIELDS = (
+    "auditor",
+    "auditor_key_id",
+    "reviewed_at",
+    "attestation_type",
+)
+
+
+def canonicalize_safety_attestation(
+    attestation: dict[str, Any],
+    content_hash: str,
+) -> bytes:
+    """Return the canonical payload covered by an auditor signature."""
+    payload = {field: attestation[field] for field in _ATTESTATION_SIGNED_FIELDS}
+    payload["content_hash"] = content_hash
+    return rfc8785.dumps(payload)
+
+
+def _format_utc_datetime(value: datetime, field_name: str) -> str:
+    """Serialize an aware datetime as RFC 3339 UTC with one ``Z`` suffix."""
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError(f"{field_name} must be timezone-aware")
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _parse_utc_datetime(value: Any, field_name: str) -> datetime:
+    """Parse an RFC 3339 datetime and normalize it to aware UTC."""
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} must be an RFC 3339 string")
+    normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be a valid RFC 3339 datetime") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{field_name} must include a timezone")
+    return parsed.astimezone(timezone.utc)
 
 
 @dataclass
@@ -59,9 +100,9 @@ class Manifest:
                 "key_id": self.issuer.key_id,
             },
             "timestamps": {
-                "iat": self.timestamps.iat.isoformat() + "Z",
-                "nbf": self.timestamps.nbf.isoformat() + "Z",
-                "exp": self.timestamps.exp.isoformat() + "Z",
+                "iat": _format_utc_datetime(self.timestamps.iat, "timestamps.iat"),
+                "nbf": _format_utc_datetime(self.timestamps.nbf, "timestamps.nbf"),
+                "exp": _format_utc_datetime(self.timestamps.exp, "timestamps.exp"),
                 "jti": self.timestamps.jti,
             },
             "budget": {
@@ -72,7 +113,10 @@ class Manifest:
             "safety_attestation": {
                 "auditor": self.safety_attestation.auditor,
                 "auditor_key_id": self.safety_attestation.auditor_key_id,
-                "reviewed_at": self.safety_attestation.reviewed_at.isoformat() + "Z",
+                "reviewed_at": _format_utc_datetime(
+                    self.safety_attestation.reviewed_at,
+                    "safety_attestation.reviewed_at",
+                ),
                 "attestation_type": self.safety_attestation.attestation_type.value,
                 "signature": self.safety_attestation.signature,
             },
@@ -98,6 +142,7 @@ class Manifest:
                     "environments": self.scope.environments or None,
                     "audiences": self.scope.audiences or None,
                     "regions": self.scope.regions or None,
+                    "competence_requirements": self.scope.competence_requirements or None,
                 }.items()
                 if v
             }
@@ -136,9 +181,9 @@ class Manifest:
         )
 
         timestamps = Timestamps(
-            iat=datetime.fromisoformat(data["timestamps"]["iat"].rstrip("Z")),
-            nbf=datetime.fromisoformat(data["timestamps"]["nbf"].rstrip("Z")),
-            exp=datetime.fromisoformat(data["timestamps"]["exp"].rstrip("Z")),
+            iat=_parse_utc_datetime(data["timestamps"]["iat"], "timestamps.iat"),
+            nbf=_parse_utc_datetime(data["timestamps"]["nbf"], "timestamps.nbf"),
+            exp=_parse_utc_datetime(data["timestamps"]["exp"], "timestamps.exp"),
             jti=data["timestamps"]["jti"],
         )
 
@@ -151,7 +196,10 @@ class Manifest:
         safety_attestation = SafetyAttestation(
             auditor=data["safety_attestation"]["auditor"],
             auditor_key_id=data["safety_attestation"]["auditor_key_id"],
-            reviewed_at=datetime.fromisoformat(data["safety_attestation"]["reviewed_at"].rstrip("Z")),
+            reviewed_at=_parse_utc_datetime(
+                data["safety_attestation"]["reviewed_at"],
+                "safety_attestation.reviewed_at",
+            ),
             attestation_type=AttestationType(data["safety_attestation"]["attestation_type"]),
             signature=data["safety_attestation"]["signature"],
         )
@@ -347,17 +395,22 @@ class BundleBuilder:
             token_count = count_tokens(self.content, self.tokenizer)
         else:
             # Rough estimate: ~4 chars per token
-            token_count = len(self.content) // 4
+            token_count = max(1, math.ceil(len(self.content.encode("utf-8")) / 4))
+        if not isinstance(token_count, int) or isinstance(token_count, bool) or token_count < 1:
+            raise ValueError("count_tokens must return a positive integer")
 
         # Build attestation and sign it
         attestation_data = {
             "auditor": self.auditor,
             "auditor_key_id": self.auditor_key_id,
-            "reviewed_at": now.isoformat() + "Z",
+            "reviewed_at": _format_utc_datetime(now, "safety_attestation.reviewed_at"),
             "attestation_type": self.attestation_type.value,
             "content_hash": content_hash,
         }
-        attestation_bytes = json.dumps(attestation_data, sort_keys=True).encode()
+        attestation_bytes = canonicalize_safety_attestation(
+            attestation_data,
+            content_hash,
+        )
         attestation_sig = sign_attestation(attestation_bytes)
 
         # Build manifest without signature
@@ -376,9 +429,11 @@ class BundleBuilder:
                 "key_id": self.issuer_key_id,
             },
             "timestamps": {
-                "iat": now.isoformat() + "Z",
-                "nbf": now.isoformat() + "Z",
-                "exp": (now + timedelta(days=self.expires_days)).isoformat() + "Z",
+                "iat": _format_utc_datetime(now, "timestamps.iat"),
+                "nbf": _format_utc_datetime(now, "timestamps.nbf"),
+                "exp": _format_utc_datetime(
+                    now + timedelta(days=self.expires_days), "timestamps.exp"
+                ),
                 "jti": str(uuid.uuid4()),
             },
             "budget": {
@@ -389,7 +444,7 @@ class BundleBuilder:
             "safety_attestation": {
                 "auditor": self.auditor,
                 "auditor_key_id": self.auditor_key_id,
-                "reviewed_at": now.isoformat() + "Z",
+                "reviewed_at": _format_utc_datetime(now, "safety_attestation.reviewed_at"),
                 "attestation_type": self.attestation_type.value,
                 "signature": f"base64:{attestation_sig}",
             },
@@ -402,6 +457,9 @@ class BundleBuilder:
                     "model_families": self.scope.model_families or None,
                     "purposes": self.scope.purposes or None,
                     "environments": self.scope.environments or None,
+                    "audiences": self.scope.audiences or None,
+                    "regions": self.scope.regions or None,
+                    "competence_requirements": self.scope.competence_requirements or None,
                 }.items()
                 if v
             }

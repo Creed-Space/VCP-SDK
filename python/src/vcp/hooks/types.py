@@ -224,23 +224,19 @@ class Hook:
         """
         if not HOOK_NAME_PATTERN.match(self.name):
             raise HookValidationError(
-                f"Invalid hook name: '{self.name}'. "
-                f"Must match [a-z0-9_-]{{1,64}}"
+                f"Invalid hook name: '{self.name}'. Must match [a-z0-9_-]{{1,64}}"
             )
         if not isinstance(self.type, HookType):
             raise HookValidationError(
-                f"Invalid hook type: '{self.type}'. "
-                f"Must be a HookType enum value"
+                f"Invalid hook type: '{self.type}'. Must be a HookType enum value"
             )
         if not (MIN_PRIORITY <= self.priority <= MAX_PRIORITY):
             raise HookValidationError(
-                f"Priority must be {MIN_PRIORITY}-{MAX_PRIORITY}, "
-                f"got: {self.priority}"
+                f"Priority must be {MIN_PRIORITY}-{MAX_PRIORITY}, got: {self.priority}"
             )
         if not (MIN_TIMEOUT_MS <= self.timeout_ms <= MAX_TIMEOUT_MS):
             raise HookValidationError(
-                f"Timeout must be {MIN_TIMEOUT_MS}-{MAX_TIMEOUT_MS}ms, "
-                f"got: {self.timeout_ms}"
+                f"Timeout must be {MIN_TIMEOUT_MS}-{MAX_TIMEOUT_MS}ms, got: {self.timeout_ms}"
             )
         if not callable(self.action):
             raise HookValidationError("Hook action must be callable")

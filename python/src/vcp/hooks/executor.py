@@ -157,7 +157,8 @@ class HookExecutor:
                 else str(result.status)
             )
             vcp_hook_executions_total.labels(
-                hook_type=hook_type.value, status=status_label,
+                hook_type=hook_type.value,
+                status=status_label,
             ).inc()
             vcp_hook_duration_seconds.labels(
                 hook_type=hook_type.value,
@@ -239,9 +240,7 @@ class HookExecutor:
         if thread.is_alive():
             # Thread exceeded timeout - we can't forcibly kill it,
             # but we treat it as timed out per spec
-            raise _HookTimeoutError(
-                f"Hook '{hook.name}' exceeded timeout of {hook.timeout_ms}ms"
-            )
+            raise _HookTimeoutError(f"Hook '{hook.name}' exceeded timeout of {hook.timeout_ms}ms")
 
         if error_container[0] is not None:
             raise error_container[0]

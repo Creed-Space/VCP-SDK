@@ -118,7 +118,7 @@
     {
       "id": "csm1-009",
       "description": "Full MICRO format: namespace, scopes, and version",
-      "input": "N5:ELEM+F+E@1.2.0",
+      "input": "N5+F+E:ELEM@1.2.0",
       "expected": {
         "valid": true,
         "persona": "N",
@@ -132,7 +132,7 @@
     {
       "id": "csm1-010",
       "description": "Custom persona with namespace, scope, and version",
-      "input": "C3:ACME+W@1.0.0",
+      "input": "C3+W:ACME@1.0.0",
       "expected": {
         "valid": true,
         "persona": "C",
@@ -156,13 +156,13 @@
     },
     {
       "id": "csm1-012",
-      "description": "All valid scopes combined",
-      "input": "Z3+F+W+P+E+T+O+V+A+H+S+R",
+      "description": "All mutually compatible non-adult scopes combined",
+      "input": "Z3+F+W+P+E+T+O+V+H+S+R",
       "expected": {
         "valid": true,
         "persona": "Z",
         "adherence": 3,
-        "scopes": ["F", "W", "P", "E", "T", "O", "V", "A", "H", "S", "R"]
+        "scopes": ["F", "W", "P", "E", "T", "O", "V", "H", "S", "R"]
       }
     },
     {
@@ -298,6 +298,33 @@
       "expected": {
         "valid": false,
         "error": "missing_adherence"
+      }
+    },
+    {
+      "id": "csm1-err-012",
+      "description": "Family and Adult scopes are mutually exclusive",
+      "input": "N5+F+A",
+      "expected": {
+        "valid": false,
+        "error": "conflicting_scopes"
+      }
+    },
+    {
+      "id": "csm1-err-013",
+      "description": "Vulnerable and Adult scopes are mutually exclusive",
+      "input": "N5+V+A",
+      "expected": {
+        "valid": false,
+        "error": "conflicting_scopes"
+      }
+    },
+    {
+      "id": "csm1-err-014",
+      "description": "Healthcare and Adult scopes are mutually exclusive",
+      "input": "N5+H+A",
+      "expected": {
+        "valid": false,
+        "error": "conflicting_scopes"
       }
     }
   ]

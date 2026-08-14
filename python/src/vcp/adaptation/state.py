@@ -131,9 +131,7 @@ class StateTracker:
                         else str(transition.current),
                         trigger=transition.severity.value,
                         transition_metadata={
-                            "changed_dimensions": [
-                                d._name for d in transition.changed_dimensions
-                            ]
+                            "changed_dimensions": [d._name for d in transition.changed_dimensions]
                         },
                     ),
                 )

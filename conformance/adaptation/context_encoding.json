@@ -1,7 +1,7 @@
 {
   "suite": "adaptation/context_encoding",
-  "version": "1.0.0",
-  "description": "Test vectors for VCP/A context encoding and decoding. Context uses the Enneagram Protocol wire format with pipe '|' separator between situational and personal dimensions. Extracted from Rust context.rs tests.",
+  "version": "3.2.0",
+  "description": "VCP v3.2 context encoding and decoding vectors. Situational dimensions use pipe-separated symbol and value groups. Personal-state dimensions use canonical field names with value and intensity (1-5). U+2016 DOUBLE VERTICAL LINE separates the situational and personal bands.",
   "vectors": [
     {
       "id": "ctx-001",
@@ -20,16 +20,18 @@
       "description": "Situational only: time dimension with sunrise emoji",
       "input": {
         "situational": {
-          "time": ["\ud83c\udf05"]
+          "time": [
+            "\ud83c\udf05"
+          ]
         },
         "personal": {}
       },
       "expected": {
         "wire_contains": "\u23f0",
-        "wire_does_not_contain": "|",
+        "wire_does_not_contain": "\u2016",
         "has_situational": true,
         "has_personal": false,
-        "note": "Time dimension uses clock emoji prefix. No pipe separator when personal is empty."
+        "note": "The personal-band separator U+2016 is absent when personal state is empty."
       }
     },
     {
@@ -38,18 +40,19 @@
       "input": {
         "situational": {},
         "personal": {
-          "cognitive": {
+          "cognitive_state": {
             "value": "focused",
-            "level": 4
+            "intensity": 4
           }
         }
       },
       "expected": {
-        "wire_starts_with": "|",
+        "wire": "\u2016\ud83e\udde0focused:4",
+        "wire_starts_with": "\u2016",
         "has_situational": false,
         "has_personal": true,
-        "personal_cognitive_value": "focused",
-        "note": "When only personal dimensions are set, wire starts with pipe separator"
+        "personal_cognitive_state_value": "focused",
+        "note": "Personal-only wire starts with the U+2016 band separator."
       }
     },
     {
@@ -57,28 +60,33 @@
       "description": "Full roundtrip: situational time + space, personal cognitive + emotional",
       "input": {
         "situational": {
-          "time": ["\ud83c\udf05"],
-          "space": ["\ud83c\udfe1"]
+          "time": [
+            "\ud83c\udf05"
+          ],
+          "space": [
+            "\ud83c\udfe1"
+          ]
         },
         "personal": {
-          "cognitive": {
+          "cognitive_state": {
             "value": "focused",
-            "level": 4
+            "intensity": 4
           },
-          "emotional": {
+          "emotional_tone": {
             "value": "calm",
-            "level": 3
+            "intensity": 3
           }
         }
       },
       "expected": {
-        "wire_contains": "|",
+        "wire": "\u23f0\ud83c\udf05|\ud83d\udccd\ud83c\udfe1\u2016\ud83e\udde0focused:4|\ud83d\udcadcalm:3",
+        "wire_contains": "\u2016",
         "has_situational": true,
         "has_personal": true,
         "roundtrip_preserves_time": true,
         "roundtrip_preserves_space": true,
-        "roundtrip_cognitive_value": "focused",
-        "roundtrip_emotional_value": "calm"
+        "roundtrip_cognitive_state_value": "focused",
+        "roundtrip_emotional_tone_value": "calm"
       }
     },
     {
@@ -96,34 +104,54 @@
       "description": "Serde roundtrip: context survives JSON serialization and deserialization",
       "input": {
         "situational": {
-          "company": ["team"]
+          "company": [
+            "team"
+          ]
         },
         "personal": {
-          "urgency": {
+          "perceived_urgency": {
             "value": "pressured",
-            "level": 4
+            "intensity": 4
           }
         }
       },
       "expected": {
         "json_roundtrip": true,
-        "note": "Serialize to JSON and deserialize back; result must equal original"
+        "note": "JSON roundtrip preserves the canonical perceived_urgency value and intensity."
       }
     },
     {
       "id": "ctx-007",
-      "description": "Context with all situational dimensions",
+      "description": "Context with all nine core situational dimensions",
       "input": {
         "situational": {
-          "time": ["\ud83c\udf05"],
-          "space": ["\ud83c\udfe1"],
-          "company": ["\ud83d\udc76"],
-          "culture": ["western"],
-          "occasion": ["casual"],
-          "state": ["relaxed"],
-          "environment": ["indoor"],
-          "agency": ["autonomous"],
-          "constraints": ["none"]
+          "time": [
+            "\ud83c\udf05"
+          ],
+          "space": [
+            "\ud83c\udfe1"
+          ],
+          "company": [
+            "\ud83d\udc76"
+          ],
+          "culture": [
+            "\ud83c\udf10"
+          ],
+          "occasion": [
+            "\u2796"
+          ],
+          "environment": [
+            "\u2600\ufe0f"
+          ],
+          "agency": [
+            "\ud83d\udc51"
+          ],
+          "constraints": [
+            "\u25cb"
+          ],
+          "system_context": [
+            "\ud83d\udfe2"
+          ]
         },
         "personal": {}
       },
@@ -137,8 +165,12 @@
       "description": "Emergency context: contains emergency indicators",
       "input": {
         "situational": {
-          "occasion": ["\ud83d\udea8"],
-          "constraints": ["\ud83d\udea8"]
+          "occasion": [
+            "\ud83d\udea8"
+          ],
+          "constraints": [
+            "\ud83d\udea8"
+          ]
         },
         "personal": {}
       },
@@ -152,8 +184,12 @@
       "description": "Children present indicator",
       "input": {
         "situational": {
-          "space": ["\ud83c\udfe1"],
-          "company": ["\ud83d\udc76"]
+          "space": [
+            "\ud83c\udfe1"
+          ],
+          "company": [
+            "\ud83d\udc76"
+          ]
         },
         "personal": {}
       },

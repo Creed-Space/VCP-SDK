@@ -12,13 +12,13 @@
         "bundle": {
           "id": "creed://creed.space/family.safe.guide",
           "version": "1.2.0",
-          "content_hash": "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+          "content_hash": "sha256:94fdc3420a7010b9a7f56231692594155d5b34c60abd674656652c565398bf30",
           "content_encoding": "utf-8",
           "content_format": "text/markdown"
         },
         "issuer": {
           "id": "creed.space",
-          "public_key": "ed25519:MC4CAQAwBQYDK2VwBCIEIHKhpwMdqgQwCXzLJv",
+          "public_key": "ed25519:0EqyMnQrtKs6E2i9RhXk5tAiSrcaAWuvhSCjMsl3hzc=",
           "key_id": "creed-space-2026"
         },
         "timestamps": {
@@ -33,15 +33,26 @@
           "max_context_share": 0.25
         },
         "scope": {
-          "model_families": ["gpt-*", "claude-*"],
-          "purposes": ["general-assistant", "family-assistant"],
-          "environments": ["production", "staging"]
+          "model_families": [
+            "gpt-*",
+            "claude-*"
+          ],
+          "purposes": [
+            "general-assistant",
+            "family-assistant"
+          ],
+          "environments": [
+            "production",
+            "staging"
+          ]
         },
         "composition": {
           "layer": 2,
           "mode": "extend",
           "conflicts_with": [],
-          "requires": ["creed://creed.space/uef"]
+          "requires": [
+            "creed://creed.space/uef"
+          ]
         },
         "revocation": {
           "check_uri": "https://creed.space/api/v1/revoked",
@@ -52,19 +63,23 @@
           "auditor_key_id": "safety-2026",
           "reviewed_at": "2026-01-10T11:00:00Z",
           "attestation_type": "injection-safe",
-          "signature": "base64:MEUCIQDrAbcDefGhIjKlMnOpQrStUvWxYz"
+          "signature": "base64:htabvH8d8bFgHM8nrCPgHZi8DNSYv30/J7/ny3S+A6XAMcRxAoyyy9IURmleCokMvHa1IktwcbZ+OYDVeCefDQ=="
         },
         "metadata": {
           "title": "Family Safety Constitution",
           "description": "Child-safe content filtering for family environments",
-          "tags": ["safety", "family", "children"],
+          "tags": [
+            "safety",
+            "family",
+            "children"
+          ],
           "persona": "nanny",
           "adherence_level": 5,
           "csm1": "N5+F:ELEM@1.2.0"
         },
         "signature": {
           "algorithm": "ed25519",
-          "value": "base64:MEUCIQD6X8kBxRiOnNpqRsTuVwXyZaBcDefGhIj",
+          "value": "base64:z6NhDZStv1Hi20X3PL3Hs+/mNPchuVC/uvbjpgoebwBdrYTT3WDr5HCsFSkp79L7f3wBg1S596kIDd3BAByjAg==",
           "signed_fields": [
             "vcp_version",
             "bundle",
@@ -87,10 +102,10 @@
               {
                 "id": "creed-space-2026",
                 "algorithm": "ed25519",
-                "public_key": "MC4CAQAwBQYDK2VwBCIEIHKhpwMdqgQwCXzLJv",
+                "public_key": "ed25519:0EqyMnQrtKs6E2i9RhXk5tAiSrcaAWuvhSCjMsl3hzc=",
                 "state": "active",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z"
+                "valid_from": "2025-01-01T00:00:00Z",
+                "valid_until": "2030-01-01T00:00:00Z"
               }
             ]
           },
@@ -100,17 +115,17 @@
               {
                 "id": "safety-2026",
                 "algorithm": "ed25519",
-                "public_key": "SafetyKeyPublicBase64==",
+                "public_key": "ed25519:Md6+VdN8cidosTcTHKpghwgLLgtguUvXhdFFdc+kmLw=",
                 "state": "active",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z"
+                "valid_from": "2025-01-01T00:00:00Z",
+                "valid_until": "2030-01-01T00:00:00Z"
               }
             ]
           }
         }
       },
       "expected_injection_format": {
-        "header": "[VCP:2.0]\n[ID:creed://creed.space/family.safe.guide@1.2.0]\n[HASH:7f83b165...9069]\n[TOKENS:350]\n[ATTESTED:injection-safe:safety-review.creed.space]",
+        "header": "[VCP:2.0]\n[ID:creed://creed.space/family.safe.guide@1.2.0]\n[HASH:94fdc342...bf30]\n[TOKENS:350]\n[ATTESTED:injection-safe:safety-review.creed.space]",
         "delimiters": {
           "begin": "---BEGIN-CONSTITUTION---",
           "end": "---END-CONSTITUTION---"
@@ -133,13 +148,13 @@
           "step": 3,
           "check": "content_hash",
           "description": "SHA-256 of canonical content matches bundle.content_hash",
-          "expected": "PASS (with correct content_hash value)"
+          "expected": "PASS"
         },
         {
           "step": 4,
           "check": "temporal_validity",
           "description": "Current time is between timestamps.nbf and timestamps.exp",
-          "expected": "CHECK against current time"
+          "expected": "PASS at reference_time"
         },
         {
           "step": 5,
@@ -151,13 +166,13 @@
           "step": 6,
           "check": "manifest_signature",
           "description": "Ed25519 signature over canonical manifest (excluding signature field) verifies against issuer public key",
-          "expected": "PASS (with real keys)"
+          "expected": "PASS with deterministic fixture keys"
         },
         {
           "step": 7,
           "check": "safety_attestation",
           "description": "Safety attestation signature verifies against auditor public key",
-          "expected": "PASS (with real keys)"
+          "expected": "PASS with deterministic fixture keys"
         },
         {
           "step": 8,
@@ -177,7 +192,22 @@
           "description": "Composition rules (layer, mode, requires) are satisfiable",
           "expected": "PASS (when requirements met)"
         }
-      ]
+      ],
+      "fixture_keys": {
+        "issuer_seed_byte": 17,
+        "auditor_seed_byte": 23
+      },
+      "reference_time": "2026-01-11T12:00:00Z",
+      "expected": {
+        "result": "VALID_AT_REFERENCE_TIME",
+        "checks": [
+          "schema",
+          "content_hash",
+          "issuer_signature",
+          "safety_attestation_signature",
+          "temporal_window"
+        ]
+      }
     },
     {
       "id": "bundle-002",
@@ -188,13 +218,13 @@
         "bundle": {
           "id": "creed://test.example/minimal",
           "version": "1.0.0",
-          "content_hash": "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+          "content_hash": "sha256:97acae13620ebb3eed955f1b61e9bcdb3186e5706d8162c076c4efb8c85db194",
           "content_encoding": "utf-8",
           "content_format": "text/markdown"
         },
         "issuer": {
           "id": "test.example",
-          "public_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+          "public_key": "ed25519:QwRr/kCSs+lJlOraFdzCDYqqB7ZY/TlU644O+4vcpd4=",
           "key_id": "test-key-2026"
         },
         "timestamps": {
@@ -213,11 +243,11 @@
           "auditor_key_id": "safety-key-2026",
           "reviewed_at": "2026-01-10T11:00:00Z",
           "attestation_type": "injection-safe",
-          "signature": "base64:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="
+          "signature": "base64:EBrD2YAuERrPqX41sg2ccKV1VwiYzAqTOqlg7AStktBHSmrKTZsWo4d723aK46HLhZVv0vOQKq3zVzEnrbCiBw=="
         },
         "signature": {
           "algorithm": "ed25519",
-          "value": "base64:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=",
+          "value": "base64:r0VFe2doyYfFKwm18VsYEkc+0Hld86CMb8OJIRB/3CeJzSwbzQXD6PwVyuhCfzf1pWJ1g0tu2HiV1xeyzjvXDA==",
           "signed_fields": [
             "vcp_version",
             "bundle",
@@ -229,8 +259,49 @@
         }
       },
       "expected": {
-        "result": "VALID",
-        "note": "Minimal bundle with all required fields. Optional fields (scope, composition, revocation, metadata) are absent."
+        "result": "VALID_AT_REFERENCE_TIME",
+        "checks": [
+          "schema",
+          "content_hash",
+          "issuer_signature",
+          "safety_attestation_signature",
+          "temporal_window"
+        ]
+      },
+      "fixture_keys": {
+        "issuer_seed_byte": 31,
+        "auditor_seed_byte": 47
+      },
+      "reference_time": "2026-01-11T12:00:00Z",
+      "trust_config": {
+        "trust_anchors": {
+          "test.example": {
+            "type": "issuer",
+            "keys": [
+              {
+                "id": "test-key-2026",
+                "algorithm": "ed25519",
+                "public_key": "ed25519:QwRr/kCSs+lJlOraFdzCDYqqB7ZY/TlU644O+4vcpd4=",
+                "state": "active",
+                "valid_from": "2025-01-01T00:00:00Z",
+                "valid_until": "2030-01-01T00:00:00Z"
+              }
+            ]
+          },
+          "safety.test.example": {
+            "type": "auditor",
+            "keys": [
+              {
+                "id": "safety-key-2026",
+                "algorithm": "ed25519",
+                "public_key": "ed25519:bjLBl0Hwr4JgYSrpn9E9ijiURyLgiWTdI5c49VKmFTs=",
+                "state": "active",
+                "valid_from": "2025-01-01T00:00:00Z",
+                "valid_until": "2030-01-01T00:00:00Z"
+              }
+            ]
+          }
+        }
       }
     }
   ]

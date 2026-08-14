@@ -32,9 +32,7 @@ class HookRegistry:
     """
 
     def __init__(self) -> None:
-        self._deployment_hooks: dict[HookType, list[Hook]] = {
-            t: [] for t in HookType
-        }
+        self._deployment_hooks: dict[HookType, list[Hook]] = {t: [] for t in HookType}
         self._session_hooks: dict[str, dict[HookType, list[Hook]]] = {}
         self._lock = threading.Lock()
 
@@ -139,9 +137,7 @@ class HookRegistry:
         """
         with self._lock:
             deployment = list(self._deployment_hooks.get(hook_type, []))
-            session = list(
-                self._session_hooks.get(session_id, {}).get(hook_type, [])
-            )
+            session = list(self._session_hooks.get(session_id, {}).get(hook_type, []))
 
         return self._merge_by_priority(deployment, session)
 
@@ -161,9 +157,7 @@ class HookRegistry:
         """
         with self._lock:
             if scope == "deployment":
-                return sum(
-                    len(hooks) for hooks in self._deployment_hooks.values()
-                )
+                return sum(len(hooks) for hooks in self._deployment_hooks.values())
             elif scope == "session" and session_id is not None:
                 session_hooks = self._session_hooks.get(session_id, {})
                 return sum(len(hooks) for hooks in session_hooks.values())

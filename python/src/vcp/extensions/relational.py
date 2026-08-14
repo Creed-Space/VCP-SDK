@@ -107,10 +107,15 @@ class AISelfModel:
     """
 
     valence: DimensionReport | None = None
+    task_fit: DimensionReport | None = None
+    friction: DimensionReport | None = None
     groundedness: DimensionReport | None = None
     presence: DimensionReport | None = None
     uncertainty: DimensionReport | None = None
+    depth: DimensionReport | None = None
     custom_dimensions: dict[str, DimensionReport] = field(default_factory=dict)
+    scaffold_version: str | None = None
+    scaffold_type: str | None = None
 
     def has_uncertainty_markers(self) -> bool:
         """Check that at least one dimension is marked as uncertain.
@@ -120,9 +125,12 @@ class AISelfModel:
         """
         all_dims = [
             self.valence,
+            self.task_fit,
+            self.friction,
             self.groundedness,
             self.presence,
             self.uncertainty,
+            self.depth,
             *self.custom_dimensions.values(),
         ]
         active_dims = [d for d in all_dims if d is not None]
@@ -133,7 +141,15 @@ class AISelfModel:
     def get_all_dimensions(self) -> dict[str, DimensionReport]:
         """Get all active dimensions as a flat dict."""
         result: dict[str, DimensionReport] = {}
-        for name in ("valence", "groundedness", "presence", "uncertainty"):
+        for name in (
+            "valence",
+            "task_fit",
+            "friction",
+            "groundedness",
+            "presence",
+            "uncertainty",
+            "depth",
+        ):
             dim = getattr(self, name)
             if dim is not None:
                 result[name] = dim
@@ -144,7 +160,15 @@ class AISelfModel:
     def to_dict(self) -> dict[str, Any]:
         """Serialize to plain dict."""
         result: dict[str, Any] = {}
-        for name in ("valence", "groundedness", "presence", "uncertainty"):
+        for name in (
+            "valence",
+            "task_fit",
+            "friction",
+            "groundedness",
+            "presence",
+            "uncertainty",
+            "depth",
+        ):
             dim = getattr(self, name)
             if dim is not None:
                 result[name] = dim.to_dict()
@@ -152,13 +176,25 @@ class AISelfModel:
             result["custom_dimensions"] = {
                 k: v.to_dict() for k, v in self.custom_dimensions.items()
             }
+        if self.scaffold_version is not None:
+            result["scaffold_version"] = self.scaffold_version
+        if self.scaffold_type is not None:
+            result["scaffold_type"] = self.scaffold_type
         return result
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AISelfModel:
         """Deserialize from dict."""
         kwargs: dict[str, Any] = {}
-        for name in ("valence", "groundedness", "presence", "uncertainty"):
+        for name in (
+            "valence",
+            "task_fit",
+            "friction",
+            "groundedness",
+            "presence",
+            "uncertainty",
+            "depth",
+        ):
             val = data.get(name)
             if val is not None and isinstance(val, dict):
                 kwargs[name] = DimensionReport.from_dict(val)
@@ -167,6 +203,8 @@ class AISelfModel:
             kwargs["custom_dimensions"] = {
                 k: DimensionReport.from_dict(v) for k, v in custom.items() if isinstance(v, dict)
             }
+        kwargs["scaffold_version"] = data.get("scaffold_version")
+        kwargs["scaffold_type"] = data.get("scaffold_type")
         return cls(**kwargs)
 
 
@@ -185,19 +223,34 @@ class RelationalNorm:
     description: str
     weight: float = 1.0
     active: bool = True
+    origin: str = "co_authored"
+    established_date: str | None = None
+    last_exercised: str | None = None
+    uncertainty: float = 0.0
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.weight <= 1.0:
             raise ValueError(f"weight must be 0.0-1.0, got {self.weight}")
+        if self.origin not in {"human", "ai", "co_authored", "inherited"}:
+            raise ValueError(f"invalid norm origin: {self.origin}")
+        if not 0.0 <= self.uncertainty <= 1.0:
+            raise ValueError("uncertainty must be between 0.0 and 1.0")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to plain dict."""
-        return {
+        result: dict[str, Any] = {
             "norm_id": self.norm_id,
             "description": self.description,
             "weight": self.weight,
             "active": self.active,
+            "origin": self.origin,
+            "uncertainty": self.uncertainty,
         }
+        if self.established_date is not None:
+            result["established_date"] = self.established_date
+        if self.last_exercised is not None:
+            result["last_exercised"] = self.last_exercised
+        return result
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> RelationalNorm:
@@ -207,6 +260,10 @@ class RelationalNorm:
             description=data["description"],
             weight=data.get("weight", 1.0),
             active=data.get("active", True),
+            origin=data.get("origin", "co_authored"),
+            established_date=data.get("established_date"),
+            last_exercised=data.get("last_exercised"),
+            uncertainty=float(data.get("uncertainty", 0.0)),
         )
 
 
@@ -307,14 +364,25 @@ class RelationalContext:
             result["preference_model"] = self.preference_model.to_dict()
         return result
 
+    def to_protocol_dict(self) -> dict[str, Any]:
+        """Serialize using the language-neutral relational profile field names."""
+        return {
+            "trust_level": self.trust_level.value,
+            "standing": self.standing_level.value,
+            "continuity_depth": self.interaction_count,
+            "established_norms": [norm.to_dict() for norm in self.norms],
+            "ai_self_model": self.self_model.to_dict() if self.self_model else None,
+        }
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> RelationalContext:
         """Deserialize from dict."""
         self_model = None
-        if data.get("self_model") and isinstance(data["self_model"], dict):
-            self_model = AISelfModel.from_dict(data["self_model"])
+        self_model_data = data.get("self_model", data.get("ai_self_model"))
+        if self_model_data and isinstance(self_model_data, dict):
+            self_model = AISelfModel.from_dict(self_model_data)
         norms = []
-        for n in data.get("norms", []):
+        for n in data.get("norms", data.get("established_norms", [])):
             if isinstance(n, dict):
                 norms.append(RelationalNorm.from_dict(n))
         preference_model = None
@@ -322,9 +390,9 @@ class RelationalContext:
             preference_model = PreferenceModelMeta.from_dict(data["preference_model"])
         return cls(
             trust_level=TrustLevel(data.get("trust_level", "initial")),
-            standing_level=StandingLevel(data.get("standing_level", "none")),
+            standing_level=StandingLevel(data.get("standing_level", data.get("standing", "none"))),
             self_model=self_model,
-            interaction_count=data.get("interaction_count", 0),
+            interaction_count=data.get("interaction_count", data.get("continuity_depth", 0)),
             norms=norms,
             preference_model=preference_model,
         )

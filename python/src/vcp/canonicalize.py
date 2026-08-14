@@ -5,9 +5,10 @@ Implements RFC 8785 (JCS) for manifest and content canonicalization.
 """
 
 import hashlib
-import json
 import unicodedata
 from typing import Any
+
+import rfc8785
 
 
 def canonicalize_content(text: str) -> bytes:
@@ -93,10 +94,7 @@ def canonicalize_manifest(manifest: dict[str, Any]) -> bytes:
     # Remove signature before canonicalizing
     to_sign = {k: v for k, v in manifest.items() if k != "signature"}
 
-    # JCS: sort keys, no whitespace, ensure_ascii=False for UTF-8
-    canonical = json.dumps(to_sign, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-
-    return canonical.encode("utf-8")
+    return rfc8785.dumps(to_sign)
 
 
 def compute_content_hash(content: str) -> str:

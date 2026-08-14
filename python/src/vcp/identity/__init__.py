@@ -22,11 +22,12 @@ from .registry import (
     create_authorization,
     infer_privacy_tier,
 )
-from .token import Token
+from .token import Token, canonicalize_token
 
 __all__ = [
     # Token
     "Token",
+    "canonicalize_token",
     # Namespace
     "NamespaceTier",
     "NamespaceConfig",

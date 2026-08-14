@@ -13,10 +13,10 @@ import type {
   TorchState,
   TrustLevel,
   StandingLevel,
-} from './relational';
+} from './relational.js';
 
 // Re-export the TorchState interface for convenience
-export type { TorchState } from './relational';
+export type { TorchState } from './relational.js';
 
 // === Torch Lineage ===
 

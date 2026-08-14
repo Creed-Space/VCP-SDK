@@ -1,0 +1,46 @@
+{
+  "schema": "vcp-repository-policy/1",
+  "repository": "Creed-Space/VCP-SDK",
+  "branch": "main",
+  "as_of": "2026-08-14",
+  "external_state_applied": false,
+  "observed": {
+    "branch_protection": "present-with-stale-required-contexts",
+    "rulesets": 0,
+    "code_scanning": "no-analysis-found",
+    "secret_scanning": "disabled"
+  },
+  "desired": {
+    "pull_request_required": true,
+    "approvals": 1,
+    "dismiss_stale_reviews": true,
+    "require_code_owner_review": true,
+    "require_last_push_approval": true,
+    "conversation_resolution": true,
+    "strict_status_checks": true,
+    "block_force_pushes": true,
+    "block_deletions": true,
+    "enforce_admins": true,
+    "required_checks": [
+      "Repository contracts and conformance",
+      "Python 3.12 on ubuntu-24.04",
+      "Rust stable on ubuntu-24.04",
+      "Rust WASM target",
+      "Installed artifact verification",
+      "WebMCP on Node 24",
+      "Dependency review",
+      "CodeQL (actions)",
+      "CodeQL (javascript-typescript)",
+      "CodeQL (python)",
+      "CodeQL (rust)"
+    ],
+    "dependency_graph": true,
+    "dependabot_alerts": true,
+    "dependabot_security_updates": true,
+    "secret_scanning": true,
+    "secret_scanning_push_protection": true,
+    "secret_scanning_validity_checks": true,
+    "code_scanning": true,
+    "default_workflow_permissions": "read"
+  }
+}

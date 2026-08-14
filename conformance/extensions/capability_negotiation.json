@@ -1,26 +1,46 @@
 {
+  "suite": "extensions/capability_negotiation",
+  "version": "1.0.0",
   "schema_version": "1.0.0",
   "vcp_version": "3.1.0",
   "description": "Conformance test vectors for VCP Hello/Ack capability negotiation",
   "test_cases": [
     {
       "id": "full-match",
-      "description": "Client and server support identical extensions — all become active",
+      "description": "Client and server support identical extensions \u2014 all become active",
       "input": {
         "client_hello": {
           "vcp_version": "3.1.0",
           "extensions": [
-            { "name": "personal_state", "version": "1.0.0" },
-            { "name": "relational_context", "version": "1.0.0" },
-            { "name": "consensus_voting", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            },
+            {
+              "name": "relational_context",
+              "version": "1.0.0"
+            },
+            {
+              "name": "consensus_voting",
+              "version": "1.0.0"
+            }
           ]
         },
         "server_capabilities": {
           "vcp_version": "3.1.0",
           "extensions": [
-            { "name": "personal_state", "version": "1.0.0" },
-            { "name": "relational_context", "version": "1.0.0" },
-            { "name": "consensus_voting", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            },
+            {
+              "name": "relational_context",
+              "version": "1.0.0"
+            },
+            {
+              "name": "consensus_voting",
+              "version": "1.0.0"
+            }
           ]
         }
       },
@@ -28,9 +48,18 @@
         "server_ack": {
           "vcp_version": "3.1.0",
           "active_extensions": [
-            { "name": "personal_state", "version": "1.0.0" },
-            { "name": "relational_context", "version": "1.0.0" },
-            { "name": "consensus_voting", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            },
+            {
+              "name": "relational_context",
+              "version": "1.0.0"
+            },
+            {
+              "name": "consensus_voting",
+              "version": "1.0.0"
+            }
           ],
           "rejected_extensions": []
         },
@@ -40,24 +69,48 @@
     },
     {
       "id": "partial-match",
-      "description": "Client requests 5 extensions, server supports 3 — 3 active, 2 rejected",
+      "description": "Client requests 5 extensions, server supports 3 \u2014 3 active, 2 rejected",
       "input": {
         "client_hello": {
           "vcp_version": "3.1.0",
           "extensions": [
-            { "name": "personal_state", "version": "1.0.0" },
-            { "name": "relational_context", "version": "1.0.0" },
-            { "name": "consensus_voting", "version": "1.0.0" },
-            { "name": "torch_handoff", "version": "1.0.0" },
-            { "name": "emotional_synthesis", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            },
+            {
+              "name": "relational_context",
+              "version": "1.0.0"
+            },
+            {
+              "name": "consensus_voting",
+              "version": "1.0.0"
+            },
+            {
+              "name": "torch_handoff",
+              "version": "1.0.0"
+            },
+            {
+              "name": "emotional_synthesis",
+              "version": "1.0.0"
+            }
           ]
         },
         "server_capabilities": {
           "vcp_version": "3.1.0",
           "extensions": [
-            { "name": "personal_state", "version": "1.0.0" },
-            { "name": "relational_context", "version": "1.0.0" },
-            { "name": "consensus_voting", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            },
+            {
+              "name": "relational_context",
+              "version": "1.0.0"
+            },
+            {
+              "name": "consensus_voting",
+              "version": "1.0.0"
+            }
           ]
         }
       },
@@ -65,13 +118,28 @@
         "server_ack": {
           "vcp_version": "3.1.0",
           "active_extensions": [
-            { "name": "personal_state", "version": "1.0.0" },
-            { "name": "relational_context", "version": "1.0.0" },
-            { "name": "consensus_voting", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            },
+            {
+              "name": "relational_context",
+              "version": "1.0.0"
+            },
+            {
+              "name": "consensus_voting",
+              "version": "1.0.0"
+            }
           ],
           "rejected_extensions": [
-            { "name": "torch_handoff", "reason": "not_supported" },
-            { "name": "emotional_synthesis", "reason": "not_supported" }
+            {
+              "name": "torch_handoff",
+              "reason": "not_supported"
+            },
+            {
+              "name": "emotional_synthesis",
+              "reason": "not_supported"
+            }
           ]
         },
         "active_count": 3,
@@ -80,18 +148,24 @@
     },
     {
       "id": "version-mismatch",
-      "description": "Client requests VCP 3.2.0, server supports 3.1.0 — negotiate to minimum",
+      "description": "Client requests VCP 3.2.0, server supports 3.1.0 \u2014 negotiate to minimum",
       "input": {
         "client_hello": {
           "vcp_version": "3.2.0",
           "extensions": [
-            { "name": "personal_state", "version": "1.1.0" }
+            {
+              "name": "personal_state",
+              "version": "1.1.0"
+            }
           ]
         },
         "server_capabilities": {
           "vcp_version": "3.1.0",
           "extensions": [
-            { "name": "personal_state", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            }
           ]
         }
       },
@@ -99,7 +173,10 @@
         "server_ack": {
           "vcp_version": "3.1.0",
           "active_extensions": [
-            { "name": "personal_state", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            }
           ],
           "rejected_extensions": []
         },
@@ -109,7 +186,7 @@
     },
     {
       "id": "empty-extensions",
-      "description": "No extensions requested — baseline VCP only",
+      "description": "No extensions requested \u2014 baseline VCP only",
       "input": {
         "client_hello": {
           "vcp_version": "3.1.0",
@@ -118,8 +195,14 @@
         "server_capabilities": {
           "vcp_version": "3.1.0",
           "extensions": [
-            { "name": "personal_state", "version": "1.0.0" },
-            { "name": "relational_context", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            },
+            {
+              "name": "relational_context",
+              "version": "1.0.0"
+            }
           ]
         }
       },
@@ -136,18 +219,24 @@
     },
     {
       "id": "unknown-extension",
-      "description": "Client requests an unknown extension — rejected gracefully",
+      "description": "Client requests an unknown extension \u2014 rejected gracefully",
       "input": {
         "client_hello": {
           "vcp_version": "3.1.0",
           "extensions": [
-            { "name": "quantum_entanglement", "version": "99.0.0" }
+            {
+              "name": "quantum_entanglement",
+              "version": "99.0.0"
+            }
           ]
         },
         "server_capabilities": {
           "vcp_version": "3.1.0",
           "extensions": [
-            { "name": "personal_state", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            }
           ]
         }
       },
@@ -156,7 +245,10 @@
           "vcp_version": "3.1.0",
           "active_extensions": [],
           "rejected_extensions": [
-            { "name": "quantum_entanglement", "reason": "not_supported" }
+            {
+              "name": "quantum_entanglement",
+              "reason": "not_supported"
+            }
           ]
         },
         "active_count": 0,
@@ -166,21 +258,36 @@
     },
     {
       "id": "server-extra-extensions",
-      "description": "Server supports more extensions than client requests — only requested ones activated",
+      "description": "Server supports more extensions than client requests \u2014 only requested ones activated",
       "input": {
         "client_hello": {
           "vcp_version": "3.1.0",
           "extensions": [
-            { "name": "personal_state", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            }
           ]
         },
         "server_capabilities": {
           "vcp_version": "3.1.0",
           "extensions": [
-            { "name": "personal_state", "version": "1.0.0" },
-            { "name": "relational_context", "version": "1.0.0" },
-            { "name": "consensus_voting", "version": "1.0.0" },
-            { "name": "torch_handoff", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            },
+            {
+              "name": "relational_context",
+              "version": "1.0.0"
+            },
+            {
+              "name": "consensus_voting",
+              "version": "1.0.0"
+            },
+            {
+              "name": "torch_handoff",
+              "version": "1.0.0"
+            }
           ]
         }
       },
@@ -188,7 +295,10 @@
         "server_ack": {
           "vcp_version": "3.1.0",
           "active_extensions": [
-            { "name": "personal_state", "version": "1.0.0" }
+            {
+              "name": "personal_state",
+              "version": "1.0.0"
+            }
           ],
           "rejected_extensions": []
         },

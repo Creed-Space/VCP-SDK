@@ -1,186 +1,108 @@
-# VCP Conformance Test Suite
+# VCP conformance corpus
 
-Language-agnostic test fixtures for validating any Value-Context Protocol (VCP) implementation.
+This directory contains authored, language-neutral fixtures and checked runners
+for the Value-Context Protocol source candidate. The corpus currently contains
+27 JSON fixtures and 294 cases. Presence in the corpus is not a pass.
+[`coverage-manifest.json`](coverage-manifest.json) is the machine-readable
+authority for every vector's source, applicability, runner, fixture hash, and
+Python, Rust, and WebMCP status.
 
-## What is Conformance?
+The status vocabulary is deliberately strict:
 
-A VCP implementation is **conformant** if it passes all test vectors at the claimed conformance level. Each test vector specifies an input, a procedure, and an expected output. If your implementation produces the expected output for every vector, it is conformant.
+| Status | Meaning |
+|:---|:---|
+| `checked` | The named runner executed the vector against that implementation. |
+| `unsupported` | The implementation does not claim the profile. This is not a pass. |
+| `not_applicable` | The vector is documentation-only or outside that implementation surface. |
 
-## Directory Structure
+A local `checked` result establishes behavior only for the exact source
+fingerprint in its report. It does not establish independent implementation,
+certification, registry publication, deployed behavior, or third-party
+attestation.
 
-```
-conformance/
-  identity/           VCP/I - Identity layer
-    token_parsing.json
-    token_canonicalization.json
-  transport/          VCP/T - Transport layer
-    content_canonicalization.json
-    content_hashing.json
-    manifest_canonicalization.json
-    signature_verification.json
-    bundle_verification.json
-  semantics/          VCP/S - Semantics layer
-    csm1_parsing.json
-    csm1_encoding.json
-    persona_resolution.json
-    composition.json
-  adaptation/         VCP/A - Adaptation layer
-    context_encoding.json
-    state_machine.json
-    messaging.json
-  interop/            Cross-implementation
-    cross_impl_roundtrip.json
-    complete_bundle.json
-```
+## Coverage map
 
-## Conformance Levels
+| Directory | Coverage | Checked runner |
+|:---|:---|:---|
+| `identity/` | Token parsing, canonicalization, hierarchy, and patterns | `identity_parity.py` |
+| `transport/` | Content, hashes, JCS manifests, signatures, bundles, temporal and content policy | `transport_parity.py` |
+| `semantics/` | CSM-1, personas, and layered composition | `csm1_parity.py`, `persona_parity.py`, `composition_parity.py` |
+| `adaptation/` | Context encoding, lifecycle, and messaging | `context_parity.py`, `state_machine_conformance.py`, `messaging_conformance.py` |
+| `interop/` | Complete signed bundles and cross-implementation roundtrips | `interop_parity.py` |
+| `security/` | Revocation responses and fail-closed scope decisions | `security_parity.py` |
+| `extensions/` | Negotiation, consensus, personal, competence, relational, torch, and drafts | Profile-specific runners |
+| `runners/` | Executable checks and aggregate reporting | `run_all.py` |
 
-| Level | Layers | Suites Required | Description |
-|-------|--------|-----------------|-------------|
-| **Minimal** | Identity + Transport | `identity/*`, `transport/*` | Can parse tokens, canonicalize content, verify hashes and signatures |
-| **Standard** | + Semantics | + `semantics/*` | Can parse CSM-1 codes, resolve personas, compose constitutions |
-| **Full** | + Adaptation + Interop | + `adaptation/*`, `interop/*` | Full protocol support including context encoding, state machine, and cross-implementation roundtrips |
+Welfare and stateless MCP fixtures are draft profiles without claimed SDK
+implementations. They remain visibly `unsupported`, rather than being counted
+as passes. The WebMCP package has one separate checked surface: its packed npm
+artifact is imported and exercised against the experimental
+`document.modelContext` lifecycle.
 
-## Fixture Format
+## Run the complete gate
 
-Every JSON fixture follows this schema:
-
-```json
-{
-  "suite": "layer/test_name",
-  "version": "1.0.0",
-  "description": "Human-readable description",
-  "vectors": [
-    {
-      "id": "unique-id",
-      "description": "What this vector tests",
-      "input": "...",
-      "expected": {
-        "valid": true,
-        "field": "expected_value"
-      }
-    }
-  ]
-}
-```
-
-## How to Validate Your Implementation
-
-### Pseudocode
-
-```python
-import json
-
-def run_conformance(suite_path, implementation):
-    with open(suite_path) as f:
-        suite = json.load(f)
-
-    results = []
-    for vector in suite["vectors"]:
-        try:
-            actual = implementation.execute(vector)
-            passed = matches_expected(actual, vector["expected"])
-            results.append({"id": vector["id"], "passed": passed})
-        except Exception as e:
-            results.append({"id": vector["id"], "passed": False, "error": str(e)})
-
-    return results
-
-def matches_expected(actual, expected):
-    """Compare actual output to expected values.
-    Only check fields present in expected; ignore extra fields in actual."""
-    for key, value in expected.items():
-        if key == "note":
-            continue  # Notes are informational, not assertions
-        if actual.get(key) != value:
-            return False
-    return True
-```
-
-### Test Vector Types
-
-1. **Direct vectors**: Have `input` and `expected` fields. Parse/process the input and compare to expected.
-2. **Procedural vectors**: Have a `procedure` field describing steps to execute (e.g., signature tests that require keypair generation).
-3. **Comparison vectors**: Have `input_a` and `input_b` fields with `hashes_equal` or similar comparison expectations.
-
-### Running the Suite
+From the repository root, using the locked development environment:
 
 ```bash
-# Example: run all identity tests
-for f in conformance/identity/*.json; do
-  your_test_runner --fixture "$f"
-done
-
-# Example: run minimal conformance
-for f in conformance/identity/*.json conformance/transport/*.json; do
-  your_test_runner --fixture "$f"
-done
-
-# Example: run full conformance
-for f in conformance/**/*.json; do
-  your_test_runner --fixture "$f"
-done
+python3 scripts/generate_conformance_coverage.py --check
+python3 conformance/runners/run_all.py
 ```
 
-## Key Implementation Notes
+Or run:
 
-### Persona Set: NZGAMDC
-
-The canonical persona set is **NZGAMDC** (6+1):
-
-| Code | Name | Focus |
-|------|------|-------|
-| N | Nanny | Child safety |
-| Z | Sentinel | Security |
-| G | Godparent | Ethics |
-| A | Ambassador | Professional |
-| M | Muse | Creative |
-| D | Mediator | Fair resolution |
-| C | Custom | User-defined |
-
-Old personas R (Anchor) and H (Hot-Rod) are **no longer valid** persona codes. They remain valid as scope codes.
-
-### Content Canonicalization Rules
-
-1. Normalize line endings: CRLF and CR to LF
-2. Strip trailing whitespace from each line
-3. Remove trailing empty lines
-4. Ensure trailing newline
-5. Reject forbidden characters: control chars (except LF, TAB), bidi overrides, zero-width spaces, BOM
-
-### Manifest Canonicalization Rules (JCS / RFC 8785)
-
-1. Remove the `signature` field
-2. Sort object keys alphabetically at all nesting levels
-3. No whitespace between tokens
-4. Arrays preserve element order
-
-### Ed25519 Signature Test Keys
-
-Procedural signature tests use deterministic keypairs generated from seed bytes:
-```
-seed = [N; 32]  // 32 bytes, all set to value N
-keypair = Ed25519::from_seed(seed)
+```bash
+make conformance PYTHON=/path/to/locked/python
 ```
 
-## Reporting Issues
+The aggregate runner builds the Rust CLI once, executes all checked profiles,
+runs the packed WebMCP artifact smoke test, and writes:
 
-If you believe a test vector is incorrect:
+```text
+conformance/reports/latest.json
+conformance/reports/badge.json
+conformance/reports/profiles/*.json
+```
 
-1. Check the source specification referenced in the fixture description
-2. Verify your implementation against the reference implementations in `python/` and `rust/`
-3. File an issue at the vcp-sdk repository with:
-   - The fixture file and vector ID
-   - Your implementation's output
-   - The expected output from the fixture
-   - Your reasoning for why the fixture may be wrong
+The aggregate report is validated by
+`schemas/vcp-conformance-aggregate-report.schema.json`. It binds results to the
+Git HEAD, dirty-tree flag, complete source fingerprint, fixture hashes,
+coverage-manifest hash, tool versions, commands, bounded output, and per-profile
+structured reports. Generated reports are ignored local evidence. CI uploads
+them as candidate-bound artifacts. The badge is generated from the aggregate
+result and cannot overstate it.
 
-## Version History
+To intentionally refresh vector coverage after adding or changing a fixture:
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-15 | Initial conformance suite: identity, transport, semantics, adaptation, interop |
+```bash
+make conformance-coverage PYTHON=/path/to/locked/python
+python3 scripts/generate_conformance_coverage.py --check
+```
 
-## License
+## Fixture format
 
-These test fixtures are released under CC BY 4.0. Implementations may use them freely for conformance testing.
+Most protocol files use a `vectors` array. Extensions use `test_cases`. Every
+case has a stable ID, description, input or procedure, and expected outcome.
+Fixture-level `suite` and `version` fields identify the profile. The generated
+coverage manifest supplies the canonical Spec pointer and execution status.
+
+Situational context dimensions are pipe-separated. U+2016 DOUBLE VERTICAL LINE
+separates situational and personal bands. Personal fields use the canonical
+names `cognitive_state`, `emotional_tone`, `energy_level`,
+`perceived_urgency`, and `body_signals`, each with `value` and `intensity`.
+
+## Maintaining the corpus
+
+1. Link semantic changes to a canonical Spec section or accepted VEP.
+2. Update positive, negative, boundary, malformed, and roundtrip cases together.
+3. Preserve stable IDs and retain versioned historical fixtures when semantics differ.
+4. Update every affected implementation and checked runner.
+5. Regenerate `coverage-manifest.json`; its `--check` mode must pass.
+6. Run the aggregate gate and all language, package, schema-sync, and repository checks.
+7. Record immutable Spec and SDK commits before making any conformance claim.
+8. Run installed-artifact verification for release candidates; source checks do not prove shipped artifacts.
+
+## Licence
+
+The fixture corpus is distributed under CC BY 4.0. SDK package code remains
+under the root MIT licence. The final file-class licensing matrix remains an
+authorized legal-review gate and must be confirmed before publication.

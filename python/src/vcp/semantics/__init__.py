@@ -4,7 +4,13 @@ VCP/S (Semantics Layer) - Constitutional semantics and composition.
 Provides CSM1 grammar parsing, persona definitions, and composition engine.
 """
 
-from .composer import Composer, CompositionConflictError, CompositionResult, Conflict
+from .composer import (
+    Composer,
+    CompositionConflictError,
+    CompositionResult,
+    Conflict,
+    compose_layered,
+)
 from .csm1 import CSM1Code, Persona, Scope
 
 __all__ = [
@@ -15,4 +21,5 @@ __all__ = [
     "CompositionResult",
     "Conflict",
     "CompositionConflictError",
+    "compose_layered",
 ]

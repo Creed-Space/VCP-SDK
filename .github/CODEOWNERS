@@ -1,0 +1,9 @@
+# Review ownership. Branch protection remains a repository administrator gate.
+* @NellInc
+/python/ @NellInc
+/rust/ @NellInc
+/webmcp/ @NellInc
+/schemas/ @NellInc
+/conformance/ @NellInc
+/SECURITY.md @NellInc
+/.github/workflows/ @NellInc

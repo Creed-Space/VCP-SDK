@@ -5,9 +5,9 @@
 //! and Creed Space.
 //!
 //! Algorithm:
-//! 1. Build pairwise defeat matrix d[i][j] = ballots preferring i over j
-//! 2. Compute strongest paths p[i][j] via modified Floyd-Warshall
-//! 3. Rank candidates: i beats j iff p[i][j] > p[j][i]
+//! 1. Build pairwise defeat matrix `d[i][j]` from ballots preferring i over j.
+//! 2. Compute strongest paths `p[i][j]` via modified Floyd-Warshall.
+//! 3. Rank candidates: i beats j when `p[i][j] > p[j][i]`.
 
 use std::collections::{HashMap, HashSet};
 
@@ -78,9 +78,9 @@ pub struct ElectionResult {
     pub winner: Option<String>,
     /// Ordered ranking of all candidates.
     pub ranking: Vec<SchulzeRanking>,
-    /// d[i][j] = number of ballots preferring candidate i over candidate j.
+    /// `d[i][j]` is the number of ballots preferring candidate i over candidate j.
     pub pairwise_matrix: Vec<Vec<i32>>,
-    /// p[i][j] = strength of strongest path from i to j.
+    /// `p[i][j]` is the strength of the strongest path from i to j.
     pub strongest_paths: Vec<Vec<i32>>,
     /// Candidates in index order matching the matrices.
     pub candidates: Vec<String>,
@@ -178,7 +178,7 @@ impl SchulzeElection {
     }
 
     /// Build pairwise defeat matrix.
-    /// d[i][j] = number of ballots that prefer candidate i over candidate j.
+    /// `d[i][j]` is the number of ballots that prefer candidate i over candidate j.
     fn build_pairwise_matrix(&self) -> Vec<Vec<i32>> {
         let n = self.candidates.len();
         let mut d = vec![vec![0i32; n]; n];
@@ -225,9 +225,9 @@ impl SchulzeElection {
 
     /// Compute strongest paths via modified Floyd-Warshall.
     ///
-    /// p[i][j] = strength of the strongest path from i to j.
+    /// `p[i][j]` is the strength of the strongest path from i to j.
     /// Path strength = minimum edge weight along the path.
-    /// Only considers edges where d[i][j] > d[j][i] (net victories).
+    /// Only considers edges where `d[i][j] > d[j][i]` (net victories).
     #[allow(clippy::needless_range_loop)]
     fn compute_strongest_paths(&self, d: &[Vec<i32>]) -> Vec<Vec<i32>> {
         let n = self.candidates.len();
@@ -358,7 +358,7 @@ mod tests {
     use super::*;
 
     fn cands(names: &[&str]) -> Vec<String> {
-        names.iter().map(|s| s.to_string()).collect()
+        names.iter().map(ToString::to_string).collect()
     }
 
     #[test]

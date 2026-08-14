@@ -2,7 +2,47 @@
 
 import pytest
 
-from vcp.identity import Token
+from vcp.identity import Token, canonicalize_token
+
+
+class TestTokenCanonicalization:
+    """Canonicalization is deterministic before strict token parsing."""
+
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            (" Family..Safe.Guide ", "family.safe.guide"),
+            ("ＦＡＭＩＬＹ.safe.guide", "family.safe.guide"),
+            ("family.safe.guide@001.02.0003:sec", "family.safe.guide@1.2.3:SEC"),
+            (
+                " family . safe . guide @ ^02.03.004 : elem ",
+                "family.safe.guide@^2.3.4:ELEM",
+            ),
+            ("family.safe.guide@1.2.3-BETA:sec", "family.safe.guide@1.2.3-beta:SEC"),
+            ("family.safe.guide@latest", "family.safe.guide@latest"),
+        ],
+    )
+    def test_canonicalizes_token(self, raw: str, expected: str) -> None:
+        assert canonicalize_token(raw) == expected
+        assert Token.canonicalize(raw) == expected
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "",
+            "   ",
+            "invalid",
+            "family.safe.guide@1.2",
+            "family.safe.guide:bad-name",
+        ],
+    )
+    def test_rejects_invalid_canonical_candidate(self, raw: str) -> None:
+        with pytest.raises(ValueError):
+            canonicalize_token(raw)
+
+    def test_rejects_non_string_input(self) -> None:
+        with pytest.raises(ValueError, match="cannot be empty"):
+            canonicalize_token(None)  # type: ignore[arg-type]
 
 
 class TestTokenParsing:
@@ -40,6 +80,20 @@ class TestTokenParsing:
         assert t.version == "1.2.0"
         assert t.namespace == "ELEM"
         assert t.full == "family.safe.guide@1.2.0:ELEM"
+
+    @pytest.mark.parametrize(
+        ("selector", "constraint"),
+        [
+            ("^2.0.0", "compatible"),
+            ("~2.1.0-beta.1", "approximate"),
+            ("latest", "alias"),
+            ("canary", "alias"),
+        ],
+    )
+    def test_schema_version_selectors(self, selector, constraint):
+        token = Token.parse(f"family.safe.guide@{selector}")
+        assert token.version == selector
+        assert token.version_constraint == constraint
 
     def test_hyphenated_segments(self):
         """Parse token with hyphenated segments."""
@@ -94,6 +148,16 @@ class TestTokenValidation:
         """Uppercase in domain should fail."""
         with pytest.raises(ValueError, match="Invalid VCP/I token"):
             Token.parse("Family.safe.guide")
+
+    def test_namespace_length_is_bounded(self):
+        with pytest.raises(ValueError, match="Invalid VCP/I token"):
+            Token.parse(f"family.safe.guide:{'A' * 33}")
+
+    def test_direct_construction_validates_segments_and_version(self):
+        with pytest.raises(ValueError, match="Invalid segment"):
+            Token(segments=("family", "UPPER", "guide"))
+        with pytest.raises(ValueError, match="Invalid version"):
+            Token(segments=("family", "safe", "guide"), version="1.2")
 
 
 class TestTokenImmutability:

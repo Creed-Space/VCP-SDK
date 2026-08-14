@@ -1,79 +1,41 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-| Version | Supported |
+| Surface | Status |
 |:---|:---|
-| Python SDK 1.0.x | Yes |
-| Rust SDK 0.1.x | Yes |
-| WebMCP SDK 0.1.x | Yes |
-| VCP Specification 1.1 | Yes |
-| VCP Specification 1.0 | Security fixes only |
+| Python, Rust, and WebMCP SDK 4.2.x | Supported candidate |
+| VCP v3.1 protocol baseline | Supported |
+| v3.2 amendments and VEP-0004 | Pre-release review candidate |
+| Older SDK and protocol versions | Considered case by case |
 
-## Reporting a Vulnerability
+Package support and protocol support are separate. Reports should name the
+affected package, protocol surface, and commit hash.
 
-The VCP-SDK team takes security seriously. If you discover a security vulnerability, we appreciate your responsible disclosure.
+## Reporting a vulnerability
 
-### How to Report
+Do not open a public issue for a suspected vulnerability. Use
+[GitHub private vulnerability reporting](https://github.com/Creed-Space/VCP-SDK/security/advisories/new)
+or email [security@creedspace.com](mailto:security@creedspace.com).
 
-**Do NOT open a public GitHub issue for security vulnerabilities.**
+Include the affected component, impact, reproduction steps, a minimal proof of
+concept where safe, and any proposed mitigation. Do not send live credentials,
+personal data, or third-party secrets.
 
-Instead, please report vulnerabilities via one of the following channels:
+## Scope
 
-1. **Email:** Send a detailed report to **[security@creedspace.com](mailto:security@creedspace.com)**
-2. **GitHub Security Advisories:** Use the [private vulnerability reporting](https://github.com/Creed-Space/VCP-SDK/security/advisories/new) feature
+Signature and hash verification, trust anchors, attestation, revocation,
+temporal validity, replay defenses, privacy boundaries, hook enforcement,
+namespace resolution, parsers, schema bypasses, package supply chain, denial of
+service, and unsafe examples are in scope.
 
-### What to Include
+Normative protocol defects should also be coordinated with VCP-Spec. Editorial
+or governance proposals without a security impact belong in the public VEP
+process.
 
-Please include the following in your report:
+## Security posture
 
-- **Description** of the vulnerability and its potential impact
-- **Affected component** (Python SDK, Rust SDK, WebMCP SDK, specification, schemas)
-- **Steps to reproduce** the issue
-- **Proof of concept** code or payload, if applicable
-- **Suggested fix**, if you have one
-
-### Response Timeline
-
-| Stage | Timeframe |
-|:---|:---|
-| Acknowledgment | Within 48 hours |
-| Initial assessment | Within 5 business days |
-| Fix development | Depends on severity |
-| Public disclosure | After fix is released, coordinated with reporter |
-
-### Severity Classification
-
-| Severity | Description | Example |
-|:---|:---|:---|
-| **Critical** | Remote code execution, signature bypass | Forged bundle accepted as valid |
-| **High** | Authentication bypass, data exfiltration | Private context fields leaked |
-| **Medium** | Denial of service, information disclosure | Malformed token causes crash |
-| **Low** | Minor issues with limited impact | Verbose error messages |
-
-### Scope
-
-The following are in scope for security reports:
-
-- Cryptographic signature verification (bundle signing, hash integrity)
-- Identity token parsing and validation
-- Privacy level enforcement (public/consent/private boundaries)
-- Transport layer security
-- Schema validation bypass
-- Dependency vulnerabilities in SDK packages
-
-### Recognition
-
-We are grateful to security researchers who help keep VCP safe. With your permission, we will acknowledge your contribution in our release notes and security advisories.
-
-## Security Design
-
-VCP's security model is built on:
-
-- **Ed25519 signatures** for bundle authentication
-- **SHA-256 content hashes** for integrity verification
-- **Three-tier privacy architecture** (public/consent/private)
-- **Verify-then-Inject pattern** — verification at the orchestration layer, not the LLM
-- **Deterministic hooks** — constitutional rules enforced outside probabilistic model behavior
-
-For details, see Section 13 (Security Considerations) of the [VCP Specification](./specs/VCP_SPECIFICATION_v1.0_COMPLETE.md).
+The orchestrators verify before injection and default to fail-closed decisions.
+Applications still own network policy, durable replay storage, trusted-key
+provisioning, audit retention, and operational monitoring. A package build or
+passing test suite is machine evidence, not a production security approval.

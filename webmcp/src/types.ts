@@ -1,8 +1,9 @@
 /**
- * @creed-space/vcp-sdk — Type Definitions
+ * @creed-space/vcp-sdk WebMCP type definitions.
  *
- * Framework-agnostic types for registering VCP tools with the
- * navigator.modelContext API (Chrome 145+, W3C Draft 2026-02-10).
+ * These structural types follow the current `document.modelContext` imperative
+ * API. WebMCP remains experimental, so the separately checked upstream contract
+ * is the authority for browser compatibility claims.
  *
  * @packageDocumentation
  */
@@ -15,24 +16,32 @@ export interface WebMCPToolResult {
 	content: Array<{ type: 'text'; text: string }>;
 }
 
+export interface WebMCPToolAnnotations {
+	readOnlyHint?: boolean;
+	untrustedContentHint?: boolean;
+}
+
 export interface WebMCPToolDefinition {
 	name: string;
+	title?: string;
 	description: string;
-	inputSchema: Record<string, unknown>;
-	annotations?: {
-		readOnlyHint?: boolean;
-		idempotentHint?: boolean;
-		destructiveHint?: boolean;
-	};
+	inputSchema?: Record<string, unknown>;
+	annotations?: WebMCPToolAnnotations;
 	execute: (args: Record<string, unknown>) => Promise<WebMCPToolResult>;
 }
 
-export interface WebMCPToolRegistration {
-	unregister(): void;
+export interface WebMCPRegisterToolOptions {
+	/** Aborting the signal unregisters the tool. */
+	signal?: AbortSignal;
+	/** Secure origins allowed to discover and execute this tool. */
+	exposedTo?: string[];
 }
 
 export interface WebMCPModelContext {
-	registerTool(definition: WebMCPToolDefinition): WebMCPToolRegistration;
+	registerTool(
+		definition: WebMCPToolDefinition,
+		options?: WebMCPRegisterToolOptions
+	): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -101,6 +110,14 @@ export interface VCPWebMCPConfig {
 	 * Useful for agent activity indicators.
 	 */
 	onToolCall?: (toolName: string) => void;
+
+	/** Receives a sanitized registration failure without forcing console output. */
+	onRegistrationError?: (failure: WebMCPRegistrationFailure) => void;
+}
+
+export interface WebMCPRegistrationFailure {
+	name: string;
+	reason: string;
 }
 
 /**
@@ -109,7 +126,11 @@ export interface VCPWebMCPConfig {
 export interface VCPWebMCPResult {
 	/** Names of successfully registered tools. */
 	registered: string[];
-	/** Cleanup function — calls unregister() on all registrations. */
+	/** Tools rejected by the browser, in attempted registration order. */
+	failed: WebMCPRegistrationFailure[];
+	/** API location selected by feature detection. */
+	api: 'document' | 'navigator' | 'unavailable';
+	/** Idempotent cleanup function that aborts every accepted registration. */
 	cleanup: () => void;
 }
 
@@ -192,7 +213,12 @@ export interface CompetenceProfile {
 // ---------------------------------------------------------------------------
 
 declare global {
+	interface Document {
+		readonly modelContext?: WebMCPModelContext;
+	}
+
 	interface Navigator {
+		/** @deprecated Chrome 150 and later use `document.modelContext`. */
 		modelContext?: WebMCPModelContext;
 	}
 }

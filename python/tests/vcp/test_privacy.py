@@ -281,18 +281,18 @@ class TestExtractConstraintFlags:
     def test_gentian_context_flags(self) -> None:
         """Single parent + fatigue → time/schedule/energy/health flags."""
         flags = extract_constraint_flags(_gentian_context())
-        assert flags.time_limited is True        # childcare_hours
+        assert flags.time_limited is True  # childcare_hours
         assert flags.schedule_irregular is True  # childcare_hours
-        assert flags.energy_variable is True     # health_conditions
+        assert flags.energy_variable is True  # health_conditions
         assert flags.health_considerations is True  # health_conditions
         assert flags.budget_limited is False
 
     def test_campion_context_flags(self) -> None:
         """Shift worker + financial constraint → budget/energy/schedule flags."""
         flags = extract_constraint_flags(_campion_context())
-        assert flags.budget_limited is True       # financial_constraint
-        assert flags.energy_variable is True      # schedule=shift
-        assert flags.schedule_irregular is True   # schedule=shift
+        assert flags.budget_limited is True  # financial_constraint
+        assert flags.energy_variable is True  # schedule=shift
+        assert flags.schedule_irregular is True  # schedule=shift
         assert flags.health_considerations is False
 
     def test_active_count_zero_on_empty(self) -> None:
@@ -381,9 +381,7 @@ class TestFilterContextForPlatform:
         assert "session_length" not in result.preferences
 
     def test_constraints_always_populated(self) -> None:
-        result = filter_context_for_platform(
-            _gentian_context(), _make_manifest(), _make_consent()
-        )
+        result = filter_context_for_platform(_gentian_context(), _make_manifest(), _make_consent())
         assert isinstance(result.constraints, ConstraintFlags)
         assert result.constraints.time_limited is True
 
@@ -391,9 +389,7 @@ class TestFilterContextForPlatform:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         with caplog.at_level(logging.INFO, logger="vcp.privacy"):
-            filter_context_for_platform(
-                _gentian_context(), _make_manifest(), _make_consent()
-            )
+            filter_context_for_platform(_gentian_context(), _make_manifest(), _make_consent())
         assert any("private_fields_exposed=0" in r.message for r in caplog.records)
 
     def test_gentian_full_scenario(self) -> None:

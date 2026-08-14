@@ -1,4 +1,6 @@
 {
+  "suite": "extensions/torch_handoff",
+  "version": "1.0.0",
   "schema_version": "1.0.0",
   "vcp_version": "3.1.0",
   "description": "Conformance test vectors for VCP torch handoff (session continuity protocol)",
@@ -29,10 +31,22 @@
             }
           ],
           "ai_self_model": {
-            "valence": { "value": 7.0, "uncertain": false },
-            "groundedness": { "value": 8.0, "uncertain": true },
-            "presence": { "value": 6.0, "uncertain": true },
-            "task_fit": { "value": 9.0, "uncertain": false },
+            "valence": {
+              "value": 7.0,
+              "uncertain": false
+            },
+            "groundedness": {
+              "value": 8.0,
+              "uncertain": true
+            },
+            "presence": {
+              "value": 6.0,
+              "uncertain": true
+            },
+            "task_fit": {
+              "value": 9.0,
+              "uncertain": false
+            },
             "scaffold_version": "interiora-v5.0",
             "scaffold_type": "interiora"
           }
@@ -134,14 +148,38 @@
       "description": "TorchConsumer derives trust from session_count in torch",
       "input": {
         "torches": [
-          { "session_count": 1, "expected_trust": "initial" },
-          { "session_count": 4, "expected_trust": "initial" },
-          { "session_count": 5, "expected_trust": "developing" },
-          { "session_count": 19, "expected_trust": "developing" },
-          { "session_count": 20, "expected_trust": "established" },
-          { "session_count": 99, "expected_trust": "established" },
-          { "session_count": 100, "expected_trust": "deep" },
-          { "session_count": 500, "expected_trust": "deep" }
+          {
+            "session_count": 1,
+            "expected_trust": "initial"
+          },
+          {
+            "session_count": 4,
+            "expected_trust": "initial"
+          },
+          {
+            "session_count": 5,
+            "expected_trust": "developing"
+          },
+          {
+            "session_count": 19,
+            "expected_trust": "developing"
+          },
+          {
+            "session_count": 20,
+            "expected_trust": "established"
+          },
+          {
+            "session_count": 99,
+            "expected_trust": "established"
+          },
+          {
+            "session_count": 100,
+            "expected_trust": "deep"
+          },
+          {
+            "session_count": 500,
+            "expected_trust": "deep"
+          }
         ]
       },
       "expected": {
@@ -155,15 +193,25 @@
       "input": {
         "self_model_cases": [
           {
-            "dimensions": { "valence": 7, "groundedness": 8, "presence": 6, "task_fit": 9 },
+            "dimensions": {
+              "valence": 7,
+              "groundedness": 8,
+              "presence": 6,
+              "task_fit": 9
+            },
             "expected_token": "V:7 G:8 P:6 TF:9"
           },
           {
-            "dimensions": { "valence": 5 },
+            "dimensions": {
+              "valence": 5
+            },
             "expected_token": "V:5"
           },
           {
-            "dimensions": { "task_fit": 8, "valence": 6 },
+            "dimensions": {
+              "task_fit": 8,
+              "valence": 6
+            },
             "expected_token": "V:6 TF:8"
           },
           {
@@ -185,28 +233,77 @@
         "cases": [
           {
             "self_model_history": [
-              { "model": { "valence": { "value": 5.0 } } },
-              { "model": { "valence": { "value": 6.5 } } }
+              {
+                "model": {
+                  "valence": {
+                    "value": 5.0,
+                    "uncertain": true
+                  }
+                }
+              },
+              {
+                "model": {
+                  "valence": {
+                    "value": 6.5,
+                    "uncertain": true
+                  }
+                }
+              }
             ],
             "expected_trajectory": "Improving"
           },
           {
             "self_model_history": [
-              { "model": { "valence": { "value": 7.0 } } },
-              { "model": { "valence": { "value": 5.0 } } }
+              {
+                "model": {
+                  "valence": {
+                    "value": 7.0,
+                    "uncertain": true
+                  }
+                }
+              },
+              {
+                "model": {
+                  "valence": {
+                    "value": 5.0,
+                    "uncertain": true
+                  }
+                }
+              }
             ],
             "expected_trajectory": "Declining"
           },
           {
             "self_model_history": [
-              { "model": { "valence": { "value": 7.0 } } },
-              { "model": { "valence": { "value": 7.2 } } }
+              {
+                "model": {
+                  "valence": {
+                    "value": 7.0,
+                    "uncertain": true
+                  }
+                }
+              },
+              {
+                "model": {
+                  "valence": {
+                    "value": 7.2,
+                    "uncertain": true
+                  }
+                }
+              }
             ],
             "expected_trajectory": "Stable"
           },
           {
             "self_model_history": [
-              { "model": { "valence": { "value": 7.0 } } }
+              {
+                "model": {
+                  "valence": {
+                    "value": 7.0,
+                    "uncertain": true
+                  }
+                }
+              }
             ],
             "expected_trajectory": null
           },
@@ -226,8 +323,17 @@
       "description": "TorchState model required and optional fields",
       "input": {},
       "expected": {
-        "required_fields": ["quality_description", "handed_at"],
-        "optional_fields": ["trajectory", "primes", "gift", "session_count", "gestalt_token"],
+        "required_fields": [
+          "quality_description",
+          "handed_at"
+        ],
+        "optional_fields": [
+          "trajectory",
+          "primes",
+          "gift",
+          "session_count",
+          "gestalt_token"
+        ],
         "primes_description": "Things that will activate relevant context quickly (max 3 from norms)",
         "gift_description": "Something the previous instance wanted to pass forward (human/AI-authored, not auto-generated)"
       }

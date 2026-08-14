@@ -15,6 +15,7 @@ from .context import (
 )
 from .redis_state import HybridStateTracker, RedisStateTracker, get_sync_redis_client
 from .state import StateTracker, Transition, TransitionSeverity
+from .state_machine import OperationalState, StateMachineConfig, VCPStateMachine
 
 __all__ = [
     "VCPContext",
@@ -26,6 +27,9 @@ __all__ = [
     "StateTracker",
     "Transition",
     "TransitionSeverity",
+    "OperationalState",
+    "StateMachineConfig",
+    "VCPStateMachine",
     # Redis persistence
     "RedisStateTracker",
     "HybridStateTracker",

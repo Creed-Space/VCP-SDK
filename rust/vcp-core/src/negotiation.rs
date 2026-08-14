@@ -6,6 +6,102 @@
 use std::collections::HashMap;
 use std::hash::BuildHasher;
 
+/// A named extension and its exact semantic version.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct VersionedExtension {
+    pub name: String,
+    pub version: String,
+}
+
+/// A rejected extension and the stable reason code.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct RejectedExtension {
+    pub name: String,
+    pub reason: String,
+}
+
+/// Deterministic result for the versioned conformance profile.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct VersionedNegotiationResult {
+    pub vcp_version: String,
+    pub active_extensions: Vec<VersionedExtension>,
+    pub rejected_extensions: Vec<RejectedExtension>,
+}
+
+fn semantic_version(value: &str) -> Result<(u64, u64, u64), String> {
+    let parts: Vec<&str> = value.split('.').collect();
+    if parts.is_empty() || parts.len() > 3 || parts.iter().any(|part| part.is_empty()) {
+        return Err(format!("invalid semantic version: {value}"));
+    }
+    let mut numbers = [0_u64; 3];
+    for (index, part) in parts.iter().enumerate() {
+        numbers[index] = part
+            .parse::<u64>()
+            .map_err(|_| format!("invalid semantic version: {value}"))?;
+    }
+    Ok((numbers[0], numbers[1], numbers[2]))
+}
+
+/// Negotiate exact protocol and extension versions for the conformance profile.
+///
+/// The lowest compatible version is selected. Extensions with different major
+/// versions are rejected rather than silently activated.
+///
+/// # Errors
+///
+/// Returns an error when either protocol version or any compared extension
+/// version is not a one-to-three-component numeric semantic version.
+pub fn negotiate_versioned(
+    client_version: &str,
+    client_extensions: &[VersionedExtension],
+    server_version: &str,
+    server_extensions: &[VersionedExtension],
+) -> Result<VersionedNegotiationResult, String> {
+    let client_protocol = semantic_version(client_version)?;
+    let server_protocol = semantic_version(server_version)?;
+    let vcp_version = if client_protocol <= server_protocol {
+        client_version.to_string()
+    } else {
+        server_version.to_string()
+    };
+    let mut active_extensions = Vec::new();
+    let mut rejected_extensions = Vec::new();
+    for requested in client_extensions {
+        let Some(supported) = server_extensions
+            .iter()
+            .find(|item| item.name == requested.name)
+        else {
+            rejected_extensions.push(RejectedExtension {
+                name: requested.name.clone(),
+                reason: "not_supported".to_string(),
+            });
+            continue;
+        };
+        let client_extension = semantic_version(&requested.version)?;
+        let server_extension = semantic_version(&supported.version)?;
+        if client_extension.0 != server_extension.0 {
+            rejected_extensions.push(RejectedExtension {
+                name: requested.name.clone(),
+                reason: "incompatible_version".to_string(),
+            });
+            continue;
+        }
+        active_extensions.push(VersionedExtension {
+            name: requested.name.clone(),
+            version: if client_extension <= server_extension {
+                requested.version.clone()
+            } else {
+                supported.version.clone()
+            },
+        });
+    }
+    Ok(VersionedNegotiationResult {
+        vcp_version,
+        active_extensions,
+        rejected_extensions,
+    })
+}
+
 /// Client's initial hello message in VCP negotiation.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct VcpHello {

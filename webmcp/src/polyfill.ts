@@ -1,8 +1,9 @@
 /**
  * @creed-space/vcp-sdk — MCP-B Polyfill Loader
  *
- * Conditionally loads the @mcp-b/global polyfill to populate
- * navigator.modelContext in browsers without native WebMCP support.
+ * Conditionally invokes a caller-supplied polyfill loader to populate the
+ * current `document.modelContext` contract. The legacy Navigator location is
+ * accepted only for compatibility with earlier preview implementations.
  *
  * Gated behind ?webmcp=polyfill query param. No-op otherwise.
  *
@@ -12,6 +13,28 @@
 
 let polyfillLoaded = false;
 let loading: Promise<boolean> | null = null;
+
+export interface PolyfillLoadOptions {
+	/** Bundled or pinned application-owned loader. No network URL is accepted. */
+	loader?: () => Promise<void>;
+	/** Optional application-owned error sink. The SDK does not log by default. */
+	onError?: (error: Error) => void;
+}
+
+/** Return true only when a usable current or legacy WebMCP API is present. */
+export function hasWebMCPModelContext(): boolean {
+	const current =
+		typeof document !== 'undefined' &&
+		document.modelContext &&
+		typeof document.modelContext.registerTool === 'function';
+	if (current) return true;
+
+	return Boolean(
+		typeof navigator !== 'undefined' &&
+			navigator.modelContext &&
+			typeof navigator.modelContext.registerTool === 'function'
+	);
+}
 
 /**
  * Check if the polyfill was requested via URL query param.
@@ -25,37 +48,38 @@ export function isPolyfillRequested(): boolean {
 /**
  * Load the MCP-B polyfill if requested via ?webmcp=polyfill.
  *
- * Loads the polyfill script from CDN, which populates navigator.modelContext.
- * Returns true if the polyfill was loaded, false if not needed or failed.
+ * The SDK never injects a remote script. Applications that opt in must supply
+ * a bundled or otherwise application-controlled loader. Returns true if that
+ * loader completed, false if loading was not requested, unavailable, or failed.
  *
  * Safe to call multiple times — only loads once.
  */
-export async function loadPolyfillIfRequested(): Promise<boolean> {
+export async function loadPolyfillIfRequested(
+	options: PolyfillLoadOptions = {}
+): Promise<boolean> {
 	if (typeof window === 'undefined') return false;
 	if (polyfillLoaded) return true;
 	if (!isPolyfillRequested()) return false;
+	if (hasWebMCPModelContext()) return true;
+	if (!options.loader) return false;
+	const loader = options.loader;
 
 	if (loading) return loading;
 
 	loading = (async () => {
 		try {
-			// Load the @mcp-b/global polyfill via dynamic script injection.
-			// This populates navigator.modelContext with the reference implementation.
-			await new Promise<void>((resolve, reject) => {
-				const script = document.createElement('script');
-				script.type = 'module';
-				script.src = 'https://cdn.jsdelivr.net/npm/@mcp-b/global/dist/index.js';
-				script.async = true;
-				script.onload = () => resolve();
-				script.onerror = () => reject(new Error('Failed to load MCP-B polyfill'));
-				document.head.appendChild(script);
-			});
-
+			await loader();
+			if (!hasWebMCPModelContext()) {
+				throw new Error(
+					'Application-owned loader completed without exposing document.modelContext'
+				);
+			}
 			polyfillLoaded = true;
-			console.log('[@creed-space/vcp-sdk] MCP-B polyfill loaded via ?webmcp=polyfill');
 			return true;
 		} catch (err) {
-			console.warn('[@creed-space/vcp-sdk] MCP-B polyfill failed to load:', err);
+			const error = err instanceof Error ? err : new Error(String(err));
+			options.onError?.(error);
+			loading = null;
 			return false;
 		}
 	})();

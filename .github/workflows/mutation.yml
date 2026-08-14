@@ -1,0 +1,80 @@
+name: Selective mutation testing
+
+on:
+  schedule:
+    - cron: "31 5 * * 4"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdk-mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mutate:
+    name: Mutation (${{ matrix.target }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: privacy
+            selector: "vcp.privacy*"
+            minimum-score: "75"
+          - target: revocation
+            selector: "vcp.revocation*"
+            minimum-score: "63"
+          - target: identity-token
+            selector: "vcp.identity.token*"
+            minimum-score: "82"
+          - target: canonicalization
+            selector: "vcp.canonicalize*"
+            minimum-score: "82"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: python/requirements-dev.lock
+
+      - name: Install exact locked environment
+        run: |
+          python -m pip install 'pip==26.2.1'
+          python -m pip install --require-hashes --requirement python/requirements-dev.lock
+          python -m pip install --no-deps --editable python
+
+      - name: Run bounded critical mutation lane
+        working-directory: python
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          path = Path("mutants")
+          if path.exists():
+              shutil.rmtree(path)
+          PY
+          mkdir -p ../mutation-results
+          mutmut run "${{ matrix.selector }}"
+          mutmut results --all true > "../mutation-results/${{ matrix.target }}-all.txt"
+          python ../scripts/check_mutation_results.py \
+            mutants \
+            --pattern "${{ matrix.selector }}" \
+            --minimum-score "${{ matrix.minimum-score }}" \
+            --output "../mutation-results/${{ matrix.target }}-summary.json"
+
+      - name: Upload survivors and killed-mutant evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mutation-${{ matrix.target }}-${{ github.sha }}
+          path: mutation-results/
+          if-no-files-found: error
+          retention-days: 30

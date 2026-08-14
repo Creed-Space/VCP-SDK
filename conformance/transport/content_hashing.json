@@ -8,8 +8,8 @@
       "description": "Known hash for 'Hello, World!\\n'",
       "input": "Hello, World!\n",
       "expected": {
-        "hash": "sha256:d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
-        "note": "This is the SHA-256 of the canonical form. Since input is already canonical (single LF, no trailing whitespace), the hash is of the input bytes directly."
+        "hash": "sha256:c98c24b677eff44860afea6f493bbaec5bb1c4cbb209c6fc2bbb47f66ff2ad31",
+        "note": "SHA-256 of the canonical UTF-8 bytes, including the required single trailing LF."
       }
     },
     {

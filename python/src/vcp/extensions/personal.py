@@ -187,6 +187,8 @@ class DecayConfig:
     baseline: int = 1
     pinned: bool = False
     reset_on_engagement: bool = False
+    fresh_window_seconds: float = 60.0
+    stale_threshold: float = 0.3
 
 
 # Default decay configurations per personal dimension
@@ -260,3 +262,32 @@ def compute_decayed_intensity(
     )
 
     return max(config.baseline, math.floor(decayed_float))
+
+
+def compute_lifecycle_state(
+    declared_intensity: int,
+    declared_at: datetime,
+    config: DecayConfig,
+    now: datetime | None = None,
+) -> LifecycleState:
+    """Classify a signal using the same freshness and decay rules as Rust."""
+    if config.pinned:
+        return LifecycleState.ACTIVE
+    if now is None:
+        now = datetime.now(timezone.utc)
+    if declared_at.tzinfo is None:
+        declared_at = declared_at.replace(tzinfo=timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    elapsed = (now - declared_at).total_seconds()
+    if elapsed <= 0:
+        return LifecycleState.SET
+    if elapsed < config.fresh_window_seconds:
+        return LifecycleState.ACTIVE
+    effective = compute_decayed_intensity(declared_intensity, declared_at, config, now)
+    if effective <= config.baseline:
+        return LifecycleState.EXPIRED
+    stale_level = config.baseline + (declared_intensity - config.baseline) * config.stale_threshold
+    if effective <= stale_level:
+        return LifecycleState.STALE
+    return LifecycleState.DECAYING

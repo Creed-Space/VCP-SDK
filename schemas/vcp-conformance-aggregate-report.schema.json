@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.creed.space/vcp/conformance-aggregate-report-v1.schema.json",
+  "title": "VCP aggregate conformance report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "generated_at",
+    "candidate",
+    "environment",
+    "coverage_manifest",
+    "profiles",
+    "summary",
+    "attestation"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vcp-conformance-aggregate-report/1"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["git_head", "dirty", "source_sha256"],
+      "properties": {
+        "git_head": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "dirty": {
+          "type": "boolean"
+        },
+        "source_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": "string"
+        },
+        "python": {
+          "type": "string"
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "node": {
+          "type": "string"
+        }
+      },
+      "required": ["platform", "python", "rustc", "node"]
+    },
+    "coverage_manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "fixture_count", "vector_count"],
+      "properties": {
+        "path": {
+          "const": "conformance/coverage-manifest.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "fixture_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "vector_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "status",
+          "command",
+          "duration_seconds",
+          "output_sha256",
+          "output_tail",
+          "report"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": ["passed", "failed"]
+          },
+          "command": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "duration_seconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "output_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "output_tail": {
+            "type": "string"
+          },
+          "report": {
+            "type": ["object", "null"]
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profiles", "passed", "failed"],
+      "properties": {
+        "profiles": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "attestation": {
+      "const": "unsigned-local-result"
+    }
+  }
+}

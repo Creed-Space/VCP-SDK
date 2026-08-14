@@ -15,6 +15,7 @@ from vcp.adaptation import (
 # SituationalDimension
 # ────────────────────────────────────────────────────────────────────────────
 
+
 class TestSituationalDimension:
     """Test SituationalDimension enum."""
 
@@ -65,8 +66,7 @@ class TestSituationalDimension:
         assert SituationalDimension.from_name("time") == SituationalDimension.TIME
         assert SituationalDimension.from_name("TIME") == SituationalDimension.TIME
         assert (
-            SituationalDimension.from_name("system_context")
-            == SituationalDimension.SYSTEM_CONTEXT
+            SituationalDimension.from_name("system_context") == SituationalDimension.SYSTEM_CONTEXT
         )
         assert SituationalDimension.from_name("embodiment") == SituationalDimension.EMBODIMENT
 
@@ -89,6 +89,7 @@ class TestDimensionAlias:
 # ────────────────────────────────────────────────────────────────────────────
 # PersonalStateDimension
 # ────────────────────────────────────────────────────────────────────────────
+
 
 class TestPersonalDimension:
     """Test PersonalStateDimension enum (R-line)."""
@@ -140,6 +141,7 @@ class TestPersonalState:
 # VCPContext basic shape
 # ────────────────────────────────────────────────────────────────────────────
 
+
 class TestVCPContext:
     """Test VCPContext class."""
 
@@ -183,9 +185,7 @@ class TestVCPContext:
         assert ps == PersonalState("focused", 4)
 
     def test_has_personal(self):
-        ctx = VCPContext(
-            personal={PersonalStateDimension.EMOTIONAL_TONE: PersonalState("calm", 5)}
-        )
+        ctx = VCPContext(personal={PersonalStateDimension.EMOTIONAL_TONE: PersonalState("calm", 5)})
         assert ctx.has(PersonalStateDimension.EMOTIONAL_TONE)
         assert not ctx.has(PersonalStateDimension.ENERGY_LEVEL)
 
@@ -221,6 +221,7 @@ class TestVCPContext:
 # Wire format
 # ────────────────────────────────────────────────────────────────────────────
 
+
 class TestVCPContextEncoding:
     """Test VCPContext wire format encoding."""
 
@@ -251,9 +252,7 @@ class TestVCPContextEncoding:
         assert "‖🧠focused:4" in encoded
 
     def test_encode_personal_without_intensity(self):
-        ctx = VCPContext(
-            personal={PersonalStateDimension.EMOTIONAL_TONE: PersonalState("calm")}
-        )
+        ctx = VCPContext(personal={PersonalStateDimension.EMOTIONAL_TONE: PersonalState("calm")})
         # Situational empty → encoding begins with the ‖ separator.
         assert ctx.encode() == "\u2016💭calm"
 
@@ -320,6 +319,17 @@ class TestVCPContextEncoding:
         assert decoded.get(SituationalDimension.TIME) == ["🌅"]
         assert decoded.get(SituationalDimension.SPACE) == ["🏡"]
 
+    def test_roundtrip_preserves_multi_codepoint_company_values(self):
+        original = VCPContext(situational={SituationalDimension.COMPANY: ["👶", "👨‍👩‍👧"]})
+        assert VCPContext.decode(original.encode()) == original
+
+    def test_decode_accepts_bare_vs16_dimension_and_value_symbols(self):
+        proximity = VCPContext.decode("↔🤏")
+        assert proximity.get(SituationalDimension.PROXIMITY) == ["🤏"]
+
+        midday = VCPContext.decode("⏰☀")
+        assert midday.get(SituationalDimension.TIME) == ["☀️"]
+
     def test_roundtrip_full_18_dim(self):
         original = VCPContext(
             situational={
@@ -341,6 +351,7 @@ class TestVCPContextEncoding:
 # ────────────────────────────────────────────────────────────────────────────
 # JSON
 # ────────────────────────────────────────────────────────────────────────────
+
 
 class TestVCPContextJSON:
     """Test VCPContext JSON serialization."""
@@ -408,6 +419,7 @@ class TestVCPContextJSON:
 # ────────────────────────────────────────────────────────────────────────────
 # ContextEncoder
 # ────────────────────────────────────────────────────────────────────────────
+
 
 class TestContextEncoder:
     """Test ContextEncoder keyword-argument interface."""
@@ -515,6 +527,7 @@ class TestContextEncoder:
 # ────────────────────────────────────────────────────────────────────────────
 # Conformance classification
 # ────────────────────────────────────────────────────────────────────────────
+
 
 class TestConformanceLevel:
     def test_minimal(self):

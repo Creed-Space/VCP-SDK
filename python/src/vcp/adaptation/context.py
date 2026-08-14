@@ -63,6 +63,7 @@ INTENSITY_SEPARATOR = ":"
 # Situational dimensions (positions 1-13)
 # ────────────────────────────────────────────────────────────────────────────
 
+
 class SituationalDimension(Enum):
     """13 situational context dimensions for VCP/A encoding (VCP v3.2)."""
 
@@ -240,6 +241,7 @@ Dimension = SituationalDimension
 # Personal-state dimensions (R-line; v3.1+)
 # ────────────────────────────────────────────────────────────────────────────
 
+
 class PersonalStateDimension(Enum):
     """5 personal-state dimensions (VCP v3.1+ R-line).
 
@@ -326,9 +328,7 @@ class PersonalState:
 
     def __post_init__(self) -> None:
         if self.intensity is not None and not (1 <= self.intensity <= 5):
-            raise ValueError(
-                f"PersonalState intensity must be 1-5 or None, got {self.intensity}"
-            )
+            raise ValueError(f"PersonalState intensity must be 1-5 or None, got {self.intensity}")
 
     def encode(self) -> str:
         """Encode to wire segment (without dimension symbol)."""
@@ -353,6 +353,7 @@ class PersonalState:
 # ────────────────────────────────────────────────────────────────────────────
 # VCPContext
 # ────────────────────────────────────────────────────────────────────────────
+
 
 class VCPContext:
     """Encoded VCP/A context state (v3.2).
@@ -379,9 +380,7 @@ class VCPContext:
                 "VCPContext: pass either 'situational' or the deprecated "
                 "'dimensions' alias — not both."
             )
-        object.__setattr__(
-            self, "situational", dict(situational or dimensions or {})
-        )
+        object.__setattr__(self, "situational", dict(situational or dimensions or {}))
         object.__setattr__(self, "personal", dict(personal or {}))
 
     # Backwards-compat alias: older v3.0 code used `ctx.dimensions[Dimension.TIME]`
@@ -447,15 +446,15 @@ class VCPContext:
             if not part:
                 continue
             for dim in SituationalDimension:
-                if part.startswith(dim.symbol):
-                    raw = part[len(dim.symbol):]
+                raw = cls._after_dimension_symbol(part, dim)
+                if raw is not None:
                     if not raw:
                         break
                     if dim.is_free_form:
                         # RELATIONSHIP: raw string preserved intact
                         situational[dim] = [raw]
                     else:
-                        values = cls._extract_emojis(raw)
+                        values = cls._extract_known_values(raw, dim)
                         if values:
                             situational[dim] = values
                         else:
@@ -469,7 +468,7 @@ class VCPContext:
                 continue
             for pdim in PersonalStateDimension:
                 if part.startswith(pdim.symbol):
-                    raw = part[len(pdim.symbol):]
+                    raw = part[len(pdim.symbol) :]
                     if raw:
                         personal[pdim] = PersonalState.decode(raw)
                     break
@@ -477,28 +476,42 @@ class VCPContext:
         return cls(situational=situational, personal=personal)
 
     @staticmethod
-    def _extract_emojis(s: str) -> list[str]:
-        """Extract individual emojis from a string.
+    def _after_dimension_symbol(part: str, dim: SituationalDimension) -> str | None:
+        """Return content after a canonical or VS16-optional dimension symbol."""
+        symbols = (dim.symbol, dim.symbol.replace("\ufe0f", ""))
+        for symbol in sorted(set(symbols), key=len, reverse=True):
+            if part.startswith(symbol):
+                return part[len(symbol) :]
+        return None
 
-        Handles multi-codepoint sequences (ZWJ families, variation selectors).
-        """
-        import re
+    @staticmethod
+    def _extract_known_values(raw: str, dim: SituationalDimension) -> list[str]:
+        """Decode a finite vocabulary without splitting ZWJ emoji sequences."""
+        aliases: list[tuple[str, str]] = []
+        for canonical in dim.values:
+            aliases.append((canonical, canonical))
+            bare = canonical.replace("\ufe0f", "")
+            if bare != canonical:
+                aliases.append((bare, canonical))
+        aliases.sort(key=lambda item: len(item[0]), reverse=True)
 
-        emoji_pattern = re.compile(
-            r"[\U0001F300-\U0001F9FF]"  # Most emojis
-            r"|[\U0001F600-\U0001F64F]"  # Emoticons
-            r"|[\U0001F680-\U0001F6FF]"  # Transport
-            r"|[\U0001F1E0-\U0001F1FF]"  # Flags
-            r"|[\u2600-\u26FF]"  # Misc symbols
-            r"|[\u2700-\u27BF]"  # Dingbats
-            r"|[\u25A0-\u25FF]"  # Geometric shapes
-            r"|\u2B50"  # Star
-            r"|\u274C"  # Cross mark
-            r"|\u2139"  # Info
-            r"|\u25CB"  # Circle
-            r"|(?:[\U0001F468-\U0001F469][\u200D]?)+[\U0001F466-\U0001F469]?"
-        )
-        return emoji_pattern.findall(s)
+        values: list[str] = []
+        cursor = 0
+        while cursor < len(raw):
+            match = next(
+                (
+                    (alias, canonical)
+                    for alias, canonical in aliases
+                    if raw.startswith(alias, cursor)
+                ),
+                None,
+            )
+            if match is None:
+                return []
+            alias, canonical = match
+            values.append(canonical)
+            cursor += len(alias)
+        return values
 
     # ── JSON ───────────────────────────────────────────────────────────────
     def to_json(self) -> dict[str, Any]:
@@ -575,9 +588,7 @@ class VCPContext:
         """Get value for a personal-state dimension."""
         return self.personal.get(dimension)
 
-    def set(
-        self, dimension: SituationalDimension, values: list[str]
-    ) -> VCPContext:
+    def set(self, dimension: SituationalDimension, values: list[str]) -> VCPContext:
         """Return new context with situational dimension values set."""
         new_sit = dict(self.situational)
         new_sit[dimension] = list(values)
@@ -635,6 +646,7 @@ class VCPContext:
 # ────────────────────────────────────────────────────────────────────────────
 # ContextEncoder
 # ────────────────────────────────────────────────────────────────────────────
+
 
 class ContextEncoder:
     """Build VCP/A contexts from keyword inputs.

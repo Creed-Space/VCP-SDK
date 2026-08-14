@@ -1,0 +1,227 @@
+{
+  "$schema": "./review-ledger.schema.json",
+  "schema_version": "1.0.0",
+  "ledger_id": "vcp-coordinated-release-review-template",
+  "candidate": {
+    "repositories": [
+      {
+        "name": "VCP-Demo-Site",
+        "commit": null,
+        "working_tree_sha256": null
+      },
+      {
+        "name": "VCP-Spec",
+        "commit": null,
+        "working_tree_sha256": null
+      },
+      {
+        "name": "VCP-SDK",
+        "commit": null,
+        "working_tree_sha256": null
+      }
+    ],
+    "combined_candidate_sha256": null,
+    "source_manifest_sha256": null,
+    "protocol": {
+      "published_baseline": "3.1",
+      "amendment": "3.2",
+      "amendment_maturity": null
+    },
+    "versions": {
+      "python": "4.2.0",
+      "rust": "4.2.0",
+      "webmcp": "4.2.0",
+      "demo": "0.1.0"
+    },
+    "deployment": {
+      "environment": null,
+      "url": null,
+      "release_id": null,
+      "deployed_at": null
+    }
+  },
+  "reviews": [
+    {
+      "id": "X015",
+      "title": "Coordinated release candidate approval",
+      "category": "release",
+      "scope": ["VCP-Demo-Site", "VCP-Spec", "VCP-SDK"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "X016",
+      "title": "Trademark, patent, contribution, and licensing review",
+      "category": "legal",
+      "scope": ["VCP-Demo-Site", "VCP-Spec", "VCP-SDK"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "X017",
+      "title": "Independent protocol and cryptographic review",
+      "category": "independent_security",
+      "scope": ["VCP-Spec", "VCP-SDK"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "X018",
+      "title": "Production and registry smoke testing",
+      "category": "production",
+      "scope": ["VCP-Demo-Site", "VCP-SDK"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "D042",
+      "title": "Keyboard and assistive technology accessibility review",
+      "category": "accessibility",
+      "scope": ["VCP-Demo-Site"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "D043",
+      "title": "Deployed privacy language and analytics review",
+      "category": "privacy",
+      "scope": ["VCP-Demo-Site"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "S030",
+      "title": "Governance seats and ratification",
+      "category": "governance",
+      "scope": ["VCP-Spec"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "S031",
+      "title": "Canonical DOCX and PDF rendering selection",
+      "category": "editorial",
+      "scope": ["VCP-Spec"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "S032",
+      "title": "Version 3.2 amendment maturity decision",
+      "category": "governance",
+      "scope": ["VCP-Spec"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "S033",
+      "title": "Independent privacy, safety, and legal review",
+      "category": "independent_review",
+      "scope": ["VCP-Spec"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "K044",
+      "title": "Signed Python, Rust, and npm publication",
+      "category": "publication",
+      "scope": ["VCP-SDK"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "K045",
+      "title": "Independent signature, revocation, and scope enforcement review",
+      "category": "independent_security",
+      "scope": ["VCP-SDK"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    },
+    {
+      "id": "K046",
+      "title": "Semantic versioning decision for fail-closed changes",
+      "category": "semver",
+      "scope": ["VCP-SDK"],
+      "status": "pending",
+      "reviewer": null,
+      "reviewed_at": null,
+      "decision_summary": null,
+      "conditions": [],
+      "findings": [],
+      "evidence": [],
+      "attestation": null
+    }
+  ]
+}

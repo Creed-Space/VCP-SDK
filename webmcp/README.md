@@ -1,21 +1,41 @@
 # @creed-space/vcp-sdk
 
-Register VCP capabilities as discoverable tools for AI agents via the [WebMCP API](https://webmcp.org) (`navigator.modelContext`).
+Register VCP capabilities as discoverable tools through the experimental
+[WebMCP imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
+(`document.modelContext`).
 
-**Status**: 4.2.0 — Used in production on [VCP Demo](https://vcp-demo.onrender.com) and [Creed Space](https://creed.space).
+**Publication state:** source-only candidate, version 4.2.0. No npm release is
+currently claimed. Browser behavior remains experimental and must be checked
+against the compatibility table below.
 
 ## Quick Start
 
 ```typescript
+// From a local VCP-SDK source checkout after `npm --prefix webmcp run build`.
 import { registerVCPTools } from '@creed-space/vcp-sdk';
 
-const { registered, cleanup } = await registerVCPTools({
+const { registered, failed, api, cleanup } = await registerVCPTools({
   chatEndpoint: '/api/chat',
 });
 
 // registered = ['vcp_chat', 'vcp_list_personas']
-// cleanup() to unregister all tools
+// failed identifies any browser-rejected registrations.
+// cleanup() aborts all accepted registrations and is safe to call repeatedly.
 ```
+
+To consume the source-only candidate from another local project:
+
+```bash
+git clone https://github.com/Creed-Space/VCP-SDK.git
+cd VCP-SDK
+npm --prefix webmcp ci
+npm --prefix webmcp test
+npm --prefix webmcp run build
+npm install ./webmcp
+```
+
+Bind the checkout to an immutable commit recorded in the coordinated candidate
+manifest before using it as release evidence.
 
 ## Tools Registered
 
@@ -45,6 +65,7 @@ interface VCPWebMCPConfig {
   wasmParser?: (token: string) => unknown;
   transmissionSummary?: (ctx: Record<string, unknown>) => TransmissionSummary;
   onToolCall?: (toolName: string) => void;
+  onRegistrationError?: (failure: WebMCPRegistrationFailure) => void;
 }
 ```
 
@@ -62,20 +83,45 @@ Use this to show "Agent Active" indicators in your UI.
 
 ## MCP-B Polyfill
 
-For browsers without native WebMCP support, use the MCP-B polyfill:
+For browsers without native WebMCP support, provide an application-owned,
+bundled polyfill loader. The SDK deliberately does not inject remote scripts:
 
 ```typescript
 import { loadPolyfillIfRequested } from '@creed-space/vcp-sdk/polyfill';
 
-// Loads @mcp-b/global from CDN when ?webmcp=polyfill is in the URL
-await loadPolyfillIfRequested();
+// Your build owns and pins this dependency.
+await loadPolyfillIfRequested({
+  loader: async () => { await import('@mcp-b/global'); },
+  onError: (error) => reportPrivately(error),
+});
 ```
+
+The loader succeeds only when it exposes a usable `document.modelContext`
+contract or the isolated legacy Navigator contract. The SDK does not inject
+remote scripts and does not log loader errors by default.
 
 ## Browser Support
 
-- **Chrome 145+**: Native `navigator.modelContext` API
-- **Other browsers**: Use MCP-B polyfill (`?webmcp=polyfill`)
-- **SSR**: Safe to call — returns empty result immediately
+| Surface | Support statement |
+|---|---|
+| Generic JavaScript SDK | Modern browsers implementing ES2022 and required Web APIs |
+| Native WebMCP | Experimental Chrome preview or origin-trial surface; current API is `document.modelContext` |
+| Legacy preview | `navigator.modelContext` remains an isolated compatibility fallback |
+| Other browsers | No native claim; an application-owned bundled polyfill may be used behind explicit opt-in |
+| SSR | Safe; returns `{ api: 'unavailable', registered: [], failed: [] }` |
+
+Last reviewed: 2026-08-14. WebMCP remains under active development, so version
+numbers alone never establish browser support.
+
+### Upstream contract monitoring
+
+`upstream-contract.json` records the reviewed W3C Community Group source
+commit, byte digest, size ceiling, and API fragments on which this adapter
+depends. Run `python3 ../scripts/check_webmcp_upstream.py` from this directory
+to compare that record with the bounded upstream source. The weekly
+`WebMCP upstream contract` workflow retains JSON evidence and opens at most one
+review issue when the source or required fragments change. It never updates
+types, compatibility copy, package metadata, or release claims automatically.
 
 ## License
 

@@ -21,11 +21,50 @@ Examples:
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing_extensions import Self
+
+
+def canonicalize_token(raw: str) -> str:
+    """Return the validated canonical identity-token representation.
+
+    Canonicalization is intentionally separate from strict parsing. It applies
+    Unicode NFKC, removes whitespace, lowercases the token path and version,
+    collapses dot runs, normalizes numeric semantic-version components, and
+    preserves the required uppercase namespace suffix.
+    """
+    if not isinstance(raw, str) or not raw:
+        raise ValueError("Token cannot be empty")
+    normalized = unicodedata.normalize("NFKC", raw).strip()
+    normalized = re.sub(r"\s+", "", normalized)
+
+    namespace: str | None = None
+    if ":" in normalized:
+        normalized, namespace = normalized.rsplit(":", 1)
+        namespace = namespace.upper()
+
+    version: str | None = None
+    if "@" in normalized:
+        normalized, version = normalized.rsplit("@", 1)
+        version = version.lower()
+        prefix = version[:1] if version.startswith(("^", "~")) else ""
+        numeric = version[1:] if prefix else version
+        match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(-[a-z0-9.-]+)?", numeric)
+        if match:
+            major, minor, patch, prerelease = match.groups()
+            version = f"{prefix}{int(major)}.{int(minor)}.{int(patch)}{prerelease or ''}"
+
+    path = re.sub(r"\.+", ".", normalized.lower()).strip(".")
+    candidate = path
+    if version is not None:
+        candidate += f"@{version}"
+    if namespace is not None:
+        candidate += f":{namespace}"
+    return Token.parse(candidate).full
 
 
 @dataclass(frozen=True)
@@ -43,14 +82,18 @@ class Token:
 
     # Segment pattern: starts with letter, then letters/digits/hyphens
     SEGMENT_PATTERN = re.compile(r"^[a-z][a-z0-9-]*$")
-    VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
-    NAMESPACE_PATTERN = re.compile(r"^[A-Z][A-Z0-9]*$")
+    VERSION_PATTERN = re.compile(
+        r"^(?:[\^~]?[0-9]{1,5}\.[0-9]{1,5}\.[0-9]{1,5}"
+        r"(?:-[a-zA-Z0-9.-]+)?|latest|canary)$"
+    )
+    NAMESPACE_PATTERN = re.compile(r"^[A-Z][A-Z0-9]{0,31}$")
 
     # Full token pattern for parsing
     TOKEN_PATTERN = re.compile(
         r"^(?P<path>[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*){2,})"
-        r"(?:@(?P<version>\d+\.\d+\.\d+))?"
-        r"(?::(?P<namespace>[A-Z][A-Z0-9]*))?$"
+        r"(?:@(?P<version>(?:[\^~]?[0-9]{1,5}\.[0-9]{1,5}\.[0-9]{1,5}"
+        r"(?:-[a-zA-Z0-9.-]+)?|latest|canary)))?"
+        r"(?::(?P<namespace>[A-Z][A-Z0-9]{0,31}))?$"
     )
 
     MAX_LENGTH = 256
@@ -62,14 +105,25 @@ class Token:
         """Validate token after construction."""
         if len(self.segments) < self.MIN_SEGMENTS:
             raise ValueError(
-                f"Token requires at least {self.MIN_SEGMENTS} "
-                f"segments, got {len(self.segments)}"
+                f"Token requires at least {self.MIN_SEGMENTS} segments, got {len(self.segments)}"
             )
         if len(self.segments) > self.MAX_SEGMENTS:
             raise ValueError(
-                f"Token exceeds maximum {self.MAX_SEGMENTS} "
-                f"segments, got {len(self.segments)}"
+                f"Token exceeds maximum {self.MAX_SEGMENTS} segments, got {len(self.segments)}"
             )
+        for index, segment in enumerate(self.segments, start=1):
+            if not self.SEGMENT_PATTERN.fullmatch(segment):
+                raise ValueError(f"Invalid segment {index}: {segment}")
+            if len(segment) > self.MAX_SEGMENT:
+                raise ValueError(
+                    f"Segment {index} exceeds max length {self.MAX_SEGMENT}: {segment}"
+                )
+        if self.version is not None and not self.VERSION_PATTERN.fullmatch(self.version):
+            raise ValueError(f"Invalid version format: {self.version}")
+        if self.namespace is not None and not self.NAMESPACE_PATTERN.fullmatch(self.namespace):
+            raise ValueError(f"Invalid namespace format: {self.namespace}")
+        if len(self.full) > self.MAX_LENGTH:
+            raise ValueError(f"Token exceeds max length {self.MAX_LENGTH}: {len(self.full)}")
 
     @classmethod
     def parse(cls, raw: str) -> Self:
@@ -88,10 +142,7 @@ class Token:
             raise ValueError("Token cannot be empty")
 
         if len(raw) > cls.MAX_LENGTH:
-            raise ValueError(
-                f"Token exceeds max length {cls.MAX_LENGTH}: "
-                f"{len(raw)}"
-            )
+            raise ValueError(f"Token exceeds max length {cls.MAX_LENGTH}: {len(raw)}")
 
         match = cls.TOKEN_PATTERN.match(raw)
         if not match:
@@ -104,23 +155,24 @@ class Token:
         # Validate segment count
         if len(segments) < cls.MIN_SEGMENTS:
             raise ValueError(
-                f"Token requires at least {cls.MIN_SEGMENTS} "
-                f"segments, got {len(segments)}"
+                f"Token requires at least {cls.MIN_SEGMENTS} segments, got {len(segments)}"
             )
 
         # Validate individual segment lengths
         for i, seg in enumerate(segments):
             if len(seg) > cls.MAX_SEGMENT:
-                raise ValueError(
-                    f"Segment {i + 1} exceeds max length "
-                    f"{cls.MAX_SEGMENT}: {seg}"
-                )
+                raise ValueError(f"Segment {i + 1} exceeds max length {cls.MAX_SEGMENT}: {seg}")
 
         return cls(
             segments=segments,
             version=groups.get("version"),
             namespace=groups.get("namespace"),
         )
+
+    @classmethod
+    def canonicalize(cls, raw: str) -> str:
+        """Canonicalize and validate a potentially non-canonical token."""
+        return canonicalize_token(raw)
 
     # Backward compatibility properties
 
@@ -213,6 +265,19 @@ class Token:
             version=self.version,
             namespace=namespace,
         )
+
+    @property
+    def version_constraint(self) -> str:
+        """Classify the token's version selector using schema terminology."""
+        if self.version is None:
+            return "none"
+        if self.version in {"latest", "canary"}:
+            return "alias"
+        if self.version.startswith("^"):
+            return "compatible"
+        if self.version.startswith("~"):
+            return "approximate"
+        return "exact"
 
     def parent(self) -> Token | None:
         """Return parent token (one segment shorter).

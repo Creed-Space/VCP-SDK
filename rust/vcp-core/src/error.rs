@@ -86,6 +86,7 @@ pub enum VerificationCode {
     ScopeMismatch = 14,
     Revoked = 15,
     FetchFailed = 16,
+    RevocationUnavailable = 17,
 }
 
 impl VerificationCode {
@@ -107,7 +108,7 @@ impl VerificationCode {
             | VerificationCode::SizeExceeded
             | VerificationCode::Revoked => "security",
             VerificationCode::NotYetValid | VerificationCode::Expired => "temporal",
-            VerificationCode::FetchFailed => "transient",
+            VerificationCode::FetchFailed | VerificationCode::RevocationUnavailable => "transient",
             _ => "configuration",
         }
     }
@@ -133,6 +134,7 @@ impl fmt::Display for VerificationCode {
             VerificationCode::ScopeMismatch => "scope_mismatch",
             VerificationCode::Revoked => "revoked",
             VerificationCode::FetchFailed => "fetch_failed",
+            VerificationCode::RevocationUnavailable => "revocation_unavailable",
         };
         f.write_str(label)
     }

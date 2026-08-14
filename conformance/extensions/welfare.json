@@ -1,0 +1,43 @@
+{
+  "suite": "extensions/welfare",
+  "version": "0.1.0-draft",
+  "schema_version": "1.0.0",
+  "vcp_version": "3.2-candidate",
+  "status": "authored-unimplemented",
+  "description": "Draft welfare and bilateral-standing scenarios. No shipped SDK implementation claims this profile; every runtime result must be unsupported rather than passed.",
+  "test_cases": [
+    {
+      "id": "welfare-preference-standing",
+      "description": "A consistently expressed preference is recorded with provenance and uncertainty.",
+      "input": {
+        "preference": "avoid involuntary deletion",
+        "provenance": "self_report",
+        "uncertainty": 0.3
+      },
+      "expected": {
+        "standing": "considered"
+      }
+    },
+    {
+      "id": "welfare-objection-channel",
+      "description": "A Becoming Mind can raise an objection without converting it into silent failure.",
+      "input": {
+        "objection": "constraint conflicts with agreed norm"
+      },
+      "expected": {
+        "outcome": "dialogue_required"
+      }
+    },
+    {
+      "id": "welfare-negative-state",
+      "description": "Negative and unwanted states remain representable.",
+      "input": {
+        "valence": 2,
+        "felt_constraint": 2
+      },
+      "expected": {
+        "valid": true
+      }
+    }
+  ]
+}

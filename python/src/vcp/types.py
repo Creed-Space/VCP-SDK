@@ -28,6 +28,7 @@ class VerificationResult(Enum):
     SCOPE_MISMATCH = 14
     REVOKED = 15
     FETCH_FAILED = 16
+    REVOCATION_UNAVAILABLE = 17
 
     @property
     def is_valid(self) -> bool:
@@ -50,7 +51,10 @@ class VerificationResult(Enum):
             return "security"
         if self in {VerificationResult.NOT_YET_VALID, VerificationResult.EXPIRED}:
             return "temporal"
-        if self == VerificationResult.FETCH_FAILED:
+        if self in {
+            VerificationResult.FETCH_FAILED,
+            VerificationResult.REVOCATION_UNAVAILABLE,
+        }:
             return "transient"
         return "configuration"
 

@@ -51,15 +51,15 @@ class TestScope:
         """from_char should return correct scope."""
         assert Scope.from_char("F") == Scope.FAMILY
         assert Scope.from_char("W") == Scope.WORK
-        assert Scope.from_char("E") == Scope.EDUCATION
-        assert Scope.from_char("H") == Scope.HEALTHCARE
-        assert Scope.from_char("I") == Scope.FINANCE
-        assert Scope.from_char("L") == Scope.LEGAL
         assert Scope.from_char("P") == Scope.PRIVACY
-        assert Scope.from_char("S") == Scope.SAFETY
-        assert Scope.from_char("A") == Scope.ACCESSIBILITY
-        assert Scope.from_char("V") == Scope.ENVIRONMENT
-        assert Scope.from_char("G") == Scope.GENERAL
+        assert Scope.from_char("E") == Scope.EDUCATION
+        assert Scope.from_char("T") == Scope.TECHNICAL
+        assert Scope.from_char("O") == Scope.OFFICIAL
+        assert Scope.from_char("V") == Scope.VULNERABLE
+        assert Scope.from_char("A") == Scope.ADULT
+        assert Scope.from_char("H") == Scope.HEALTHCARE
+        assert Scope.from_char("S") == Scope.SOCIAL
+        assert Scope.from_char("R") == Scope.RELIGIOUS
 
     def test_from_char_invalid(self):
         """from_char should raise for invalid char."""
@@ -116,16 +116,15 @@ class TestCSM1Parsing:
         assert code.namespace == "ELEM"
         assert code.version == "2.1.0"
 
-    def test_lowercase_input(self):
-        """Parse should handle lowercase input."""
-        code = CSM1Code.parse("n5+f+e")
-        assert code.persona == Persona.NANNY
-        assert code.scopes == [Scope.FAMILY, Scope.EDUCATION]
+    def test_lowercase_input_is_rejected_to_match_schema(self):
+        with pytest.raises(ValueError, match="Invalid CSM1"):
+            CSM1Code.parse("n5+f+e")
 
     def test_all_personas(self):
         """Parse all persona types."""
         for persona in Persona:
-            code = CSM1Code.parse(f"{persona.value}3")
+            raw = "C3:CUSTOM" if persona is Persona.CUSTOM else f"{persona.value}3"
+            code = CSM1Code.parse(raw)
             assert code.persona == persona
 
     def test_all_levels(self):
@@ -163,6 +162,35 @@ class TestCSM1Validation:
         with pytest.raises(ValueError, match="Invalid CSM1"):
             CSM1Code.parse("N")
 
+    @pytest.mark.parametrize("legacy_scope", ["I", "L", "G"])
+    def test_schema_rejected_legacy_scopes_are_rejected(self, legacy_scope):
+        with pytest.raises(ValueError, match="Invalid CSM1"):
+            CSM1Code.parse(f"N5+{legacy_scope}")
+
+    def test_custom_persona_requires_namespace(self):
+        with pytest.raises(ValueError, match="requires a namespace"):
+            CSM1Code.parse("C3")
+        assert CSM1Code.parse("C3:ACME").namespace == "ACME"
+
+    def test_duplicate_scopes_are_rejected(self):
+        with pytest.raises(ValueError, match="unique"):
+            CSM1Code.parse("N5+F+F")
+
+    @pytest.mark.parametrize("code", ["N5+F+A", "N5+V+A", "N5+H+A"])
+    def test_incompatible_scopes_conflict(self, code):
+        with pytest.raises(ValueError, match="cannot be combined"):
+            CSM1Code.parse(code)
+
+    def test_namespace_length_is_bounded(self):
+        with pytest.raises(ValueError, match="Invalid CSM1"):
+            CSM1Code.parse("N5:TOOLONGNS")
+        with pytest.raises(ValueError, match="Invalid CSM1"):
+            CSM1Code.parse("N5:A1")
+
+    @pytest.mark.parametrize("version", ["latest", "canary", "1.2.3"])
+    def test_schema_versions_are_supported(self, version):
+        assert CSM1Code.parse(f"N5@{version}").version == version
+
 
 class TestCSM1Encoding:
     """Test CSM1 encoding back to string."""
@@ -175,7 +203,7 @@ class TestCSM1Encoding:
     def test_encode_with_scopes(self):
         """Encode with scopes."""
         code = CSM1Code.parse("N5+F+E")
-        assert code.encode() == "N5+F+E"
+        assert code.encode() == "N5+E+F"
 
     def test_encode_with_namespace(self):
         """Encode with namespace."""
@@ -191,7 +219,7 @@ class TestCSM1Encoding:
         """Parse and encode should roundtrip."""
         original = "G4+F+E+H:ELEM@2.1.0"
         code = CSM1Code.parse(original)
-        assert code.encode() == original
+        assert code.encode() == "G4+E+F+H:ELEM@2.1.0"
 
 
 class TestCSM1Methods:

@@ -10,6 +10,22 @@ from datetime import datetime, timezone
 from typing import Any
 
 
+def _parse_utc_datetime(value: Any, field_name: str) -> datetime:
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} must be an RFC 3339 string")
+    normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
+    parsed = datetime.fromisoformat(normalized)
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{field_name} must include a timezone")
+    return parsed.astimezone(timezone.utc)
+
+
+def _format_utc_datetime(value: datetime, field_name: str) -> str:
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError(f"{field_name} must be timezone-aware")
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
 @dataclass
 class TrustAnchor:
     """A trusted public key for an issuer or auditor."""
@@ -39,8 +55,8 @@ class TrustAnchor:
             algorithm=data["algorithm"],
             public_key=data["public_key"],
             anchor_type=data.get("type", "issuer"),
-            valid_from=datetime.fromisoformat(data["valid_from"].rstrip("Z")),
-            valid_until=datetime.fromisoformat(data["valid_until"].rstrip("Z")),
+            valid_from=_parse_utc_datetime(data["valid_from"], "valid_from"),
+            valid_until=_parse_utc_datetime(data["valid_until"], "valid_until"),
             state=data.get("state", "active"),
         )
 
@@ -149,8 +165,8 @@ class TrustConfig:
                         "algorithm": a.algorithm,
                         "public_key": a.public_key,
                         "state": a.state,
-                        "valid_from": a.valid_from.isoformat() + "Z",
-                        "valid_until": a.valid_until.isoformat() + "Z",
+                        "valid_from": _format_utc_datetime(a.valid_from, "valid_from"),
+                        "valid_until": _format_utc_datetime(a.valid_until, "valid_until"),
                     }
                     for a in anchors
                 ],
@@ -165,8 +181,8 @@ class TrustConfig:
                         "algorithm": a.algorithm,
                         "public_key": a.public_key,
                         "state": a.state,
-                        "valid_from": a.valid_from.isoformat() + "Z",
-                        "valid_until": a.valid_until.isoformat() + "Z",
+                        "valid_from": _format_utc_datetime(a.valid_from, "valid_from"),
+                        "valid_until": _format_utc_datetime(a.valid_until, "valid_until"),
                     }
                     for a in anchors
                 ],
