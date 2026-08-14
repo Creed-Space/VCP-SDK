@@ -38,17 +38,24 @@
 //! ```
 
 use std::collections::{HashMap, HashSet, VecDeque};
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::io::Read;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::net::{SocketAddr, ToSocketAddrs};
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
 use regex::Regex;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use reqwest::header::{ACCEPT, CONTENT_ENCODING, CONTENT_LENGTH, CONTENT_TYPE};
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use reqwest::redirect::Policy;
-use reqwest::{StatusCode, Url};
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use reqwest::StatusCode;
 use serde::Deserialize;
 use serde_json::Value;
+use url::Url;
 
 use crate::error::{VcpError, VcpResult};
 
@@ -354,9 +361,14 @@ pub trait RevocationTransport: Send + Sync {
 }
 
 /// HTTPS transport with DNS pinning and bounded response processing.
+///
+/// On `wasm32-unknown-unknown`, live blocking HTTP is unavailable. The
+/// transport validates the URI and then fails closed. Browser hosts can inject
+/// a custom transport or preload CRLs into [`RevocationChecker`].
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ReqwestRevocationTransport;
 
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 impl RevocationTransport for ReqwestRevocationTransport {
     fn get_json(&self, uri: &str, timeout: Duration) -> VcpResult<Value> {
         validate_uri(uri)?;
@@ -391,6 +403,23 @@ impl RevocationTransport for ReqwestRevocationTransport {
     }
 }
 
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+impl RevocationTransport for ReqwestRevocationTransport {
+    fn get_json(&self, uri: &str, timeout: Duration) -> VcpResult<Value> {
+        validate_uri(uri)?;
+        if timeout.is_zero() {
+            return Err(VcpError::RevocationError(
+                "revocation timeout must be positive".to_string(),
+            ));
+        }
+        Err(VcpError::RevocationError(
+            "live revocation transport is unavailable on wasm32-unknown-unknown; inject a host transport or preload a CRL"
+                .to_string(),
+        ))
+    }
+}
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn build_revocation_client(
     host: &str,
     addresses: &[SocketAddr],
@@ -424,6 +453,7 @@ fn build_revocation_client(
         })
 }
 
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn parse_json_response(mut response: reqwest::blocking::Response) -> VcpResult<Value> {
     if response.status() != StatusCode::OK {
         return Err(VcpError::RevocationError(format!(
@@ -491,6 +521,7 @@ fn parse_json_response(mut response: reqwest::blocking::Response) -> VcpResult<V
     Ok(value)
 }
 
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn validate_response_headers(headers: &reqwest::header::HeaderMap) -> VcpResult<()> {
     if headers.len() > MAX_RESPONSE_HEADERS {
         return Err(VcpError::RevocationError(format!(
@@ -514,6 +545,7 @@ fn validate_response_headers(headers: &reqwest::header::HeaderMap) -> VcpResult<
     Ok(())
 }
 
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn resolve_public_addresses(host: &str, port: u16) -> VcpResult<Vec<SocketAddr>> {
     let addresses = (host, port).to_socket_addrs().map_err(|error| {
         VcpError::RevocationError(format!("failed to resolve revocation host: {error}"))
@@ -521,6 +553,7 @@ fn resolve_public_addresses(host: &str, port: u16) -> VcpResult<Vec<SocketAddr>>
     validate_resolved_addresses(addresses)
 }
 
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn validate_resolved_addresses(
     addresses: impl IntoIterator<Item = SocketAddr>,
 ) -> VcpResult<Vec<SocketAddr>> {
@@ -1414,7 +1447,7 @@ mod tests {
         }))]);
         let requests = transport.requests.clone();
         let mut checker = RevocationChecker::with_transport(
-            Duration::from_mins(5),
+            Duration::from_secs(300),
             Duration::from_secs(5),
             transport,
         );
@@ -1448,7 +1481,7 @@ mod tests {
             "issuer": "issuer.example"
         }))]);
         let mut checker = RevocationChecker::with_transport(
-            Duration::from_mins(5),
+            Duration::from_secs(300),
             Duration::from_secs(5),
             transport,
         );
@@ -1477,7 +1510,7 @@ mod tests {
         }))]);
         let requests = transport.requests.clone();
         let mut checker = RevocationChecker::with_transport(
-            Duration::from_mins(5),
+            Duration::from_secs(300),
             Duration::from_secs(5),
             transport,
         );
@@ -1560,7 +1593,7 @@ mod tests {
 
     #[test]
     fn checker_returns_not_revoked_by_default() {
-        let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         let status = checker.check("some-jti", None, None);
         assert!(!status.revoked);
@@ -1568,7 +1601,7 @@ mod tests {
 
     #[test]
     fn checker_crl_cache_lookup() {
-        let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         let crl = Crl {
             issuer: "test".into(),
@@ -1606,7 +1639,7 @@ mod tests {
 
     #[test]
     fn checker_cache_is_bound_to_uri_issuer_and_jti() {
-        let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         let revoked_crl = Crl {
             issuer: "test".into(),
@@ -1666,7 +1699,7 @@ mod tests {
 
     #[test]
     fn valid_cached_decision_is_retained_across_repeated_hits() {
-        let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
         let uri = "https://example.com/repeated.json";
         checker.insert_crl(
             uri,
@@ -1695,7 +1728,7 @@ mod tests {
 
     #[test]
     fn crl_uri_without_expected_issuer_fails_closed() {
-        let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
         let uri = "https://example.com/issuer-required.json";
         checker.insert_crl(
             uri,
@@ -1735,7 +1768,8 @@ mod tests {
 
     #[test]
     fn crl_decision_cache_is_bounded_by_next_update() {
-        let mut checker = RevocationChecker::new(Duration::from_hours(24), Duration::from_secs(5));
+        let mut checker =
+            RevocationChecker::new(Duration::from_secs(86_400), Duration::from_secs(5));
         let now = chrono::Utc::now();
         checker.insert_crl(
             "https://example.com/short-lived.json",
@@ -1764,7 +1798,7 @@ mod tests {
 
     #[test]
     fn checker_rejects_empty_jti_and_expected_issuer() {
-        let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
         assert_eq!(
             checker.check("", None, None).decision,
             RevocationDecision::Unavailable
@@ -1779,7 +1813,7 @@ mod tests {
 
     #[test]
     fn checker_clear_cache() {
-        let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         let crl = Crl {
             issuer: "test".into(),
@@ -1812,21 +1846,21 @@ mod tests {
     #[test]
     fn checker_caches_are_bounded_with_deterministic_eviction() {
         let mut checker =
-            RevocationChecker::with_limits(Duration::from_mins(5), Duration::from_secs(5), 2, 1);
+            RevocationChecker::with_limits(Duration::from_secs(300), Duration::from_secs(5), 2, 1);
         checker.insert_decision(
             ("one".into(), "issuer".into(), "jti-1".into()),
             RevocationStatus::not_revoked(),
-            Duration::from_mins(1),
+            Duration::from_secs(60),
         );
         checker.insert_decision(
             ("two".into(), "issuer".into(), "jti-2".into()),
             RevocationStatus::not_revoked(),
-            Duration::from_mins(1),
+            Duration::from_secs(60),
         );
         checker.insert_decision(
             ("three".into(), "issuer".into(), "jti-3".into()),
             RevocationStatus::not_revoked(),
-            Duration::from_mins(1),
+            Duration::from_secs(60),
         );
         assert_eq!(checker.cache.len(), 2);
         assert!(!checker
@@ -1849,7 +1883,7 @@ mod tests {
 
     #[test]
     fn checker_rejects_unsafe_crl_uri() {
-        let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         // Private IP CRL URI must fail closed.
         let status = checker.check_with_issuer(
@@ -1868,7 +1902,7 @@ mod tests {
 
     #[test]
     fn checker_rejects_unsafe_check_uri() {
-        let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
         // Online check with private IP must fail closed.
         let status = checker.check_with_issuer(
@@ -1887,7 +1921,7 @@ mod tests {
 
     #[test]
     fn checker_rejects_expired_cached_crl() {
-        let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
+        let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
         checker.insert_crl(
             "https://example.com/crl.json",
             Crl {

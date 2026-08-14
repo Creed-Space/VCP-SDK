@@ -2186,6 +2186,7 @@ dependencies = [
  "chrono",
  "criterion",
  "ed25519-dalek",
+ "getrandom 0.4.2",
  "pretty_assertions",
  "proptest",
  "rand 0.10.2",
@@ -2196,6 +2197,7 @@ dependencies = [
  "sha2",
  "thiserror",
  "unicode-normalization",
+ "url",
 ]
 
 [[package]]

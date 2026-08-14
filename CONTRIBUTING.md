@@ -24,11 +24,12 @@ python -m pytest -q
 Regenerate the development lock only when dependency inputs change:
 
 ```bash
-python -m pip install 'pip==26.2.1' 'pip-tools==7.6.1'
-pip-compile pyproject.toml \
+python -m pip install 'pip==26.2.1' 'uv==0.12.4'
+uv pip compile pyproject.toml \
   --extra dev --extra server --extra mcp \
+  --universal \
   --output-file requirements-dev.lock \
-  --resolver backtracking --strip-extras --generate-hashes --allow-unsafe
+  --generate-hashes
 ```
 
 ### Rust
