@@ -1091,7 +1091,7 @@ mod tests {
     #[test]
     fn replay_cache_second_time_returns_true() {
         let mut cache = ReplayCache::new(100);
-        let exp = SystemTime::now() + StdDuration::from_hours(1);
+        let exp = SystemTime::now() + StdDuration::from_secs(3_600);
         cache.record("jti-001".to_string(), exp);
         assert!(cache.is_seen("jti-001"));
     }
@@ -1111,7 +1111,7 @@ mod tests {
     #[test]
     fn replay_cache_max_entries_triggers_cleanup() {
         let mut cache = ReplayCache::new(3);
-        let future = SystemTime::now() + StdDuration::from_hours(1);
+        let future = SystemTime::now() + StdDuration::from_secs(3_600);
         let past = SystemTime::now() - StdDuration::from_secs(10);
 
         cache.record("a".to_string(), past);
@@ -1130,7 +1130,7 @@ mod tests {
     #[test]
     fn replay_cache_never_exceeds_capacity() {
         let mut cache = ReplayCache::new(2);
-        let future = SystemTime::now() + StdDuration::from_hours(1);
+        let future = SystemTime::now() + StdDuration::from_secs(3_600);
         assert!(cache.check_and_record("a".to_string(), future));
         assert!(cache.check_and_record("b".to_string(), future));
         assert!(!cache.check_and_record("c".to_string(), future));
