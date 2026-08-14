@@ -17,7 +17,9 @@ FIXTURES = (
 )
 
 
-def run(label: str, command: list[str], cwd: Path = ROOT) -> tuple[dict[str, object], str | None]:
+def run(
+    label: str, command: list[str], cwd: Path = ROOT
+) -> tuple[dict[str, object], str | None]:
     result = subprocess.run(
         command,
         cwd=cwd,
@@ -41,7 +43,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
-    python = str(ROOT / "python" / ".venv" / "bin" / "python")
+    python = sys.executable
     commands = (
         (
             "python-shared-revocation-vectors",
@@ -76,7 +78,14 @@ def main() -> int:
         ),
         (
             "rust-scope-policy",
-            ["cargo", "test", "-q", "-p", "vcp-core", "scope_mismatch_wrong_environment"],
+            [
+                "cargo",
+                "test",
+                "-q",
+                "-p",
+                "vcp-core",
+                "scope_mismatch_wrong_environment",
+            ],
             ROOT / "rust",
         ),
         (
@@ -112,14 +121,17 @@ def main() -> int:
         if failure:
             failures.append(failure)
     fixture_cases = sum(
-        len(json.loads(path.read_text(encoding="utf-8"))["vectors"]) for path in FIXTURES
+        len(json.loads(path.read_text(encoding="utf-8"))["vectors"])
+        for path in FIXTURES
     )
     report = {
         "schema": "vcp-conformance-report/1",
         "profile": "revocation-and-scope-policy",
         "implementations": ["python", "rust"],
         "fixture_sha256": {
-            path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+            path.relative_to(ROOT).as_posix(): hashlib.sha256(
+                path.read_bytes()
+            ).hexdigest()
             for path in FIXTURES
         },
         "summary": {
