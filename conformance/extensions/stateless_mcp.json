@@ -1,0 +1,58 @@
+{
+  "suite": "extensions/stateless_mcp",
+  "version": "0.1.0-draft",
+  "schema_version": "1.0.0",
+  "mcp_version": "2026-07-28",
+  "status": "vep-0005-draft-unimplemented",
+  "description": "Draft VEP-0005 stateless MCP scenarios. No runtime implementation claims this profile until the VEP is accepted and migration lands.",
+  "test_cases": [
+    {
+      "id": "mcp-no-handshake",
+      "description": "A request carries all necessary VCP context without a prior session handshake.",
+      "input": {
+        "method": "tools/call",
+        "params": {},
+        "_meta": {
+          "vcp": {
+            "context": "T:morning"
+          }
+        }
+      },
+      "expected": {
+        "requires_prior_session": false
+      }
+    },
+    {
+      "id": "mcp-request-meta",
+      "description": "VCP metadata is scoped to the request and does not leak to a later request.",
+      "input": {
+        "requests": [
+          {
+            "_meta": {
+              "vcp": {
+                "context": "T:morning"
+              }
+            }
+          },
+          {
+            "_meta": {}
+          }
+        ]
+      },
+      "expected": {
+        "second_request_vcp": null
+      }
+    },
+    {
+      "id": "mcp-mrtr",
+      "description": "A transport retry preserves request identity without relying on server session state.",
+      "input": {
+        "request_id": "req-1",
+        "retry": true
+      },
+      "expected": {
+        "same_request_identity": true
+      }
+    }
+  ]
+}

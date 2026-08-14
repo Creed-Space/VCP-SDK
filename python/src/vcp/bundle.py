@@ -5,6 +5,7 @@ Represents a signed constitutional bundle.
 """
 
 import json
+import math
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -141,6 +142,7 @@ class Manifest:
                     "environments": self.scope.environments or None,
                     "audiences": self.scope.audiences or None,
                     "regions": self.scope.regions or None,
+                    "competence_requirements": self.scope.competence_requirements or None,
                 }.items()
                 if v
             }
@@ -393,7 +395,9 @@ class BundleBuilder:
             token_count = count_tokens(self.content, self.tokenizer)
         else:
             # Rough estimate: ~4 chars per token
-            token_count = len(self.content) // 4
+            token_count = max(1, math.ceil(len(self.content.encode("utf-8")) / 4))
+        if not isinstance(token_count, int) or isinstance(token_count, bool) or token_count < 1:
+            raise ValueError("count_tokens must return a positive integer")
 
         # Build attestation and sign it
         attestation_data = {
@@ -453,6 +457,9 @@ class BundleBuilder:
                     "model_families": self.scope.model_families or None,
                     "purposes": self.scope.purposes or None,
                     "environments": self.scope.environments or None,
+                    "audiences": self.scope.audiences or None,
+                    "regions": self.scope.regions or None,
+                    "competence_requirements": self.scope.competence_requirements or None,
                 }.items()
                 if v
             }

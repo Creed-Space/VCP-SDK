@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vcp.dev/schemas/release-review-ledger-v1.schema.json",
+  "title": "VCP coordinated release review ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ledger_id",
+    "candidate",
+    "reviews"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "ledger_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate": {
+      "$ref": "#/$defs/candidate"
+    },
+    "reviews": {
+      "type": "array",
+      "minItems": 13,
+      "maxItems": 13,
+      "items": {
+        "$ref": "#/$defs/review"
+      }
+    }
+  },
+  "$defs": {
+    "sha256OrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "commitOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repositories",
+        "combined_candidate_sha256",
+        "source_manifest_sha256",
+        "protocol",
+        "versions",
+        "deployment"
+      ],
+      "properties": {
+        "repositories": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "commit",
+              "working_tree_sha256"
+            ],
+            "properties": {
+              "name": {
+                "enum": ["VCP-Demo-Site", "VCP-Spec", "VCP-SDK"]
+              },
+              "commit": {
+                "$ref": "#/$defs/commitOrNull"
+              },
+              "working_tree_sha256": {
+                "$ref": "#/$defs/sha256OrNull"
+              }
+            }
+          }
+        },
+        "combined_candidate_sha256": {
+          "$ref": "#/$defs/sha256OrNull"
+        },
+        "source_manifest_sha256": {
+          "$ref": "#/$defs/sha256OrNull"
+        },
+        "protocol": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["published_baseline", "amendment", "amendment_maturity"],
+          "properties": {
+            "published_baseline": {
+              "type": "string",
+              "minLength": 1
+            },
+            "amendment": {
+              "type": ["string", "null"]
+            },
+            "amendment_maturity": {
+              "type": ["string", "null"]
+            }
+          }
+        },
+        "versions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["python", "rust", "webmcp", "demo"],
+          "properties": {
+            "python": { "type": ["string", "null"] },
+            "rust": { "type": ["string", "null"] },
+            "webmcp": { "type": ["string", "null"] },
+            "demo": { "type": ["string", "null"] }
+          }
+        },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["environment", "url", "release_id", "deployed_at"],
+          "properties": {
+            "environment": { "type": ["string", "null"] },
+            "url": { "type": ["string", "null"], "format": "uri" },
+            "release_id": { "type": ["string", "null"] },
+            "deployed_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "role", "organization", "independence_statement"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "role": { "type": "string", "minLength": 1 },
+        "organization": { "type": "string", "minLength": 1 },
+        "independence_statement": { "type": "string", "minLength": 1 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "uri", "sha256"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "uri": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "summary", "disposition"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "severity": {
+          "enum": ["critical", "high", "medium", "low", "informational"]
+        },
+        "summary": { "type": "string", "minLength": 1 },
+        "disposition": { "type": "string", "minLength": 1 }
+      }
+    },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "identity", "signed_at", "value"],
+      "properties": {
+        "method": { "type": "string", "minLength": 1 },
+        "identity": { "type": "string", "minLength": 1 },
+        "signed_at": { "type": "string", "format": "date-time" },
+        "value": { "type": "string", "minLength": 1 }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "category",
+        "scope",
+        "status",
+        "reviewer",
+        "reviewed_at",
+        "decision_summary",
+        "conditions",
+        "findings",
+        "evidence",
+        "attestation"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "X015",
+            "X016",
+            "X017",
+            "X018",
+            "D042",
+            "D043",
+            "S030",
+            "S031",
+            "S032",
+            "S033",
+            "K044",
+            "K045",
+            "K046"
+          ]
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "category": {
+          "enum": [
+            "release",
+            "legal",
+            "independent_security",
+            "production",
+            "accessibility",
+            "privacy",
+            "governance",
+            "editorial",
+            "independent_review",
+            "publication",
+            "semver"
+          ]
+        },
+        "scope": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["VCP-Demo-Site", "VCP-Spec", "VCP-SDK"]
+          }
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "approved",
+            "approved_with_conditions",
+            "rejected",
+            "not_applicable"
+          ]
+        },
+        "reviewer": {
+          "oneOf": [{ "$ref": "#/$defs/reviewer" }, { "type": "null" }]
+        },
+        "reviewed_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "decision_summary": {
+          "type": ["string", "null"]
+        },
+        "conditions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/finding" }
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence" }
+        },
+        "attestation": {
+          "oneOf": [{ "$ref": "#/$defs/attestation" }, { "type": "null" }]
+        }
+      }
+    }
+  }
+}

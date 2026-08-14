@@ -16,6 +16,7 @@ consistent with VCP v2.0 manifest signing.
 from __future__ import annotations
 
 import base64
+import binascii
 import json
 import re
 import uuid
@@ -156,6 +157,8 @@ def validate_message(msg: VcpMessage) -> list[str]:
     # Type-specific payload validation.
     if msg.type == "escalation" and isinstance(msg.payload, dict):
         severity = msg.payload.get("severity")
+        if severity is not None and severity not in VALID_SEVERITIES:
+            errors.append(f"severity must be one of {sorted(VALID_SEVERITIES)}, got '{severity}'")
         if severity and severity in ACK_REQUIRED_SEVERITIES:
             if msg.payload.get("requires_ack") is not True:
                 errors.append(f"requires_ack must be true for severity '{severity}'")
@@ -285,13 +288,16 @@ def verify_message(msg: VcpMessage, public_key: bytes) -> bool:
     sig_value = msg.signature
     if sig_value.startswith("base64:"):
         sig_value = sig_value[7:]
-    sig_bytes = base64.b64decode(sig_value)
+    try:
+        sig_bytes = base64.b64decode(sig_value, validate=True)
+    except (binascii.Error, ValueError):
+        return False
 
     try:
         pub = Ed25519PublicKey.from_public_bytes(public_key)
         pub.verify(sig_bytes, canonical)
         return True
-    except InvalidSignature:
+    except (InvalidSignature, ValueError):
         return False
 
 
@@ -338,5 +344,10 @@ def _parse_timestamp(ts: str) -> datetime:
         ValueError: If the string cannot be parsed.
     """
     # Handle Z suffix for fromisoformat (Python <3.11 compat).
-    cleaned = ts.replace("Z", "+00:00")
-    return datetime.fromisoformat(cleaned)
+    cleaned = ts[:-1] + "+00:00" if ts.endswith("Z") else ts
+    parsed = datetime.fromisoformat(cleaned)
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError("timestamp must include a UTC offset")
+    if parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+        raise ValueError("timestamp must be UTC")
+    return parsed

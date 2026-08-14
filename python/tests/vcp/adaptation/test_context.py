@@ -319,6 +319,17 @@ class TestVCPContextEncoding:
         assert decoded.get(SituationalDimension.TIME) == ["🌅"]
         assert decoded.get(SituationalDimension.SPACE) == ["🏡"]
 
+    def test_roundtrip_preserves_multi_codepoint_company_values(self):
+        original = VCPContext(situational={SituationalDimension.COMPANY: ["👶", "👨‍👩‍👧"]})
+        assert VCPContext.decode(original.encode()) == original
+
+    def test_decode_accepts_bare_vs16_dimension_and_value_symbols(self):
+        proximity = VCPContext.decode("↔🤏")
+        assert proximity.get(SituationalDimension.PROXIMITY) == ["🤏"]
+
+        midday = VCPContext.decode("⏰☀")
+        assert midday.get(SituationalDimension.TIME) == ["☀️"]
+
     def test_roundtrip_full_18_dim(self):
         original = VCPContext(
             situational={

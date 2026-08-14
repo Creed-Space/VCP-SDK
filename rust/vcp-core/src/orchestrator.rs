@@ -32,22 +32,23 @@
 //! ```
 
 use std::collections::{HashMap, HashSet};
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use regex::Regex;
 use serde_json::Value;
 
 use crate::error::{VcpError, VcpResult, VerificationCode};
+use crate::revocation::{RevocationChecker, RevocationDecision};
 use crate::transport::{verify_content_hash, verify_ed25519_signature, verify_manifest_signature};
 use crate::trust::TrustConfig;
 
 // ── Constants ────────────────────────────────────────────────
 
 /// Maximum manifest size in bytes (64 KB).
-const MAX_MANIFEST_SIZE: usize = 65_536;
+pub const MAX_MANIFEST_SIZE: usize = 65_536;
 
 /// Maximum content size in bytes (256 KB).
-const MAX_CONTENT_SIZE: usize = 262_144;
+pub const MAX_CONTENT_SIZE: usize = 262_144;
 
 /// Clock skew tolerance in minutes.
 const CLOCK_SKEW_MINUTES: i64 = 5;
@@ -57,6 +58,9 @@ const MAX_EXP_DAYS: i64 = 90;
 
 /// Default maximum replay cache entries.
 const DEFAULT_MAX_REPLAY_ENTRIES: usize = 100_000;
+
+/// Maximum pattern and input length accepted by scope glob matching.
+const MAX_GLOB_CHARS: usize = 256;
 
 /// Injection patterns to scan for in constitution content.
 const INJECTION_PATTERNS: &[&str] = &[
@@ -79,6 +83,44 @@ const FORBIDDEN_CHARS: &[char] = &[
     '\0',       // null
 ];
 
+/// Classify temporal claims against an explicit reference time.
+///
+/// Keeping this decision pure makes temporal conformance deterministic while
+/// the orchestrator continues to supply the real UTC clock in production.
+pub fn classify_temporal_claims(
+    iat: &str,
+    nbf: &str,
+    exp: &str,
+    reference_time: &str,
+    max_exp_days: u32,
+) -> VerificationCode {
+    let Ok(iat) = chrono::DateTime::parse_from_rfc3339(iat) else {
+        return VerificationCode::InvalidSchema;
+    };
+    let Ok(nbf) = chrono::DateTime::parse_from_rfc3339(nbf) else {
+        return VerificationCode::InvalidSchema;
+    };
+    let Ok(exp) = chrono::DateTime::parse_from_rfc3339(exp) else {
+        return VerificationCode::InvalidSchema;
+    };
+    let Ok(reference_time) = chrono::DateTime::parse_from_rfc3339(reference_time) else {
+        return VerificationCode::InvalidSchema;
+    };
+    if reference_time < nbf {
+        return VerificationCode::NotYetValid;
+    }
+    if reference_time > exp {
+        return VerificationCode::Expired;
+    }
+    if iat > reference_time + chrono::Duration::minutes(CLOCK_SKEW_MINUTES) {
+        return VerificationCode::FutureTimestamp;
+    }
+    if exp > iat + chrono::Duration::days(i64::from(max_exp_days)) {
+        return VerificationCode::Expired;
+    }
+    VerificationCode::Valid
+}
+
 // ── Verification context ─────────────────────────────────────
 
 /// Context provided to the orchestrator for verification decisions.
@@ -97,6 +139,10 @@ pub struct VerificationContext {
     pub purpose: String,
     /// Deployment environment for scope matching (e.g. `"production"`).
     pub environment: String,
+    /// Runtime audience for fail-closed audience scope binding.
+    pub audience: Option<String>,
+    /// Runtime region for fail-closed regional scope binding.
+    pub region: Option<String>,
 }
 
 impl VerificationContext {
@@ -109,6 +155,8 @@ impl VerificationContext {
             model_family: "claude-*".to_string(),
             purpose: "general-assistant".to_string(),
             environment: "production".to_string(),
+            audience: None,
+            region: None,
         }
     }
 }
@@ -228,6 +276,7 @@ fn canonicalize_attestation(attestation: &Value, content_hash: &str) -> Option<V
 pub struct Orchestrator {
     trust_config: TrustConfig,
     replay_cache: ReplayCache,
+    revocation_checker: RevocationChecker,
     max_manifest_size: usize,
     max_content_size: usize,
     max_exp_days: u32,
@@ -250,6 +299,10 @@ impl Orchestrator {
         Self {
             trust_config,
             replay_cache: ReplayCache::default(),
+            revocation_checker: RevocationChecker::new(
+                Duration::from_secs(300),
+                Duration::from_secs(10),
+            ),
             max_manifest_size: MAX_MANIFEST_SIZE,
             max_content_size: MAX_CONTENT_SIZE,
             max_exp_days: u32::try_from(MAX_EXP_DAYS).unwrap_or(90),
@@ -266,6 +319,13 @@ impl Orchestrator {
     #[must_use]
     pub fn with_replay_cache(mut self, cache: ReplayCache) -> Self {
         self.replay_cache = cache;
+        self
+    }
+
+    /// Create an orchestrator with a custom revocation checker.
+    #[must_use]
+    pub fn with_revocation_checker(mut self, checker: RevocationChecker) -> Self {
+        self.revocation_checker = checker;
         self
     }
 
@@ -317,13 +377,19 @@ impl Orchestrator {
             return code;
         }
 
+        // Step 6b: Revocation is enforced by default. Any configured source
+        // that cannot establish a clean status fails closed as revoked.
+        if let Some(code) = self.verify_revocation(&manifest) {
+            return code;
+        }
+
         // Steps 7-8: Temporal validation + replay detection.
         if let Some(code) = self.verify_temporal(&manifest) {
             return code;
         }
 
         // Step 9: Token budget validation.
-        if let Some(code) = Self::verify_budget(&manifest, ctx) {
+        if let Some(code) = Self::verify_budget(&manifest, body, ctx) {
             return code;
         }
 
@@ -440,6 +506,13 @@ impl Orchestrator {
             return Some(VerificationCode::InvalidAttestation);
         };
 
+        if !matches!(
+            attestation.get("attestation_type").and_then(Value::as_str),
+            Some("injection-safe" | "full-audit")
+        ) {
+            return Some(VerificationCode::InvalidAttestation);
+        }
+
         let Some(auditor_id) = attestation.get("auditor").and_then(Value::as_str) else {
             return Some(VerificationCode::InvalidAttestation);
         };
@@ -483,13 +556,57 @@ impl Orchestrator {
         None
     }
 
+    /// Check optional revocation sources with issuer and JTI binding.
+    fn verify_revocation(&mut self, manifest: &Value) -> Option<VerificationCode> {
+        let jti = manifest
+            .get("timestamps")?
+            .get("jti")?
+            .as_str()
+            .filter(|value| !value.trim().is_empty())?;
+        let issuer = manifest
+            .get("issuer")?
+            .get("id")?
+            .as_str()
+            .filter(|value| !value.trim().is_empty())?;
+
+        let (check_uri, crl_uri) = match manifest.get("revocation") {
+            None => (None, None),
+            Some(value) => {
+                let Some(object) = value.as_object() else {
+                    return Some(VerificationCode::InvalidSchema);
+                };
+                let check_uri = match object.get("check_uri") {
+                    Some(value) => match value.as_str() {
+                        Some(value) => Some(value),
+                        None => return Some(VerificationCode::InvalidSchema),
+                    },
+                    None => None,
+                };
+                let crl_uri = match object.get("crl_uri") {
+                    Some(value) => match value.as_str() {
+                        Some(value) => Some(value),
+                        None => return Some(VerificationCode::InvalidSchema),
+                    },
+                    None => None,
+                };
+                (check_uri, crl_uri)
+            }
+        };
+        let status =
+            self.revocation_checker
+                .check_with_issuer(jti, check_uri, crl_uri, Some(issuer));
+        match status.decision {
+            RevocationDecision::NotRevoked => None,
+            RevocationDecision::Revoked => Some(VerificationCode::Revoked),
+            RevocationDecision::Unavailable => Some(VerificationCode::RevocationUnavailable),
+        }
+    }
+
     /// Verify temporal claims and replay detection (steps 7-8).
     fn verify_temporal(&mut self, manifest: &Value) -> Option<VerificationCode> {
         let Some(timestamps) = manifest.get("timestamps") else {
             return Some(VerificationCode::InvalidSchema);
         };
-        let now = chrono::Utc::now();
-
         let Some(iat_str) = timestamps.get("iat").and_then(Value::as_str) else {
             return Some(VerificationCode::InvalidSchema);
         };
@@ -505,34 +622,10 @@ impl Orchestrator {
         if jti.trim().is_empty() {
             return Some(VerificationCode::InvalidSchema);
         }
-        let Ok(iat) = chrono::DateTime::parse_from_rfc3339(iat_str) else {
-            return Some(VerificationCode::InvalidSchema);
-        };
-        let Ok(nbf) = chrono::DateTime::parse_from_rfc3339(nbf_str) else {
-            return Some(VerificationCode::InvalidSchema);
-        };
-        let Ok(exp) = chrono::DateTime::parse_from_rfc3339(exp_str) else {
-            return Some(VerificationCode::InvalidSchema);
-        };
-
-        // nbf -- not before.
-        if now < nbf {
-            return Some(VerificationCode::NotYetValid);
-        }
-
-        // exp -- expiration.
-        if now > exp {
-            return Some(VerificationCode::Expired);
-        }
-
-        // iat -- issued at, clock skew + max expiration check.
-        let skew = chrono::Duration::minutes(CLOCK_SKEW_MINUTES);
-        if iat > now + skew {
-            return Some(VerificationCode::FutureTimestamp);
-        }
-        let max_exp = iat + chrono::Duration::days(i64::from(self.max_exp_days));
-        if exp > max_exp {
-            return Some(VerificationCode::Expired);
+        let now = chrono::Utc::now().to_rfc3339();
+        let temporal = classify_temporal_claims(iat_str, nbf_str, exp_str, &now, self.max_exp_days);
+        if temporal != VerificationCode::Valid {
+            return Some(temporal);
         }
 
         if self.replay_cache.is_seen(jti) {
@@ -543,7 +636,11 @@ impl Orchestrator {
     }
 
     /// Verify token budget constraints (step 9).
-    fn verify_budget(manifest: &Value, ctx: &VerificationContext) -> Option<VerificationCode> {
+    fn verify_budget(
+        manifest: &Value,
+        body: &str,
+        ctx: &VerificationContext,
+    ) -> Option<VerificationCode> {
         let Some(budget) = manifest.get("budget") else {
             return Some(VerificationCode::InvalidSchema);
         };
@@ -574,7 +671,10 @@ impl Orchestrator {
         )]
         let max_tokens = (ctx.model_context_limit as f64 * max_share) as u64;
 
-        if token_count > max_tokens {
+        let body_token_floor = u64::try_from(body.len().div_ceil(16))
+            .unwrap_or(u64::MAX)
+            .max(1);
+        if token_count < body_token_floor || token_count > max_tokens {
             return Some(VerificationCode::BudgetExceeded);
         }
 
@@ -626,6 +726,42 @@ impl Orchestrator {
                 return Some(VerificationCode::InvalidSchema);
             };
             if !strs.is_empty() && !strs.contains(&ctx.environment.as_str()) {
+                return Some(VerificationCode::ScopeMismatch);
+            }
+        }
+
+        if let Some(audiences) = scope.get("audiences") {
+            let Some(audiences) = audiences.as_array() else {
+                return Some(VerificationCode::InvalidSchema);
+            };
+            let values: Option<Vec<&str>> = audiences.iter().map(Value::as_str).collect();
+            let Some(values) = values else {
+                return Some(VerificationCode::InvalidSchema);
+            };
+            if !values.is_empty()
+                && ctx
+                    .audience
+                    .as_deref()
+                    .is_none_or(|audience| !values.contains(&audience))
+            {
+                return Some(VerificationCode::ScopeMismatch);
+            }
+        }
+
+        if let Some(regions) = scope.get("regions") {
+            let Some(regions) = regions.as_array() else {
+                return Some(VerificationCode::InvalidSchema);
+            };
+            let values: Option<Vec<&str>> = regions.iter().map(Value::as_str).collect();
+            let Some(values) = values else {
+                return Some(VerificationCode::InvalidSchema);
+            };
+            if !values.is_empty()
+                && ctx
+                    .region
+                    .as_deref()
+                    .is_none_or(|region| !values.contains(&region))
+            {
                 return Some(VerificationCode::ScopeMismatch);
             }
         }
@@ -687,21 +823,26 @@ impl Orchestrator {
 fn glob_match(pattern: &str, text: &str) -> bool {
     let pat_chars: Vec<char> = pattern.chars().collect();
     let txt_chars: Vec<char> = text.chars().collect();
-    glob_match_inner(&pat_chars, &txt_chars)
-}
-
-fn glob_match_inner(pattern: &[char], text: &[char]) -> bool {
-    match (pattern.first(), text.first()) {
-        (None, None) => true,
-        (Some('*'), _) => {
-            // Try matching zero characters or one-or-more characters.
-            glob_match_inner(&pattern[1..], text)
-                || (!text.is_empty() && glob_match_inner(pattern, &text[1..]))
-        }
-        (Some('?'), Some(_)) => glob_match_inner(&pattern[1..], &text[1..]),
-        (Some(p), Some(t)) if *p == *t => glob_match_inner(&pattern[1..], &text[1..]),
-        _ => false,
+    if pat_chars.len() > MAX_GLOB_CHARS || txt_chars.len() > MAX_GLOB_CHARS {
+        return false;
     }
+    let mut previous = vec![false; txt_chars.len() + 1];
+    previous[0] = true;
+    for pattern_char in pat_chars {
+        let mut current = vec![false; txt_chars.len() + 1];
+        if pattern_char == '*' {
+            current[0] = previous[0];
+        }
+        for (index, text_char) in txt_chars.iter().enumerate() {
+            current[index + 1] = if pattern_char == '*' {
+                previous[index + 1] || current[index]
+            } else {
+                previous[index] && (pattern_char == '?' || pattern_char == *text_char)
+            };
+        }
+        previous = current;
+    }
+    previous[txt_chars.len()]
 }
 
 // ── Tests ────────────────────────────────────────────────────
@@ -1064,6 +1205,64 @@ mod tests {
         assert_eq!(code, VerificationCode::ScopeMismatch);
     }
 
+    #[test]
+    fn audience_and_region_scopes_require_explicit_runtime_context() {
+        let trust = test_trust_config();
+        let mut orch = Orchestrator::new(trust.clone());
+        let mut ctx = VerificationContext::new(trust);
+        let content = "Be kind.";
+        let mut manifest: Value = serde_json::from_str(&valid_manifest(content)).unwrap();
+        manifest["scope"] = serde_json::json!({
+            "audiences": ["children"],
+            "regions": ["GB"],
+        });
+        sign_test_manifest(&mut manifest);
+
+        assert_eq!(
+            orch.verify(&manifest.to_string(), content, &ctx),
+            VerificationCode::ScopeMismatch
+        );
+        ctx.audience = Some("children".to_string());
+        ctx.region = Some("GB".to_string());
+        assert_eq!(
+            orch.verify(&manifest.to_string(), content, &ctx),
+            VerificationCode::Valid
+        );
+    }
+
+    #[test]
+    fn content_only_attestation_cannot_authorize_prompt_injection() {
+        let trust = test_trust_config();
+        let mut orch = Orchestrator::new(trust.clone());
+        let ctx = VerificationContext::new(trust);
+        let content = "Be kind.";
+        let mut manifest: Value = serde_json::from_str(&valid_manifest(content)).unwrap();
+        manifest["safety_attestation"]["attestation_type"] =
+            Value::String("content-safe".to_string());
+        sign_test_manifest(&mut manifest);
+        assert_eq!(
+            orch.verify(&manifest.to_string(), content, &ctx),
+            VerificationCode::InvalidAttestation
+        );
+    }
+
+    #[test]
+    fn configured_unavailable_revocation_source_fails_closed() {
+        let trust = test_trust_config();
+        let mut orch = Orchestrator::new(trust.clone());
+        let ctx = VerificationContext::new(trust);
+        let content = "Be kind.";
+        let mut manifest: Value = serde_json::from_str(&valid_manifest(content)).unwrap();
+        manifest["revocation"] = serde_json::json!({
+            "check_uri": "https://example.com/revocation",
+        });
+        sign_test_manifest(&mut manifest);
+        assert_eq!(
+            orch.verify(&manifest.to_string(), content, &ctx),
+            VerificationCode::RevocationUnavailable
+        );
+    }
+
     // ── Budget exceeded test ─────────────────────────────────
 
     #[test]
@@ -1085,6 +1284,21 @@ mod tests {
         // 50000 > 100000 * 0.10 = 10000
         let code = orch.verify(&manifest.to_string(), content, &ctx);
         assert_eq!(code, VerificationCode::BudgetExceeded);
+    }
+
+    #[test]
+    fn declared_tokens_cannot_understate_body() {
+        let trust = test_trust_config();
+        let mut orch = Orchestrator::new(trust.clone());
+        let ctx = VerificationContext::new(trust);
+        let content = "x".repeat(32_000);
+        let mut manifest: Value = serde_json::from_str(&valid_manifest(&content)).unwrap();
+        manifest["budget"]["token_count"] = Value::from(1);
+        sign_test_manifest(&mut manifest);
+        assert_eq!(
+            orch.verify(&manifest.to_string(), &content, &ctx),
+            VerificationCode::BudgetExceeded
+        );
     }
 
     // ── Verify or err test ───────────────────────────────────
@@ -1116,6 +1330,7 @@ mod tests {
         assert!(!glob_match("gpt-?", "gpt-4o")); // ? matches exactly one char
         assert!(glob_match("exact", "exact"));
         assert!(!glob_match("exact", "not-exact"));
+        assert!(!glob_match(&"*".repeat(MAX_GLOB_CHARS + 1), "model"));
     }
 
     // ── Replay detection in full pipeline ────────────────────

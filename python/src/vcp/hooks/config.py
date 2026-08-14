@@ -322,14 +322,17 @@ def _import_dotted_path(
             f"to a callable (e.g. 'mypackage.hooks.my_action')."
         )
 
-    if not any(dotted.startswith(prefix) for prefix in allowed_prefixes):
+    module_path, attr = dotted.rsplit(".", 1)
+    if not any(
+        module_path == prefix.rstrip(".") or module_path.startswith(prefix.rstrip(".") + ".")
+        for prefix in allowed_prefixes
+    ):
         raise HookConfigError(
             f"Hook '{hook_name}': import '{dotted}' is not under any "
             f"allowed module prefix ({', '.join(allowed_prefixes)}). "
             f"Add the prefix to ALLOWED_IMPORT_PREFIXES if this is intentional."
         )
 
-    module_path, attr = dotted.rsplit(".", 1)
     try:
         module = importlib.import_module(module_path)
     except ImportError as exc:

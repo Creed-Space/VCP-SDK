@@ -1,0 +1,297 @@
+name: SDK release candidate and publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Build and attest, or request protected registry publication
+        required: true
+        type: choice
+        default: dry-run
+        options:
+          - dry-run
+          - publish
+      version:
+        description: Exact coherent SDK version
+        required: true
+        type: string
+        default: 4.2.0
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdk-release-${{ github.ref }}-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Independent artifact build (${{ matrix.builder }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        builder: [primary, rebuild]
+    steps:
+      - name: Checkout exact workflow commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+
+      - name: Set up Rust with WASM target
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install exact locked build tools
+        run: |
+          python -m pip install 'pip==26.2.1'
+          python -m pip install --require-hashes --requirement python/requirements-dev.lock
+          npm ci --ignore-scripts --prefix webmcp
+
+      - name: Validate source version and build authority
+        run: python scripts/check_release_authority.py --version "${{ inputs.version }}"
+
+      - name: Build once, install-test, and export exact artifacts
+        run: |
+          SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+          export SOURCE_DATE_EPOCH
+          artifact_dir="$RUNNER_TEMP/release-${{ matrix.builder }}"
+          evidence_dir="$RUNNER_TEMP/evidence-${{ matrix.builder }}"
+          mkdir -p "$artifact_dir" "$evidence_dir"
+          python scripts/verify_artifacts.py \
+            --require-clean \
+            --artifact-dir "$artifact_dir" \
+            --output "$evidence_dir/artifact-verification.json"
+          python scripts/generate_sboms.py --output-dir "$artifact_dir/sbom"
+          python scripts/finalize_release_manifest.py \
+            "$artifact_dir" \
+            --version "${{ inputs.version }}"
+
+      - name: Generate candidate-bound conformance report and badge
+        if: matrix.builder == 'primary'
+        run: |
+          evidence_dir="$RUNNER_TEMP/evidence-${{ matrix.builder }}"
+          python conformance/runners/run_all.py \
+            --output "$evidence_dir/conformance/aggregate.json"
+
+      - name: Upload exact release bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sdk-release-${{ matrix.builder }}-${{ github.sha }}
+          path: ${{ runner.temp }}/release-${{ matrix.builder }}/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Upload build evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sdk-release-evidence-${{ matrix.builder }}-${{ github.sha }}
+          path: ${{ runner.temp }}/evidence-${{ matrix.builder }}/
+          if-no-files-found: error
+          retention-days: 30
+
+  compare-and-attest:
+    name: Compare independent builds and attest
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout verification scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download primary release bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sdk-release-primary-${{ github.sha }}
+          path: primary
+
+      - name: Download independent rebuild
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sdk-release-rebuild-${{ github.sha }}
+          path: rebuild
+
+      - name: Download primary conformance evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sdk-release-evidence-primary-${{ github.sha }}
+          path: primary-evidence
+
+      - name: Require byte-identical delivered artifacts
+        run: python scripts/compare_release_artifacts.py primary rebuild | tee reproducibility.txt
+
+      - name: Attest every release artifact, SBOM, checksum list, and manifest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: primary/**/*
+
+      - name: Attest the generated conformance report and badge
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: primary-evidence/conformance/*
+
+      - name: Retain reproducibility evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sdk-release-reproducibility-${{ github.sha }}
+          path: reproducibility.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  authorize-publication:
+    name: Verify human and registry publication authority
+    if: ${{ inputs.mode == 'publish' }}
+    needs: compare-and-attest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: vcp-release-approval
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+
+      - name: Install exact ledger validator
+        run: |
+          python -m pip install 'pip==26.2.1'
+          python -m pip install --require-hashes --requirement python/requirements-dev.lock
+
+      - name: Require signed-off candidate state and exact immutable tag
+        run: |
+          test "$GITHUB_REF" = "refs/tags/v${{ inputs.version }}"
+          git verify-tag "v${{ inputs.version }}"
+          python scripts/check_release_authority.py \
+            --version "${{ inputs.version }}" \
+            --publish
+
+  publish-pypi:
+    name: Publish the attested Python distributions
+    if: ${{ inputs.mode == 'publish' }}
+    needs: authorize-publication
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: vcp-pypi
+      url: https://pypi.org/project/value-context-protocol/
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download the attested release bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sdk-release-primary-${{ github.sha }}
+          path: release
+
+      - name: Publish without rebuilding
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        with:
+          packages-dir: release/python/
+          verbose: true
+
+  publish-npm:
+    name: Publish the attested npm tarball
+    if: ${{ inputs.mode == 'publish' }}
+    needs: authorize-publication
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: vcp-npm
+      url: https://www.npmjs.com/package/@creed-space/vcp-sdk
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Set up Node for trusted publishing
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+
+      - name: Install a trusted-publishing capable npm CLI
+        run: npm install --global 'npm@11.19.0'
+
+      - name: Download the attested release bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sdk-release-primary-${{ github.sha }}
+          path: release
+
+      - name: Publish the exact tarball with provenance
+        run: npm publish release/npm/*.tgz --access public --provenance
+
+  publish-crates:
+    name: Publish crates in dependency order
+    if: ${{ inputs.mode == 'publish' }}
+    needs: authorize-publication
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: vcp-crates
+      url: https://crates.io/crates/vcp-core
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout the exact tagged candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+
+      - name: Download the attested release bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sdk-release-primary-${{ github.sha }}
+          path: release
+
+      - name: Obtain a short-lived crates.io token
+        id: crates-auth
+        uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+
+      - name: Verify and publish dependency-ordered crate archives
+        working-directory: rust
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-auth.outputs.token }}
+        run: |
+          set -euo pipefail
+          verify_archive() {
+            crate="$1"
+            cargo package -p "$crate" --locked
+            local_file="target/package/${crate}-${{ inputs.version }}.crate"
+            attested_file="../release/crates/${crate}-${{ inputs.version }}.crate"
+            test "$(sha256sum "$local_file" | cut -d' ' -f1)" = \
+              "$(sha256sum "$attested_file" | cut -d' ' -f1)"
+          }
+          verify_archive vcp-core
+          cargo publish -p vcp-core --locked
+          for attempt in $(seq 1 18); do
+            cargo info "vcp-core@${{ inputs.version }}" >/dev/null 2>&1 && break
+            test "$attempt" -lt 18
+            sleep 10
+          done
+          verify_archive vcp-cli
+          cargo publish -p vcp-cli --locked
+          verify_archive vcp-wasm
+          cargo publish -p vcp-wasm --locked

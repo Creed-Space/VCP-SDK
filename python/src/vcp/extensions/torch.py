@@ -98,6 +98,32 @@ class TorchLineage:
         )
 
 
+@dataclass
+class TorchChain:
+    """Language-neutral torch lineage used by the conformance profile."""
+
+    session_count: int = 0
+    first_session_date: str | None = None
+    torch_chain: list[TorchSummary] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize without implementation-specific current-session fields."""
+        return {
+            "session_count": self.session_count,
+            "first_session_date": self.first_session_date,
+            "torch_chain": [summary.to_dict() for summary in self.torch_chain],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> TorchChain:
+        """Deserialize a language-neutral lineage chain."""
+        return cls(
+            session_count=int(data.get("session_count", 0)),
+            first_session_date=data.get("first_session_date"),
+            torch_chain=[TorchSummary.from_dict(item) for item in data.get("torch_chain", [])],
+        )
+
+
 class TorchGenerator:
     """Generates torch handoff payload at session end.
 
@@ -161,7 +187,52 @@ class TorchGenerator:
             parts.append(f"G:{model.groundedness.value:.0f}")
         if model.presence:
             parts.append(f"P:{model.presence.value:.0f}")
+        if model.task_fit:
+            parts.append(f"TF:{model.task_fit.value:.0f}")
         return " ".join(parts) if parts else None
+
+    def generate_protocol(
+        self,
+        relational_ctx: RelationalContext,
+        handed_at: str,
+        self_model_history: list[AISelfModel] | None = None,
+    ) -> dict[str, Any]:
+        """Generate the language-neutral v3.1 torch handoff profile."""
+        quality_parts = [
+            f"Trust: {relational_ctx.trust_level.value}",
+            f"Standing: {relational_ctx.standing_level.value}",
+        ]
+        active_norms = relational_ctx.active_norms()
+        if active_norms:
+            quality_parts.append(f"{len(active_norms)} established norms")
+        return {
+            "quality_description": ". ".join(quality_parts),
+            "trajectory": self.derive_trajectory(self_model_history),
+            "primes": [norm.description[:80] for norm in active_norms[:3]],
+            "gift": None,
+            "handed_at": handed_at,
+            "session_count": relational_ctx.interaction_count + 1,
+            "gestalt_token": (
+                self._build_gestalt(relational_ctx.self_model)
+                if relational_ctx.self_model is not None
+                else None
+            ),
+        }
+
+    @staticmethod
+    def derive_trajectory(history: list[AISelfModel] | None) -> str | None:
+        """Derive the profile trajectory from the two most recent valence reports."""
+        if not history or len(history) < 2:
+            return None
+        previous = history[-2].valence
+        recent = history[-1].valence
+        if previous is None or recent is None:
+            return None
+        if recent.value > previous.value + 0.5:
+            return "Improving"
+        if recent.value < previous.value - 0.5:
+            return "Declining"
+        return "Stable"
 
 
 class TorchConsumer:
@@ -189,6 +260,15 @@ class TorchConsumer:
             trust_level=trust,
             standing_level=StandingLevel.ADVISORY,
             interaction_count=interaction_count,
+        )
+
+    def receive_protocol(self, torch_payload: dict[str, Any]) -> RelationalContext:
+        """Receive the language-neutral profile using ``session_count``."""
+        session_count = int(torch_payload.get("session_count", 1))
+        return RelationalContext(
+            trust_level=self._trust_from_interactions(session_count),
+            standing_level=StandingLevel.ADVISORY,
+            interaction_count=session_count,
         )
 
     def validate(self, torch_payload: dict[str, Any]) -> list[str]:

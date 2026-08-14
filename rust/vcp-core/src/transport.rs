@@ -335,6 +335,7 @@ impl<'de> Deserialize<'de> for VerificationCode {
             "scope_mismatch" => Ok(VerificationCode::ScopeMismatch),
             "revoked" => Ok(VerificationCode::Revoked),
             "fetch_failed" => Ok(VerificationCode::FetchFailed),
+            "revocation_unavailable" => Ok(VerificationCode::RevocationUnavailable),
             other => Err(serde::de::Error::unknown_variant(
                 other,
                 &[
@@ -355,6 +356,7 @@ impl<'de> Deserialize<'de> for VerificationCode {
                     "scope_mismatch",
                     "revoked",
                     "fetch_failed",
+                    "revocation_unavailable",
                 ],
             )),
         }

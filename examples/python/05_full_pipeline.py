@@ -1,81 +1,81 @@
-"""End-to-end: parse token, build context, verify bundle, format injection."""
+"""Parse identity, encode context, verify a bundle, then prepare injection."""
+
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+import base64
+from datetime import datetime, timedelta, timezone
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from vcp.adaptation.context import ContextEncoder
-from vcp.bundle import Bundle
-from vcp.canonicalize import compute_content_hash
+from vcp.bundle import BundleBuilder
 from vcp.identity import Token
 from vcp.injection import InjectionFormat, InjectionOptions, format_injection
 from vcp.orchestrator import Orchestrator
 from vcp.trust import TrustAnchor, TrustConfig
+from vcp.types import VerificationResult
 
-# -- 1. Parse the identity token. --
+
+def public_key_value(key: Ed25519PrivateKey) -> str:
+    raw = key.public_key().public_bytes(
+        serialization.Encoding.Raw,
+        serialization.PublicFormat.Raw,
+    )
+    return f"ed25519:{base64.b64encode(raw).decode('ascii')}"
+
+
+def signer(key: Ed25519PrivateKey):
+    return lambda payload: base64.b64encode(key.sign(payload)).decode("ascii")
+
+
 token = Token.parse("family.safe.guide@1.2.0")
+context = ContextEncoder().encode(time="morning", space="home", company="children")
 print(f"Constitution: {token.full}")
+print(f"Context: {context.encode()}")
 
-# -- 2. Encode situational context. --
-encoder = ContextEncoder()
-ctx = encoder.encode(time="morning", space="home", company="children")
-print(f"Context: {ctx.encode()}")
-
-# -- 3. Set up trust and build a minimal bundle. --
-now = datetime.utcnow()
-far_future = now + timedelta(days=365)
-
-config = TrustConfig()
-config.add_issuer(
-    "creed-space",
-    TrustAnchor(
-        id="creed-space", key_id="k1", algorithm="ed25519",
-        public_key="ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        anchor_type="issuer", valid_from=now - timedelta(days=1), valid_until=far_future,
-    ),
-)
-config.add_auditor(
-    "safety-lab",
-    TrustAnchor(
-        id="safety-lab", key_id="a1", algorithm="ed25519",
-        public_key="ed25519:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
-        anchor_type="auditor", valid_from=now - timedelta(days=1), valid_until=far_future,
-    ),
+issuer_key = Ed25519PrivateKey.generate()
+auditor_key = Ed25519PrivateKey.generate()
+issuer_public = public_key_value(issuer_key)
+auditor_public = public_key_value(auditor_key)
+bundle = (
+    BundleBuilder("family.safe.guide", "1.2.0")
+    .with_content("Use age-appropriate language.\nAvoid instructions involving weapons.\n")
+    .with_issuer("example-issuer", issuer_public, "issuer-key-1")
+    .with_auditor("example-auditor", "auditor-key-1")
+    .build(
+        sign_manifest=signer(issuer_key),
+        sign_attestation=signer(auditor_key),
+    )
 )
 
-content = "Always use age-appropriate language.\nNever discuss weapons.\n"
-content_hash = compute_content_hash(content)
+now = datetime.now(timezone.utc)
+trust = TrustConfig()
+for entity_id, key_id, public_key, anchor_type in (
+    ("example-issuer", "issuer-key-1", issuer_public, "issuer"),
+    ("example-auditor", "auditor-key-1", auditor_public, "auditor"),
+):
+    anchor = TrustAnchor(
+        id=entity_id,
+        key_id=key_id,
+        algorithm="ed25519",
+        public_key=public_key,
+        anchor_type=anchor_type,
+        valid_from=now - timedelta(days=1),
+        valid_until=now + timedelta(days=365),
+    )
+    if anchor_type == "issuer":
+        trust.add_issuer(entity_id, anchor)
+    else:
+        trust.add_auditor(entity_id, anchor)
 
-bundle = Bundle.from_dict({
-    "manifest": {
-        "vcp_version": "2.0",
-        "bundle": {"id": "family.safe.guide", "version": "1.2.0",
-                   "content_hash": content_hash},
-        "issuer": {"id": "creed-space",
-                   "public_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-                   "key_id": "k1"},
-        "timestamps": {"iat": now.isoformat() + "Z", "nbf": now.isoformat() + "Z",
-                       "exp": (now + timedelta(days=30)).isoformat() + "Z",
-                       "jti": "550e8400-e29b-41d4-a716-446655440001"},
-        "budget": {"token_count": 50, "tokenizer": "cl100k_base"},
-        "safety_attestation": {"auditor": "safety-lab", "auditor_key_id": "a1",
-                               "reviewed_at": now.isoformat() + "Z",
-                               "attestation_type": "injection-safe",
-                               "signature": "base64:AAAA"},
-        "signature": {"algorithm": "ed25519", "value": "base64:AAAA",
-                      "signed_fields": ["bundle"]},
-    },
-    "content": content,
-})
+result = Orchestrator(trust).verify(bundle)
+if result is not VerificationResult.VALID:
+    raise SystemExit(f"Bundle verification failed: {result.name}")
 
-# -- 4. Verify the bundle. --
-orch = Orchestrator(trust_config=config)
-result = orch.verify(bundle)
-print(f"Verification: {result.name} (valid={result.is_valid})")
-
-# -- 5. Format for injection into a model's context window. --
 injection = format_injection(
     bundle,
     options=InjectionOptions(format=InjectionFormat.HEADER_DELIMITED),
 )
-print(f"\n--- Injection output ({len(injection)} chars) ---")
-print(injection[:200], "..." if len(injection) > 200 else "")
+print(f"Verification: {result.name}")
+print(f"Prepared injection: {len(injection)} characters")

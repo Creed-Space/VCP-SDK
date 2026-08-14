@@ -1,0 +1,170 @@
+{
+  "suite": "revocation-crl-responses",
+  "version": "1.0.0",
+  "description": "Shared Python and Rust CRL binding, freshness, and entry-validation contract",
+  "vectors": [
+    {
+      "id": "crl-clear-bound",
+      "description": "A fresh issuer-bound CRL without the requested JTI establishes a clear result",
+      "jti": "bundle-clear",
+      "issuer": "issuer.example",
+      "response": {
+        "issuer": "issuer.example",
+        "updated_at": "2026-08-01T00:00:00Z",
+        "next_update": "2099-09-01T00:00:00Z",
+        "revoked": []
+      },
+      "expected": "not_revoked"
+    },
+    {
+      "id": "crl-revoked-bound",
+      "description": "A fresh issuer-bound CRL with complete details establishes revocation",
+      "jti": "bundle-revoked",
+      "issuer": "issuer.example",
+      "response": {
+        "issuer": "issuer.example",
+        "updated_at": "2026-08-01T00:00:00Z",
+        "next_update": "2099-09-01T00:00:00Z",
+        "revoked": [
+          {
+            "jti": "bundle-revoked",
+            "reason": "key_compromise",
+            "revoked_at": "2026-08-02T00:00:00Z"
+          }
+        ]
+      },
+      "expected": "revoked"
+    },
+    {
+      "id": "crl-wrong-issuer",
+      "description": "A CRL from another issuer cannot establish revocation status",
+      "jti": "bundle-clear",
+      "issuer": "issuer.example",
+      "response": {
+        "issuer": "other.example",
+        "updated_at": "2026-08-01T00:00:00Z",
+        "next_update": "2099-09-01T00:00:00Z",
+        "revoked": []
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "crl-expired",
+      "description": "An expired CRL cannot establish revocation status",
+      "jti": "bundle-clear",
+      "issuer": "issuer.example",
+      "response": {
+        "issuer": "issuer.example",
+        "updated_at": "2020-08-01T00:00:00Z",
+        "next_update": "2020-09-01T00:00:00Z",
+        "revoked": []
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "crl-updated-after-next-update",
+      "description": "A CRL with inverted freshness timestamps is unavailable",
+      "jti": "bundle-clear",
+      "issuer": "issuer.example",
+      "response": {
+        "issuer": "issuer.example",
+        "updated_at": "2099-10-01T00:00:00Z",
+        "next_update": "2099-09-01T00:00:00Z",
+        "revoked": []
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "crl-missing-reason",
+      "description": "A revoked CRL entry without a reason is unavailable",
+      "jti": "bundle-revoked",
+      "issuer": "issuer.example",
+      "response": {
+        "issuer": "issuer.example",
+        "updated_at": "2026-08-01T00:00:00Z",
+        "next_update": "2099-09-01T00:00:00Z",
+        "revoked": [
+          {
+            "jti": "bundle-revoked",
+            "revoked_at": "2026-08-02T00:00:00Z"
+          }
+        ]
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "crl-empty-reason",
+      "description": "A revoked CRL entry requires a nonempty reason",
+      "jti": "bundle-revoked",
+      "issuer": "issuer.example",
+      "response": {
+        "issuer": "issuer.example",
+        "updated_at": "2026-08-01T00:00:00Z",
+        "next_update": "2099-09-01T00:00:00Z",
+        "revoked": [
+          {
+            "jti": "bundle-revoked",
+            "reason": " ",
+            "revoked_at": "2026-08-02T00:00:00Z"
+          }
+        ]
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "crl-missing-revoked-at",
+      "description": "A revoked CRL entry without a timestamp is unavailable",
+      "jti": "bundle-revoked",
+      "issuer": "issuer.example",
+      "response": {
+        "issuer": "issuer.example",
+        "updated_at": "2026-08-01T00:00:00Z",
+        "next_update": "2099-09-01T00:00:00Z",
+        "revoked": [
+          {
+            "jti": "bundle-revoked",
+            "reason": "superseded"
+          }
+        ]
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "crl-duplicate-jti",
+      "description": "Duplicate CRL entries make the entire decision unavailable",
+      "jti": "bundle-revoked",
+      "issuer": "issuer.example",
+      "response": {
+        "issuer": "issuer.example",
+        "updated_at": "2026-08-01T00:00:00Z",
+        "next_update": "2099-09-01T00:00:00Z",
+        "revoked": [
+          {
+            "jti": "bundle-revoked",
+            "reason": "first",
+            "revoked_at": "2026-08-02T00:00:00Z"
+          },
+          {
+            "jti": "bundle-revoked",
+            "reason": "second",
+            "revoked_at": "2026-08-03T00:00:00Z"
+          }
+        ]
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "crl-non-array-revoked",
+      "description": "The CRL revoked member must be an array",
+      "jti": "bundle-clear",
+      "issuer": "issuer.example",
+      "response": {
+        "issuer": "issuer.example",
+        "updated_at": "2026-08-01T00:00:00Z",
+        "next_update": "2099-09-01T00:00:00Z",
+        "revoked": {}
+      },
+      "expected": "unavailable"
+    }
+  ]
+}

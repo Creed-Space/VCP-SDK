@@ -1,0 +1,79 @@
+{
+  "suite": "extensions/competence",
+  "version": "1.0.0",
+  "schema_version": "1.0.0",
+  "vcp_version": "3.2-candidate",
+  "description": "Competence profile behavior for the Python implementation. Rust does not currently claim this extension.",
+  "test_cases": [
+    {
+      "id": "decay-zero-days",
+      "description": "No elapsed time preserves the score.",
+      "input": {
+        "score": 0.9,
+        "days_elapsed": 0,
+        "decay_rate": 0.003,
+        "evidence_count": 0
+      },
+      "expected": {
+        "score": 0.9
+      }
+    },
+    {
+      "id": "decay-toward-midpoint",
+      "description": "Positive elapsed time moves scores toward 0.5 without crossing it.",
+      "input": {
+        "score": 0.9,
+        "days_elapsed": 365,
+        "decay_rate": 0.003,
+        "evidence_count": 0
+      },
+      "expected": {
+        "less_than": 0.9,
+        "greater_than": 0.5
+      }
+    },
+    {
+      "id": "evidence-dampens-decay",
+      "description": "More evidence slows decay.",
+      "input": {
+        "score": 0.9,
+        "days_elapsed": 365,
+        "decay_rate": 0.003
+      },
+      "expected": {
+        "high_evidence_greater_than_low": true
+      }
+    },
+    {
+      "id": "domain-fallback",
+      "description": "A missing domain falls back to a general claim.",
+      "input": {
+        "criterion": "EPISTEMIC",
+        "requested_domain": "medical",
+        "general_score": 0.8
+      },
+      "expected": {
+        "score": 0.8
+      }
+    },
+    {
+      "id": "requirements-fail-closed",
+      "description": "Unknown or absent competence criteria fail requirements.",
+      "input": {
+        "claims": [
+          {
+            "criterion": "EPISTEMIC",
+            "score": 0.8
+          }
+        ],
+        "requirements": {
+          "EPISTEMIC": 0.7,
+          "DISCERNMENT": 0.7
+        }
+      },
+      "expected": {
+        "meets": false
+      }
+    }
+  ]
+}

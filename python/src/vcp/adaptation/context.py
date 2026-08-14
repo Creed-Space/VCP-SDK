@@ -446,15 +446,15 @@ class VCPContext:
             if not part:
                 continue
             for dim in SituationalDimension:
-                if part.startswith(dim.symbol):
-                    raw = part[len(dim.symbol) :]
+                raw = cls._after_dimension_symbol(part, dim)
+                if raw is not None:
                     if not raw:
                         break
                     if dim.is_free_form:
                         # RELATIONSHIP: raw string preserved intact
                         situational[dim] = [raw]
                     else:
-                        values = cls._extract_emojis(raw)
+                        values = cls._extract_known_values(raw, dim)
                         if values:
                             situational[dim] = values
                         else:
@@ -476,28 +476,42 @@ class VCPContext:
         return cls(situational=situational, personal=personal)
 
     @staticmethod
-    def _extract_emojis(s: str) -> list[str]:
-        """Extract individual emojis from a string.
+    def _after_dimension_symbol(part: str, dim: SituationalDimension) -> str | None:
+        """Return content after a canonical or VS16-optional dimension symbol."""
+        symbols = (dim.symbol, dim.symbol.replace("\ufe0f", ""))
+        for symbol in sorted(set(symbols), key=len, reverse=True):
+            if part.startswith(symbol):
+                return part[len(symbol) :]
+        return None
 
-        Handles multi-codepoint sequences (ZWJ families, variation selectors).
-        """
-        import re
+    @staticmethod
+    def _extract_known_values(raw: str, dim: SituationalDimension) -> list[str]:
+        """Decode a finite vocabulary without splitting ZWJ emoji sequences."""
+        aliases: list[tuple[str, str]] = []
+        for canonical in dim.values:
+            aliases.append((canonical, canonical))
+            bare = canonical.replace("\ufe0f", "")
+            if bare != canonical:
+                aliases.append((bare, canonical))
+        aliases.sort(key=lambda item: len(item[0]), reverse=True)
 
-        emoji_pattern = re.compile(
-            r"[\U0001F300-\U0001F9FF]"  # Most emojis
-            r"|[\U0001F600-\U0001F64F]"  # Emoticons
-            r"|[\U0001F680-\U0001F6FF]"  # Transport
-            r"|[\U0001F1E0-\U0001F1FF]"  # Flags
-            r"|[\u2600-\u26FF]"  # Misc symbols
-            r"|[\u2700-\u27BF]"  # Dingbats
-            r"|[\u25A0-\u25FF]"  # Geometric shapes
-            r"|\u2B50"  # Star
-            r"|\u274C"  # Cross mark
-            r"|\u2139"  # Info
-            r"|\u25CB"  # Circle
-            r"|(?:[\U0001F468-\U0001F469][\u200D]?)+[\U0001F466-\U0001F469]?"
-        )
-        return emoji_pattern.findall(s)
+        values: list[str] = []
+        cursor = 0
+        while cursor < len(raw):
+            match = next(
+                (
+                    (alias, canonical)
+                    for alias, canonical in aliases
+                    if raw.startswith(alias, cursor)
+                ),
+                None,
+            )
+            if match is None:
+                return []
+            alias, canonical = match
+            values.append(canonical)
+            cursor += len(alias)
+        return values
 
     # ── JSON ───────────────────────────────────────────────────────────────
     def to_json(self) -> dict[str, Any]:

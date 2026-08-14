@@ -174,43 +174,118 @@ class AuditLogger:
 
         manifest = bundle.manifest
 
-        # Determine checks passed
-        checks = []
-        if result == VerificationResult.VALID:
-            checks = [
+        # Map outcomes to checks guaranteed to have completed. Enum ordinals
+        # are wire identifiers, not pipeline-stage indexes, and the same
+        # outcome can occur at more than one stage. Keep this conservative.
+        checks_by_result: dict[VerificationResult, list[str]] = {
+            VerificationResult.VALID: [
                 "size",
-                "schema",
-                "signature",
-                "attestation",
                 "hash",
-                "temporal",
-                "replay",
-                "budget",
-                "scope",
-                "revocation",
-            ]
-        elif result.value > 0:
-            # Partial checks based on error code
-            check_order = [
-                "size",
-                "schema",
                 "issuer",
                 "signature",
                 "auditor",
                 "attestation",
-                "hash",
-                "nbf",
-                "exp",
-                "timestamp",
+                "revocation",
+                "temporal",
                 "replay",
-                "tokens",
                 "budget",
                 "scope",
-                "revoked",
-            ]
-            # All checks before the failing one passed
-            if result.value <= len(check_order):
-                checks = check_order[: result.value - 1]
+                "content_safety",
+            ],
+            VerificationResult.HASH_MISMATCH: ["size"],
+            VerificationResult.UNTRUSTED_ISSUER: ["size", "hash"],
+            VerificationResult.INVALID_SIGNATURE: ["size", "hash", "issuer"],
+            VerificationResult.UNTRUSTED_AUDITOR: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+            ],
+            VerificationResult.INVALID_ATTESTATION: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+            ],
+            VerificationResult.REVOKED: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+            ],
+            VerificationResult.REVOCATION_UNAVAILABLE: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+            ],
+            VerificationResult.NOT_YET_VALID: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+            ],
+            VerificationResult.EXPIRED: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+            ],
+            VerificationResult.FUTURE_TIMESTAMP: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+            ],
+            VerificationResult.REPLAY_DETECTED: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+                "temporal",
+            ],
+            VerificationResult.BUDGET_EXCEEDED: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+                "temporal",
+                "replay",
+            ],
+            VerificationResult.SCOPE_MISMATCH: [
+                "size",
+                "hash",
+                "issuer",
+                "signature",
+                "auditor",
+                "attestation",
+                "revocation",
+                "temporal",
+                "replay",
+                "budget",
+            ],
+        }
+        checks = checks_by_result.get(result, [])
 
         # Extract signature value (truncated for log)
         sig = manifest.signature.value

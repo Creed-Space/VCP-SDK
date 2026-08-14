@@ -42,8 +42,9 @@
       "expected": {
         "valid": true,
         "domain": "company",
-        "approach": "acme",
+        "approach": "legal",
         "role": "compliance",
+        "path": ["acme"],
         "namespace": "SEC",
         "version": null,
         "depth": 4

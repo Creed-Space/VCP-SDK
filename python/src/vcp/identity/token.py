@@ -21,11 +21,50 @@ Examples:
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing_extensions import Self
+
+
+def canonicalize_token(raw: str) -> str:
+    """Return the validated canonical identity-token representation.
+
+    Canonicalization is intentionally separate from strict parsing. It applies
+    Unicode NFKC, removes whitespace, lowercases the token path and version,
+    collapses dot runs, normalizes numeric semantic-version components, and
+    preserves the required uppercase namespace suffix.
+    """
+    if not isinstance(raw, str) or not raw:
+        raise ValueError("Token cannot be empty")
+    normalized = unicodedata.normalize("NFKC", raw).strip()
+    normalized = re.sub(r"\s+", "", normalized)
+
+    namespace: str | None = None
+    if ":" in normalized:
+        normalized, namespace = normalized.rsplit(":", 1)
+        namespace = namespace.upper()
+
+    version: str | None = None
+    if "@" in normalized:
+        normalized, version = normalized.rsplit("@", 1)
+        version = version.lower()
+        prefix = version[:1] if version.startswith(("^", "~")) else ""
+        numeric = version[1:] if prefix else version
+        match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(-[a-z0-9.-]+)?", numeric)
+        if match:
+            major, minor, patch, prerelease = match.groups()
+            version = f"{prefix}{int(major)}.{int(minor)}.{int(patch)}{prerelease or ''}"
+
+    path = re.sub(r"\.+", ".", normalized.lower()).strip(".")
+    candidate = path
+    if version is not None:
+        candidate += f"@{version}"
+    if namespace is not None:
+        candidate += f":{namespace}"
+    return Token.parse(candidate).full
 
 
 @dataclass(frozen=True)
@@ -129,6 +168,11 @@ class Token:
             version=groups.get("version"),
             namespace=groups.get("namespace"),
         )
+
+    @classmethod
+    def canonicalize(cls, raw: str) -> str:
+        """Canonicalize and validate a potentially non-canonical token."""
+        return canonicalize_token(raw)
 
     # Backward compatibility properties
 

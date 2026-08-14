@@ -223,6 +223,23 @@ class TestOrchestratorPreInjectHook:
 
         assert result == VerificationResult.INVALID_ATTESTATION
 
+    def test_pre_inject_modification_is_rejected_when_api_cannot_return_it(
+        self, trust_config: TrustConfig
+    ) -> None:
+        def modify_hook(inp: HookInput) -> HookResult:
+            return HookResult(
+                status=ResultStatus.MODIFY,
+                modified_constitution="Different constitution",
+            )
+
+        executor = _make_executor_with_hook(HookType.PRE_INJECT, modify_hook)
+        orchestrator = Orchestrator(
+            trust_config=trust_config,
+            verify_signature=_accept_test_signature,
+            hook_executor=executor,
+        )
+        assert orchestrator.verify(_make_valid_bundle()) == VerificationResult.INVALID_ATTESTATION
+
     def test_no_executor_skips_hooks(self, trust_config: TrustConfig) -> None:
         """When no hook_executor is provided, verification works without hooks."""
         orchestrator = Orchestrator(

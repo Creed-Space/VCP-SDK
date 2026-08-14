@@ -25,14 +25,41 @@ from .metrics import (
     vcp_bundle_verifications_total,
     vcp_bundle_verify_duration_seconds,
 )
-from .revocation import RevocationChecker
+from .revocation import RevocationChecker, RevocationDecision
 from .trust import TrustConfig
-from .types import VerificationResult
+from .types import AttestationType, VerificationResult
 
 if TYPE_CHECKING:
     from .hooks.executor import HookExecutor
 
 logger = logging.getLogger(__name__)
+
+
+def classify_temporal_claims(
+    iat: datetime,
+    nbf: datetime,
+    exp: datetime,
+    reference_time: datetime,
+    *,
+    clock_skew_minutes: int = 5,
+    max_exp_days: int = 90,
+) -> VerificationResult:
+    """Classify temporal claims against an explicit, testable reference time."""
+    values = (iat, nbf, exp, reference_time)
+    if any(
+        not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None
+        for value in values
+    ):
+        return VerificationResult.INVALID_SCHEMA
+    if reference_time < nbf:
+        return VerificationResult.NOT_YET_VALID
+    if reference_time > exp:
+        return VerificationResult.EXPIRED
+    if iat > reference_time + timedelta(minutes=clock_skew_minutes):
+        return VerificationResult.FUTURE_TIMESTAMP
+    if exp > iat + timedelta(days=max_exp_days):
+        return VerificationResult.EXPIRED
+    return VerificationResult.VALID
 
 
 def _verify_ed25519_signature(
@@ -91,6 +118,8 @@ class VerificationContext:
     model_family: str = "claude-*"
     purpose: str = "general-assistant"
     environment: str = "production"
+    audience: str | None = None
+    region: str | None = None
 
 
 @dataclass
@@ -207,10 +236,9 @@ class Orchestrator:
             replay_cache: Cache for JTI tracking (created if None)
             verify_signature: Optional custom Ed25519 verifier. The SDK's
                               cryptography-backed verifier is used by default.
-            revocation_checker: Optional checker for bundle revocation status.
-                               When provided, bundles are checked against
-                               check_uri / CRL between attestation and
-                               temporal verification (spec step 10).
+            revocation_checker: Optional customized checker for bundle
+                               revocation status. A bounded fail-closed checker
+                               is created when this is omitted.
             hook_executor: Optional HookExecutor for firing pipeline hooks.
                           When provided, pre_inject hooks fire before returning
                           VALID. Import: ``from vcp.hooks import HookExecutor``.
@@ -218,7 +246,9 @@ class Orchestrator:
         self.trust_config = trust_config
         self.replay_cache = replay_cache or ReplayCache()
         self._verify_signature = verify_signature or _verify_ed25519_signature
-        self.revocation_checker = revocation_checker
+        self.revocation_checker = (
+            revocation_checker if revocation_checker is not None else RevocationChecker()
+        )
         self._hook_executor = hook_executor
 
     def verify(
@@ -342,53 +372,53 @@ class Orchestrator:
         if not attestation_signature_valid:
             return VerificationResult.INVALID_ATTESTATION
 
+        # Prompt-injection pipelines require evidence that actually covers
+        # injection risk. Content-only and competence attestations are valid
+        # for their own purposes but cannot authorize prompt injection.
+        if manifest.safety_attestation.attestation_type not in {
+            AttestationType.INJECTION_SAFE,
+            AttestationType.FULL_AUDIT,
+        }:
+            return VerificationResult.INVALID_ATTESTATION
+
         # 6b. Revocation check (between attestation and temporal — spec step 10)
-        if self.revocation_checker:
-            try:
-                status = self.revocation_checker.check(manifest)
-                if status.revoked:
-                    logger.warning(
-                        "Bundle jti=%s is revoked: reason=%s, revoked_at=%s",
-                        manifest.timestamps.jti,
-                        status.reason,
-                        status.revoked_at,
-                    )
-                    return VerificationResult.REVOKED
-            except Exception:
-                logger.exception(
-                    "Revocation check error for jti=%s; rejecting bundle",
+        try:
+            status = self.revocation_checker.check(manifest)
+            if status.should_reject:
+                logger.warning(
+                    "Bundle jti=%s failed revocation validation: decision=%s, reason=%s, "
+                    "revoked_at=%s",
                     manifest.timestamps.jti,
+                    status.decision,
+                    status.reason,
+                    status.revoked_at,
                 )
+                if status.decision is RevocationDecision.UNAVAILABLE:
+                    return VerificationResult.REVOCATION_UNAVAILABLE
                 return VerificationResult.REVOKED
+        except Exception:
+            logger.exception(
+                "Revocation check error for jti=%s; rejecting bundle",
+                manifest.timestamps.jti,
+            )
+            return VerificationResult.REVOCATION_UNAVAILABLE
 
         # 7. Temporal claims
         now = datetime.now(timezone.utc)
         ts = manifest.timestamps
 
-        temporal_values = (ts.iat, ts.nbf, ts.exp)
-        if any(
-            not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None
-            for value in temporal_values
-        ):
-            return VerificationResult.INVALID_SCHEMA
         if not isinstance(ts.jti, str) or not ts.jti.strip():
             return VerificationResult.INVALID_SCHEMA
-
-        # Not before check
-        if now < ts.nbf:
-            return VerificationResult.NOT_YET_VALID
-
-        # Expiration check
-        if now > ts.exp:
-            return VerificationResult.EXPIRED
-
-        # Future timestamp check (clock skew)
-        if ts.iat > now + timedelta(minutes=self.CLOCK_SKEW_MINUTES):
-            return VerificationResult.FUTURE_TIMESTAMP
-
-        # Maximum expiration check
-        if ts.exp > ts.iat + timedelta(days=self.MAX_EXP_DAYS):
-            return VerificationResult.EXPIRED  # Exp too far from iat
+        temporal_result = classify_temporal_claims(
+            ts.iat,
+            ts.nbf,
+            ts.exp,
+            now,
+            clock_skew_minutes=self.CLOCK_SKEW_MINUTES,
+            max_exp_days=self.MAX_EXP_DAYS,
+        )
+        if temporal_result is not VerificationResult.VALID:
+            return temporal_result
 
         # 8. Replay prevention is reserved after all pure validation succeeds.
         if self.replay_cache.is_seen(ts.jti):
@@ -411,7 +441,11 @@ class Orchestrator:
         ):
             return VerificationResult.INVALID_SCHEMA
         max_tokens = int(context.model_context_limit * max_share)
-        if declared_tokens > max_tokens:
+        # Tokenizers vary, so use a deliberately conservative lower bound.
+        # It prevents an attacker from declaring one token for a large body
+        # without rejecting ordinary tokenizer variance.
+        body_token_floor = max(1, math.ceil(len(bundle.content.encode("utf-8")) / 16))
+        if declared_tokens < body_token_floor or declared_tokens > max_tokens:
             return VerificationResult.BUDGET_EXCEEDED
 
         # 10. Scope verification
@@ -436,6 +470,16 @@ class Orchestrator:
             if scope.environments and context.environment not in scope.environments:
                 return VerificationResult.SCOPE_MISMATCH
 
+            # A scoped audience or region must be supplied explicitly. Missing
+            # runtime context cannot be treated as a wildcard authorization.
+            if scope.audiences and (
+                context.audience is None or context.audience not in scope.audiences
+            ):
+                return VerificationResult.SCOPE_MISMATCH
+
+            if scope.regions and (context.region is None or context.region not in scope.regions):
+                return VerificationResult.SCOPE_MISMATCH
+
         # 11. Content safety scan (additional check even with attestation)
         safety_issues = self._scan_for_injection(bundle.content)
         if safety_issues:
@@ -452,7 +496,7 @@ class Orchestrator:
         # 12. Fire pre_inject hooks (if executor configured)
         if self._hook_executor is not None:
             try:
-                from .hooks.types import HookType, PreInjectEvent
+                from .hooks.types import HookType, PreInjectEvent, ResultStatus
 
                 hook_result = self._hook_executor.execute(
                     HookType.PRE_INJECT,
@@ -461,6 +505,8 @@ class Orchestrator:
                         "environment": context.environment,
                         "purpose": context.purpose,
                         "model_family": context.model_family,
+                        "audience": context.audience,
+                        "region": context.region,
                     },
                     constitution=bundle.content,
                     event=PreInjectEvent(
@@ -479,6 +525,16 @@ class Orchestrator:
                     return VerificationResult.INVALID_ATTESTATION
                 if hook_result.cascade_failure:
                     logger.error("pre_inject hook chain failed; rejecting bundle")
+                    self.replay_cache.discard(ts.jti)
+                    return VerificationResult.INVALID_ATTESTATION
+                if any(
+                    result.status == ResultStatus.MODIFY
+                    for _hook_name, result in hook_result.hook_results
+                ):
+                    logger.error(
+                        "pre_inject hook attempted a modification that the verify API "
+                        "cannot return; rejecting instead of discarding it"
+                    )
                     self.replay_cache.discard(ts.jti)
                     return VerificationResult.INVALID_ATTESTATION
             except Exception:
@@ -503,6 +559,10 @@ class Orchestrator:
                 findings.append(f"Forbidden character: U+{ord(char):04X}")
 
         return findings
+
+    def scan_for_injection(self, content: str) -> list[str]:
+        """Return injection-pattern and forbidden-character findings."""
+        return self._scan_for_injection(content)
 
     def verify_or_raise(
         self,

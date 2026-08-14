@@ -1,8 +1,8 @@
 /**
  * @creed-space/vcp-sdk
  *
- * Register VCP capabilities as discoverable tools for AI agents via
- * the navigator.modelContext API (Chrome 145+, W3C Draft 2026-02-10).
+ * Register VCP capabilities as discoverable tools for AI agents through the
+ * experimental WebMCP `document.modelContext` imperative API.
  *
  * Usage:
  *   import { registerVCPTools } from '@creed-space/vcp-sdk';
@@ -23,11 +23,14 @@ export type {
 	TransmissionSummary,
 	WebMCPToolDefinition,
 	WebMCPToolResult,
-	WebMCPToolRegistration,
+	WebMCPToolAnnotations,
+	WebMCPRegisterToolOptions,
+	WebMCPRegistrationFailure,
 	WebMCPModelContext
 } from './types.js';
 
 export { createVCPTools } from './tools.js';
+export { registerVCPTools } from './registration.js';
 
 export {
 	HookRegistry,
@@ -64,63 +67,3 @@ export {
 	negotiate,
 	createFullHello,
 } from './extensions/index.js';
-
-import type { VCPWebMCPConfig, VCPWebMCPResult, WebMCPToolRegistration } from './types.js';
-import { createVCPTools } from './tools.js';
-
-const EMPTY_RESULT: VCPWebMCPResult = {
-	registered: [],
-	cleanup: () => {}
-};
-
-/**
- * Register VCP tools with navigator.modelContext.
- *
- * Safe to call during SSR (returns immediately) and in browsers without
- * WebMCP support (returns empty result, no errors logged).
- *
- * @param config - Optional configuration for tool selection and dependencies
- * @returns Promise resolving to registered tool names and a cleanup function
- */
-export async function registerVCPTools(
-	config: VCPWebMCPConfig = {}
-): Promise<VCPWebMCPResult> {
-	// SSR guard
-	if (typeof window === 'undefined') return EMPTY_RESULT;
-
-	// Feature detection
-	if (!navigator.modelContext?.registerTool) return EMPTY_RESULT;
-
-	const tools = createVCPTools(config);
-	const registrations: WebMCPToolRegistration[] = [];
-	const registered: string[] = [];
-
-	for (const tool of tools) {
-		try {
-			const reg = navigator.modelContext.registerTool(tool);
-			registrations.push(reg);
-			registered.push(tool.name);
-		} catch (err) {
-			console.warn(`[@creed-space/vcp-sdk] Failed to register ${tool.name}:`, err);
-		}
-	}
-
-	if (registered.length > 0) {
-		console.log(
-			`[@creed-space/vcp-sdk] Registered ${registered.length} tools: ${registered.join(', ')}`
-		);
-	}
-
-	return {
-		registered,
-		cleanup() {
-			for (const reg of registrations) {
-				try {
-					reg.unregister();
-				} catch {
-					// already unregistered or browser cleaned up
-				}
-			}
-		}
-	};
-}

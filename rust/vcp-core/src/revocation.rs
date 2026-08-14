@@ -1,8 +1,8 @@
 //! Revocation checking for VCP bundles.
 //!
 //! Provides SSRF-safe URI validation, CRL (Certificate Revocation List)
-//! parsing, and a caching revocation checker. The checker supports both
-//! online status endpoints and offline CRL-based revocation lookups.
+//! parsing, and a caching revocation checker. The checker supports live
+//! online status endpoints, live CRL retrieval, and preloaded CRLs.
 //!
 //! # SSRF Protection
 //!
@@ -11,11 +11,13 @@
 //! - Only `https` is permitted for network revocation checks.
 //! - Non-standard ports are rejected.
 //!
-//! # HTTP Requests
+//! # Network Boundaries
 //!
-//! Actual HTTP fetching requires a sync HTTP client crate. Since none is
-//! currently configured, network checks fail closed as unavailable. Cached
-//! CRLs remain usable until their freshness window expires.
+//! The default transport resolves every hostname before connecting, rejects
+//! the entire resolution set if any address is non-global, and pins the
+//! validated addresses into the TLS client. Redirects, proxies, retries, and
+//! transparent decompression are disabled. Response headers and bodies are
+//! bounded before JSON parsing.
 //!
 //! # Example
 //!
@@ -35,13 +37,18 @@
 //! assert!(!status.revoked);
 //! ```
 
-use std::collections::{HashMap, HashSet};
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use std::sync::LazyLock;
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::io::Read;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
+use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
 use regex::Regex;
+use reqwest::header::{ACCEPT, CONTENT_ENCODING, CONTENT_LENGTH, CONTENT_TYPE};
+use reqwest::redirect::Policy;
+use reqwest::{StatusCode, Url};
 use serde::Deserialize;
+use serde_json::Value;
 
 use crate::error::{VcpError, VcpResult};
 
@@ -67,10 +74,24 @@ fn parse_strict_rfc3339(
 
 // ── RevocationStatus ────────────────────────────────────────
 
+/// The three possible outcomes of a revocation lookup.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum RevocationDecision {
+    /// The configured source established that the bundle is not revoked.
+    #[default]
+    NotRevoked,
+    /// The configured source established that the bundle is revoked.
+    Revoked,
+    /// No configured source could establish a trustworthy decision.
+    Unavailable,
+}
+
 /// Revocation status of a VCP bundle.
 #[derive(Debug, Clone, Default)]
 pub struct RevocationStatus {
-    /// Whether the bundle has been revoked.
+    /// Exact revocation decision. Callers must reject `Unavailable` fail closed.
+    pub decision: RevocationDecision,
+    /// Compatibility flag that is true only for a confirmed revocation.
     pub revoked: bool,
     /// Human-readable reason for revocation, if revoked.
     pub reason: Option<String>,
@@ -87,6 +108,7 @@ impl RevocationStatus {
     /// Create a status indicating the bundle has been revoked.
     pub fn revoked(reason: impl Into<String>, revoked_at: impl Into<String>) -> Self {
         Self {
+            decision: RevocationDecision::Revoked,
             revoked: true,
             reason: Some(reason.into()),
             revoked_at: Some(revoked_at.into()),
@@ -96,10 +118,16 @@ impl RevocationStatus {
     /// Create a fail-closed status for an unavailable revocation decision.
     pub fn unavailable() -> Self {
         Self {
-            revoked: true,
+            decision: RevocationDecision::Unavailable,
+            revoked: false,
             reason: Some("revocation_status_unavailable".to_string()),
             revoked_at: None,
         }
+    }
+
+    /// Whether this result must cause verification to fail closed.
+    pub fn should_reject(&self) -> bool {
+        self.decision != RevocationDecision::NotRevoked
     }
 }
 
@@ -145,8 +173,8 @@ fn is_private_ipv6(ip: Ipv6Addr) -> bool {
         return true;
     }
     let segments = ip.segments();
-    // fe80::/10 (link-local)
-    if segments[0] & 0xffc0 == 0xfe80 {
+    // fe80::/10 (link-local) and fec0::/10 (deprecated site-local)
+    if segments[0] & 0xffc0 == 0xfe80 || segments[0] & 0xffc0 == 0xfec0 {
         return true;
     }
     // fc00::/7 (unique local address)
@@ -161,8 +189,42 @@ fn is_private_ipv6(ip: Ipv6Addr) -> bool {
     if segments[0] & 0xff00 == 0xff00 {
         return true;
     }
+    // 64:ff9b:1::/48 (local-use translation)
+    if segments[0] == 0x0064 && segments[1] == 0xff9b && segments[2] == 0x0001 {
+        return true;
+    }
+    // 64:ff9b::/96 (well-known NAT64 translation). Reject the translation
+    // prefix rather than trusting an embedded IPv4 destination.
+    if segments[..6] == [0x0064, 0xff9b, 0, 0, 0, 0] {
+        return true;
+    }
+    // ::/96 (deprecated IPv4-compatible and other special addresses).
+    // IPv4-mapped addresses were handled above.
+    if segments[..6] == [0, 0, 0, 0, 0, 0] {
+        return true;
+    }
+    // 100::/64 (discard-only)
+    if segments[0] == 0x0100 && segments[1..4] == [0, 0, 0] {
+        return true;
+    }
+    // 2001::/23 (IETF special-purpose space, including documentation and ORCHID)
+    if segments[0] == 0x2001 && segments[1] <= 0x01ff {
+        return true;
+    }
     // 2001:db8::/32 (documentation)
     if segments[0] == 0x2001 && segments[1] == 0x0db8 {
+        return true;
+    }
+    // 2002::/16 (deprecated 6to4)
+    if segments[0] == 0x2002 {
+        return true;
+    }
+    // 3fff::/20 (documentation)
+    if segments[0] == 0x3fff && segments[1] & 0xf000 == 0 {
+        return true;
+    }
+    // 5f00::/16 (segment-routing SIDs)
+    if segments[0] == 0x5f00 {
         return true;
     }
     false
@@ -270,6 +332,214 @@ pub fn validate_uri(uri: &str) -> VcpResult<()> {
     Ok(())
 }
 
+/// Maximum accepted JSON response body, in bytes.
+pub const MAX_RESPONSE_BYTES: usize = 327_680;
+/// Maximum accepted response header count.
+pub const MAX_RESPONSE_HEADERS: usize = 64;
+/// Maximum aggregate response header name and value bytes.
+pub const MAX_RESPONSE_HEADER_BYTES: usize = 32_768;
+
+/// Injectable JSON transport for revocation status and CRL retrieval.
+///
+/// Production callers normally use [`ReqwestRevocationTransport`]. The trait
+/// makes parser, cache, and fallback behavior testable without a live network.
+pub trait RevocationTransport: Send + Sync {
+    /// Retrieve one JSON object from an already validated revocation URI.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when URI validation, DNS resolution, transport,
+    /// response-bound enforcement, or JSON decoding fails.
+    fn get_json(&self, uri: &str, timeout: Duration) -> VcpResult<Value>;
+}
+
+/// HTTPS transport with DNS pinning and bounded response processing.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ReqwestRevocationTransport;
+
+impl RevocationTransport for ReqwestRevocationTransport {
+    fn get_json(&self, uri: &str, timeout: Duration) -> VcpResult<Value> {
+        validate_uri(uri)?;
+        if timeout.is_zero() {
+            return Err(VcpError::RevocationError(
+                "revocation timeout must be positive".to_string(),
+            ));
+        }
+
+        let url = Url::parse(uri).map_err(|error| {
+            VcpError::RevocationError(format!("invalid revocation URI: {error}"))
+        })?;
+        let host = url.host_str().ok_or_else(|| {
+            VcpError::RevocationError("revocation URI requires a hostname".to_string())
+        })?;
+        let port = url.port_or_known_default().ok_or_else(|| {
+            VcpError::RevocationError("revocation URI requires a known HTTPS port".to_string())
+        })?;
+        let addresses = resolve_public_addresses(host, port)?;
+
+        let client = build_revocation_client(host, &addresses, timeout)?;
+        let response = client
+            .get(url)
+            .header(ACCEPT, "application/json")
+            .header("Accept-Encoding", "identity")
+            .send()
+            .map_err(|error| {
+                VcpError::RevocationError(format!("revocation request failed: {error}"))
+            })?;
+
+        parse_json_response(response)
+    }
+}
+
+fn build_revocation_client(
+    host: &str,
+    addresses: &[SocketAddr],
+    timeout: Duration,
+) -> VcpResult<reqwest::blocking::Client> {
+    let connect_timeout = std::cmp::min(timeout, Duration::from_secs(5));
+    reqwest::blocking::Client::builder()
+        .tls_backend_rustls()
+        .https_only(true)
+        .no_proxy()
+        .redirect(Policy::none())
+        .retry(reqwest::retry::never())
+        .referer(false)
+        .timeout(timeout)
+        .connect_timeout(connect_timeout)
+        .pool_max_idle_per_host(0)
+        .http1_only()
+        .http1_allow_obsolete_multiline_headers_in_responses(false)
+        .http1_ignore_invalid_headers_in_responses(false)
+        .http1_allow_spaces_after_header_name_in_responses(false)
+        .no_gzip()
+        .no_brotli()
+        .no_deflate()
+        .no_zstd()
+        .no_hickory_dns()
+        .tls_sni(true)
+        .resolve_to_addrs(host, addresses)
+        .build()
+        .map_err(|error| {
+            VcpError::RevocationError(format!("failed to build revocation client: {error}"))
+        })
+}
+
+fn parse_json_response(mut response: reqwest::blocking::Response) -> VcpResult<Value> {
+    if response.status() != StatusCode::OK {
+        return Err(VcpError::RevocationError(format!(
+            "revocation endpoint returned HTTP {}",
+            response.status()
+        )));
+    }
+
+    validate_response_headers(response.headers())?;
+    if response
+        .headers()
+        .get(CONTENT_ENCODING)
+        .is_some_and(|value| !value.as_bytes().eq_ignore_ascii_case(b"identity"))
+    {
+        return Err(VcpError::RevocationError(
+            "compressed revocation responses are not accepted".to_string(),
+        ));
+    }
+    let content_type = response
+        .headers()
+        .get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(';').next())
+        .map(str::trim)
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    if content_type != "application/json" && !content_type.ends_with("+json") {
+        return Err(VcpError::RevocationError(
+            "revocation response requires a JSON content type".to_string(),
+        ));
+    }
+    if let Some(length) = response
+        .headers()
+        .get(CONTENT_LENGTH)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<u64>().ok())
+    {
+        if length > MAX_RESPONSE_BYTES as u64 {
+            return Err(VcpError::RevocationError(format!(
+                "revocation response exceeds {MAX_RESPONSE_BYTES} bytes"
+            )));
+        }
+    }
+
+    let mut body = Vec::with_capacity(4096);
+    response
+        .by_ref()
+        .take((MAX_RESPONSE_BYTES + 1) as u64)
+        .read_to_end(&mut body)
+        .map_err(|error| {
+            VcpError::RevocationError(format!("failed to read revocation response: {error}"))
+        })?;
+    if body.len() > MAX_RESPONSE_BYTES {
+        return Err(VcpError::RevocationError(format!(
+            "revocation response exceeds {MAX_RESPONSE_BYTES} bytes"
+        )));
+    }
+    let value: Value = serde_json::from_slice(&body)
+        .map_err(|error| VcpError::RevocationError(format!("invalid revocation JSON: {error}")))?;
+    if !value.is_object() {
+        return Err(VcpError::RevocationError(
+            "revocation response must be a JSON object".to_string(),
+        ));
+    }
+    Ok(value)
+}
+
+fn validate_response_headers(headers: &reqwest::header::HeaderMap) -> VcpResult<()> {
+    if headers.len() > MAX_RESPONSE_HEADERS {
+        return Err(VcpError::RevocationError(format!(
+            "revocation response exceeds {MAX_RESPONSE_HEADERS} headers"
+        )));
+    }
+    let total = headers
+        .iter()
+        .try_fold(0usize, |sum, (name, value)| {
+            sum.checked_add(name.as_str().len())
+                .and_then(|value_sum| value_sum.checked_add(value.as_bytes().len()))
+        })
+        .ok_or_else(|| {
+            VcpError::RevocationError("revocation response header size overflow".to_string())
+        })?;
+    if total > MAX_RESPONSE_HEADER_BYTES {
+        return Err(VcpError::RevocationError(format!(
+            "revocation response headers exceed {MAX_RESPONSE_HEADER_BYTES} bytes"
+        )));
+    }
+    Ok(())
+}
+
+fn resolve_public_addresses(host: &str, port: u16) -> VcpResult<Vec<SocketAddr>> {
+    let addresses = (host, port).to_socket_addrs().map_err(|error| {
+        VcpError::RevocationError(format!("failed to resolve revocation host: {error}"))
+    })?;
+    validate_resolved_addresses(addresses)
+}
+
+fn validate_resolved_addresses(
+    addresses: impl IntoIterator<Item = SocketAddr>,
+) -> VcpResult<Vec<SocketAddr>> {
+    let mut addresses: Vec<_> = addresses.into_iter().collect();
+    addresses.sort_unstable();
+    addresses.dedup();
+    if addresses.is_empty() {
+        return Err(VcpError::RevocationError(
+            "revocation hostname resolved to no addresses".to_string(),
+        ));
+    }
+    if addresses.iter().any(|address| is_private_ip(address.ip())) {
+        return Err(VcpError::RevocationError(
+            "revocation hostname resolved to a private or reserved address".to_string(),
+        ));
+    }
+    Ok(addresses)
+}
+
 // ── CRL types ───────────────────────────────────────────────
 
 /// An entry in a Certificate Revocation List.
@@ -335,6 +605,11 @@ impl Crl {
                 ));
             }
             parse_strict_rfc3339(&entry.revoked_at, "revoked[].revoked_at")?;
+            if entry.reason.trim().is_empty() {
+                return Err(VcpError::RevocationError(
+                    "CRL entry reason must not be empty".to_string(),
+                ));
+            }
             if !seen.insert(entry.jti.as_str()) {
                 return Err(VcpError::RevocationError(format!(
                     "CRL contains duplicate jti {:?}",
@@ -359,6 +634,54 @@ impl Crl {
     }
 }
 
+#[derive(Debug, Deserialize)]
+struct OnlineRevocationResponse {
+    revoked: bool,
+    jti: String,
+    issuer: String,
+    #[serde(default)]
+    reason: Option<String>,
+    #[serde(default)]
+    revoked_at: Option<String>,
+}
+
+impl OnlineRevocationResponse {
+    fn into_status(self, expected_jti: &str, expected_issuer: &str) -> VcpResult<RevocationStatus> {
+        if self.jti != expected_jti {
+            return Err(VcpError::RevocationError(
+                "online revocation response JTI does not match the request".to_string(),
+            ));
+        }
+        if self.issuer != expected_issuer {
+            return Err(VcpError::RevocationError(
+                "online revocation response issuer does not match the request".to_string(),
+            ));
+        }
+        if self.revoked {
+            let reason = self
+                .reason
+                .filter(|value| !value.trim().is_empty())
+                .ok_or_else(|| {
+                    VcpError::RevocationError(
+                        "confirmed revocation requires a non-empty reason".to_string(),
+                    )
+                })?;
+            let revoked_at = self.revoked_at.ok_or_else(|| {
+                VcpError::RevocationError("confirmed revocation requires revoked_at".to_string())
+            })?;
+            parse_strict_rfc3339(&revoked_at, "online.revoked_at")?;
+            Ok(RevocationStatus::revoked(reason, revoked_at))
+        } else {
+            if self.reason.is_some() || self.revoked_at.is_some() {
+                return Err(VcpError::RevocationError(
+                    "non-revoked response must not include revocation details".to_string(),
+                ));
+            }
+            Ok(RevocationStatus::not_revoked())
+        }
+    }
+}
+
 // ── RevocationChecker ───────────────────────────────────────
 
 /// Synchronous revocation checker with caching.
@@ -367,12 +690,9 @@ impl Crl {
 /// Results are cached for the configured TTL to avoid redundant network
 /// requests.
 ///
-/// # HTTP Note
-///
-/// Actual HTTP fetching is not implemented because no sync HTTP client
-/// crate is in the current dependencies. Configured network checks therefore
-/// return a fail-closed unavailable status. Callers may preload a fresh CRL
-/// for offline operation.
+/// The default transport uses rustls, validates and pins DNS results, disables
+/// redirects and proxies, and bounds every accepted response. A custom
+/// transport can be injected for deterministic tests.
 pub struct RevocationChecker {
     /// How long cached results remain valid.
     cache_ttl: Duration,
@@ -380,9 +700,17 @@ pub struct RevocationChecker {
     timeout: Duration,
     /// Cache of revocation decisions keyed by source URI, issuer, and JTI.
     cache: HashMap<(String, String, String), CachedDecision>,
+    cache_order: VecDeque<(String, String, String)>,
     /// Cache of parsed CRLs keyed by URI.
     crl_cache: HashMap<String, (Crl, Instant)>,
+    crl_order: VecDeque<String>,
+    max_cache_entries: usize,
+    max_crl_cache_entries: usize,
+    transport: Arc<dyn RevocationTransport>,
 }
+
+const DEFAULT_MAX_CACHE_ENTRIES: usize = 4096;
+const DEFAULT_MAX_CRL_CACHE_ENTRIES: usize = 256;
 
 struct CachedDecision {
     status: RevocationStatus,
@@ -395,7 +723,12 @@ impl std::fmt::Debug for RevocationChecker {
             .field("cache_ttl", &self.cache_ttl)
             .field("timeout", &self.timeout)
             .field("cache_entries", &self.cache.len())
+            .field("cache_order", &self.cache_order.len())
             .field("crl_entries", &self.crl_cache.len())
+            .field("crl_order", &self.crl_order.len())
+            .field("max_cache_entries", &self.max_cache_entries)
+            .field("max_crl_cache_entries", &self.max_crl_cache_entries)
+            .field("transport", &"dyn RevocationTransport")
             .finish()
     }
 }
@@ -408,11 +741,74 @@ impl RevocationChecker {
     /// * `cache_ttl` - How long cached results remain valid.
     /// * `timeout` - Maximum time to wait for an HTTP response.
     pub fn new(cache_ttl: Duration, timeout: Duration) -> Self {
+        Self::with_limits(
+            cache_ttl,
+            timeout,
+            DEFAULT_MAX_CACHE_ENTRIES,
+            DEFAULT_MAX_CRL_CACHE_ENTRIES,
+        )
+    }
+
+    /// Create a checker with explicit bounded cache capacities.
+    ///
+    /// # Panics
+    ///
+    /// Panics when either cache limit is zero.
+    pub fn with_limits(
+        cache_ttl: Duration,
+        timeout: Duration,
+        max_cache_entries: usize,
+        max_crl_cache_entries: usize,
+    ) -> Self {
+        Self::with_limits_and_transport(
+            cache_ttl,
+            timeout,
+            max_cache_entries,
+            max_crl_cache_entries,
+            Arc::new(ReqwestRevocationTransport),
+        )
+    }
+
+    /// Create a checker with an injected transport.
+    pub fn with_transport<T>(cache_ttl: Duration, timeout: Duration, transport: T) -> Self
+    where
+        T: RevocationTransport + 'static,
+    {
+        Self::with_limits_and_transport(
+            cache_ttl,
+            timeout,
+            DEFAULT_MAX_CACHE_ENTRIES,
+            DEFAULT_MAX_CRL_CACHE_ENTRIES,
+            Arc::new(transport),
+        )
+    }
+
+    fn with_limits_and_transport(
+        cache_ttl: Duration,
+        timeout: Duration,
+        max_cache_entries: usize,
+        max_crl_cache_entries: usize,
+        transport: Arc<dyn RevocationTransport>,
+    ) -> Self {
+        assert!(
+            max_cache_entries > 0,
+            "decision cache limit must be positive"
+        );
+        assert!(
+            max_crl_cache_entries > 0,
+            "CRL cache limit must be positive"
+        );
+        assert!(!timeout.is_zero(), "revocation timeout must be positive");
         Self {
             cache_ttl,
             timeout,
             cache: HashMap::new(),
+            cache_order: VecDeque::new(),
             crl_cache: HashMap::new(),
+            crl_order: VecDeque::new(),
+            max_cache_entries,
+            max_crl_cache_entries,
+            transport,
         }
     }
 
@@ -433,7 +829,34 @@ impl RevocationChecker {
             None => return None,
         }
         self.cache.remove(key);
+        self.cache_order.retain(|candidate| candidate != key);
         None
+    }
+
+    fn insert_decision(
+        &mut self,
+        key: (String, String, String),
+        status: RevocationStatus,
+        ttl: Duration,
+    ) {
+        let now = Instant::now();
+        self.cache.retain(|_, entry| entry.expires_at > now);
+        self.cache_order
+            .retain(|candidate| candidate != &key && self.cache.contains_key(candidate));
+        while self.cache.len() >= self.max_cache_entries {
+            let Some(oldest) = self.cache_order.pop_front() else {
+                break;
+            };
+            self.cache.remove(&oldest);
+        }
+        self.cache_order.push_back(key.clone());
+        self.cache.insert(
+            key,
+            CachedDecision {
+                status,
+                expires_at: now + ttl,
+            },
+        );
     }
 
     /// Check the revocation status of a bundle by JTI.
@@ -465,7 +888,7 @@ impl RevocationChecker {
     ) -> RevocationStatus {
         if jti.trim().is_empty()
             || expected_issuer.is_some_and(|issuer| issuer.trim().is_empty())
-            || (crl_uri.is_some() && expected_issuer.is_none())
+            || ((check_uri.is_some() || crl_uri.is_some()) && expected_issuer.is_none())
         {
             return RevocationStatus::unavailable();
         }
@@ -479,14 +902,11 @@ impl RevocationChecker {
             if let Some(status) = self.cached(&key) {
                 return status;
             }
-            if let Ok(Some(status)) = self.check_online(uri, jti) {
-                self.cache.insert(
-                    key,
-                    CachedDecision {
-                        status: status.clone(),
-                        expires_at: Instant::now() + self.cache_ttl,
-                    },
-                );
+            let Some(issuer) = expected_issuer else {
+                return RevocationStatus::unavailable();
+            };
+            if let Ok(status) = self.check_online(uri, jti, issuer) {
+                self.insert_decision(key, status.clone(), self.cache_ttl);
                 return status;
             }
         }
@@ -499,12 +919,10 @@ impl RevocationChecker {
                 return status;
             }
             if let Ok((status, freshness)) = self.check_crl(uri, jti, expected_issuer) {
-                self.cache.insert(
+                self.insert_decision(
                     key,
-                    CachedDecision {
-                        status: status.clone(),
-                        expires_at: Instant::now() + std::cmp::min(self.cache_ttl, freshness),
-                    },
+                    status.clone(),
+                    std::cmp::min(self.cache_ttl, freshness),
                 );
                 return status;
             }
@@ -520,18 +938,36 @@ impl RevocationChecker {
     /// Attempt an online revocation check against a status endpoint.
     ///
     /// Returns an error if the check cannot be performed.
-    #[allow(clippy::unused_self)] // Will use self for HTTP client state when ureq/minreq is added.
-    fn check_online(&mut self, uri: &str, _jti: &str) -> VcpResult<Option<RevocationStatus>> {
-        // Validate URI for SSRF safety.
+    fn check_online(
+        &self,
+        uri: &str,
+        jti: &str,
+        expected_issuer: &str,
+    ) -> VcpResult<RevocationStatus> {
         validate_uri(uri)?;
-
-        // TODO: Implement HTTP GET to `{uri}?jti={jti}` when a sync HTTP
-        // client (ureq, minreq) is added to dependencies.
-        // Expected response: { "revoked": bool, "reason": string?, "revoked_at": string? }
-        //
-        Err(VcpError::RevocationError(
-            "online revocation client is unavailable".to_string(),
-        ))
+        let mut url = Url::parse(uri).map_err(|error| {
+            VcpError::RevocationError(format!("invalid revocation URI: {error}"))
+        })?;
+        let retained: Vec<(String, String)> = url
+            .query_pairs()
+            .filter(|(key, _)| key != "jti" && key != "issuer")
+            .map(|(key, value)| (key.into_owned(), value.into_owned()))
+            .collect();
+        url.set_query(None);
+        {
+            let mut query = url.query_pairs_mut();
+            for (key, value) in retained {
+                query.append_pair(&key, &value);
+            }
+            query.append_pair("jti", jti);
+            query.append_pair("issuer", expected_issuer);
+        }
+        let value = self.transport.get_json(url.as_str(), self.timeout)?;
+        let response: OnlineRevocationResponse =
+            serde_json::from_value(value).map_err(|error| {
+                VcpError::RevocationError(format!("invalid online revocation response: {error}"))
+            })?;
+        response.into_status(jti, expected_issuer)
     }
 
     /// Check revocation status against a cached or fetched CRL.
@@ -551,26 +987,41 @@ impl RevocationChecker {
             }
         }
 
-        // Validate URI for SSRF safety.
         validate_uri(uri)?;
-
-        // TODO: Fetch CRL via HTTP GET when a sync HTTP client is available.
-        Err(VcpError::RevocationError(
-            "CRL fetch client is unavailable".to_string(),
-        ))
+        let value = self.transport.get_json(uri, self.timeout)?;
+        let crl: Crl = serde_json::from_value(value)
+            .map_err(|error| VcpError::RevocationError(format!("failed to parse CRL: {error}")))?;
+        let (_, freshness) = crl_lookup_status(&crl, jti, expected_issuer)?;
+        self.insert_crl(uri, crl);
+        let (crl, _) = self
+            .crl_cache
+            .get(uri)
+            .expect("freshly inserted CRL is present");
+        let (status, _) = crl_lookup_status(crl, jti, expected_issuer)?;
+        Ok((status, freshness))
     }
 
     /// Manually insert a CRL into the cache (useful for testing and
     /// offline operation).
     pub fn insert_crl(&mut self, uri: &str, crl: Crl) {
-        self.crl_cache
-            .insert(uri.to_string(), (crl, Instant::now()));
+        let uri = uri.to_string();
+        self.crl_order.retain(|candidate| candidate != &uri);
+        while self.crl_cache.len() >= self.max_crl_cache_entries {
+            let Some(oldest) = self.crl_order.pop_front() else {
+                break;
+            };
+            self.crl_cache.remove(&oldest);
+        }
+        self.crl_order.push_back(uri.clone());
+        self.crl_cache.insert(uri, (crl, Instant::now()));
     }
 
     /// Clear all caches.
     pub fn clear_cache(&mut self) {
         self.cache.clear();
+        self.cache_order.clear();
         self.crl_cache.clear();
+        self.crl_order.clear();
     }
 }
 
@@ -599,6 +1050,34 @@ fn crl_lookup_status(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    #[derive(Clone)]
+    struct FakeTransport {
+        responses: Arc<Mutex<VecDeque<Result<Value, String>>>>,
+        requests: Arc<Mutex<Vec<String>>>,
+    }
+
+    impl FakeTransport {
+        fn new(responses: impl IntoIterator<Item = Result<Value, String>>) -> Self {
+            Self {
+                responses: Arc::new(Mutex::new(responses.into_iter().collect())),
+                requests: Arc::new(Mutex::new(Vec::new())),
+            }
+        }
+    }
+
+    impl RevocationTransport for FakeTransport {
+        fn get_json(&self, uri: &str, _timeout: Duration) -> VcpResult<Value> {
+            self.requests.lock().unwrap().push(uri.to_string());
+            self.responses
+                .lock()
+                .unwrap()
+                .pop_front()
+                .expect("fake response available")
+                .map_err(VcpError::RevocationError)
+        }
+    }
 
     // ── is_private_ip tests ─────────────────────────────────
 
@@ -879,6 +1358,7 @@ mod tests {
     fn revocation_status_revoked() {
         let status = RevocationStatus::revoked("policy violation", "2026-01-15T12:00:00Z");
         assert!(status.revoked);
+        assert_eq!(status.decision, RevocationDecision::Revoked);
         assert_eq!(status.reason.as_deref(), Some("policy violation"));
         assert_eq!(status.revoked_at.as_deref(), Some("2026-01-15T12:00:00Z"));
     }
@@ -887,6 +1367,193 @@ mod tests {
     fn revocation_status_not_revoked() {
         let status = RevocationStatus::not_revoked();
         assert!(!status.revoked);
+    }
+
+    #[test]
+    fn unavailable_is_distinct_from_confirmed_revocation() {
+        let status = RevocationStatus::unavailable();
+        assert_eq!(status.decision, RevocationDecision::Unavailable);
+        assert!(!status.revoked);
+        assert!(status.should_reject());
+    }
+
+    #[test]
+    fn resolved_addresses_reject_empty_private_and_mixed_sets() {
+        assert!(validate_resolved_addresses(Vec::<SocketAddr>::new()).is_err());
+        assert!(validate_resolved_addresses(["127.0.0.1:443".parse().unwrap()]).is_err());
+        assert!(validate_resolved_addresses([
+            "8.8.8.8:443".parse().unwrap(),
+            "10.0.0.1:443".parse().unwrap(),
+        ])
+        .is_err());
+        assert_eq!(
+            validate_resolved_addresses([
+                "8.8.8.8:443".parse().unwrap(),
+                "8.8.8.8:443".parse().unwrap(),
+            ])
+            .unwrap()
+            .len(),
+            1
+        );
+    }
+
+    #[test]
+    fn rejects_translation_and_compatible_ipv6() {
+        for ip in ["64:ff9b::7f00:1", "64:ff9b:1::808:808", "::808:808"] {
+            assert!(is_private_ip(ip.parse().unwrap()), "{ip}");
+        }
+        assert!(!is_private_ip("3ff0::1".parse().unwrap()));
+    }
+
+    #[test]
+    fn online_transport_binds_query_and_response_to_jti_and_issuer() {
+        let transport = FakeTransport::new([Ok(serde_json::json!({
+            "revoked": false,
+            "jti": "real-jti",
+            "issuer": "issuer.example"
+        }))]);
+        let requests = transport.requests.clone();
+        let mut checker = RevocationChecker::with_transport(
+            Duration::from_mins(5),
+            Duration::from_secs(5),
+            transport,
+        );
+
+        let status = checker.check_with_issuer(
+            "real-jti",
+            Some("https://status.example/check?jti=attacker&issuer=attacker&mode=full"),
+            None,
+            Some("issuer.example"),
+        );
+
+        assert_eq!(status.decision, RevocationDecision::NotRevoked);
+        let requested = requests.lock().unwrap().first().unwrap().clone();
+        let url = Url::parse(&requested).unwrap();
+        let pairs: Vec<_> = url.query_pairs().collect();
+        assert_eq!(pairs.iter().filter(|(key, _)| key == "jti").count(), 1);
+        assert_eq!(pairs.iter().filter(|(key, _)| key == "issuer").count(), 1);
+        assert!(pairs
+            .iter()
+            .any(|(key, value)| key == "jti" && value == "real-jti"));
+        assert!(pairs
+            .iter()
+            .any(|(key, value)| key == "issuer" && value == "issuer.example"));
+    }
+
+    #[test]
+    fn online_response_binding_mismatch_is_unavailable() {
+        let transport = FakeTransport::new([Ok(serde_json::json!({
+            "revoked": false,
+            "jti": "other-jti",
+            "issuer": "issuer.example"
+        }))]);
+        let mut checker = RevocationChecker::with_transport(
+            Duration::from_mins(5),
+            Duration::from_secs(5),
+            transport,
+        );
+        let status = checker.check_with_issuer(
+            "real-jti",
+            Some("https://status.example/check"),
+            None,
+            Some("issuer.example"),
+        );
+        assert_eq!(status.decision, RevocationDecision::Unavailable);
+        assert!(!status.revoked);
+    }
+
+    #[test]
+    fn live_crl_fetch_uses_injected_transport_and_caches_result() {
+        let now = chrono::Utc::now();
+        let transport = FakeTransport::new([Ok(serde_json::json!({
+            "issuer": "issuer.example",
+            "updated_at": now.to_rfc3339(),
+            "next_update": (now + chrono::Duration::hours(1)).to_rfc3339(),
+            "revoked": [{
+                "jti": "revoked-jti",
+                "revoked_at": now.to_rfc3339(),
+                "reason": "key compromise"
+            }]
+        }))]);
+        let requests = transport.requests.clone();
+        let mut checker = RevocationChecker::with_transport(
+            Duration::from_mins(5),
+            Duration::from_secs(5),
+            transport,
+        );
+        let uri = "https://status.example/crl.json";
+
+        let first =
+            checker.check_with_issuer("revoked-jti", None, Some(uri), Some("issuer.example"));
+        let second =
+            checker.check_with_issuer("revoked-jti", None, Some(uri), Some("issuer.example"));
+
+        assert_eq!(first.decision, RevocationDecision::Revoked);
+        assert_eq!(second.decision, RevocationDecision::Revoked);
+        assert_eq!(requests.lock().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn shared_online_response_contract_matches_rust_parser() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../conformance/security/revocation-responses.json"
+        ))
+        .unwrap();
+        for case in fixture["vectors"].as_array().unwrap() {
+            let actual = match serde_json::from_value::<OnlineRevocationResponse>(
+                case["response"].clone(),
+            ) {
+                Ok(response) => match response.into_status(
+                    case["jti"].as_str().unwrap(),
+                    case["issuer"].as_str().unwrap(),
+                ) {
+                    Ok(status) => match status.decision {
+                        RevocationDecision::NotRevoked => "not_revoked",
+                        RevocationDecision::Revoked => "revoked",
+                        RevocationDecision::Unavailable => "unavailable",
+                    },
+                    Err(_) => "unavailable",
+                },
+                Err(_) => "unavailable",
+            };
+            assert_eq!(
+                actual,
+                case["expected"].as_str().unwrap(),
+                "case {}",
+                case["id"].as_str().unwrap()
+            );
+        }
+    }
+
+    #[test]
+    fn shared_crl_response_contract_matches_rust_parser() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../conformance/security/revocation-crl-responses.json"
+        ))
+        .unwrap();
+        for case in fixture["vectors"].as_array().unwrap() {
+            let actual = match serde_json::from_value::<Crl>(case["response"].clone()) {
+                Ok(crl) => match crl_lookup_status(
+                    &crl,
+                    case["jti"].as_str().unwrap(),
+                    case["issuer"].as_str(),
+                ) {
+                    Ok((status, _)) => match status.decision {
+                        RevocationDecision::NotRevoked => "not_revoked",
+                        RevocationDecision::Revoked => "revoked",
+                        RevocationDecision::Unavailable => "unavailable",
+                    },
+                    Err(_) => "unavailable",
+                },
+                Err(_) => "unavailable",
+            };
+            assert_eq!(
+                actual,
+                case["expected"].as_str().unwrap(),
+                "case {}",
+                case["id"].as_str().unwrap()
+            );
+        }
     }
 
     // ── RevocationChecker tests ─────────────────────────────
@@ -924,6 +1591,7 @@ mod tests {
             Some("test"),
         );
         assert!(status.revoked);
+        assert_eq!(status.decision, RevocationDecision::Revoked);
         assert_eq!(status.reason.as_deref(), Some("key compromise"));
 
         // Check a non-revoked JTI.
@@ -968,6 +1636,7 @@ mod tests {
             Some("test"),
         );
         assert!(status.revoked);
+        assert_eq!(status.decision, RevocationDecision::Revoked);
 
         // A context-free lookup cannot reuse a prior source-specific decision.
         let status = checker.check("cached-jti", None, None);
@@ -987,7 +1656,8 @@ mod tests {
             Some("https://example.com/a.json"),
             Some("other"),
         );
-        assert!(status.revoked);
+        assert!(!status.revoked);
+        assert_eq!(status.decision, RevocationDecision::Unavailable);
         assert_eq!(
             status.reason.as_deref(),
             Some("revocation_status_unavailable")
@@ -1039,7 +1709,8 @@ mod tests {
 
         let status = checker.check("clean-jti", None, Some(uri));
 
-        assert!(status.revoked);
+        assert!(!status.revoked);
+        assert_eq!(status.decision, RevocationDecision::Unavailable);
         assert_eq!(
             status.reason.as_deref(),
             Some("revocation_status_unavailable")
@@ -1094,11 +1765,15 @@ mod tests {
     #[test]
     fn checker_rejects_empty_jti_and_expected_issuer() {
         let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
-        assert!(checker.check("", None, None).revoked);
-        assert!(
+        assert_eq!(
+            checker.check("", None, None).decision,
+            RevocationDecision::Unavailable
+        );
+        assert_eq!(
             checker
                 .check_with_issuer("jti", None, None, Some(" "))
-                .revoked
+                .decision,
+            RevocationDecision::Unavailable
         );
     }
 
@@ -1126,11 +1801,50 @@ mod tests {
             Some("test"),
         );
         assert!(status.revoked);
+        assert_eq!(status.decision, RevocationDecision::Revoked);
 
         // Clear and verify cache is empty.
         checker.clear_cache();
         let status = checker.check("cleared-jti", None, None);
         assert!(!status.revoked);
+    }
+
+    #[test]
+    fn checker_caches_are_bounded_with_deterministic_eviction() {
+        let mut checker =
+            RevocationChecker::with_limits(Duration::from_mins(5), Duration::from_secs(5), 2, 1);
+        checker.insert_decision(
+            ("one".into(), "issuer".into(), "jti-1".into()),
+            RevocationStatus::not_revoked(),
+            Duration::from_mins(1),
+        );
+        checker.insert_decision(
+            ("two".into(), "issuer".into(), "jti-2".into()),
+            RevocationStatus::not_revoked(),
+            Duration::from_mins(1),
+        );
+        checker.insert_decision(
+            ("three".into(), "issuer".into(), "jti-3".into()),
+            RevocationStatus::not_revoked(),
+            Duration::from_mins(1),
+        );
+        assert_eq!(checker.cache.len(), 2);
+        assert!(!checker
+            .cache
+            .contains_key(&("one".into(), "issuer".into(), "jti-1".into())));
+
+        let crl = |issuer: &str| Crl {
+            issuer: issuer.into(),
+            updated_at: chrono::Utc::now().to_rfc3339(),
+            next_update: (chrono::Utc::now() + chrono::Duration::days(1)).to_rfc3339(),
+            revoked: vec![],
+        };
+        checker.insert_crl("https://example.com/one.json", crl("one"));
+        checker.insert_crl("https://example.com/two.json", crl("two"));
+        assert_eq!(checker.crl_cache.len(), 1);
+        assert!(checker
+            .crl_cache
+            .contains_key("https://example.com/two.json"));
     }
 
     #[test]
@@ -1144,7 +1858,8 @@ mod tests {
             Some("https://192.168.1.1/crl.json"),
             Some("test"),
         );
-        assert!(status.revoked);
+        assert!(!status.revoked);
+        assert_eq!(status.decision, RevocationDecision::Unavailable);
         assert_eq!(
             status.reason.as_deref(),
             Some("revocation_status_unavailable")
@@ -1156,8 +1871,14 @@ mod tests {
         let mut checker = RevocationChecker::new(Duration::from_mins(5), Duration::from_secs(5));
 
         // Online check with private IP must fail closed.
-        let status = checker.check("some-jti", Some("https://10.0.0.1/revoked"), None);
-        assert!(status.revoked);
+        let status = checker.check_with_issuer(
+            "some-jti",
+            Some("https://10.0.0.1/revoked"),
+            None,
+            Some("test"),
+        );
+        assert!(!status.revoked);
+        assert_eq!(status.decision, RevocationDecision::Unavailable);
         assert_eq!(
             status.reason.as_deref(),
             Some("revocation_status_unavailable")
@@ -1183,7 +1904,8 @@ mod tests {
             Some("https://example.com/crl.json"),
             Some("test"),
         );
-        assert!(status.revoked);
+        assert!(!status.revoked);
+        assert_eq!(status.decision, RevocationDecision::Unavailable);
         assert_eq!(
             status.reason.as_deref(),
             Some("revocation_status_unavailable")

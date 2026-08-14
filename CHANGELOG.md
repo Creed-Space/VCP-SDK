@@ -4,6 +4,23 @@ All notable changes to the VCP SDK will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Rust live HTTPS transport for online status and CRL revocation checks, with
+  rustls hostname verification, public address resolution and pinning, disabled
+  redirects, proxies, retries, and decompression, plus bounded headers and bodies.
+- Shared Python and Rust online response vectors that bind every decision to the
+  requested JTI and issuer.
+- Distinct `revocation_unavailable` verification outcomes. They remain
+  fail-closed while no longer representing an unconfirmed result as revoked.
+
+### Changed
+- Online status responses must echo the requested JTI and issuer. Confirmed
+  revocations must include a non-empty reason and a strict RFC 3339 timestamp.
+- The Python HTTPS transport now enforces JSON content types, identity encoding,
+  and response header limits in parity with Rust.
+
 ## [4.2.0] - 2026-04-22
 
 ### Added

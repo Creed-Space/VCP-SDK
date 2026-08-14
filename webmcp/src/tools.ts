@@ -363,7 +363,7 @@ function createPersonasTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 			type: 'object',
 			properties: {}
 		},
-		annotations: { readOnlyHint: true, idempotentHint: true },
+		annotations: { readOnlyHint: true },
 		execute: wrapExecute(
 			'vcp_list_personas',
 			async () => {

@@ -13,8 +13,9 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from vcp.bundle import Bundle, BundleBuilder
 from vcp.canonicalize import canonicalize_manifest
 from vcp.orchestrator import Orchestrator, ReplayCache, VerificationContext
+from vcp.revocation import RevocationStatus
 from vcp.trust import TrustAnchor, TrustConfig
-from vcp.types import VerificationResult
+from vcp.types import AttestationType, Scope, VerificationResult
 
 
 def _public_key_value(private_key: Ed25519PrivateKey) -> str:
@@ -145,6 +146,18 @@ def test_unexpected_revocation_error_is_fail_closed() -> None:
     checker = MagicMock()
     checker.check.side_effect = RuntimeError("revocation backend crashed")
     result = Orchestrator(trust, revocation_checker=checker).verify(bundle)
+    assert result is VerificationResult.REVOCATION_UNAVAILABLE
+
+
+def test_confirmed_revocation_remains_distinct_from_unavailable() -> None:
+    bundle, trust = _signed_bundle()
+    checker = MagicMock()
+    checker.check.return_value = RevocationStatus(
+        revoked=True,
+        reason="key_compromise",
+        revoked_at="2026-02-14T08:00:00Z",
+    )
+    result = Orchestrator(trust, revocation_checker=checker).verify(bundle)
     assert result is VerificationResult.REVOKED
 
 
@@ -213,3 +226,43 @@ def test_malformed_budget_claims_are_invalid_schema(field_name: str, invalid_val
     setattr(bundle.manifest.budget, field_name, invalid_value)
     result = Orchestrator(trust, verify_signature=lambda *_args: True).verify(bundle)
     assert result is VerificationResult.INVALID_SCHEMA
+
+
+def test_declared_token_count_cannot_understate_large_body() -> None:
+    bundle, trust = _signed_bundle("x" * 160)
+    bundle.manifest.budget.token_count = 1
+    result = Orchestrator(trust, verify_signature=lambda *_args: True).verify(bundle)
+    assert result is VerificationResult.BUDGET_EXCEEDED
+
+
+@pytest.mark.parametrize(
+    "attestation_type",
+    [AttestationType.CONTENT_SAFE, AttestationType.COMPETENCE_CALIBRATION],
+)
+def test_prompt_injection_requires_relevant_attestation(
+    attestation_type: AttestationType,
+) -> None:
+    bundle, trust = _signed_bundle()
+    bundle.manifest.safety_attestation.attestation_type = attestation_type
+    result = Orchestrator(trust, verify_signature=lambda *_args: True).verify(bundle)
+    assert result is VerificationResult.INVALID_ATTESTATION
+
+
+def test_audience_scope_fails_closed_without_runtime_audience() -> None:
+    bundle, trust = _signed_bundle()
+    bundle.manifest.scope = Scope(audiences=["children"])
+    bundle.manifest.signature.signed_fields = list(set(bundle.manifest.to_dict()) - {"signature"})
+    orchestrator = Orchestrator(trust, verify_signature=lambda *_args: True)
+    assert orchestrator.verify(bundle) is VerificationResult.SCOPE_MISMATCH
+    context = VerificationContext(trust_config=trust, audience="children")
+    assert orchestrator.verify(bundle, context) is VerificationResult.VALID
+
+
+def test_region_scope_fails_closed_without_runtime_region() -> None:
+    bundle, trust = _signed_bundle()
+    bundle.manifest.scope = Scope(regions=["GB"])
+    bundle.manifest.signature.signed_fields = list(set(bundle.manifest.to_dict()) - {"signature"})
+    orchestrator = Orchestrator(trust, verify_signature=lambda *_args: True)
+    assert orchestrator.verify(bundle) is VerificationResult.SCOPE_MISMATCH
+    context = VerificationContext(trust_config=trust, region="GB")
+    assert orchestrator.verify(bundle, context) is VerificationResult.VALID

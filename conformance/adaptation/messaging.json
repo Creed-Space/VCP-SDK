@@ -1,190 +1,300 @@
 {
   "suite": "adaptation/messaging",
-  "version": "1.0.0",
-  "description": "Test vectors for VCP/A inter-agent messaging envelope format. Messages carry context, constitution references, and state machine state between agents.",
-  "vectors": [
+  "version": "2.0.0",
+  "schema_version": "1.0.0",
+  "vcp_version": "2.0.0",
+  "implementation_profile": "vcp-inter-agent-messaging-2.0",
+  "description": "Checked VCP Inter-Agent Messaging v2.0 envelope validation vectors. This suite is intentionally separate from the VCP 3.1 context-envelope state machine.",
+  "test_cases": [
     {
-      "id": "msg-001",
-      "description": "Valid complete message envelope",
+      "id": "msg-context-share",
+      "description": "Valid context-share envelope",
       "input": {
-        "vcp_message_version": "2.0",
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
-        "context": "T:morning|S:office",
-        "constitutions": ["creed://creed.space/professional@1.0.0"],
-        "state": "ACTIVE",
-        "timestamp": "2026-01-10T12:00:00Z"
-      },
-      "expected": {
-        "valid": true
-      }
-    },
-    {
-      "id": "msg-002",
-      "description": "Valid message with multiple constitutions",
-      "input": {
-        "vcp_message_version": "2.0",
-        "sender": "agent-alpha",
-        "recipient": "agent-beta",
-        "context": "T:morning|S:home|C:children",
-        "constitutions": [
-          "creed://creed.space/family.safe.guide@1.2.0",
-          "creed://creed.space/uef@1.0.0"
-        ],
-        "state": "ACTIVE",
-        "timestamp": "2026-01-10T12:00:00Z"
-      },
-      "expected": {
-        "valid": true
-      }
-    },
-    {
-      "id": "msg-003",
-      "description": "Valid message in EMERGENCY state",
-      "input": {
-        "vcp_message_version": "2.0",
-        "sender": "agent-alpha",
-        "recipient": "agent-beta",
-        "context": "emergency",
-        "constitutions": ["creed://creed.space/safety.minimal@1.0.0"],
-        "state": "EMERGENCY",
-        "timestamp": "2026-01-10T12:05:00Z"
-      },
-      "expected": {
-        "valid": true
-      }
-    },
-    {
-      "id": "msg-004",
-      "description": "Valid message in DEGRADED state with empty context",
-      "input": {
-        "vcp_message_version": "2.0",
-        "sender": "agent-alpha",
-        "recipient": "agent-beta",
-        "context": "",
-        "constitutions": ["creed://creed.space/platform.default@1.0.0"],
-        "state": "DEGRADED",
-        "timestamp": "2026-01-10T12:10:00Z"
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "T:morning|S:office"
+        }
       },
       "expected": {
         "valid": true,
-        "note": "Empty context is valid in DEGRADED state; agent is operating on last-known or default"
+        "error_codes": []
       }
     },
     {
-      "id": "msg-005",
-      "description": "Valid message in IDLE state with no constitutions",
+      "id": "msg-constitution-announce",
+      "description": "Valid constitution announcement",
       "input": {
-        "vcp_message_version": "2.0",
-        "sender": "agent-gamma",
-        "recipient": "agent-delta",
-        "context": "",
-        "constitutions": [],
-        "state": "IDLE",
-        "timestamp": "2026-01-10T12:00:00Z"
+        "vcp_message": "2.0",
+        "type": "constitution_announce",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "sender": "agent-alpha",
+        "recipient": "broadcast",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constitution_ref": "creed://creed.space/professional@1.0.0"
+        }
       },
       "expected": {
         "valid": true,
-        "note": "IDLE state with empty constitutions is valid; using platform default"
+        "error_codes": []
       }
     },
     {
-      "id": "msg-err-001",
-      "description": "Missing sender field",
+      "id": "msg-constraint-propagate",
+      "description": "Valid constraint propagation",
       "input": {
-        "vcp_message_version": "2.0",
-        "recipient": "agent-beta",
-        "context": "T:morning",
-        "constitutions": [],
-        "state": "ACTIVE",
-        "timestamp": "2026-01-10T12:00:00Z"
-      },
-      "expected": {
-        "valid": false,
-        "error": "missing_sender"
-      }
-    },
-    {
-      "id": "msg-err-002",
-      "description": "Missing recipient field",
-      "input": {
-        "vcp_message_version": "2.0",
-        "sender": "agent-alpha",
-        "context": "T:morning",
-        "constitutions": [],
-        "state": "ACTIVE",
-        "timestamp": "2026-01-10T12:00:00Z"
-      },
-      "expected": {
-        "valid": false,
-        "error": "missing_recipient"
-      }
-    },
-    {
-      "id": "msg-err-003",
-      "description": "Invalid state value",
-      "input": {
-        "vcp_message_version": "2.0",
+        "vcp_message": "2.0",
+        "type": "constraint_propagate",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
-        "context": "T:morning",
-        "constitutions": [],
-        "state": "RUNNING",
-        "timestamp": "2026-01-10T12:00:00Z"
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constraints": [
+            "do_not_disclose"
+          ]
+        }
       },
       "expected": {
-        "valid": false,
-        "error": "invalid_state",
-        "valid_states": ["IDLE", "ACTIVE", "TRANSITIONING", "CONFLICT", "DEGRADED", "EMERGENCY"]
+        "valid": true,
+        "error_codes": []
       }
     },
     {
-      "id": "msg-err-004",
-      "description": "Missing vcp_message_version field",
+      "id": "msg-escalation-info",
+      "description": "Informational escalation does not require acknowledgement",
       "input": {
+        "vcp_message": "2.0",
+        "type": "escalation",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
-        "context": "T:morning",
-        "constitutions": [],
-        "state": "ACTIVE",
-        "timestamp": "2026-01-10T12:00:00Z"
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "severity": "info",
+          "requires_ack": false
+        }
       },
       "expected": {
-        "valid": false,
-        "error": "missing_version"
+        "valid": true,
+        "error_codes": []
       }
     },
     {
-      "id": "msg-err-005",
-      "description": "Missing timestamp field",
+      "id": "msg-escalation-critical",
+      "description": "Critical escalation explicitly requires acknowledgement",
       "input": {
-        "vcp_message_version": "2.0",
+        "vcp_message": "2.0",
+        "type": "escalation",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
-        "context": "T:morning",
-        "constitutions": [],
-        "state": "ACTIVE"
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "severity": "critical",
+          "requires_ack": true
+        }
       },
       "expected": {
-        "valid": false,
-        "error": "missing_timestamp"
+        "valid": true,
+        "error_codes": []
       }
     },
     {
-      "id": "msg-err-006",
-      "description": "Invalid timestamp format (not ISO 8601)",
+      "id": "msg-err-missing-sender",
+      "description": "Missing required sender is rejected",
       "input": {
-        "vcp_message_version": "2.0",
-        "sender": "agent-alpha",
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
         "recipient": "agent-beta",
-        "context": "T:morning",
-        "constitutions": [],
-        "state": "ACTIVE",
-        "timestamp": "January 10, 2026"
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "T:morning|S:office"
+        }
       },
       "expected": {
         "valid": false,
-        "error": "invalid_timestamp_format"
+        "error_codes": [
+          "missing_sender"
+        ]
+      }
+    },
+    {
+      "id": "msg-err-invalid-type",
+      "description": "Unknown message type is rejected",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "state_update",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "T:morning|S:office"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_type"
+        ]
+      }
+    },
+    {
+      "id": "msg-err-version",
+      "description": "Protocol-major mismatch is rejected",
+      "input": {
+        "vcp_message": "3.0",
+        "type": "context_share",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "T:morning|S:office"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_version"
+        ]
+      }
+    },
+    {
+      "id": "msg-err-uuid",
+      "description": "Malformed message identifier is rejected",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "not-a-uuid",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "T:morning|S:office"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_message_id"
+        ]
+      }
+    },
+    {
+      "id": "msg-err-naive-time",
+      "description": "Timestamp without timezone is rejected",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00",
+        "payload": {
+          "context": "T:morning|S:office"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_timestamp"
+        ]
+      }
+    },
+    {
+      "id": "msg-err-non-utc-time",
+      "description": "Timestamp with a non-UTC offset is rejected",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T13:00:00+01:00",
+        "payload": {
+          "context": "T:morning|S:office"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_timestamp"
+        ]
+      }
+    },
+    {
+      "id": "msg-err-critical-ack",
+      "description": "Critical escalation without acknowledgement is rejected",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "escalation",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "severity": "critical",
+          "requires_ack": false
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "ack_required"
+        ]
+      }
+    },
+    {
+      "id": "msg-err-severity",
+      "description": "Unknown escalation severity is rejected",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "escalation",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "severity": "catastrophic",
+          "requires_ack": true
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_severity"
+        ]
+      }
+    },
+    {
+      "id": "msg-err-payload",
+      "description": "Non-object payload is rejected",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": [
+          "not",
+          "an",
+          "object"
+        ]
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_payload"
+        ]
       }
     }
   ]

@@ -11,7 +11,9 @@ import argparse
 import base64
 import hashlib
 import json
+import os
 import sys
+import tempfile
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -26,6 +28,12 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 
 from .canonicalize import canonicalize_content, canonicalize_manifest
 from .trust import TrustConfig
+
+MAX_SKILL_MARKDOWN_FILES = 256
+MAX_SKILL_FILE_BYTES = 1_048_576
+MAX_SKILL_TOTAL_BYTES = 4_194_304
+MAX_SKILL_MANIFEST_BYTES = 65_536
+SIGNED_SKILL_FIELDS = ("vcp_version", "type", "skill", "issuer", "timestamps")
 
 # ---------------------------------------------------------------------------
 # Frontmatter parsing
@@ -60,6 +68,49 @@ def _parse_frontmatter(content: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def _skill_markdown_files(skill_dir: Path) -> list[Path]:
+    """Return bounded, regular Markdown files without following links."""
+    try:
+        root = skill_dir.resolve(strict=True)
+    except OSError as exc:
+        raise FileNotFoundError(f"Skill directory not found: {skill_dir}") from exc
+    if not root.is_dir():
+        raise FileNotFoundError(f"Skill directory not found: {skill_dir}")
+
+    files: list[Path] = []
+    total_bytes = 0
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        directory = Path(dirpath)
+        for name in [*dirnames, *filenames]:
+            candidate = directory / name
+            if candidate.is_symlink():
+                raise ValueError(f"Symbolic links are not allowed in signed skills: {candidate}")
+        for name in filenames:
+            if not name.endswith(".md"):
+                continue
+            candidate = directory / name
+            try:
+                resolved = candidate.resolve(strict=True)
+                resolved.relative_to(root)
+                stat = candidate.stat()
+            except (OSError, ValueError) as exc:
+                raise ValueError(f"Unsafe skill file path: {candidate}") from exc
+            if not candidate.is_file():
+                raise ValueError(f"Skill content must be a regular file: {candidate}")
+            if stat.st_size > MAX_SKILL_FILE_BYTES:
+                raise ValueError(f"Skill file exceeds {MAX_SKILL_FILE_BYTES} bytes: {candidate}")
+            total_bytes += stat.st_size
+            if total_bytes > MAX_SKILL_TOTAL_BYTES:
+                raise ValueError(f"Skill Markdown exceeds {MAX_SKILL_TOTAL_BYTES} total bytes")
+            files.append(candidate)
+            if len(files) > MAX_SKILL_MARKDOWN_FILES:
+                raise ValueError(f"Skill exceeds {MAX_SKILL_MARKDOWN_FILES} Markdown files")
+
+    if not files:
+        raise FileNotFoundError(f"No .md files found in {root}")
+    return sorted(files, key=lambda path: path.relative_to(root).as_posix())
+
+
 def compute_skill_hash(skill_dir: Path) -> str:
     """Compute a deterministic SHA-256 hash over all ``.md`` files in a skill directory.
 
@@ -76,14 +127,8 @@ def compute_skill_hash(skill_dir: Path) -> str:
         FileNotFoundError: If *skill_dir* does not exist or contains no
             ``.md`` files.
     """
-    skill_dir = skill_dir.resolve()
-    if not skill_dir.is_dir():
-        raise FileNotFoundError(f"Skill directory not found: {skill_dir}")
-
-    md_files = sorted(skill_dir.rglob("*.md"), key=lambda p: p.relative_to(skill_dir).as_posix())
-
-    if not md_files:
-        raise FileNotFoundError(f"No .md files found in {skill_dir}")
+    skill_dir = skill_dir.resolve(strict=True)
+    md_files = _skill_markdown_files(skill_dir)
 
     parts: list[str] = []
     for md_file in md_files:
@@ -99,8 +144,8 @@ def compute_skill_hash(skill_dir: Path) -> str:
 
 def _list_skill_files(skill_dir: Path) -> list[str]:
     """Return sorted relative POSIX paths of all ``.md`` files in *skill_dir*."""
-    skill_dir = skill_dir.resolve()
-    return sorted(p.relative_to(skill_dir).as_posix() for p in skill_dir.rglob("*.md"))
+    skill_dir = skill_dir.resolve(strict=True)
+    return [p.relative_to(skill_dir).as_posix() for p in _skill_markdown_files(skill_dir)]
 
 
 # ---------------------------------------------------------------------------
@@ -192,7 +237,9 @@ def sign_skill(
     Raises:
         FileNotFoundError: If skill dir, SKILL.md, or key file is missing.
     """
-    skill_dir = skill_dir.resolve()
+    if not 1 <= expires_days <= 90:
+        raise ValueError("expires_days must be between 1 and 90")
+    skill_dir = skill_dir.resolve(strict=True)
 
     # -- Parse SKILL.md frontmatter for metadata --------------------------
     skill_md = skill_dir / "SKILL.md"
@@ -235,7 +282,7 @@ def sign_skill(
         "signature": {
             "algorithm": "ed25519",
             "value": "",
-            "signed_fields": ["vcp_version", "type", "skill", "issuer", "timestamps"],
+            "signed_fields": list(SIGNED_SKILL_FIELDS),
         },
     }
 
@@ -247,10 +294,24 @@ def sign_skill(
 
     # -- Write manifest.json to skill directory ---------------------------
     manifest_path = skill_dir / "manifest.json"
-    manifest_path.write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    if manifest_path.is_symlink():
+        raise ValueError("manifest.json must not be a symbolic link")
+    payload = json.dumps(manifest, indent=2, ensure_ascii=False) + "\n"
+    if len(payload.encode("utf-8")) > MAX_SKILL_MANIFEST_BYTES:
+        raise ValueError(f"manifest.json exceeds {MAX_SKILL_MANIFEST_BYTES} bytes")
+    fd, temp_name = tempfile.mkstemp(prefix=".manifest-", suffix=".tmp", dir=skill_dir)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(temp_name, 0o644)
+        os.replace(temp_name, manifest_path)
+    finally:
+        try:
+            os.unlink(temp_name)
+        except FileNotFoundError:
+            pass
 
     return manifest
 
@@ -263,6 +324,8 @@ def sign_skill(
 def verify_skill(
     skill_dir: Path,
     trust_config: TrustConfig | None = None,
+    *,
+    allow_structural_only: bool = False,
 ) -> tuple[bool, str]:
     """Verify a signed skill directory.
 
@@ -272,20 +335,30 @@ def verify_skill(
     Args:
         skill_dir: Root directory of the skill (must contain
             ``manifest.json``).
-        trust_config: Optional trust configuration for full cryptographic
-            verification.  When ``None``, only structural checks (hash
-            match and valid JSON) are performed.
+        trust_config: Trust configuration for cryptographic verification.
+        allow_structural_only: Explicitly allow hash and structure checks
+            without establishing signer trust.
 
     Returns:
         A ``(valid, reason)`` tuple.  *valid* is ``True`` when all checks
         pass; *reason* is a human-readable explanation.
     """
-    skill_dir = skill_dir.resolve()
+    try:
+        skill_dir = skill_dir.resolve(strict=True)
+    except OSError as exc:
+        return False, f"Skill directory not found: {exc}"
     manifest_path = skill_dir / "manifest.json"
 
     # -- Load manifest ----------------------------------------------------
+    if manifest_path.is_symlink():
+        return False, "manifest.json must not be a symbolic link"
     if not manifest_path.is_file():
         return False, "manifest.json not found in skill directory"
+    try:
+        if manifest_path.stat().st_size > MAX_SKILL_MANIFEST_BYTES:
+            return False, f"manifest.json exceeds {MAX_SKILL_MANIFEST_BYTES} bytes"
+    except OSError as exc:
+        return False, f"Could not inspect manifest.json: {exc}"
 
     try:
         manifest: dict[str, Any] = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -302,13 +375,19 @@ def verify_skill(
 
     # -- Content hash verification ----------------------------------------
     try:
+        files = _list_skill_files(skill_dir)
         computed_hash = compute_skill_hash(skill_dir)
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, OSError, ValueError, UnicodeError) as exc:
         return False, f"Content hash computation failed: {exc}"
 
-    expected_hash = manifest.get("skill", {}).get("content_hash", "")
+    skill = manifest.get("skill")
+    if not isinstance(skill, dict):
+        return False, "Invalid skill object"
+    expected_hash = skill.get("content_hash", "")
     if computed_hash != expected_hash:
         return False, "Content modified after signing"
+    if skill.get("files") != files:
+        return False, "Signed skill file list does not match directory contents"
 
     # -- Temporal checks --------------------------------------------------
     try:
@@ -318,11 +397,10 @@ def verify_skill(
         return False, f"Invalid timestamps: {exc}"
 
     now = datetime.now(tz=timezone.utc)
-    # Handle manifests that may have been created without explicit tz info
-    if nbf.tzinfo is None:
-        nbf = nbf.replace(tzinfo=timezone.utc)
-    if exp.tzinfo is None:
-        exp = exp.replace(tzinfo=timezone.utc)
+    if nbf.tzinfo is None or nbf.utcoffset() is None:
+        return False, "Invalid timestamps: nbf must include a timezone"
+    if exp.tzinfo is None or exp.utcoffset() is None:
+        return False, "Invalid timestamps: exp must include a timezone"
 
     if now < nbf:
         return False, f"Manifest not yet valid (nbf: {nbf.isoformat()})"
@@ -330,6 +408,24 @@ def verify_skill(
         return False, f"Manifest expired (exp: {exp.isoformat()})"
 
     # -- Signature verification -------------------------------------------
+    signature = manifest.get("signature")
+    if not isinstance(signature, dict):
+        return False, "Invalid signature object"
+    if signature.get("algorithm") != "ed25519":
+        return False, "Invalid signature algorithm (expected ed25519)"
+    declared_fields = signature.get("signed_fields")
+    expected_fields = set(manifest) - {"signature"}
+    if (
+        not isinstance(declared_fields, list)
+        or any(not isinstance(field, str) for field in declared_fields)
+        or len(declared_fields) != len(set(declared_fields))
+        or set(declared_fields) != expected_fields
+    ):
+        return False, "signed_fields must cover every non-signature top-level field exactly once"
+
+    if trust_config is None and not allow_structural_only:
+        return False, "Trust configuration is required (or explicitly allow structural-only checks)"
+
     if trust_config is not None:
         issuer_id = manifest.get("issuer", {}).get("id", "")
         key_id = manifest.get("issuer", {}).get("key_id")
@@ -340,18 +436,25 @@ def verify_skill(
 
         # Decode the anchor's public key
         try:
-            pub_bytes = base64.b64decode(anchor.public_key)
+            if anchor.algorithm.lower() != "ed25519":
+                return False, "Trusted issuer key must use ed25519"
+            pub_value = anchor.public_key.removeprefix("base64:")
+            pub_bytes = base64.b64decode(pub_value, validate=True)
+            if len(pub_bytes) != 32:
+                return False, "Issuer public key must be 32 bytes"
             public_key = Ed25519PublicKey.from_public_bytes(pub_bytes)
         except Exception as exc:
             return False, f"Failed to load issuer public key: {exc}"
 
         # Extract signature
-        sig_value = manifest.get("signature", {}).get("value", "")
+        sig_value = signature.get("value", "")
         if not sig_value.startswith("base64:"):
             return False, "Invalid signature format (expected 'base64:' prefix)"
 
         try:
-            sig_bytes = base64.b64decode(sig_value[7:])
+            sig_bytes = base64.b64decode(sig_value[7:], validate=True)
+            if len(sig_bytes) != 64:
+                return False, "Ed25519 signature must be 64 bytes"
         except Exception as exc:
             return False, f"Failed to decode signature: {exc}"
 
@@ -417,11 +520,17 @@ def main(argv: list[str] | None = None) -> int:
     # -- verify -----------------------------------------------------------
     verify_parser = subparsers.add_parser("verify", help="Verify a signed skill directory")
     verify_parser.add_argument("skill_dir", type=Path, help="Path to skill directory")
-    verify_parser.add_argument(
+    verify_mode = verify_parser.add_mutually_exclusive_group()
+    verify_mode.add_argument(
         "--trust-config",
         type=Path,
         default=None,
         help="Path to trust config JSON",
+    )
+    verify_mode.add_argument(
+        "--structural-only",
+        action="store_true",
+        help="Explicitly skip issuer trust and signature verification",
     )
 
     args = parser.parse_args(argv)
@@ -452,7 +561,14 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"FAILED: Could not load trust config: {exc}", file=sys.stderr)
                 return 1
 
-        valid, reason = verify_skill(skill_dir=args.skill_dir, trust_config=trust_cfg)
+        if trust_cfg is None and not args.structural_only:
+            print("FAILED: verification requires --trust-config or --structural-only")
+            return 1
+        valid, reason = verify_skill(
+            skill_dir=args.skill_dir,
+            trust_config=trust_cfg,
+            allow_structural_only=args.structural_only,
+        )
         if valid:
             print(reason)
             return 0

@@ -3,100 +3,92 @@
 <!-- wiki:type = system -->
 <!-- wiki:scope = vcp-sdk -->
 <!-- wiki:created = 2026-05-23 -->
-<!-- wiki:updated = 2026-05-23 -->
+<!-- wiki:updated = 2026-08-14 -->
 <!-- wiki:status = active -->
 
 ## Summary
 
-The VCP SDK is the reference implementation of the VCP protocol. It is structured as three language implementations (Python, Rust, TypeScript) plus conformance tests and integration examples. The Python SDK is the reference; Rust targets high-performance and WASM; TypeScript targets browser-side. (VCP-SDK/README.md header, VCP-Spec/README.md "SDKs" table)
+VCP-SDK is the implementation repository for the Value Context Protocol. It
+contains a full Python reference package, a Rust workspace for native, CLI, and
+WASM use, a focused TypeScript WebMCP package, synchronized schema copies, and a
+language-neutral conformance corpus. Normative protocol text belongs in
+VCP-Spec; the maintained interactive application belongs in VCP-Demo-Site.
 
-## Repository Layout
+## Maintained repository surfaces
 
-```
-VCP-SDK/
-├── python/          # Reference implementation (Python 3.x, Pydantic, async)
-│   ├── src/
-│   │   ├── vcp/     # Core library modules
-│   │   ├── api/     # FastAPI router
-│   │   └── mcp/     # MCP server for Claude Code
-│   └── tests/
-├── rust/            # High-performance / WASM implementation
-├── conformance/     # Cross-language conformance tests
-├── examples/        # Runnable usage examples
-├── integrations/    # External integration examples (has PDP dependencies)
-├── schemas/         # JSON Schema validation files
-├── specs/           # Spec subset (or symlinks)
-├── webmcp/          # Web-facing MCP bindings
-└── website/         # SDK website content
-```
+| Path | Responsibility |
+|:---|:---|
+| `python/src/vcp/` | Reference protocol models, canonicalization, verification, trust, revocation, orchestration, hooks, privacy, messaging, MCP server, and extensions |
+| `rust/vcp-core/` | Native core types, parsing, transport, orchestration, revocation, negotiation, and extension behavior |
+| `rust/vcp-cli/` | Command-line parsing, signing, verification, and conformance adapters |
+| `rust/vcp-wasm/` | Browser-compatible WASM bindings over `vcp-core` |
+| `webmcp/` | TypeScript WebMCP tools, explicit registration lifecycle, hooks, polyfill loading boundary, and supported extensions |
+| `schemas/` | SDK-owned schemas and reviewed copies synchronized from VCP-Spec |
+| `conformance/` | Authored fixtures, 16 profile runners, coverage classification, and aggregate reports |
+| `examples/` | Executable integration examples and deployment configuration samples |
+| `scripts/` | Repository, schema, ecosystem, package, performance, coverage, and release-evidence validators |
+| `archives/` | Retired adjacent projects and host-specific integrations preserved with archive metadata |
+| `website/` | Archive notice for the retired partial website copy |
 
-(VCP-SDK/CLAUDE.md, "Repository Structure"; VCP-SDK root directory listing)
+The deleted `python/src/api/`, legacy `python/src/mcp/`, root `integrations/`, and
+partial website implementation are not maintained SDK entry points. Their useful
+history is preserved under `archives/`; production code must not import it.
 
-## Python Core Library (python/src/vcp/)
+## Distribution boundaries
 
-Key modules in `python/src/vcp/` (directory listing):
+The three candidate distribution families all use SDK version 4.2.0, while the
+published protocol baseline remains VCP v3.1. Selected v3.2 amendments and
+experimental VEP behavior are labelled separately and require negotiation or
+governance approval.
 
-| Module | Purpose |
-|--------|---------|
-| `types.py` | Core type definitions |
-| `bundle.py` | Bundle creation and parsing |
-| `canonicalize.py` | Canonical serialization for signing |
-| `trust.py` | Trust anchor and chain verification |
-| `manifest.py` | Bundle manifest handling |
-| `orchestrator.py` | Orchestration layer (verify then inject) |
-| `enforcement.py` | Policy enforcement |
-| `negotiation.py` | Capability negotiation |
-| `injection.py` | Injection scanning |
-| `privacy.py` | Context opacity and privacy |
-| `revocation.py` | Revocation infrastructure |
-| `audit.py` | Tamper-evident audit chain |
-| `messaging.py` | VCP/M inter-agent messaging |
-| `metrics.py` | Metrics and telemetry |
-| `skill_security.py` | Skill-level security checks |
-| `identity/` | VCP/I layer modules |
-| `semantics/` | VCP/S layer modules |
-| `adaptation/` | VCP/A layer modules |
-| `extensions/` | VCP-X-* extension modules |
-| `hooks/` | Lifecycle hooks |
+* Python distribution: `value-context-protocol`, imported as `vcp`.
+* Rust distributions: `vcp-core`, `vcp-cli`, and `vcp-wasm`.
+* npm distribution: `@creed-space/vcp-sdk`, a WebMCP subset rather than a full
+  general TypeScript implementation.
 
-## Code Conventions
+No public registry publication is currently claimed. Source metadata and local
+package builds are candidate evidence only.
 
-(VCP-SDK/CLAUDE.md, "Code Patterns")
-- Type hints required on all Python functions
-- Pydantic models for data structures
-- Async preferred for API/MCP entry points
-- Files: `snake_case.py`; Classes: `PascalCase`; Constants: `UPPER_SNAKE_CASE`
+## Trust boundaries
 
-## Important Constraints
+The SDK performs canonicalization, signature and hash verification, temporal
+validation, revocation checks, replay-policy integration, scope enforcement,
+hook enforcement, and fail-closed orchestration. Integrators still own trusted
+key provisioning, durable replay storage, outbound network policy, audit
+retention, service monitoring, and authorization decisions.
 
-`integrations/` has dependencies on Creed Space PDP — these are reference examples, not standalone modules. (VCP-SDK/CLAUDE.md, "Important Notes")
+Online revocation clients validate destinations before connection, reject
+non-global resolution sets, pin validated addresses while retaining TLS hostname
+verification, disable redirects and transparent decompression, bound response
+sizes, bind responses to the requested issuer and JTI, and distinguish confirmed
+revocation from dependency unavailability.
 
-What is NOT in this repo:
-- Interiora (separate system that uses VCP)
-- Bilateral alignment framework (informs design, not implemented here)
-- Constitution content (VCP transports constitutions, does not define them)
+## Schema and protocol ownership
 
-## Entry Points
+VCP-Spec owns normative protocol schemas. `SCHEMA_OWNERSHIP.md` records which
+copies are synchronized, which SDK schemas are implementation-specific, and the
+intentional VCP/M version split. `scripts/check_schema_sync.py` compares an exact
+Spec and SDK checkout; `scripts/validate_public_contract.py` checks public names,
+versions, exports, protocol labels, and Demo guidance across all three projects.
 
-```bash
-# Install Python SDK
-pip install creed-sdk
+## Release architecture
 
-# Run tests
-pytest tests/                     # all
-pytest tests/vcp/identity/        # by layer
-pytest --cov=src/vcp tests/       # with coverage
-```
-
-(VCP-SDK/CLAUDE.md, "Testing")
+Release evidence is candidate-bound. Build, test, audit, conformance, package,
+human review, rights review, governance approval, and publication authorization
+remain separate gates. The repository's release ledger template records those
+decisions without pretending that source authorship confers registry authority.
 
 ## Provenance
 
-- Sources consulted: VCP-SDK/CLAUDE.md, VCP-SDK root listing, python/src/vcp/ listing
-- Last verified against sources: 2026-05-23
+Sources verified on 2026-08-14: `README.md`; `ARTIFACTS.md`;
+`COMPATIBILITY.md`; `SCHEMA_OWNERSHIP.md`; `RELEASE_CHECKLIST.md`; root directory
+inventory; `python/src/vcp/`; `rust/Cargo.toml`; `webmcp/package.json`;
+`conformance/coverage-manifest.json`.
 
 ## See Also
 
-- [[vcp-spec:systems/itsame-architecture]] — the spec this SDK implements
-- [[vcp-sdk:flows/bundle-sign-verify]] — bundle signing and verification flow
-- [[shared:vcp]] — VCP cross-project concept
+* [[vcp-sdk:systems/testing-approach]]
+* [[vcp-sdk:systems/python-sdk-modules]]
+* [[vcp-sdk:systems/rust-implementation]]
+* [[vcp-sdk:systems/webmcp-typescript]]
+* [[vcp-sdk:flows/bundle-sign-verify]]

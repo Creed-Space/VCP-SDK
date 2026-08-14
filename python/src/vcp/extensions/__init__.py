@@ -41,6 +41,7 @@ from vcp.extensions.relational import (
     TrustLevel,
 )
 from vcp.extensions.torch import (
+    TorchChain,
     TorchConsumer,
     TorchGenerator,
     TorchLineage,
@@ -82,4 +83,5 @@ __all__ = [
     "TorchLineage",
     "TorchGenerator",
     "TorchConsumer",
+    "TorchChain",
 ]

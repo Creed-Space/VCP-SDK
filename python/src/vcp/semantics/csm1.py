@@ -46,6 +46,13 @@ class Persona(Enum):
                 return persona
         raise ValueError(f"Unknown persona character: {char}")
 
+    @classmethod
+    def from_wire_char(cls, char: str) -> Persona:
+        """Resolve the case-sensitive single-character wire representation."""
+        if len(char) != 1 or char != char.upper():
+            raise ValueError(f"Persona wire code must be one uppercase character: {char!r}")
+        return cls.from_char(char)
+
     @property
     def description(self) -> str:
         """Human-readable description."""
@@ -59,6 +66,32 @@ class Persona(Enum):
             Persona.CUSTOM: "User-defined persona",
         }
         return descriptions[self]
+
+    @property
+    def focus(self) -> str:
+        """Normative persona-resolution focus text."""
+        return {
+            Persona.NANNY: "Child safety and family-appropriate content",
+            Persona.SENTINEL: "Security, privacy, and operational safety",
+            Persona.GODPARENT: "Ethical guidance and moral reasoning",
+            Persona.AMBASSADOR: "Professional conduct and diplomatic communication",
+            Persona.MUSE: "Creativity and artistic expression",
+            Persona.MEDIATOR: "Fair resolution and balanced mediation",
+            Persona.CUSTOM: "User-defined constitution",
+        }[self]
+
+    @property
+    def default_adherence(self) -> int:
+        """Default adherence level for this persona profile."""
+        return {
+            Persona.NANNY: 5,
+            Persona.SENTINEL: 4,
+            Persona.GODPARENT: 4,
+            Persona.AMBASSADOR: 3,
+            Persona.MUSE: 2,
+            Persona.MEDIATOR: 3,
+            Persona.CUSTOM: 3,
+        }[self]
 
 
 class Scope(Enum):

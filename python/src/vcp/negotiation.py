@@ -12,6 +12,60 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
+def _semantic_version(value: str) -> tuple[int, int, int]:
+    """Parse the strict numeric protocol subset used by VCP negotiation."""
+    parts = value.split(".")
+    if not 1 <= len(parts) <= 3 or any(not part.isdigit() for part in parts):
+        raise ValueError(f"invalid semantic version: {value!r}")
+    return tuple(int(part) for part in (*parts, "0", "0")[:3])  # type: ignore[return-value]
+
+
+def negotiate_versioned(
+    client_version: str,
+    client_extensions: list[dict[str, str]],
+    server_version: str,
+    server_extensions: list[dict[str, str]],
+) -> dict[str, Any]:
+    """Negotiate protocol and named extension versions deterministically.
+
+    The lowest compatible protocol version is selected. An extension is active
+    only when both peers name it and advertise the same major version; the
+    lowest advertised extension version is selected. Client order is retained.
+    """
+    client_protocol = _semantic_version(client_version)
+    server_protocol = _semantic_version(server_version)
+    negotiated_protocol = client_version if client_protocol <= server_protocol else server_version
+    server_by_name = {entry["name"]: entry["version"] for entry in server_extensions}
+    active: list[dict[str, str]] = []
+    rejected: list[dict[str, str]] = []
+    for requested in client_extensions:
+        name = requested["name"]
+        server_extension_version = server_by_name.get(name)
+        if server_extension_version is None:
+            rejected.append({"name": name, "reason": "not_supported"})
+            continue
+        client_extension = _semantic_version(requested["version"])
+        server_extension = _semantic_version(server_extension_version)
+        if client_extension[0] != server_extension[0]:
+            rejected.append({"name": name, "reason": "incompatible_version"})
+            continue
+        active.append(
+            {
+                "name": name,
+                "version": (
+                    requested["version"]
+                    if client_extension <= server_extension
+                    else server_extension_version
+                ),
+            }
+        )
+    return {
+        "vcp_version": negotiated_protocol,
+        "active_extensions": active,
+        "rejected_extensions": rejected,
+    }
+
+
 @dataclass
 class VCPHello:
     """Client hello message for VCP negotiation.

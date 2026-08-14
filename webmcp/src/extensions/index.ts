@@ -17,8 +17,8 @@ export {
   DEFAULT_DECAY_CONFIGS,
   computeDecayedIntensity,
   computeLifecycleState,
-} from './personal';
-export type { PersonalSignal, PersonalContext, DecayConfig } from './personal';
+} from './personal.js';
+export type { PersonalSignal, PersonalContext, DecayConfig } from './personal.js';
 
 // Relational context
 export {
@@ -30,23 +30,23 @@ export {
   hasUncertaintyMarkers,
   getAllDimensions,
   createDefaultRelationalContext,
-} from './relational';
+} from './relational.js';
 export type {
   DimensionReport,
   AISelfModel,
   RelationalNorm,
   TorchState,
   RelationalContext,
-} from './relational';
+} from './relational.js';
 
 // Consensus voting
-export { SchulzeElection } from './consensus';
+export { SchulzeElection } from './consensus.js';
 export type {
   Ballot,
   SchulzeRanking,
   PairwiseResult,
   ElectionResult,
-} from './consensus';
+} from './consensus.js';
 
 // Torch handoff
 export {
@@ -54,16 +54,16 @@ export {
   TorchConsumer,
   createEmptyLineage,
   appendToLineage,
-} from './torch';
-export type { TorchSummary, TorchLineage } from './torch';
+} from './torch.js';
+export type { TorchSummary, TorchLineage } from './torch.js';
 
 // Negotiation
 export {
   VCPCapability,
   negotiate,
   createFullHello,
-} from './negotiation';
-export type { VCPHello, VCPAck } from './negotiation';
+} from './negotiation.js';
+export type { VCPHello, VCPAck } from './negotiation.js';
 
 // VCP/A Situational + Personal-state context encoder (v3.2, incl. VEP-0004)
 export {
@@ -86,7 +86,7 @@ export {
   contextFromJSON,
   conformanceLevel,
   buildContext,
-} from './context';
+} from './context.js';
 export type {
   SituationalDimensionSpec,
   PersonalStateDimensionSpec,
@@ -95,4 +95,4 @@ export type {
   VCPContextJSON,
   ConformanceLevel,
   EncoderInput,
-} from './context';
+} from './context.js';

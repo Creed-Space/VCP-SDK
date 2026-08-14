@@ -9,15 +9,16 @@ ctx = encoder.encode(
     time="morning",
     space="home",
     company=["children", "family"],
-    state="happy",
+    emotional_tone=("happy", 4),
 )
 
 # -- 2. Encode to wire format (emoji-based, pipe-separated). --
 wire = ctx.encode()
-print(f"Wire format: {wire}")  # e.g. ⏰🌅|📍🏡|👥👶👨‍👩‍👧|🧠😊
+print(f"Wire format: {wire}")  # includes U+2016 before the personal-state band
 
 # -- 3. Decode back from wire format. --
 decoded = VCPContext.decode(wire)
+assert decoded == ctx, "VCP context wire encoding must round-trip losslessly"
 print(f"Roundtrip:   {decoded.encode()}")
 
 # -- 4. Inspect individual dimensions. --

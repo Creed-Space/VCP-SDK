@@ -1,0 +1,68 @@
+name: Parser fuzzing
+
+on:
+  pull_request:
+    paths:
+      - "rust/fuzz/**"
+      - "rust/vcp-core/src/csm1.rs"
+      - "rust/vcp-core/src/context.rs"
+      - "rust/vcp-core/src/revocation.rs"
+      - "rust/vcp-core/src/transport.rs"
+      - ".github/workflows/fuzz.yml"
+  schedule:
+    - cron: "47 3 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdk-fuzz-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up nightly Rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: nightly
+
+      - name: Cache Cargo
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/fuzz/target
+          key: fuzz-${{ runner.os }}-${{ hashFiles('rust/fuzz/Cargo.toml', 'rust/fuzz/Cargo.lock', 'rust/Cargo.lock') }}
+
+      - name: Install pinned fuzz runner
+        run: cargo install cargo-fuzz --locked --version 0.13.2
+
+      - name: Run bounded corpus and mutation checks
+        working-directory: rust
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            fuzz_args=(-max_total_time=120 -rss_limit_mb=512)
+          else
+            fuzz_args=(-runs=5000 -rss_limit_mb=512)
+          fi
+          for target in csm1_code full_context revocation_json manifest_canonicalization identity_scope; do
+            cargo fuzz run "$target" "fuzz/corpus/$target" -- "${fuzz_args[@]}"
+          done
+
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-crashes-${{ github.sha }}
+          path: rust/fuzz/artifacts/
+          if-no-files-found: warn
+          retention-days: 30

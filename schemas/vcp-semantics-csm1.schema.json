@@ -174,6 +174,7 @@
         "required": ["scopes"],
         "properties": {
           "scopes": {
+            "type": "array",
             "contains": { "const": "F" }
           }
         }
@@ -181,6 +182,7 @@
       "then": {
         "properties": {
           "scopes": {
+            "type": "array",
             "not": {
               "contains": { "const": "A" }
             }
@@ -193,6 +195,7 @@
         "required": ["scopes"],
         "properties": {
           "scopes": {
+            "type": "array",
             "contains": { "const": "V" }
           }
         }
@@ -200,6 +203,7 @@
       "then": {
         "properties": {
           "scopes": {
+            "type": "array",
             "not": {
               "contains": { "const": "A" }
             }
@@ -212,6 +216,7 @@
         "required": ["scopes"],
         "properties": {
           "scopes": {
+            "type": "array",
             "contains": { "const": "H" }
           }
         }
@@ -219,6 +224,7 @@
       "then": {
         "properties": {
           "scopes": {
+            "type": "array",
             "not": {
               "contains": { "const": "A" }
             }

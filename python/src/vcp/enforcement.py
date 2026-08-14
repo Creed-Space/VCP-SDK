@@ -138,27 +138,33 @@ class RefusalBoundaryPlugin(PDPPlugin):
                 )
             return None
 
-        # Check bundle verification status if available
+        # A fail-closed boundary requires explicit, well-typed proof of
+        # successful verification. Absence is not evidence of validity.
         verification = ctx.metadata.get("verification_result")
-        if isinstance(verification, VerificationResult) and not verification.is_valid:
+        if not isinstance(verification, VerificationResult) or not verification.is_valid:
+            verification_name = (
+                verification.name
+                if isinstance(verification, VerificationResult)
+                else "MISSING_OR_MALFORMED"
+            )
             if self._mode == EnforcementMode.FAIL_CLOSED:
                 return PDPDecision(
                     decision=DecisionType.BLOCK,
-                    reason=f"Bundle verification failed: {verification.name}",
+                    reason=f"Bundle verification failed: {verification_name}",
                     plugin_id=self.plugin_id,
-                    evidence={"verification_result": verification.name},
+                    evidence={"verification_result": verification_name},
                 )
             if self._mode == EnforcementMode.ESCALATE:
                 return PDPDecision(
                     decision=DecisionType.ESCALATE,
-                    reason=f"Bundle verification failed: {verification.name}",
+                    reason=f"Bundle verification failed: {verification_name}",
                     plugin_id=self.plugin_id,
-                    evidence={"verification_result": verification.name},
+                    evidence={"verification_result": verification_name},
                 )
             # AUDIT_ONLY: log but allow
             logger.warning(
                 "Bundle verification failed (%s) but enforcement is AUDIT_ONLY",
-                verification.name,
+                verification_name,
             )
 
         return None

@@ -6,3 +6,6 @@ contact_links:
   - name: Questions & Discussion
     url: https://github.com/Creed-Space/VCP-SDK/discussions
     about: Ask questions, share ideas, or discuss VCP in the community forum
+  - name: Protocol change or VEP
+    url: https://github.com/Creed-Space/VCP-Spec/issues/new?template=spec_amendment.yml
+    about: Propose normative protocol and schema changes in the canonical VCP-Spec tracker

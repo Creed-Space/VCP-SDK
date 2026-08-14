@@ -14,9 +14,11 @@ import logging
 import re
 import socket
 import ssl
+import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
@@ -24,13 +26,25 @@ logger = logging.getLogger(__name__)
 
 # Maximum response size: 320KB
 MAX_RESPONSE_BYTES = 327_680
+MAX_RESPONSE_HEADERS = 64
+MAX_RESPONSE_HEADER_BYTES = 32_768
 
 # The revocation transport is HTTPS-only, so its sole default port is 443.
 _STANDARD_PORTS = {443}
+DEFAULT_MAX_DECISION_CACHE_ENTRIES = 4096
+DEFAULT_MAX_CRL_CACHE_ENTRIES = 256
 
 
 class RevocationError(Exception):
     """Raised when revocation checking encounters an unrecoverable error."""
+
+
+class RevocationDecision(str, Enum):
+    """Exact outcome of a revocation lookup."""
+
+    NOT_REVOKED = "not_revoked"
+    REVOKED = "revoked"
+    UNAVAILABLE = "unavailable"
 
 
 @dataclass
@@ -40,6 +54,27 @@ class RevocationStatus:
     revoked: bool
     reason: str | None = None
     revoked_at: str | None = None
+    decision: RevocationDecision | None = None
+
+    def __post_init__(self) -> None:
+        if self.decision is None:
+            self.decision = (
+                RevocationDecision.REVOKED if self.revoked else RevocationDecision.NOT_REVOKED
+            )
+
+    @classmethod
+    def unavailable(cls) -> RevocationStatus:
+        """Create a distinct fail-closed status for an unavailable decision."""
+        return cls(
+            revoked=False,
+            reason="revocation_status_unavailable",
+            decision=RevocationDecision.UNAVAILABLE,
+        )
+
+    @property
+    def should_reject(self) -> bool:
+        """Whether verification must reject this result fail closed."""
+        return self.decision is not RevocationDecision.NOT_REVOKED
 
 
 @dataclass
@@ -87,6 +122,17 @@ def _is_private_ip(ip_str: str) -> bool:
 
     if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped:
         return _is_private_ip(str(addr.ipv4_mapped))
+    if isinstance(addr, ipaddress.IPv6Address):
+        packed = addr.packed
+        # Reject NAT64 and deprecated IPv4-compatible translation space. These
+        # prefixes can route an apparently public IPv6 address to an embedded
+        # private IPv4 destination on some networks.
+        if packed[:12] == bytes.fromhex("0064ff9b0000000000000000"):
+            return True
+        if packed[:6] == bytes.fromhex("0064ff9b0001"):
+            return True
+        if packed[:12] == b"\x00" * 12:
+            return True
     return not addr.is_global
 
 
@@ -221,13 +267,32 @@ def _fetch_json(
                 target,
                 headers={
                     "Accept": "application/json",
+                    "Accept-Encoding": "identity",
                     "Host": host_header,
-                    "User-Agent": "VCP-SDK/2.0",
+                    "User-Agent": "VCP-SDK/4.2",
                 },
             )
             response = connection.getresponse()
             if response.status != 200:
                 raise RevocationError(f"HTTP request failed with status {response.status}")
+            response_headers = response.getheaders()
+            if len(response_headers) > MAX_RESPONSE_HEADERS:
+                raise RevocationError(
+                    f"Response exceeds the limit of {MAX_RESPONSE_HEADERS} headers"
+                )
+            header_bytes = sum(
+                len(name.encode("ascii", "strict")) + len(value.encode("latin-1", "strict"))
+                for name, value in response_headers
+            )
+            if header_bytes > MAX_RESPONSE_HEADER_BYTES:
+                raise RevocationError(f"Response headers exceed {MAX_RESPONSE_HEADER_BYTES} bytes")
+            content_encoding = response.getheader("Content-Encoding")
+            if content_encoding is not None and content_encoding.lower() != "identity":
+                raise RevocationError("Compressed revocation responses are not accepted")
+            content_type = response.getheader("Content-Type")
+            media_type = (content_type or "").split(";", 1)[0].strip().lower()
+            if media_type != "application/json" and not media_type.endswith("+json"):
+                raise RevocationError("Revocation response requires a JSON content type")
             content_length = response.getheader("Content-Length")
             if content_length is not None:
                 try:
@@ -274,12 +339,21 @@ class RevocationChecker:
         cache_ttl: int = 300,
         timeout: float = 10.0,
         allowed_ports: set[int] | None = None,
+        max_cache_entries: int = DEFAULT_MAX_DECISION_CACHE_ENTRIES,
+        max_crl_cache_entries: int = DEFAULT_MAX_CRL_CACHE_ENTRIES,
     ) -> None:
+        if cache_ttl < 0 or timeout <= 0:
+            raise ValueError("cache_ttl must be non-negative and timeout must be positive")
+        if max_cache_entries < 1 or max_crl_cache_entries < 1:
+            raise ValueError("revocation cache limits must be positive")
         self._cache: dict[str, _CacheEntry] = {}
         self._crl_cache: dict[str, _CacheEntry] = {}
         self._cache_ttl = cache_ttl
         self._timeout = timeout
         self._allowed_ports = allowed_ports
+        self._max_cache_entries = max_cache_entries
+        self._max_crl_cache_entries = max_crl_cache_entries
+        self._cache_lock = threading.RLock()
 
     def check(self, manifest: Any, expected_issuer: str | None = None) -> RevocationStatus:
         """Check if a bundle is revoked.
@@ -305,18 +379,12 @@ class RevocationChecker:
                 expected_issuer = manifest_issuer_id
         if not isinstance(jti, str) or not jti.strip():
             logger.error("Revocation check rejected an empty bundle jti")
-            return RevocationStatus(
-                revoked=True,
-                reason="revocation_status_unavailable",
-            )
+            return RevocationStatus.unavailable()
         if expected_issuer is not None and (
             not isinstance(expected_issuer, str) or not expected_issuer.strip()
         ):
             logger.error("Revocation check rejected an empty expected issuer")
-            return RevocationStatus(
-                revoked=True,
-                reason="revocation_status_unavailable",
-            )
+            return RevocationStatus.unavailable()
 
         if not revocation:
             logger.warning(
@@ -327,12 +395,9 @@ class RevocationChecker:
 
         check_uri = revocation.get("check_uri")
         crl_uri = revocation.get("crl_uri")
-        if crl_uri and expected_issuer is None:
-            logger.error("CRL revocation check requires an expected issuer")
-            return RevocationStatus(
-                revoked=True,
-                reason="revocation_status_unavailable",
-            )
+        if (check_uri or crl_uri) and expected_issuer is None:
+            logger.error("Configured revocation checks require an expected issuer")
+            return RevocationStatus.unavailable()
 
         # Try online endpoint first
         if check_uri:
@@ -361,10 +426,7 @@ class RevocationChecker:
                 "All configured revocation checks failed for jti=%s; rejecting fail-closed",
                 jti,
             )
-            return RevocationStatus(
-                revoked=True,
-                reason="revocation_status_unavailable",
-            )
+            return RevocationStatus.unavailable()
 
         return RevocationStatus(revoked=False)
 
@@ -373,8 +435,8 @@ class RevocationChecker:
     ) -> RevocationStatus | None:
         """Check revocation via online endpoint.
 
-        GET {check_uri}?jti={jti} expecting:
-            {"revoked": bool, "reason": str | null, "revoked_at": str | null}
+        GET {check_uri}?jti={jti}&issuer={issuer} expecting an object that
+        echoes both binding values and includes a boolean ``revoked``.
 
         Args:
             uri: The check_uri from the manifest.
@@ -403,9 +465,12 @@ class RevocationChecker:
         query = [
             (key, value)
             for key, value in parse_qsl(parsed_uri.query, keep_blank_values=True)
-            if key != "jti"
+            if key not in {"jti", "issuer"}
         ]
         query.append(("jti", jti))
+        if expected_issuer is None:
+            raise RevocationError("Online revocation check requires an expected issuer")
+        query.append(("issuer", expected_issuer))
         full_uri = urlunparse(parsed_uri._replace(query=urlencode(query)))
 
         data = _fetch_json(
@@ -417,12 +482,24 @@ class RevocationChecker:
         revoked = data.get("revoked")
         if not isinstance(revoked, bool):
             raise RevocationError("Online revocation response requires boolean 'revoked'")
+        response_jti = data.get("jti")
+        response_issuer = data.get("issuer")
+        if response_jti != jti:
+            raise RevocationError("Online revocation response jti does not match the request")
+        if response_issuer != expected_issuer:
+            raise RevocationError("Online revocation response issuer does not match the request")
         online_reason = data.get("reason")
         online_revoked_at = data.get("revoked_at")
         if online_reason is not None and not isinstance(online_reason, str):
             raise RevocationError("Online revocation 'reason' must be a string or null")
         if online_revoked_at is not None and not isinstance(online_revoked_at, str):
             raise RevocationError("Online revocation 'revoked_at' must be a string or null")
+        if revoked:
+            if not isinstance(online_reason, str) or not online_reason.strip():
+                raise RevocationError("Confirmed revocation requires a non-empty reason")
+            _parse_rfc3339(online_revoked_at, "online.revoked_at")
+        elif online_reason is not None or online_revoked_at is not None:
+            raise RevocationError("Non-revoked response must not include revocation details")
         status = RevocationStatus(
             revoked=revoked,
             reason=online_reason,
@@ -506,12 +583,11 @@ class RevocationChecker:
                 seen_jtis.add(entry_jti)
                 entry_reason = entry.get("reason")
                 entry_revoked_at = entry.get("revoked_at")
-                if entry_reason is not None and not isinstance(entry_reason, str):
-                    raise RevocationError("CRL entry 'reason' must be a string or null")
-                if entry_revoked_at is not None and not isinstance(entry_revoked_at, str):
-                    raise RevocationError("CRL entry 'revoked_at' must be a string or null")
-                if entry_revoked_at is not None:
-                    _parse_rfc3339(entry_revoked_at, "revoked[].revoked_at")
+                if not isinstance(entry_reason, str) or not entry_reason.strip():
+                    raise RevocationError("CRL entry 'reason' must be a non-empty string")
+                if not isinstance(entry_revoked_at, str):
+                    raise RevocationError("CRL entry 'revoked_at' must be a string")
+                _parse_rfc3339(entry_revoked_at, "revoked[].revoked_at")
                 revoked_map[entry_jti] = entry
             seconds_until_update = (next_dt - now).total_seconds()
             self._set_crl_cached(
@@ -536,28 +612,32 @@ class RevocationChecker:
 
     def _get_cached(self, key: str) -> RevocationStatus | None:
         """Retrieve a non-expired cache entry."""
-        entry = self._cache.get(key)
-        if entry and entry.expires_at > time.monotonic():
-            return entry.value  # type: ignore[no-any-return]
-        if entry:
-            del self._cache[key]
-        return None
+        with self._cache_lock:
+            entry = self._cache.get(key)
+            if entry and entry.expires_at > time.monotonic():
+                return entry.value  # type: ignore[no-any-return]
+            if entry:
+                del self._cache[key]
+            return None
 
     def _set_cached(self, key: str, value: RevocationStatus) -> None:
         """Store a value in the cache."""
-        self._cache[key] = _CacheEntry(
-            value=value,
-            expires_at=time.monotonic() + self._cache_ttl,
-        )
+        with self._cache_lock:
+            self._prune_for_insert(self._cache, self._max_cache_entries, key)
+            self._cache[key] = _CacheEntry(
+                value=value,
+                expires_at=time.monotonic() + self._cache_ttl,
+            )
 
     def _get_crl_cached(self, key: str) -> dict[str, dict[str, str]] | None:
         """Retrieve a non-expired CRL cache entry."""
-        entry = self._crl_cache.get(key)
-        if entry and entry.expires_at > time.monotonic():
-            return entry.value  # type: ignore[no-any-return]
-        if entry:
-            del self._crl_cache[key]
-        return None
+        with self._cache_lock:
+            entry = self._crl_cache.get(key)
+            if entry and entry.expires_at > time.monotonic():
+                return entry.value  # type: ignore[no-any-return]
+            if entry:
+                del self._crl_cache[key]
+            return None
 
     def _set_crl_cached(
         self,
@@ -566,12 +646,27 @@ class RevocationChecker:
         max_age: float | None = None,
     ) -> None:
         """Store a CRL in the cache."""
-        self._crl_cache[key] = _CacheEntry(
-            value=value,
-            expires_at=time.monotonic() + (float(self._cache_ttl) if max_age is None else max_age),
-        )
+        with self._cache_lock:
+            self._prune_for_insert(self._crl_cache, self._max_crl_cache_entries, key)
+            self._crl_cache[key] = _CacheEntry(
+                value=value,
+                expires_at=time.monotonic()
+                + (float(self._cache_ttl) if max_age is None else max_age),
+            )
+
+    @staticmethod
+    def _prune_for_insert(cache: dict[str, _CacheEntry], limit: int, key: str) -> None:
+        """Expire stale entries and evict oldest insertions deterministically."""
+        now = time.monotonic()
+        for stale_key in [k for k, entry in cache.items() if entry.expires_at <= now]:
+            del cache[stale_key]
+        # Reinsert updates at the newest position in dict insertion order.
+        cache.pop(key, None)
+        while len(cache) >= limit:
+            del cache[next(iter(cache))]
 
     def clear_cache(self) -> None:
         """Clear all caches."""
-        self._cache.clear()
-        self._crl_cache.clear()
+        with self._cache_lock:
+            self._cache.clear()
+            self._crl_cache.clear()

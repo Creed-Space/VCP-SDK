@@ -75,7 +75,10 @@ pub use hooks::{
 };
 pub use identity::VcpToken;
 pub use personal::{PersonalDimension, PersonalState};
-pub use revocation::{Crl, CrlEntry, RevocationChecker, RevocationStatus};
+pub use revocation::{
+    Crl, CrlEntry, ReqwestRevocationTransport, RevocationChecker, RevocationDecision,
+    RevocationStatus, RevocationTransport,
+};
 pub use situational::{SituationalContext, SituationalDimension};
 pub use transport::{
     compute_content_hash, sign_manifest, verify_content_hash, verify_manifest_signature,

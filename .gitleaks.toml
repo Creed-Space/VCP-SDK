@@ -1,0 +1,20 @@
+title = "VCP-SDK secret scanning"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documented placeholders and generated test-only key material"
+regexTarget = "match"
+regexes = [
+  '''(?i)your[-_ ]?(api[-_ ]?)?key''',
+  '''(?i)example[-_ ]?(secret|token|key)'''
+]
+paths = [
+  '''(^|/)conformance/transport/signature_verification\.json$''',
+  '''(^|/)node_modules/''',
+  '''(^|/)python/(?:build|dist)/''',
+  '''(^|/)python/src/[^/]+\.egg-info/''',
+  '''(^|/)rust/(?:[^/]+/)*target/''',
+  '''(^|/)webmcp/dist/'''
+]

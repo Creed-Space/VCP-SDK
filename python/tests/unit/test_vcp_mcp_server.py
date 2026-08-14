@@ -1,81 +1,24 @@
-"""Contract tests for the VCP MCP tool surface."""
+"""Contract tests for the packaged VCP MCP 2 tool surface."""
 
 from __future__ import annotations
 
 import asyncio
-import importlib.util
 import json
-import sys
-from dataclasses import dataclass
-from pathlib import Path
-from types import ModuleType
-from typing import Any
 
 import pytest
+from mcp.types import CallToolRequestParams
 
-
-class _Tool:
-    def __init__(self, name: str, description: str, **kwargs: Any) -> None:
-        self.name = name
-        self.description = description
-        self._input_schema = kwargs["inputSchema"]
-
-    def __getattr__(self, name: str) -> Any:
-        if name == "inputSchema":
-            return self._input_schema
-        raise AttributeError(name)
-
-
-@dataclass
-class _TextContent:
-    type: str
-    text: str
-
-
-class _Server:
-    def __init__(self, _name: str) -> None:
-        pass
-
-    def list_tools(self):
-        return lambda function: function
-
-    def call_tool(self):
-        return lambda function: function
+from vcp import mcp_server
 
 
 @pytest.fixture(scope="module")
-def mcp_server():
-    server_module = ModuleType("mcp.server")
-    server_module.Server = _Server  # type: ignore[attr-defined]
-    types_module = ModuleType("mcp.types")
-    types_module.TextContent = _TextContent  # type: ignore[attr-defined]
-    types_module.Tool = _Tool  # type: ignore[attr-defined]
-
-    previous_server = sys.modules.get("mcp.server")
-    previous_types = sys.modules.get("mcp.types")
-    sys.modules["mcp.server"] = server_module
-    sys.modules["mcp.types"] = types_module
-    try:
-        source = Path(__file__).parents[2] / "src" / "mcp" / "vcp_server.py"
-        spec = importlib.util.spec_from_file_location("vcp_sdk_mcp_server", source)
-        assert spec is not None and spec.loader is not None
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        yield module
-    finally:
-        if previous_server is None:
-            sys.modules.pop("mcp.server", None)
-        else:
-            sys.modules["mcp.server"] = previous_server
-        if previous_types is None:
-            sys.modules.pop("mcp.types", None)
-        else:
-            sys.modules["mcp.types"] = previous_types
+def server_module():
+    return mcp_server
 
 
-def test_encode_context_schema_matches_all_supported_dimensions(mcp_server) -> None:
-    tools = {tool.name: tool for tool in asyncio.run(mcp_server.list_tools())}
-    schema = tools["vcp_encode_context"].inputSchema
+def test_encode_context_schema_matches_all_supported_dimensions(server_module) -> None:
+    tools = {tool.name: tool for tool in asyncio.run(server_module.list_tools())}
+    schema = tools["vcp_encode_context"].input_schema
     properties = schema["properties"]
 
     assert schema["additionalProperties"] is False
@@ -102,9 +45,9 @@ def test_encode_context_schema_matches_all_supported_dimensions(mcp_server) -> N
     }
 
 
-def test_encode_context_handles_extended_and_intensity_dimensions(mcp_server) -> None:
+def test_encode_context_handles_extended_and_intensity_dimensions(server_module) -> None:
     response = asyncio.run(
-        mcp_server._handle_encode_context(
+        server_module._handle_encode_context(
             {
                 "time": "morning",
                 "system_context": "testing",
@@ -124,8 +67,55 @@ def test_encode_context_handles_extended_and_intensity_dimensions(mcp_server) ->
     ]
 
 
-def test_status_reports_installed_sdk_version(mcp_server) -> None:
+def test_status_reports_installed_sdk_version(server_module) -> None:
     from vcp import __version__
 
-    response = asyncio.run(mcp_server._handle_status({}))
+    response = asyncio.run(server_module._handle_status({}))
     assert json.loads(response[0].text)["version"] == __version__
+
+
+def test_mcp_2_adapters_list_and_call_tools(server_module) -> None:
+    listed = asyncio.run(server_module._list_tools_adapter(None, None))
+    assert {tool.name for tool in listed.tools} == {
+        "vcp_validate_token",
+        "vcp_parse_csm1",
+        "vcp_encode_context",
+        "vcp_status",
+    }
+
+    called = asyncio.run(
+        server_module._call_tool_adapter(
+            None,
+            CallToolRequestParams(
+                name="vcp_validate_token",
+                arguments={"token": "family.safe.guide@1.2.0"},
+            ),
+        )
+    )
+    assert called.is_error is False
+    assert json.loads(called.content[0].text)["valid"] is True
+
+
+def test_mcp_2_adapter_marks_unknown_tool_as_error(server_module) -> None:
+    called = asyncio.run(
+        server_module._call_tool_adapter(
+            None,
+            CallToolRequestParams(name="unknown", arguments={}),
+        )
+    )
+    assert called.is_error is True
+    assert "Unknown tool" in json.loads(called.content[0].text)["error"]
+
+
+def test_mcp_2_adapter_rejects_arguments_outside_tool_schema(server_module) -> None:
+    called = asyncio.run(
+        server_module._call_tool_adapter(
+            None,
+            CallToolRequestParams(
+                name="vcp_encode_context",
+                arguments={"cognitive_state": {"value": "focused", "intensity": True}},
+            ),
+        )
+    )
+    assert called.is_error is True
+    assert "Invalid arguments" in json.loads(called.content[0].text)["error"]

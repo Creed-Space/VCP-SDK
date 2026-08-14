@@ -84,6 +84,42 @@ impl Persona {
         }
     }
 
+    /// Parse the case-sensitive single-character wire representation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::InvalidPersona`] unless `c` is an uppercase persona
+    /// code defined by the wire grammar.
+    pub fn from_wire_char(c: char) -> VcpResult<Self> {
+        if !c.is_ascii_uppercase() {
+            return Err(VcpError::InvalidPersona(c));
+        }
+        Self::from_char(c)
+    }
+
+    /// Normative persona-resolution focus text.
+    pub fn focus(self) -> &'static str {
+        match self {
+            Self::Nanny => "Child safety and family-appropriate content",
+            Self::Sentinel => "Security, privacy, and operational safety",
+            Self::Godparent => "Ethical guidance and moral reasoning",
+            Self::Ambassador => "Professional conduct and diplomatic communication",
+            Self::Muse => "Creativity and artistic expression",
+            Self::Mediator => "Fair resolution and balanced mediation",
+            Self::Custom => "User-defined constitution",
+        }
+    }
+
+    /// Default adherence level for this persona profile.
+    pub fn default_adherence(self) -> u8 {
+        match self {
+            Self::Nanny => 5,
+            Self::Sentinel | Self::Godparent => 4,
+            Self::Ambassador | Self::Mediator | Self::Custom => 3,
+            Self::Muse => 2,
+        }
+    }
+
     /// Human-readable description.
     pub fn description(self) -> &'static str {
         match self {

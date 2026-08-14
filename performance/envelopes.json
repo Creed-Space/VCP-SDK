@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "profiles": {
+    "smoke": {
+      "max_wall_seconds": 60,
+      "max_peak_rss_mb": 2048,
+      "metrics": {
+        "python_csm1_roundtrip": {
+          "min_ops_per_second": 5000,
+          "max_p95_us": 1000
+        },
+        "python_content_hash_64k": {
+          "min_ops_per_second": 4,
+          "max_p95_us": 250000
+        },
+        "rust_csm1_roundtrip": {
+          "min_ops_per_second": 10000,
+          "max_p95_us": 1000
+        },
+        "rust_content_hash_64k": {
+          "min_ops_per_second": 10,
+          "max_p95_us": 100000
+        },
+        "webmcp_context_roundtrip": {
+          "min_ops_per_second": 5000,
+          "max_p95_us": 1000
+        },
+        "webmcp_consensus_7x30": {
+          "min_ops_per_second": 100,
+          "max_p95_us": 10000
+        },
+        "python_scope_glob_6": {
+          "min_ops_per_second": 1000,
+          "max_p95_us": 1000
+        },
+        "python_manifest_canonicalization_48k": {
+          "min_ops_per_second": 5,
+          "max_p95_us": 250000
+        },
+        "python_ed25519_verification": {
+          "min_ops_per_second": 100,
+          "max_p95_us": 10000
+        },
+        "rust_scope_glob_6": {
+          "min_ops_per_second": 1000,
+          "max_p95_us": 1000
+        },
+        "rust_manifest_canonicalization_48k": {
+          "min_ops_per_second": 20,
+          "max_p95_us": 100000
+        },
+        "rust_ed25519_verification": {
+          "min_ops_per_second": 500,
+          "max_p95_us": 5000
+        }
+      }
+    },
+    "full": {
+      "max_wall_seconds": 180,
+      "max_peak_rss_mb": 2048,
+      "metrics": {
+        "python_csm1_roundtrip": {
+          "min_ops_per_second": 5000,
+          "max_p95_us": 1000
+        },
+        "python_content_hash_64k": {
+          "min_ops_per_second": 4,
+          "max_p95_us": 250000
+        },
+        "rust_csm1_roundtrip": {
+          "min_ops_per_second": 10000,
+          "max_p95_us": 1000
+        },
+        "rust_content_hash_64k": {
+          "min_ops_per_second": 10,
+          "max_p95_us": 100000
+        },
+        "webmcp_context_roundtrip": {
+          "min_ops_per_second": 5000,
+          "max_p95_us": 1000
+        },
+        "webmcp_consensus_7x30": {
+          "min_ops_per_second": 100,
+          "max_p95_us": 10000
+        },
+        "python_scope_glob_6": {
+          "min_ops_per_second": 1000,
+          "max_p95_us": 1000
+        },
+        "python_manifest_canonicalization_48k": {
+          "min_ops_per_second": 5,
+          "max_p95_us": 250000
+        },
+        "python_ed25519_verification": {
+          "min_ops_per_second": 100,
+          "max_p95_us": 10000
+        },
+        "rust_scope_glob_6": {
+          "min_ops_per_second": 1000,
+          "max_p95_us": 1000
+        },
+        "rust_manifest_canonicalization_48k": {
+          "min_ops_per_second": 20,
+          "max_p95_us": 100000
+        },
+        "rust_ed25519_verification": {
+          "min_ops_per_second": 500,
+          "max_p95_us": 5000
+        }
+      }
+    }
+  }
+}

@@ -26,7 +26,9 @@
 
 use std::fmt;
 
+use regex::Regex;
 use serde::{Deserialize, Serialize};
+use unicode_normalization::UnicodeNormalization;
 
 use crate::error::{VcpError, VcpResult};
 
@@ -171,6 +173,84 @@ impl VcpToken {
             version,
             namespace,
         })
+    }
+
+    /// Canonicalize and validate a potentially non-canonical identity token.
+    ///
+    /// The token path and version are lowercased after Unicode NFKC
+    /// normalization. Whitespace is removed, dot runs are collapsed, numeric
+    /// semantic-version components lose redundant leading zeroes, and the
+    /// namespace is normalized to the uppercase form required by the grammar.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`VcpError`] when the input is empty, cannot be normalized,
+    /// contains an out-of-range semantic-version component, or does not parse
+    /// as a valid canonical token.
+    pub fn canonicalize(raw: &str) -> VcpResult<String> {
+        if raw.is_empty() {
+            return Err(VcpError::MalformedToken("token cannot be empty".into()));
+        }
+        let compact: String = raw
+            .nfkc()
+            .filter(|character| !character.is_whitespace())
+            .collect();
+
+        let (without_namespace, namespace) = if let Some(index) = compact.rfind(':') {
+            (&compact[..index], Some(compact[index + 1..].to_uppercase()))
+        } else {
+            (compact.as_str(), None)
+        };
+        let (raw_path, version) = if let Some(index) = without_namespace.rfind('@') {
+            let raw_version = without_namespace[index + 1..].to_lowercase();
+            let (prefix, numeric) = if raw_version.starts_with(['^', '~']) {
+                (&raw_version[..1], &raw_version[1..])
+            } else {
+                ("", raw_version.as_str())
+            };
+            let version_pattern =
+                Regex::new(r"^(\d+)\.(\d+)\.(\d+)(-[a-z0-9.-]+)?$").map_err(|error| {
+                    VcpError::ParseError(format!("internal version pattern failed: {error}"))
+                })?;
+            let normalized_version = if let Some(captures) = version_pattern.captures(numeric) {
+                format!(
+                    "{}{}.{}.{}{}",
+                    prefix,
+                    captures[1].parse::<u32>().map_err(|_| {
+                        VcpError::ParseError("version component out of range".into())
+                    })?,
+                    captures[2].parse::<u32>().map_err(|_| {
+                        VcpError::ParseError("version component out of range".into())
+                    })?,
+                    captures[3].parse::<u32>().map_err(|_| {
+                        VcpError::ParseError("version component out of range".into())
+                    })?,
+                    captures.get(4).map_or("", |value| value.as_str()),
+                )
+            } else {
+                format!("{prefix}{numeric}")
+            };
+            (&without_namespace[..index], Some(normalized_version))
+        } else {
+            (without_namespace, None)
+        };
+
+        let path = raw_path
+            .to_lowercase()
+            .split('.')
+            .filter(|segment| !segment.is_empty())
+            .collect::<Vec<_>>()
+            .join(".");
+        let mut candidate = path;
+        if let Some(version) = version {
+            candidate.push('@');
+            candidate.push_str(&version);
+        }
+        if let Some(namespace) = namespace {
+            candidate.push(':');
+            candidate.push_str(&namespace);
+        }
+        Ok(Self::parse(&candidate)?.full())
     }
 
     // ── Accessors ───────────────────────────────────────────

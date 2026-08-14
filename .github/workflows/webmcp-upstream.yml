@@ -1,0 +1,93 @@
+name: WebMCP upstream contract
+
+on:
+  schedule:
+    - cron: "23 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: sdk-webmcp-upstream
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Review upstream WebMCP contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+
+      - name: Compare reviewed and current upstream contracts
+        id: contract
+        continue-on-error: true
+        run: >-
+          python scripts/check_webmcp_upstream.py
+          --output webmcp-upstream-result.json
+
+      - name: Retain bounded drift evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: webmcp-upstream-${{ github.run_id }}
+          path: webmcp-upstream-result.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Open one review issue for semantic or byte drift
+        if: steps.contract.outcome == 'failure'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('fs');
+            const result = JSON.parse(fs.readFileSync('webmcp-upstream-result.json', 'utf8'));
+            if (result.status !== 'drift') return;
+            const title = 'Review upstream WebMCP contract drift';
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            if (issues.some((issue) => !issue.pull_request && issue.title === title)) return;
+            const missing = result.missing_required_fragments.length
+              ? result.missing_required_fragments.map((item) => `- \`${item}\``).join('\n')
+              : '- none';
+            const forbidden = result.present_forbidden_fragments.length
+              ? result.present_forbidden_fragments.map((item) => `- \`${item}\``).join('\n')
+              : '- none';
+            const body = [
+              'The bounded weekly watcher detected a change in the reviewed WebMCP source.',
+              '',
+              `Reviewed upstream commit: \`${result.expected_upstream_commit}\``,
+              `Expected SHA-256: \`${result.expected_sha256}\``,
+              `Observed SHA-256: \`${result.observed_sha256}\``,
+              `Observed bytes: ${result.observed_bytes}`,
+              '',
+              'Missing required contract fragments:',
+              missing,
+              '',
+              'Newly present forbidden fragments:',
+              forbidden,
+              '',
+              'Review the upstream specification, SDK adapter, types, polyfill contract, browser tests, compatibility copy, and review date. This workflow does not modify source, publish a claim, or release a package.'
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body
+            });
+
+      - name: Fail until upstream review is complete
+        if: steps.contract.outcome == 'failure'
+        run: exit 1

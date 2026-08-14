@@ -1,176 +1,91 @@
 # Contributing to VCP-SDK
 
-Thank you for your interest in contributing to the Value-Context Protocol. This guide covers everything you need to get started.
+Contributions are welcome. Protocol changes start in VCP-Spec; implementation
+changes belong here.
 
-## Table of Contents
+## Development setup
 
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [Development Setup](#development-setup)
-- [Making Changes](#making-changes)
-- [Pull Request Process](#pull-request-process)
-- [Coding Standards](#coding-standards)
-- [Specification Changes](#specification-changes)
-
----
-
-## Code of Conduct
-
-This project adheres to the [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [conduct@creedspace.com](mailto:conduct@creedspace.com).
-
----
-
-## Getting Started
-
-1. **Fork the repository** and clone your fork locally
-2. **Create a branch** from `main` for your changes
-3. **Set up the development environment** for the SDK(s) you're working on
-4. **Make your changes** with appropriate tests
-5. **Submit a pull request** against `main`
-
----
-
-## Development Setup
-
-### Python SDK
-
-```bash
-cd python
-python -m venv .venv
-source .venv/bin/activate
-uv sync
-uv pip install -e ".[dev]"
-pytest tests/
-```
-
-Requires Python 3.10+.
-
-### Rust SDK
-
-```bash
-cd rust
-cargo build
-cargo test
-cargo clippy -- -D warnings
-```
-
-Requires Rust 1.70+ (2021 edition).
-
-### TypeScript / WebMCP SDK
-
-```bash
-cd webmcp
-npm install
-npm run check   # Type checking
-npm run build   # Compile to dist/
-```
-
-Requires Node.js 18+.
-
----
-
-## Making Changes
-
-### Branch Naming
-
-| Prefix | Use Case |
-|:---|:---|
-| `feat/` | New features |
-| `fix/` | Bug fixes |
-| `docs/` | Documentation changes |
-| `spec/` | Specification amendments |
-| `refactor/` | Code refactoring |
-| `test/` | Test additions or fixes |
-
-### Commit Messages
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-feat(python): add CSM-1 R-line parsing for personal state
-fix(rust): correct identity token namespace validation
-docs: update newcomer guide with v1.1 examples
-spec: propose UVC registry extension for custom namespaces
-```
-
-### Testing
-
-- **All changes must include tests.** Untested code will not be merged.
-- Run the full test suite for the SDK(s) you've modified before submitting.
-- Cross-SDK changes should be validated against the JSON schemas in `schemas/`.
-
----
-
-## Pull Request Process
-
-1. **Ensure all tests pass** in the relevant SDK(s)
-2. **Update documentation** if your change affects public APIs or behavior
-3. **Reference any related issues** in your PR description
-4. **Describe your changes clearly** — what, why, and how
-5. **Keep PRs focused** — one logical change per pull request
-6. A maintainer will review your PR and may request changes
-
-### PR Template
-
-```markdown
-## Summary
-- Brief description of changes
-
-## Motivation
-- Why is this change needed?
-
-## Testing
-- How were these changes tested?
-
-## Checklist
-- [ ] Tests added/updated
-- [ ] Documentation updated
-- [ ] Passes all existing tests
-- [ ] Conforms to coding standards
-```
-
----
-
-## Coding Standards
+Use an isolated environment for each package.
 
 ### Python
 
-- **Formatter:** Ruff
-- **Type hints:** Required on all public functions
-- **Style:** PEP 8, enforced via `ruff check`
-- **Docstrings:** Google style for public API
+```bash
+cd python
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install 'pip==26.2.1'
+python -m pip install --require-hashes --requirement requirements-dev.lock
+python -m pip install --no-deps --editable .
+python -m ruff check src tests
+python -m mypy src/vcp
+python -m pytest -q
+```
+
+Regenerate the development lock only when dependency inputs change:
+
+```bash
+python -m pip install 'pip==26.2.1' 'pip-tools==7.6.1'
+pip-compile pyproject.toml \
+  --extra dev --extra server --extra mcp \
+  --output-file requirements-dev.lock \
+  --resolver backtracking --strip-extras --generate-hashes --allow-unsafe
+```
 
 ### Rust
 
-- **Formatter:** `rustfmt`
-- **Linter:** `clippy` with `-D warnings`
-- **Documentation:** `///` doc comments on public items
-- **Unsafe:** Avoid unless absolutely necessary; document rationale
+```bash
+cd rust
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --all-features --no-deps
+```
 
-### TypeScript
+### WebMCP
 
-- **Strict mode:** `strict: true` in `tsconfig.json`
-- **Style:** Consistent with existing codebase
-- **Types:** Explicit types on public exports; avoid `any`
+```bash
+cd webmcp
+npm ci
+npm run check
+npm test
+npm run prepack
+npm pack --dry-run
+```
 
----
+### Repository contracts
 
-## Specification Changes
+```bash
+npm ci --ignore-scripts
+make validate PYTHON="$(command -v python)"
+make schema-sync SPEC=/path/to/VCP-Spec PYTHON="$(command -v python)"
+make property PYTHON="$(command -v python)"
+make performance-smoke PYTHON="$(command -v python)"
+cargo check --manifest-path rust/fuzz/Cargo.toml
+```
 
-Changes to the VCP specification (`specs/`) follow a more rigorous process:
+Property suites use deterministic seeds and committed settings. When a fuzz
+target finds a failure, reproduce and minimize the input, add it to the target's
+committed corpus, and add a focused regression assertion. Do not raise a
+performance envelope merely to make a regression green. Record the measured
+candidate, environment, before and after results, and an evidence-based reason
+for any envelope change.
 
-1. **Open a discussion issue** describing the proposed change and its motivation
-2. **Draft an amendment** following the format in `specs/VCP_SPECIFICATION_v1.1_AMENDMENTS.md`
-3. **Include rationale** for why the change is necessary and how it affects existing implementations
-4. **Update all three SDKs** to reflect the specification change, or clearly note what remains to be implemented
-5. **Update JSON schemas** in `schemas/` to match the new specification
+## Change requirements
 
-Specification changes require approval from a core maintainer.
+* Add regression tests for changed behavior.
+* Update public documentation and compatibility notes with API or wire changes.
+* Keep package and protocol version claims separate.
+* Never hand-edit generated package output.
+* Preserve fail-closed behavior for security-sensitive failures.
+* Use Conventional Commits and keep each pull request coherent.
+* Run the checks for every affected distribution.
 
----
+Specification syntax, schema, or semantics changes require the VEP process in
+VCP-Spec. Copy an accepted schema here only through the synchronization procedure
+in [SCHEMA_OWNERSHIP.md](SCHEMA_OWNERSHIP.md).
 
-## Questions?
+## Pull request evidence
 
-Open a [discussion](https://github.com/Creed-Space/VCP-SDK/discussions) or reach out to the maintainers — we're happy to help.
-
-Thank you for helping build the future of portable AI context.
+Include the candidate hash, exact commands run, test outcomes, package manifest
+review, dependency audit result, and any remaining human or publication gates.
+Maintainer review and hosted CI remain required before merge.

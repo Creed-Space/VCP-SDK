@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ..metrics import vcp_compositions_total
 from ..types import CompositionMode
@@ -460,3 +460,81 @@ class Composer:
 
         # Default to tension (weaker conflict)
         return "tension"
+
+
+def compose_layered(
+    bundles: list[dict[str, Any]],
+    available_constitutions: list[str] | None = None,
+) -> dict[str, Any]:
+    """Compose the language-neutral layered conformance profile.
+
+    This profile adds layer precedence, explicit dependency declarations, and
+    explicit mutual-exclusion metadata to the rule-level ``Composer`` API.
+    """
+    if not bundles:
+        return {"result": "default_constitution"}
+    available = set(available_constitutions or [bundle["id"] for bundle in bundles])
+    missing = sorted(
+        {
+            required
+            for bundle in bundles
+            for required in bundle.get("composition", {}).get("requires", [])
+            if required not in available
+        }
+    )
+    if missing:
+        return {"result": "MISSING_DEPENDENCY", "missing": missing}
+    by_id = {bundle["id"]: bundle for bundle in bundles}
+    for bundle in bundles:
+        conflicts = set(bundle.get("composition", {}).get("conflicts_with", []))
+        for conflict_id in conflicts:
+            peer = by_id.get(conflict_id)
+            if peer and bundle["id"] in set(peer.get("composition", {}).get("conflicts_with", [])):
+                return {
+                    "result": "CONFLICT",
+                    "conflict_type": "mutual_exclusion",
+                    "conflicting_ids": [bundle["id"], conflict_id],
+                }
+    ordered = sorted(
+        enumerate(bundles),
+        key=lambda item: (int(item[1].get("composition", {}).get("layer", 0)), item[0]),
+    )
+    strict_layer = next(
+        (
+            int(bundle.get("composition", {}).get("layer", 0))
+            for _, bundle in ordered
+            if bundle.get("composition", {}).get("mode") == "strict"
+        ),
+        None,
+    )
+    if strict_layer is not None and any(
+        int(bundle.get("composition", {}).get("layer", 0)) > strict_layer
+        and bundle.get("composition", {}).get("mode") == "override"
+        for _, bundle in ordered
+    ):
+        return {"result": "CONFLICT", "conflict_type": "strict_mode_violation"}
+    base = next(
+        (bundle for _, bundle in ordered if bundle.get("composition", {}).get("mode") == "base"),
+        None,
+    )
+    if base is not None and any(
+        bundle.get("composition", {}).get("mode") == "override"
+        and int(bundle.get("composition", {}).get("layer", 0))
+        > int(base.get("composition", {}).get("layer", 0))
+        for _, bundle in ordered
+    ):
+        return {"result": "base_mode_protected", "effective_rule": base.get("rule")}
+    rules: list[str] = []
+    overridden = False
+    for _, bundle in ordered:
+        rule = bundle.get("rule")
+        if not rule:
+            continue
+        if bundle.get("composition", {}).get("mode") == "override" and rules:
+            rules = [rule]
+            overridden = True
+        else:
+            rules.append(rule)
+    if overridden and len(rules) == 1:
+        return {"result": "overridden", "effective_rule": rules[0]}
+    return {"result": "merged", "effective_rules": rules}

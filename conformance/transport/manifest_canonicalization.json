@@ -7,8 +7,12 @@
       "id": "mc-001",
       "description": "Signature field excluded from canonical form",
       "input": {
-        "bundle": {"id": "test"},
-        "signature": {"value": "should-be-excluded"},
+        "bundle": {
+          "id": "test"
+        },
+        "signature": {
+          "value": "should-be-excluded"
+        },
         "version": "1.0"
       },
       "expected": {
@@ -27,7 +31,11 @@
         "m_field": 3
       },
       "expected": {
-        "key_order": ["a_field", "m_field", "z_field"],
+        "key_order": [
+          "a_field",
+          "m_field",
+          "z_field"
+        ],
         "canonical_json": "{\"a_field\":2,\"m_field\":3,\"z_field\":1}"
       }
     },
@@ -57,11 +65,20 @@
         }
       },
       "expected": {
-        "canonical_json": "{\"outer_a\":{\"inner_a\":\"first\",\"inner_z\":\"last\"},\"outer_a\":{\"inner_a\":\"first\",\"inner_z\":\"last\"},\"outer_z\":{\"inner_a\":1,\"inner_b\":2}}",
+        "canonical_json": "{\"outer_a\":{\"inner_a\":\"first\",\"inner_z\":\"last\"},\"outer_z\":{\"inner_a\":1,\"inner_b\":2}}",
         "note": "This expected value shows the principle; implementations should verify key ordering at all nesting levels independently",
-        "top_level_order": ["outer_a", "outer_z"],
-        "nested_order_outer_z": ["inner_a", "inner_b"],
-        "nested_order_outer_a": ["inner_a", "inner_z"]
+        "top_level_order": [
+          "outer_a",
+          "outer_z"
+        ],
+        "nested_order_outer_z": [
+          "inner_a",
+          "inner_b"
+        ],
+        "nested_order_outer_a": [
+          "inner_a",
+          "inner_z"
+        ]
       }
     },
     {
@@ -90,7 +107,11 @@
       "id": "mc-006",
       "description": "Arrays preserve element order (not sorted)",
       "input": {
-        "tags": ["zebra", "apple", "mango"],
+        "tags": [
+          "zebra",
+          "apple",
+          "mango"
+        ],
         "id": "test"
       },
       "expected": {
@@ -114,12 +135,19 @@
       "id": "mc-008",
       "description": "Deeply nested signature field still excluded",
       "input": {
-        "bundle": {"id": "deep-test"},
-        "metadata": {"title": "Test"},
+        "bundle": {
+          "id": "deep-test"
+        },
+        "metadata": {
+          "title": "Test"
+        },
         "signature": {
           "algorithm": "ed25519",
           "value": "base64:DEEP_SIG",
-          "signed_fields": ["bundle", "metadata"]
+          "signed_fields": [
+            "bundle",
+            "metadata"
+          ]
         }
       },
       "expected": {

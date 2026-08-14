@@ -188,7 +188,7 @@
         "layer": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 10,
+          "maximum": 4,
           "default": 2,
           "description": "Composition layer (0=platform, 1=safety, 2=domain, 3=user, 4=session)"
         },
@@ -282,7 +282,12 @@
         },
         "attestation_type": {
           "type": "string",
-          "enum": ["injection-safe", "content-safe", "full-audit", "competence-calibration"],
+          "enum": [
+            "injection-safe",
+            "content-safe",
+            "full-audit",
+            "competence-calibration"
+          ],
           "description": "Type of safety review performed"
         },
         "signature": {

@@ -130,7 +130,7 @@ impl FullContext {
     ///
     /// # Errors
     ///
-    /// Returns [`VcpError::ParseError`] if the situational or personal
+    /// Returns [`crate::error::VcpError::ParseError`] if the situational or personal
     /// portion of the wire format is malformed.
     pub fn from_wire(wire: &str) -> VcpResult<Self> {
         if wire.is_empty() {

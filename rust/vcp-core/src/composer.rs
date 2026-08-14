@@ -55,6 +55,44 @@ impl fmt::Display for CompositionMode {
     }
 }
 
+/// Layer and relationship metadata for the language-neutral composition profile.
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct LayeredComposition {
+    #[serde(default)]
+    pub layer: i32,
+    #[serde(default)]
+    pub mode: String,
+    #[serde(default)]
+    pub conflicts_with: Vec<String>,
+    #[serde(default)]
+    pub requires: Vec<String>,
+}
+
+/// One constitution input to the language-neutral layered profile.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct LayeredBundle {
+    pub id: String,
+    #[serde(default)]
+    pub composition: LayeredComposition,
+    pub rule: Option<String>,
+}
+
+/// Stable output fields for the language-neutral layered profile.
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct LayeredCompositionOutcome {
+    pub result: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub effective_rule: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub effective_rules: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conflict_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub conflicting_ids: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub missing: Vec<String>,
+}
+
 // ── Conflict ─────────────────────────────────────────────────
 
 /// A detected conflict between two constitution rules.
@@ -505,6 +543,113 @@ impl Default for Composer {
 /// Helper: check if a lowercased string contains "must" but NOT "must not".
 fn a_lower_has_must_without_not(s: &str) -> bool {
     s.contains("must") && !s.contains("must not")
+}
+
+/// Compose the language-neutral layered conformance profile.
+#[must_use]
+pub fn compose_layered(
+    bundles: &[LayeredBundle],
+    available_constitutions: Option<&[String]>,
+) -> LayeredCompositionOutcome {
+    if bundles.is_empty() {
+        return LayeredCompositionOutcome {
+            result: "default_constitution".to_string(),
+            ..Default::default()
+        };
+    }
+    let available: HashSet<&str> = available_constitutions.map_or_else(
+        || bundles.iter().map(|bundle| bundle.id.as_str()).collect(),
+        |items| items.iter().map(String::as_str).collect(),
+    );
+    let mut missing: Vec<String> = bundles
+        .iter()
+        .flat_map(|bundle| bundle.composition.requires.iter())
+        .filter(|required| !available.contains(required.as_str()))
+        .cloned()
+        .collect();
+    missing.sort();
+    missing.dedup();
+    if !missing.is_empty() {
+        return LayeredCompositionOutcome {
+            result: "MISSING_DEPENDENCY".to_string(),
+            missing,
+            ..Default::default()
+        };
+    }
+    for bundle in bundles {
+        for conflict_id in &bundle.composition.conflicts_with {
+            if let Some(peer) = bundles
+                .iter()
+                .find(|candidate| candidate.id == *conflict_id)
+            {
+                if peer.composition.conflicts_with.contains(&bundle.id) {
+                    return LayeredCompositionOutcome {
+                        result: "CONFLICT".to_string(),
+                        conflict_type: Some("mutual_exclusion".to_string()),
+                        conflicting_ids: vec![bundle.id.clone(), conflict_id.clone()],
+                        ..Default::default()
+                    };
+                }
+            }
+        }
+    }
+    let mut ordered: Vec<(usize, &LayeredBundle)> = bundles.iter().enumerate().collect();
+    ordered.sort_by_key(|(index, bundle)| (bundle.composition.layer, *index));
+    if let Some(strict_layer) = ordered
+        .iter()
+        .find(|(_, bundle)| bundle.composition.mode == "strict")
+        .map(|(_, bundle)| bundle.composition.layer)
+    {
+        if ordered.iter().any(|(_, bundle)| {
+            bundle.composition.layer > strict_layer && bundle.composition.mode == "override"
+        }) {
+            return LayeredCompositionOutcome {
+                result: "CONFLICT".to_string(),
+                conflict_type: Some("strict_mode_violation".to_string()),
+                ..Default::default()
+            };
+        }
+    }
+    if let Some((_, base)) = ordered
+        .iter()
+        .find(|(_, bundle)| bundle.composition.mode == "base")
+    {
+        if ordered.iter().any(|(_, bundle)| {
+            bundle.composition.mode == "override"
+                && bundle.composition.layer > base.composition.layer
+        }) {
+            return LayeredCompositionOutcome {
+                result: "base_mode_protected".to_string(),
+                effective_rule: base.rule.clone(),
+                ..Default::default()
+            };
+        }
+    }
+    let mut rules = Vec::new();
+    let mut overridden = false;
+    for (_, bundle) in ordered {
+        let Some(rule) = &bundle.rule else {
+            continue;
+        };
+        if bundle.composition.mode == "override" && !rules.is_empty() {
+            rules.clear();
+            overridden = true;
+        }
+        rules.push(rule.clone());
+    }
+    if overridden && rules.len() == 1 {
+        LayeredCompositionOutcome {
+            result: "overridden".to_string(),
+            effective_rule: rules.into_iter().next(),
+            ..Default::default()
+        }
+    } else {
+        LayeredCompositionOutcome {
+            result: "merged".to_string(),
+            effective_rules: rules,
+            ..Default::default()
+        }
+    }
 }
 
 // ── Tests ────────────────────────────────────────────────────

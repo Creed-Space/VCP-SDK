@@ -247,8 +247,8 @@ paths:
 
 **Process**:
 1. Requestor claims `company.acme`
-2. Registry provides verification token: `vcp-verify=abc123xyz`
-3. Requestor adds DNS TXT record: `_vcp.acme.com TXT "vcp-verify=abc123xyz"`
+2. Registry provides a fresh, single-use verification value
+3. Requestor adds it as a DNS TXT record: `_vcp.acme.com TXT "vcp-verify=<one-time-random-value>"`
 4. Registry verifies DNS record
 5. Namespace approved
 

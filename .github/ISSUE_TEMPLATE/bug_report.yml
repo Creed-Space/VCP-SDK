@@ -26,8 +26,8 @@ body:
     id: version
     attributes:
       label: Version
-      description: SDK version or commit hash
-      placeholder: "e.g. 1.0.0, 0.1.0, or a2a515c"
+      description: SDK version, full source commit, installation method, and enabled extras
+      placeholder: "e.g. source commit 0123456789abcdef..., editable Python install with mcp extra"
     validations:
       required: true
 
@@ -45,7 +45,7 @@ body:
       label: Steps to Reproduce
       description: Minimal steps to reproduce the behavior
       placeholder: |
-        1. Install the SDK with `pip install vcp-python`
+        1. Check out the exact source commit and install with `python -m pip install ./python`
         2. Run this code...
         3. See error...
     validations:
@@ -77,6 +77,8 @@ body:
         - Python: 3.12.1
         - Rust: 1.77.0
         - Node: 20.11.0
+        - Installation: source checkout / wheel / sdist / crate / npm tarball
+        - Optional extras or features: core / server / mcp / redis / metrics
     validations:
       required: false
 

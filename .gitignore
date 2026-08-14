@@ -37,8 +37,16 @@ ENV/
 .pytest_cache/
 .coverage
 htmlcov/
+python/coverage.json
+python/critical-coverage.json
+python/mutants/
+mutation-results/
 .tox/
 .nox/
+performance-results/
+conformance/reports/*.json
+conformance/reports/profiles/
+artifact-evidence/
 
 # Type checking
 .mypy_cache/

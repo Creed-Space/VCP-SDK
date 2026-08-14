@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+import vcp.hooks.config as hooks_config
 from vcp.hooks.config import (
     DeploymentConfig,
     HookConfigError,
@@ -145,6 +146,13 @@ class TestLoadFromDictErrors:
     def test_entry_not_dict(self) -> None:
         with pytest.raises(HookConfigError, match="mapping"):
             load_from_dict({"hooks": ["not-a-dict"]})
+
+    def test_import_allowlist_requires_module_segment_boundary(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(hooks_config, "ALLOWED_IMPORT_PREFIXES", ("safe",))
+        with pytest.raises(HookConfigError, match="not under"):
+            hooks_config._import_dotted_path("safeevil.hooks.action", "test-hook")
 
 
 # ---------------------------------------------------------------------------

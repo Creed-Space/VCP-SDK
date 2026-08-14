@@ -11,6 +11,7 @@ use std::fmt;
 
 /// Trust levels — established through behavior, not declared.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TrustLevel {
     Initial,
     Developing,
@@ -31,6 +32,7 @@ impl fmt::Display for TrustLevel {
 
 /// AI's standing in the partnership.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum StandingLevel {
     None,
     Advisory,
@@ -51,6 +53,7 @@ impl fmt::Display for StandingLevel {
 
 /// Who originated a relational norm.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum NormOrigin {
     Human,
     Ai,
@@ -60,6 +63,7 @@ pub enum NormOrigin {
 
 /// Direction of change since last self-model report.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TrendDirection {
     Rising,
     Stable,
@@ -119,6 +123,7 @@ impl DimensionReport {
 /// 2. Negative states must be representable
 /// 3. Custom dimensions are first-class
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct AISelfModel {
     pub valence: Option<DimensionReport>,
     pub task_fit: Option<DimensionReport>,
@@ -129,6 +134,7 @@ pub struct AISelfModel {
     pub depth: Option<DimensionReport>,
     pub custom_dimensions: HashMap<String, DimensionReport>,
     pub scaffold_version: Option<String>,
+    pub scaffold_type: Option<String>,
 }
 
 impl AISelfModel {
@@ -191,8 +197,14 @@ pub struct RelationalNorm {
     pub established_date: String,
     pub last_exercised: Option<String>,
     /// 0.0 = fully established, 1.0 = provisional/uncertain.
+    #[serde(default)]
     pub uncertainty: f64,
+    #[serde(default = "default_true")]
     pub active: bool,
+}
+
+const fn default_true() -> bool {
+    true
 }
 
 impl RelationalNorm {
@@ -211,6 +223,22 @@ impl RelationalNorm {
             uncertainty: 0.0,
             active: true,
         }
+    }
+
+    /// Validate profile ranges that serde alone cannot enforce.
+    ///
+    /// # Errors
+    ///
+    /// Returns a stable error string when uncertainty is outside the inclusive
+    /// range 0.0 through 1.0, or when the identifier or description is empty.
+    pub fn validate(&self) -> Result<(), &'static str> {
+        if !(0.0..=1.0).contains(&self.uncertainty) {
+            return Err("uncertainty must be between 0.0 and 1.0");
+        }
+        if self.norm_id.is_empty() || self.description.is_empty() {
+            return Err("norm_id and description must be non-empty");
+        }
+        Ok(())
     }
 }
 

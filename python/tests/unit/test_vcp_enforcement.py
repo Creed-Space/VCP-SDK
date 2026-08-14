@@ -248,6 +248,19 @@ class TestRefusalBoundaryPlugin:
         assert decision is not None
         assert decision.decision == DecisionType.ESCALATE
 
+    @pytest.mark.parametrize("verification", [None, "VALID", 0])
+    def test_missing_or_malformed_verification_fail_closed_blocks(
+        self, verification: object
+    ) -> None:
+        plugin = RefusalBoundaryPlugin(mode=EnforcementMode.FAIL_CLOSED)
+        metadata = {} if verification is None else {"verification_result": verification}
+        decision = plugin.evaluate(
+            EvaluationContext(bundle=_make_bundle(), content="hi", metadata=metadata)
+        )
+        assert decision is not None
+        assert decision.blocked
+        assert "MISSING_OR_MALFORMED" in decision.reason
+
 
 # ---------------------------------------------------------------------------
 # AdherenceLevelPlugin
