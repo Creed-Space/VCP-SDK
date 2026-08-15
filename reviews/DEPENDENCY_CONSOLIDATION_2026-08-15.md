@@ -63,6 +63,20 @@ remain unchanged.
 The original Dependabot pull requests are closed as superseded only after this
 candidate has passed its exact hosted matrix and reached `main`.
 
+## Post-merge lock reconciliation
+
+The exact-main full ecosystem run found that `rust/fuzz/Cargo.lock` still
+resolved ed25519-dalek 2.2 and therefore rejected `cargo check --locked` after
+the vcp-core dependency update. The ordinary SDK matrix had passed because the
+fuzz workflow's path filter covered selected core source files but omitted
+`rust/vcp-core/Cargo.toml`.
+
+The follow-up candidate regenerates the independent fuzz lockfile, verifies it
+with `cargo check --locked --manifest-path rust/fuzz/Cargo.toml`, and broadens
+the fuzz trigger to every `rust/vcp-core/**` change. Repository validation now
+enforces that trigger, preventing dependency changes from bypassing the lockfile
+gate again. The failed aggregate receipt is retained as part of the audit trail.
+
 Working if: the merged lockfile contains every reviewed update, the direct
 base64 feature boundary cannot drift silently, exact hosted checks pass before
 merge, and no publication authority is inferred from dependency maintenance.

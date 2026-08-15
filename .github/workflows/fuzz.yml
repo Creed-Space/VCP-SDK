@@ -4,10 +4,7 @@ on:
   pull_request:
     paths:
       - "rust/fuzz/**"
-      - "rust/vcp-core/src/csm1.rs"
-      - "rust/vcp-core/src/context.rs"
-      - "rust/vcp-core/src/revocation.rs"
-      - "rust/vcp-core/src/transport.rs"
+      - "rust/vcp-core/**"
       - ".github/workflows/fuzz.yml"
   schedule:
     - cron: "47 3 * * 3"
