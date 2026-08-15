@@ -84,6 +84,10 @@ cp release/review-ledger.template.json \
 Never edit the repository template into an apparently approved state. The
 template is intentionally and permanently pending.
 
+Never commit the working ledger into a candidate repository. Besides exposing
+review material that may be access-controlled, doing so would change the SDK
+tree hash recorded inside the ledger and create a self-referential candidate.
+
 ## 4. Freeze and identify the candidate
 
 ### 4.1 Candidate prerequisites
@@ -190,6 +194,29 @@ decisions, the deployment identity, and the post-publication evidence. Neither
 mode reinterprets a rejection or unresolved conditional approval as
 authorization.
 
+After prepublication validation passes, bind the exact external ledger to the
+protected `vcp-release-approval` environment. The secret carries the private
+bytes; the workflow-dispatch input carries their public SHA-256:
+
+```bash
+python3 -c \
+  'import base64,sys; sys.stdout.write(base64.b64encode(sys.stdin.buffer.read()).decode())' \
+  < /secure/path/vcp-release-evidence/review-ledger.json \
+  | gh secret set VCP_REVIEW_LEDGER_B64 \
+      --repo Creed-Space/VCP-SDK \
+      --env vcp-release-approval
+
+shasum -a 256 \
+  /secure/path/vcp-release-evidence/review-ledger.json
+```
+
+Enter that digest as `review_ledger_sha256` when dispatching `publish`. The
+protected job decodes the secret into its temporary directory, checks the
+digest before parsing, validates the ledger against the tagged source, and
+prints only the digest to its step summary. Delete the environment secret after
+the publication workflow finishes and retain the final ledger in the controlled
+evidence archive.
+
 ## 6. Gate order and dependencies
 
 The recommended order minimizes review invalidation and prevents publication
@@ -243,10 +270,11 @@ every delivered byte, generates CycloneDX SBOMs and a final SHA-256 manifest,
 and requests GitHub artifact attestations. `publish` additionally requires an
 exact signed `v<version>` tag, the protected `vcp-release-approval`
 environment, a coordinated ledger that passes `--require-prepublication`,
-ratified package names, and registry-specific protected environments. K044 and
-X018 are then completed from the publication receipts and production smoke
-evidence before the ledger passes `--require-complete`. The current source-only
-publication state deliberately causes publication preflight to fail.
+an exact dispatch digest for the protected external ledger, ratified package
+names, and registry-specific protected environments. K044 and X018 are then
+completed from the publication receipts and production smoke evidence before
+the ledger passes `--require-complete`. The current source-only publication
+state deliberately causes publication preflight to fail.
 
 1. Create signed, immutable repository tags for the approved Spec and SDK
    commits. Record tag-object hashes and signature verification output.
