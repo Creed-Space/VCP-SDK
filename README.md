@@ -165,7 +165,7 @@ time, throughput, and memory envelopes across all three distributions:
 make property PYTHON=/path/to/validation-venv/bin/python
 make performance-smoke PYTHON=/path/to/validation-venv/bin/python
 make performance-full PYTHON=/path/to/validation-venv/bin/python
-cargo check --manifest-path rust/fuzz/Cargo.toml
+cargo check --locked --manifest-path rust/fuzz/Cargo.toml
 ```
 
 Pull requests run bounded fuzz cases and smoke performance probes. Scheduled CI

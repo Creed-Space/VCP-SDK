@@ -105,7 +105,13 @@ def checks_for(mode: str, python: str) -> list[Check]:
             Check("sdk", ("make", "performance-smoke", f"PYTHON={python}")),
             Check(
                 "sdk",
-                ("cargo", "check", "--manifest-path", "rust/fuzz/Cargo.toml"),
+                (
+                    "cargo",
+                    "check",
+                    "--locked",
+                    "--manifest-path",
+                    "rust/fuzz/Cargo.toml",
+                ),
             ),
         ]
     demo_checks = [
