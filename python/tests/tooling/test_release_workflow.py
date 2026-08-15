@@ -8,10 +8,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
 WORKFLOW = ROOT / ".github/workflows/release.yml"
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="the protected publication job runs only on ubuntu-24.04 Bash",
+)
 
 
 def materialization_script() -> str:
