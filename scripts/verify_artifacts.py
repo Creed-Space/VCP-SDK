@@ -265,6 +265,19 @@ def main() -> int:
                     with tarfile.open(crate_path, "r:gz") as archive:
                         archive.extractall(unpacked, filter="data")
                     packaged_root = unpacked / f"vcp-core-{PROJECT_VERSION}"
+                    packaged_tests = run(
+                        [
+                            "cargo",
+                            "test",
+                            "--quiet",
+                            "--locked",
+                            "--manifest-path",
+                            str(packaged_root / "Cargo.toml"),
+                        ],
+                        env=env,
+                    )
+                    packaged_tests["name"] = "vcp-core-packaged-tests"
+                    checks.append(packaged_tests)
                     for example in PUBLIC_RUST_EXAMPLES:
                         example_check = run(
                             [

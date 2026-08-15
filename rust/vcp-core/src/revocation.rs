@@ -1528,10 +1528,8 @@ mod tests {
 
     #[test]
     fn shared_online_response_contract_matches_rust_parser() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../conformance/security/revocation-responses.json"
-        ))
-        .unwrap();
+        let fixture: Value =
+            serde_json::from_str(include_str!("../testdata/revocation-responses.json")).unwrap();
         for case in fixture["vectors"].as_array().unwrap() {
             let actual = match serde_json::from_value::<OnlineRevocationResponse>(
                 case["response"].clone(),
@@ -1560,10 +1558,9 @@ mod tests {
 
     #[test]
     fn shared_crl_response_contract_matches_rust_parser() {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../../conformance/security/revocation-crl-responses.json"
-        ))
-        .unwrap();
+        let fixture: Value =
+            serde_json::from_str(include_str!("../testdata/revocation-crl-responses.json"))
+                .unwrap();
         for case in fixture["vectors"].as_array().unwrap() {
             let actual = match serde_json::from_value::<Crl>(case["response"].clone()) {
                 Ok(crl) => match crl_lookup_status(
