@@ -38,6 +38,7 @@ REQUIRED_FILES = (
     "release/review-ledger.template.json",
     "reviews/SDK_SECURITY_SEMVER_PUBLICATION_REVIEW.md",
     "reviews/DEPENDABOT_DISPOSITION_2026-08-14.md",
+    "reviews/DEPENDENCY_CONSOLIDATION_2026-08-15.md",
     "scripts/build_candidate_manifest.py",
     "scripts/validate_review_ledger.py",
     "scripts/validate_ecosystem.py",
@@ -455,6 +456,21 @@ def validate_versions(problems: Problems) -> None:
             problems.add(f"{label} version is not semantic: {version}")
 
 
+def validate_rust_security_dependencies(problems: Problems) -> None:
+    """Keep security-sensitive dependency features explicit and reviewable."""
+    core = tomllib.loads(
+        (ROOT / "rust/vcp-core/Cargo.toml").read_text(encoding="utf-8")
+    )
+    base64 = core.get("dependencies", {}).get("base64")
+    if not isinstance(base64, dict):
+        problems.add("vcp-core base64 dependency must use an explicit feature table")
+        return
+    if base64.get("default-features") is not False:
+        problems.add("vcp-core base64 dependency must disable simd-unsafe defaults")
+    if base64.get("features") != ["std"]:
+        problems.add("vcp-core base64 dependency must enable only the std feature")
+
+
 def validate_packaged_fixture_mirrors(problems: Problems) -> None:
     """Keep crate-local test data byte-identical to canonical conformance inputs."""
     fixture_mirrors = (
@@ -517,6 +533,7 @@ def main() -> int:
     validate_yaml(problems)
     validate_repository_invariants(problems)
     validate_versions(problems)
+    validate_rust_security_dependencies(problems)
     validate_packaged_fixture_mirrors(problems)
     validate_workflows(problems)
     return problems.finish()

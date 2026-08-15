@@ -17,9 +17,10 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-base64 = "0.22"
+# The 0.23 default enables simd-unsafe. Keep the security-critical codec on the safe std engine.
+base64 = { version = "0.23", default-features = false, features = ["std"] }
 chrono = { version = "0.4", features = ["serde"] }
-ed25519-dalek = { version = "2", features = ["rand_core"] }
+ed25519-dalek = { version = "3", features = ["rand_core"] }
 rand = "0.10"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
