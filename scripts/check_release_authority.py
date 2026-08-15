@@ -21,6 +21,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True)
     parser.add_argument("--publish", action="store_true")
+    parser.add_argument(
+        "--ledger",
+        type=Path,
+        help="external coordinated review ledger used for publication authority",
+    )
     args = parser.parse_args()
     problems: list[str] = []
     python = tomllib.loads((ROOT / "python" / "pyproject.toml").read_text())["project"][
@@ -51,9 +56,11 @@ def main() -> int:
             problems.append(
                 "publication state must be candidate or published before registry upload"
             )
-        ledger = ROOT / "release" / "review-ledger.json"
-        if not ledger.is_file():
-            problems.append("release/review-ledger.json is missing")
+        ledger = args.ledger
+        if ledger is None:
+            problems.append("publication requires an external review ledger")
+        elif not ledger.is_file():
+            problems.append(f"review ledger is missing: {ledger}")
         else:
             validation = subprocess.run(
                 [

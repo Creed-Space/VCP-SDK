@@ -16,6 +16,11 @@ on:
         required: true
         type: string
         default: 4.2.0
+      review_ledger_sha256:
+        description: Exact protected review-ledger SHA-256, required for publish mode
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -179,12 +184,52 @@ jobs:
           python -m pip install 'pip==26.2.1'
           python -m pip install --require-hashes --requirement python/requirements-dev.lock
 
+      - name: Materialize the hash-bound protected review ledger
+        env:
+          VCP_REVIEW_LEDGER_B64: ${{ secrets.VCP_REVIEW_LEDGER_B64 }}
+          VCP_REVIEW_LEDGER_SHA256: ${{ inputs.review_ledger_sha256 }}
+        run: |
+          python - <<'PY'
+          import base64
+          import binascii
+          import hashlib
+          import hmac
+          import os
+          import re
+          from pathlib import Path
+
+          encoded = os.environ.get("VCP_REVIEW_LEDGER_B64", "")
+          expected = os.environ.get("VCP_REVIEW_LEDGER_SHA256", "")
+          if not encoded:
+              raise SystemExit("VCP_REVIEW_LEDGER_B64 is not configured")
+          if not re.fullmatch(r"[0-9a-f]{64}", expected):
+              raise SystemExit("publish mode needs an exact review_ledger_sha256")
+          try:
+              payload = base64.b64decode(encoded, validate=True)
+          except (ValueError, binascii.Error) as exc:
+              raise SystemExit("VCP_REVIEW_LEDGER_B64 is not valid base64") from exc
+          actual = hashlib.sha256(payload).hexdigest()
+          if not hmac.compare_digest(actual, expected):
+              raise SystemExit("protected review ledger SHA-256 does not match dispatch")
+
+          ledger = Path(os.environ["RUNNER_TEMP"]) / "review-ledger.json"
+          ledger.write_bytes(payload)
+          ledger.chmod(0o600)
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as stream:
+              stream.write(f"VCP_REVIEW_LEDGER={ledger}\n")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open(
+              "a", encoding="utf-8"
+          ) as stream:
+              stream.write(f"Protected review ledger SHA-256: `{actual}`\n")
+          PY
+
       - name: Require signed-off candidate state and exact immutable tag
         run: |
           test "$GITHUB_REF" = "refs/tags/v${{ inputs.version }}"
           git verify-tag "v${{ inputs.version }}"
           python scripts/check_release_authority.py \
             --version "${{ inputs.version }}" \
+            --ledger "$VCP_REVIEW_LEDGER" \
             --publish
 
   publish-pypi:
