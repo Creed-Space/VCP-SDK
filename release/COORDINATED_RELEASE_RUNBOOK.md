@@ -166,7 +166,17 @@ python scripts/validate_review_ledger.py \
   /secure/path/vcp-release-evidence/review-ledger.json
 ```
 
-The archival ledger must also pass:
+Before registry publication, require every decision through X015 while leaving
+K044 and X018 available for the receipts and smoke evidence that publication
+itself creates:
+
+```bash
+python scripts/validate_review_ledger.py \
+  /secure/path/vcp-release-evidence/review-ledger.json \
+  --require-prepublication
+```
+
+The final archival ledger must also pass:
 
 ```bash
 python scripts/validate_review_ledger.py \
@@ -174,9 +184,11 @@ python scripts/validate_review_ledger.py \
   --require-complete
 ```
 
-`--require-complete` checks that all 13 decisions exist. It does not reinterpret
-a rejection as approval. The release coordinator must stop when any required
-gate is rejected or has unresolved conditions.
+`--require-prepublication` requires a final disposition for every gate except
+K044 and X018. `--require-complete` requires a final disposition for all 13
+decisions, the deployment identity, and the post-publication evidence. Neither
+mode reinterprets a rejection or unresolved conditional approval as
+authorization.
 
 ## 6. Gate order and dependencies
 
@@ -230,9 +242,11 @@ sequence in two modes. `dry-run` builds twice from clean checkouts, compares
 every delivered byte, generates CycloneDX SBOMs and a final SHA-256 manifest,
 and requests GitHub artifact attestations. `publish` additionally requires an
 exact signed `v<version>` tag, the protected `vcp-release-approval`
-environment, a complete coordinated review ledger, ratified package names, and
-registry-specific protected environments. The current source-only publication
-state deliberately causes that publication preflight to fail.
+environment, a coordinated ledger that passes `--require-prepublication`,
+ratified package names, and registry-specific protected environments. K044 and
+X018 are then completed from the publication receipts and production smoke
+evidence before the ledger passes `--require-complete`. The current source-only
+publication state deliberately causes publication preflight to fail.
 
 1. Create signed, immutable repository tags for the approved Spec and SDK
    commits. Record tag-object hashes and signature verification output.

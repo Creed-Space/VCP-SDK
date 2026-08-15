@@ -60,13 +60,16 @@ def main() -> int:
                     sys.executable,
                     str(ROOT / "scripts" / "validate_review_ledger.py"),
                     str(ledger),
-                    "--require-complete",
+                    "--require-prepublication",
                 ],
                 cwd=ROOT,
                 check=False,
             )
             if validation.returncode:
-                problems.append("the coordinated human review ledger is not complete")
+                problems.append(
+                    "the coordinated review ledger has not passed "
+                    "prepublication validation"
+                )
 
     if problems:
         for problem in problems:

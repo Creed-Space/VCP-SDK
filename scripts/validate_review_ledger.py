@@ -53,6 +53,8 @@ REQUIRED_EVIDENCE: dict[str, set[str]] = {
 }
 
 INDEPENDENT_GATES = {"X017", "S033", "K045"}
+POST_PUBLICATION_GATES = {"K044", "X018"}
+FINAL_STATUSES = {"approved", "not_applicable"}
 
 
 class Problems:
@@ -173,7 +175,10 @@ def validate_review_shape(ledger: dict[str, Any], problems: Problems) -> None:
 
 
 def validate_candidate_semantics(
-    ledger: dict[str, Any], problems: Problems, require_complete: bool
+    ledger: dict[str, Any],
+    problems: Problems,
+    require_prepublication: bool,
+    require_complete: bool,
 ) -> None:
     candidate = ledger.get("candidate", {})
     reviews = ledger.get("reviews", [])
@@ -181,40 +186,62 @@ def validate_candidate_semantics(
         isinstance(review, dict) and review.get("status") != "pending"
         for review in reviews
     )
-    if has_completed_review or require_complete:
+    if has_completed_review or require_prepublication or require_complete:
         candidate_is_locked(candidate, problems)
 
-    if require_complete:
-        pending = [
-            review.get("id")
+    if require_prepublication or require_complete:
+        required_gates = set(EXPECTED_REVIEWS)
+        phase = "require-complete"
+        if require_prepublication:
+            required_gates -= POST_PUBLICATION_GATES
+            phase = "require-prepublication"
+        blocking = [
+            f"{review.get('id')}={review.get('status')}"
             for review in reviews
-            if isinstance(review, dict) and review.get("status") == "pending"
+            if isinstance(review, dict)
+            and review.get("id") in required_gates
+            and review.get("status") not in FINAL_STATUSES
         ]
-        if pending:
-            problems.add(f"require-complete found pending gates: {', '.join(pending)}")
+        if blocking:
+            problems.add(f"{phase} found non-final gates: {', '.join(blocking)}")
 
         protocol = candidate.get("protocol", {})
         if not protocol.get("amendment_maturity"):
-            problems.add("completed ledger needs the v3.2 amendment maturity decision")
+            problems.add(f"{phase} needs the v3.2 amendment maturity decision")
         versions = candidate.get("versions", {})
         for name in ("python", "rust", "webmcp", "demo"):
             version = versions.get(name)
             if not isinstance(version, str) or not SEMVER_RE.fullmatch(version):
-                problems.add(f"completed ledger needs a semantic {name} version")
+                problems.add(f"{phase} needs a semantic {name} version")
         deployment = candidate.get("deployment", {})
-        for name in ("environment", "url", "release_id", "deployed_at"):
+        deployment_fields = ["environment", "url"]
+        if require_complete:
+            deployment_fields.extend(["release_id", "deployed_at"])
+        for name in deployment_fields:
             if not deployment.get(name):
-                problems.add(f"completed ledger needs deployment.{name}")
+                problems.add(f"{phase} needs deployment.{name}")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("ledger", nargs="?", type=Path, default=DEFAULT_LEDGER)
     parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA)
-    parser.add_argument(
+    phase = parser.add_mutually_exclusive_group()
+    phase.add_argument(
+        "--require-prepublication",
+        action="store_true",
+        help=(
+            "require exact candidate identity and every decision that must exist "
+            "before registry publication"
+        ),
+    )
+    phase.add_argument(
         "--require-complete",
         action="store_true",
-        help="require exact candidate identity, deployment identity, and no pending gates",
+        help=(
+            "require exact candidate and deployment identity plus every final "
+            "post-publication decision"
+        ),
     )
     return parser.parse_args()
 
@@ -239,7 +266,12 @@ def main() -> int:
 
     if isinstance(ledger, dict):
         validate_review_shape(ledger, problems)
-        validate_candidate_semantics(ledger, problems, args.require_complete)
+        validate_candidate_semantics(
+            ledger,
+            problems,
+            args.require_prepublication,
+            args.require_complete,
+        )
     else:
         problems.add("ledger root must be an object")
     return problems.finish()
