@@ -10,6 +10,8 @@ repository:
 	$(PYTHON) -m ruff format --check scripts
 	$(PYTHON) scripts/validate_repo.py
 	$(PYTHON) scripts/validate_review_ledger.py
+	$(PYTHON) scripts/generate_feature_matrix.py --check
+	$(PYTHON) scripts/generate_api_snapshot.py --check
 
 review-ledger:
 	$(PYTHON) scripts/validate_review_ledger.py
@@ -20,6 +22,7 @@ schemas:
 conformance:
 	$(PYTHON) scripts/generate_conformance_coverage.py --check
 	$(PYTHON) conformance/runners/run_all.py
+	$(PYTHON) scripts/validate_conformance_claim.py conformance/reports/latest.json
 
 conformance-coverage:
 	$(PYTHON) scripts/generate_conformance_coverage.py
@@ -27,6 +30,7 @@ conformance-coverage:
 schema-sync:
 	@test -n "$(SPEC)" || (echo "Set SPEC=/path/to/VCP-Spec" >&2; exit 2)
 	$(PYTHON) scripts/check_schema_sync.py --spec "$(SPEC)" --sdk .
+	$(PYTHON) scripts/check_status_registry.py --spec "$(SPEC)"
 
 python:
 	cd python && $(PYTHON) -m ruff check src tests

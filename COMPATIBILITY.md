@@ -5,10 +5,10 @@ protocol release.
 
 | Surface | Repository status | Compatibility meaning |
 |:---|:---|:---|
-| Core specification | v3.1 published baseline | Stable protocol reference |
+| Core specification | v3.1 source baseline | Mutable source reference; immutable normative release remains open |
 | v3.2 amendments | Pre-release | Candidate behavior requiring governance approval |
 | VEP-0004 | Experimental | Extended adaptation dimensions requiring negotiation |
-| Python SDK | 4.2.0, `value-context-protocol` | Reference implementation with selected v3.2 candidate support |
+| Python SDK | 4.2.0, `value-context-protocol` | Project-maintained implementation with selected v3.2 candidate support |
 | Rust SDK | 4.2.0 workspace, `vcp-core` | Core, CLI, and WASM implementation with selected v3.2 candidate support |
 | WebMCP SDK | 4.2.0, `@creed-space/vcp-sdk` | Browser integration subset, not a full protocol implementation |
 | Demo | 0.1.0 application | Demonstration release, not conformance evidence |
@@ -28,6 +28,10 @@ acceptance authority for each row; metadata alone is not proof.
 | Native operating systems | Ubuntu 24.04, macOS 15, Windows 2025 | Python and Rust matrix jobs |
 | WASM | `wasm32-unknown-unknown` for `vcp-wasm` | Explicit target build using the stable toolchain |
 | WebMCP | Compatible Chromium implementations exposing the experimental `document.modelContext` API | Packed package and browser lifecycle checks; generic Demo flows use a broader browser matrix |
+
+Outbound revocation checks use the platform trust store and explicitly require
+TLS 1.2 or later. Applications may impose a higher floor, but they must not
+weaken this minimum. Certificate and hostname verification remain enabled.
 
 No `no_std`, WASI, alternative Python implementation, Node 20, or non-Chromium
 WebMCP support is claimed by this candidate.

@@ -8,6 +8,8 @@ body:
       value: |
         Thank you for suggesting a feature. Please describe what you'd like and why.
 
+        This is a public form. Do not include secrets, personal data, private VCP context, embargoed vulnerability details, or confidential third-party material.
+
   - type: dropdown
     id: sdk
     attributes:

@@ -2,13 +2,22 @@
   "schema": "vcp-repository-policy/1",
   "repository": "Creed-Space/VCP-SDK",
   "branch": "main",
-  "as_of": "2026-08-14",
+  "as_of": "2026-08-15",
   "external_state_applied": false,
   "observed": {
-    "branch_protection": "present-with-stale-required-contexts",
+    "branch_protection": "present-with-stale-required-contexts-pending-candidate-integration",
     "rulesets": 0,
-    "code_scanning": "no-analysis-found",
-    "secret_scanning": "disabled"
+    "code_scanning": "workflow-awaiting-candidate-integration",
+    "private_vulnerability_reporting": "enabled",
+    "dependabot_alerts": "enabled",
+    "dependabot_security_updates": "enabled",
+    "secret_scanning": "enabled",
+    "secret_scanning_push_protection": "enabled",
+    "secret_scanning_non_provider_patterns": "enabled",
+    "secret_scanning_validity_checks": "enabled",
+    "default_workflow_permissions": "read",
+    "actions_can_approve_pull_requests": false,
+    "repository_metadata": "applied"
   },
   "desired": {
     "pull_request_required": true,

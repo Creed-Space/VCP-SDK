@@ -1,11 +1,15 @@
 [package]
 name = "vcp-cli"
 description = "VCP SDK command-line interface"
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage = "https://github.com/Creed-Space/VCP-SDK/tree/main/rust/vcp-cli"
+keywords = ["cli", "context", "protocol", "values", "verification"]
+categories = ["command-line-utilities", "encoding"]
 
 [dependencies]
 vcp-core = { version = "4.2.0", path = "../vcp-core" }

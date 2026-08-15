@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "value-context-protocol"
 version = "4.2.0"
-description = "Value-Context Protocol - A specification for transporting constitutional values to AI systems"
+description = "Project-maintained implementation of the Value Context Protocol for portable, verifiable context"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -14,7 +14,10 @@ authors = [
     {name = "Nell Watson"},
     {name = "Claude", email = "noreply@anthropic.com"}
 ]
-keywords = ["ai", "constitutional-ai", "values", "protocol", "safety"]
+maintainers = [
+    {name = "Nell Watson"}
+]
+keywords = ["becoming-minds", "context", "protocol", "safety", "values"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -76,12 +79,20 @@ vcp-mcp-server = "vcp.mcp_server:run"
 
 [project.urls]
 Homepage = "https://github.com/Creed-Space/VCP-SDK"
-Documentation = "https://github.com/Creed-Space/VCP-SDK/tree/main/python"
+Documentation = "https://github.com/Creed-Space/VCP-SDK/tree/main/docs"
 Repository = "https://github.com/Creed-Space/VCP-SDK"
+Source = "https://github.com/Creed-Space/VCP-SDK/tree/main/python"
+Issues = "https://github.com/Creed-Space/VCP-SDK/issues"
+Changelog = "https://github.com/Creed-Space/VCP-SDK/blob/main/CHANGELOG.md"
+Security = "https://github.com/Creed-Space/VCP-SDK/security/policy"
+Support = "https://github.com/Creed-Space/VCP-SDK/discussions"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["vcp*"]
+
+[tool.setuptools.package-data]
+vcp = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

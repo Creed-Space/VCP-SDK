@@ -1,7 +1,7 @@
 """
 VCP Built-in Hooks.
 
-Reference implementations of common hook patterns:
+Project-maintained implementations of common hook patterns:
 - persona_select_hook: Select persona based on context signals
 - adherence_escalate_hook: Increase adherence during emergency states
 - scope_filter_hook: Skip out-of-scope constitutions

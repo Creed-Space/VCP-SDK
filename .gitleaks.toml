@@ -4,16 +4,22 @@ title = "VCP-SDK secret scanning"
 useDefault = true
 
 [allowlist]
-description = "Documented placeholders and generated test-only key material"
+description = "Documented placeholders plus generated digests, reports, build products, and test-only key material"
 regexTarget = "match"
 regexes = [
   '''(?i)your[-_ ]?(api[-_ ]?)?key''',
   '''(?i)example[-_ ]?(secret|token|key)'''
 ]
 paths = [
+  '''(^|/)api-snapshots/public-api\.json$''',
+  '''(^|/)artifact-evidence/''',
+  '''(^|/)conformance/reports/''',
   '''(^|/)conformance/transport/signature_verification\.json$''',
   '''(^|/)node_modules/''',
+  '''(^|/)performance-results/''',
+  '''(^|/)python/\.venv/''',
   '''(^|/)python/(?:build|dist)/''',
+  '''(^|/)python/(?:coverage|critical-coverage)\.json$''',
   '''(^|/)python/src/[^/]+\.egg-info/''',
   '''(^|/)rust/(?:[^/]+/)*target/''',
   '''(^|/)webmcp/dist/'''

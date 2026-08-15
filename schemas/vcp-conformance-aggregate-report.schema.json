@@ -12,6 +12,7 @@
     "coverage_manifest",
     "profiles",
     "summary",
+    "claim",
     "attestation"
   ],
   "properties": {
@@ -145,6 +146,36 @@
           "type": "integer",
           "minimum": 0
         }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "publishable",
+        "protocol",
+        "profile",
+        "implementation_version",
+        "source_sha256",
+        "issued_at",
+        "expires_at",
+        "revocation_status_url",
+        "superseded_by",
+        "revoked_at"
+      ],
+      "properties": {
+        "status": { "const": "local-source-evidence" },
+        "publishable": { "const": false },
+        "protocol": { "type": "string", "minLength": 1 },
+        "profile": { "type": "string", "minLength": 1 },
+        "implementation_version": { "type": "string", "minLength": 1 },
+        "source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "issued_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "revocation_status_url": { "type": "string", "format": "uri" },
+        "superseded_by": { "type": ["string", "null"] },
+        "revoked_at": { "type": ["string", "null"], "format": "date-time" }
       }
     },
     "attestation": {

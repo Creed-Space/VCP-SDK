@@ -1,6 +1,6 @@
 # Value Context Protocol SDK
 
-Reference implementations and integration libraries for the Value Context
+Project-maintained implementations and integration libraries for the Value Context
 Protocol (VCP).
 
 [![CI](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml)
@@ -13,7 +13,7 @@ Protocol (VCP).
 
 | Candidate distribution | Version | Publication state | Scope |
 |:---|:---|:---|:---|
-| Python, `value-context-protocol` | 4.2.0 | Source-only | Full reference implementation, orchestration, hooks, privacy, messaging, and extensions |
+| Python, `value-context-protocol` | 4.2.0 | Source-only | Full project-maintained implementation, orchestration, hooks, privacy, messaging, and extensions |
 | Rust workspace, including `vcp-core` | 4.2.0 | Source-only | Core parsing, transport, orchestration, CLI, and WASM bindings |
 | npm, `@creed-space/vcp-sdk` | 4.2.0 | Source-only | Browser and WebMCP integration library |
 

@@ -3,7 +3,7 @@
 //! Core types and parsing for the **Value Context Protocol (VCP)**.
 //!
 //! VCP is a protocol for expressing and transmitting human values,
-//! context, and personal state between AI systems so they can
+//! context, and personal state between Becoming Minds so they can
 //! adapt their behaviour accordingly.
 //!
 //! ## Modules

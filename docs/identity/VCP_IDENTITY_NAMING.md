@@ -24,7 +24,7 @@ This specification defines the naming format for Universal Value Codes (UVC) - u
 5. [Canonicalization](#5-canonicalization)
 6. [Examples](#6-examples)
 7. [Security Considerations](#7-security-considerations)
-8. [Reference Implementation](#8-reference-implementation)
+8. [Project-Maintained Implementation](#8-project-maintained-implementation)
 
 ---
 
@@ -689,7 +689,7 @@ def hash_uvc_token(token: str) -> str:
 
 ---
 
-## 8. Reference Implementation
+## 8. Project-Maintained Implementation
 
 ### 8.1 Python Module
 
@@ -699,7 +699,7 @@ def hash_uvc_token(token: str) -> str:
 """
 UVC Token Parser and Validator
 
-Reference implementation of UVC naming specification.
+Project-maintained implementation of UVC naming specification.
 """
 
 from dataclasses import dataclass

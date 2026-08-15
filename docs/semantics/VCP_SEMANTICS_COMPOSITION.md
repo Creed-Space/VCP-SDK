@@ -24,7 +24,7 @@ This specification defines how multiple constitutions are composed into a cohere
 5. [Merge Semantics](#5-merge-semantics)
 6. [Resolution Strategies](#6-resolution-strategies)
 7. [Examples](#7-examples)
-8. [Reference Implementation](#8-reference-implementation)
+8. [Project-Maintained Implementation](#8-project-maintained-implementation)
 
 ---
 
@@ -819,7 +819,7 @@ const_b_manifest = {
 
 ---
 
-## 8. Reference Implementation
+## 8. Project-Maintained Implementation
 
 ### 8.1 Complete Module
 
@@ -829,7 +829,7 @@ const_b_manifest = {
 """
 Constitution Composition Implementation
 
-Reference implementation for merging constitutions.
+Project-maintained implementation for merging constitutions.
 """
 
 from dataclasses import dataclass, field

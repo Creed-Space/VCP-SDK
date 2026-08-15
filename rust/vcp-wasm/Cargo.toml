@@ -1,11 +1,20 @@
 [package]
 name = "vcp-wasm"
 description = "VCP SDK WebAssembly bindings for browser playgrounds"
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage = "https://github.com/Creed-Space/VCP-SDK/tree/main/rust/vcp-wasm"
+documentation = "https://docs.rs/vcp-wasm"
+keywords = ["context", "protocol", "values", "verification", "wasm"]
+categories = ["api-bindings", "encoding", "wasm"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

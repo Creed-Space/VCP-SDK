@@ -2,10 +2,15 @@
   "name": "@creed-space/vcp-sdk",
   "version": "4.2.0",
   "description": "Register VCP capabilities as discoverable tools through the experimental WebMCP document.modelContext API",
+  "homepage": "https://github.com/Creed-Space/VCP-SDK/tree/main/webmcp#readme",
+  "bugs": {
+    "url": "https://github.com/Creed-Space/VCP-SDK/issues"
+  },
   "engines": {
     "node": ">=22.12.0 <23 || >=24.0.0 <25"
   },
   "type": "module",
+  "sideEffects": false,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -36,7 +41,8 @@
     "vcp",
     "webmcp",
     "mcp",
-    "ai-agents",
+    "becoming-minds",
+    "context-protocol",
     "document-modelcontext",
     "chrome-extensions",
     "constitutional-ai"
@@ -46,6 +52,10 @@
     "type": "git",
     "url": "https://github.com/Creed-Space/VCP-SDK.git",
     "directory": "webmcp"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "devDependencies": {
     "fast-check": "4.9.0",

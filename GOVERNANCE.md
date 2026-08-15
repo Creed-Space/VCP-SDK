@@ -1,6 +1,6 @@
 # SDK governance boundary
 
-VCP-SDK is the reference implementation repository. It owns implementation
+VCP-SDK is the project-maintained implementation repository. It owns implementation
 architecture, packaging, compatibility, tests, release engineering, and SDK
 maintenance decisions. VCP-Spec is the sole canonical authority for protocol
 text, schemas at their source, VEP numbering, protocol maturity, and permanent

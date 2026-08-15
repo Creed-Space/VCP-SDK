@@ -5,8 +5,8 @@ Runnable examples demonstrating the VCP SDK across Python and Rust.
 ## Python
 
 ```bash
-# Install the SDK in editable mode
-cd python && uv pip install -e .
+# Install the SDK and the optional MCP runtime in editable mode
+cd python && uv pip install -e ".[mcp]"
 
 # Run individual examples
 python ../examples/python/01_parse_token.py
@@ -14,6 +14,7 @@ python ../examples/python/02_verify_bundle.py
 python ../examples/python/03_compose.py
 python ../examples/python/04_context_encoding.py
 python ../examples/python/05_full_pipeline.py
+python ../examples/python/06_async_mcp.py
 ```
 
 | Example | Demonstrates |
@@ -23,6 +24,11 @@ python ../examples/python/05_full_pipeline.py
 | `03_compose.py` | Composing multiple constitutions with conflict detection |
 | `04_context_encoding.py` | VCP/A Enneagram context encoding and decoding |
 | `05_full_pipeline.py` | End-to-end: parse, verify, and inject into model context |
+| `06_async_mcp.py` | Async MCP tool discovery and a deadline-bounded tool call |
+
+The MCP example requires the `mcp` optional extra. Every async caller should
+set an application deadline, propagate cancellation, and treat cancellation as
+no authorization. See [`docs/RUNTIME_CONTRACTS.md`](../docs/RUNTIME_CONTRACTS.md).
 
 ## Rust
 

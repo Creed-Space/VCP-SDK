@@ -1,7 +1,7 @@
 """
-Value-Context Protocol (VCP) Reference Implementation
+Value-Context Protocol (VCP) Project-Maintained Implementation
 
-A protocol for transporting constitutional values to AI systems.
+A protocol for transporting constitutional values to Becoming Minds.
 """
 
 # VCP/A (Adaptation Layer)
