@@ -57,6 +57,10 @@ REQUIRED_FILES = (
     "conformance/coverage-manifest.json",
     "conformance/runners/run_all.py",
     "conformance/reports/README.md",
+    "rust/vcp-core/testdata/revocation-responses.json",
+    "rust/vcp-core/testdata/revocation-crl-responses.json",
+    "rust/vcp-core/testdata/relational_context.json",
+    "rust/vcp-core/testdata/torch_handoff.json",
     "webmcp/upstream-contract.json",
     "schemas/vcp-conformance-aggregate-report.schema.json",
     "release/ECOSYSTEM_STATUS.md",
@@ -451,6 +455,25 @@ def validate_versions(problems: Problems) -> None:
             problems.add(f"{label} version is not semantic: {version}")
 
 
+def validate_packaged_fixture_mirrors(problems: Problems) -> None:
+    """Keep crate-local test data byte-identical to canonical conformance inputs."""
+    fixture_mirrors = (
+        ("security", "revocation-responses.json"),
+        ("security", "revocation-crl-responses.json"),
+        ("extensions", "relational_context.json"),
+        ("extensions", "torch_handoff.json"),
+    )
+    for family, name in fixture_mirrors:
+        canonical = ROOT / "conformance" / family / name
+        packaged = ROOT / "rust" / "vcp-core" / "testdata" / name
+        if not canonical.is_file() or not packaged.is_file():
+            continue
+        if canonical.read_bytes() != packaged.read_bytes():
+            problems.add(
+                f"packaged vcp-core test fixture differs from canonical input: {name}"
+            )
+
+
 def validate_workflows(problems: Problems) -> None:
     workflow_dir = ROOT / ".github" / "workflows"
     workflows = sorted(workflow_dir.glob("*.yml")) + sorted(workflow_dir.glob("*.yaml"))
@@ -494,6 +517,7 @@ def main() -> int:
     validate_yaml(problems)
     validate_repository_invariants(problems)
     validate_versions(problems)
+    validate_packaged_fixture_mirrors(problems)
     validate_workflows(problems)
     return problems.finish()
 

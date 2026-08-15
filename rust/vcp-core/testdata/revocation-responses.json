@@ -1,0 +1,111 @@
+{
+  "suite": "revocation-responses",
+  "version": "1.0.0",
+  "description": "Shared Python and Rust online revocation response contract",
+  "vectors": [
+    {
+      "id": "clear-bound",
+      "description": "A bound clear response establishes that the bundle is not revoked",
+      "jti": "bundle-1",
+      "issuer": "issuer.example",
+      "response": {
+        "revoked": false,
+        "jti": "bundle-1",
+        "issuer": "issuer.example",
+        "reason": null,
+        "revoked_at": null
+      },
+      "expected": "not_revoked"
+    },
+    {
+      "id": "revoked-bound",
+      "description": "A bound response with complete revocation details establishes revocation",
+      "jti": "bundle-2",
+      "issuer": "issuer.example",
+      "response": {
+        "revoked": true,
+        "jti": "bundle-2",
+        "issuer": "issuer.example",
+        "reason": "key_compromise",
+        "revoked_at": "2026-02-14T08:00:00Z"
+      },
+      "expected": "revoked"
+    },
+    {
+      "id": "wrong-jti",
+      "description": "A response bound to another bundle cannot establish revocation status",
+      "jti": "bundle-3",
+      "issuer": "issuer.example",
+      "response": {
+        "revoked": false,
+        "jti": "other-bundle",
+        "issuer": "issuer.example"
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "wrong-issuer",
+      "description": "A response bound to another issuer cannot establish revocation status",
+      "jti": "bundle-4",
+      "issuer": "issuer.example",
+      "response": {
+        "revoked": false,
+        "jti": "bundle-4",
+        "issuer": "other.example"
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "non-boolean",
+      "description": "The revoked member must be a JSON boolean",
+      "jti": "bundle-5",
+      "issuer": "issuer.example",
+      "response": {
+        "revoked": "false",
+        "jti": "bundle-5",
+        "issuer": "issuer.example"
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "revoked-without-reason",
+      "description": "A revoked response without a nonempty reason is unavailable",
+      "jti": "bundle-6",
+      "issuer": "issuer.example",
+      "response": {
+        "revoked": true,
+        "jti": "bundle-6",
+        "issuer": "issuer.example",
+        "revoked_at": "2026-02-14T08:00:00Z"
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "revoked-with-bad-time",
+      "description": "A revoked response requires a strict RFC 3339 timestamp",
+      "jti": "bundle-7",
+      "issuer": "issuer.example",
+      "response": {
+        "revoked": true,
+        "jti": "bundle-7",
+        "issuer": "issuer.example",
+        "reason": "superseded",
+        "revoked_at": "2026-02-14 08:00:00"
+      },
+      "expected": "unavailable"
+    },
+    {
+      "id": "clear-with-revocation-details",
+      "description": "A clear response cannot contain contradictory revocation details",
+      "jti": "bundle-8",
+      "issuer": "issuer.example",
+      "response": {
+        "revoked": false,
+        "jti": "bundle-8",
+        "issuer": "issuer.example",
+        "reason": "contradictory"
+      },
+      "expected": "unavailable"
+    }
+  ]
+}

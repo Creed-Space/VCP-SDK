@@ -7,17 +7,11 @@ use vcp_core::extensions::torch::{
 };
 
 fn relational_fixture() -> Value {
-    serde_json::from_str(include_str!(
-        "../../../conformance/extensions/relational_context.json"
-    ))
-    .unwrap()
+    serde_json::from_str(include_str!("../testdata/relational_context.json")).unwrap()
 }
 
 fn torch_fixture() -> Value {
-    serde_json::from_str(include_str!(
-        "../../../conformance/extensions/torch_handoff.json"
-    ))
-    .unwrap()
+    serde_json::from_str(include_str!("../testdata/torch_handoff.json")).unwrap()
 }
 
 fn case<'a>(fixture: &'a Value, id: &str) -> &'a Value {
