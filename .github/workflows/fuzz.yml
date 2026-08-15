@@ -49,6 +49,7 @@ jobs:
         working-directory: rust
         shell: bash
         run: |
+          cargo check --locked --manifest-path fuzz/Cargo.toml
           if [[ "${{ github.event_name }}" == "schedule" ]]; then
             fuzz_args=(-max_total_time=120 -rss_limit_mb=512)
           else
