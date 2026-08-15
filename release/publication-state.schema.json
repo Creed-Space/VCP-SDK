@@ -11,6 +11,7 @@
     "overall_state",
     "candidate_names_ratified",
     "protocol",
+    "conformance",
     "artifacts",
     "public_copy_policy"
   ],
@@ -25,11 +26,38 @@
     "protocol": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["published_baseline", "candidate", "candidate_maturity"],
+      "required": ["source_baseline", "candidate", "candidate_maturity"],
       "properties": {
-        "published_baseline": { "type": "string" },
+        "source_baseline": { "type": "string" },
         "candidate": { "type": "string" },
         "candidate_maturity": { "type": "string" }
+      }
+    },
+    "conformance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixture_count",
+        "case_count",
+        "protocol_layer_count",
+        "extension_suite_count",
+        "full_project_controlled_implementations",
+        "browser_integrations",
+        "independent_implementations",
+        "claim_boundary"
+      ],
+      "properties": {
+        "fixture_count": { "type": "integer", "minimum": 0 },
+        "case_count": { "type": "integer", "minimum": 0 },
+        "protocol_layer_count": { "type": "integer", "minimum": 0 },
+        "extension_suite_count": { "type": "integer", "minimum": 0 },
+        "full_project_controlled_implementations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "browser_integrations": { "type": "integer", "minimum": 0 },
+        "independent_implementations": { "type": "integer", "minimum": 0 },
+        "claim_boundary": { "type": "string", "minLength": 1 }
       }
     },
     "artifacts": {

@@ -11,7 +11,7 @@ import platform
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -261,13 +261,33 @@ def main() -> int:
         ).stdout
     )
     failed = sum(item["status"] == "failed" for item in profiles)
+    generated_at = datetime.now(timezone.utc)
+    source_sha256 = source_fingerprint()
+    claim = {
+        "status": "local-source-evidence",
+        "publishable": False,
+        "protocol": "VCP 3.1 source baseline with labelled candidates",
+        "profile": "project-controlled aggregate runner",
+        "implementation_version": "4.2.0 source candidate",
+        "source_sha256": source_sha256,
+        "issued_at": generated_at.isoformat().replace("+00:00", "Z"),
+        "expires_at": (generated_at + timedelta(days=30))
+        .isoformat()
+        .replace("+00:00", "Z"),
+        "revocation_status_url": (
+            "https://github.com/Creed-Space/VCP-SDK/blob/main/"
+            "release/publication-state.json"
+        ),
+        "superseded_by": None,
+        "revoked_at": None,
+    }
     report = {
         "schema": "vcp-conformance-aggregate-report/1",
-        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "generated_at": generated_at.isoformat().replace("+00:00", "Z"),
         "candidate": {
             "git_head": git_head,
             "dirty": dirty,
-            "source_sha256": source_fingerprint(),
+            "source_sha256": source_sha256,
         },
         "environment": {
             "platform": platform.platform(),
@@ -287,6 +307,7 @@ def main() -> int:
             "passed": len(profiles) - failed,
             "failed": failed,
         },
+        "claim": claim,
         "attestation": "unsigned-local-result",
     }
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
@@ -305,13 +326,14 @@ def main() -> int:
     )
     badge = {
         "schemaVersion": 1,
-        "label": "VCP conformance",
+        "label": "VCP local suite",
         "message": (
-            f"{coverage['summary']['vector_count']} vectors, "
-            f"{report['summary']['passed']}/{report['summary']['profiles']} profiles"
+            f"{report['summary']['passed']}/{report['summary']['profiles']} "
+            "project-controlled profiles"
         ),
-        "color": "brightgreen" if not failed else "critical",
+        "color": "lightgrey" if not failed else "critical",
         "cacheSeconds": 300,
+        "claim": claim,
     }
     (args.output.parent / "badge.json").write_text(
         json.dumps(badge, indent=2, sort_keys=True) + "\n",

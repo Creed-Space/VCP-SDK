@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import stat
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -62,6 +64,13 @@ def test_trusted_signature_verification_succeeds(tmp_path: Path) -> None:
     skill, trust = _make_signed_skill(tmp_path)
     valid, reason = verify_skill(skill, trust)
     assert valid, reason
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits are not portable to Windows")
+def test_signed_manifest_is_private_by_default(tmp_path: Path) -> None:
+    skill, _trust = _make_signed_skill(tmp_path)
+    mode = stat.S_IMODE((skill / "manifest.json").stat().st_mode)
+    assert mode == 0o600
 
 
 def test_verification_requires_explicit_trust_mode(tmp_path: Path) -> None:

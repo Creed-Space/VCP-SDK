@@ -209,6 +209,56 @@ def validate_publication_state(
         state.get("candidate_names_ratified"),
         False,
     )
+    conformance = state.get("conformance")
+    if not isinstance(conformance, dict):
+        problems.append("publication-state conformance must be an object")
+    else:
+        coverage = load_json(sdk / "conformance" / "coverage-manifest.json")
+        coverage_summary = coverage.get("summary")
+        coverage_suites = coverage.get("suites")
+        if not isinstance(coverage_summary, dict) or not isinstance(
+            coverage_suites, list
+        ):
+            problems.append(
+                "conformance coverage manifest summary or suites are malformed"
+            )
+        else:
+            extension_suites = sum(
+                1
+                for suite in coverage_suites
+                if isinstance(suite, dict)
+                and str(suite.get("suite", "")).startswith("extensions/")
+            )
+            require_equal(
+                problems,
+                "publication-state fixture count",
+                conformance.get("fixture_count"),
+                coverage_summary.get("fixture_count"),
+            )
+            require_equal(
+                problems,
+                "publication-state case count",
+                conformance.get("case_count"),
+                coverage_summary.get("vector_count"),
+            )
+            require_equal(
+                problems,
+                "publication-state extension suite count",
+                conformance.get("extension_suite_count"),
+                extension_suites,
+            )
+        for label, expected in (
+            ("protocol_layer_count", 6),
+            ("full_project_controlled_implementations", 2),
+            ("browser_integrations", 1),
+            ("independent_implementations", 0),
+        ):
+            require_equal(
+                problems,
+                f"publication-state {label.replace('_', ' ')}",
+                conformance.get(label),
+                expected,
+            )
     policy = state.get("public_copy_policy")
     if not isinstance(policy, dict):
         problems.append("publication-state public_copy_policy must be an object")
@@ -297,7 +347,7 @@ def validate_compatibility_docs(
     spec_compatibility = (spec / "COMPATIBILITY.md").read_text(encoding="utf-8")
     sdk_compatibility = (sdk / "COMPATIBILITY.md").read_text(encoding="utf-8")
     common = (
-        "v3.1 published baseline",
+        "v3.1 source baseline",
         EXPECTED_PYTHON_PACKAGE,
         EXPECTED_RUST_PACKAGE,
         EXPECTED_WEB_PACKAGE,
@@ -404,7 +454,7 @@ def main() -> int:
     print(
         "VCP public contract passed: "
         f"Python {versions[0]}, WebMCP {versions[1]}, Rust {versions[2]}, "
-        f"Demo {versions[3]}, protocol v3.1 published baseline, "
+        f"Demo {versions[3]}, protocol v3.1 source baseline, "
         f"artifacts {publication_state['overall_state']}."
     )
     return 0

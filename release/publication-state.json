@@ -1,13 +1,23 @@
 {
   "schema": "vcp-publication-state/1",
-  "as_of": "2026-08-13",
+  "as_of": "2026-08-15",
   "authority": "VCP-SDK coordinated release process",
   "overall_state": "source-only",
   "candidate_names_ratified": false,
   "protocol": {
-    "published_baseline": "3.1",
+    "source_baseline": "3.1",
     "candidate": "3.2",
     "candidate_maturity": "experimental"
+  },
+  "conformance": {
+    "fixture_count": 27,
+    "case_count": 294,
+    "protocol_layer_count": 6,
+    "extension_suite_count": 8,
+    "full_project_controlled_implementations": 2,
+    "browser_integrations": 1,
+    "independent_implementations": 0,
+    "claim_boundary": "Same-programme candidate coverage. This is not independent interoperability or certification evidence."
   },
   "artifacts": [
     {

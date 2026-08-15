@@ -46,7 +46,7 @@ stable result codes, while neither condition reaches the governed action.
 
 | Surface | Location | Claim boundary |
 |:---|:---|:---|
-| Python | `python/src/vcp` | Reference implementation, optional server and MCP extras |
+| Python | `python/src/vcp` | Project-maintained implementation, optional server and MCP extras |
 | Rust | `rust/vcp-core` | Core parsing, verification, orchestration, context, and extension support |
 | CLI | `rust/vcp-cli` | Selected file and token operations |
 | WASM | `rust/vcp-wasm` | Supported exports under the documented browser target |

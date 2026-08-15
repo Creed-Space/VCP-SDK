@@ -2,7 +2,7 @@
 VCP Privacy Filtering
 
 Core privacy mechanism for filtering context before sharing with platforms.
-Private field VALUES are never exposed to AI systems; they influence only
+Private field VALUES are never exposed to Becoming Minds; they influence only
 boolean constraint flags. The AI knows THAT constraints apply, never WHY.
 
 Three field tiers:
@@ -255,7 +255,7 @@ def extract_constraint_flags(ctx: dict[str, Any]) -> ConstraintFlags:
 
     This is the core privacy mechanism: private field values are never
     exposed. Instead, their existence influences a set of boolean flags.
-    The AI system knows THAT constraints apply, never WHY.
+    The Becoming Mind knows THAT constraints apply, never WHY.
 
     Examples from learning path demo:
         Gentian (single parent, childcare_hours set)

@@ -1,0 +1,942 @@
+{
+  "claim_boundary": "Statuses summarize same-programme candidate runners. They do not establish independent interoperability, certification, publication, or deployment support.",
+  "features": [
+    {
+      "case_count": 9,
+      "fixture": "conformance/adaptation/context_encoding.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 9,
+          "case_statuses": {
+            "checked": 9
+          },
+          "checked_cases": 9,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 9,
+          "case_statuses": {
+            "checked": 9
+          },
+          "checked_cases": 9,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 9
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/context_parity.py",
+      "suite": "adaptation/context_encoding",
+      "version": "3.2.0"
+    },
+    {
+      "case_count": 12,
+      "fixture": "conformance/adaptation/context_encoding_extended.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 12,
+          "case_statuses": {
+            "checked": 12
+          },
+          "checked_cases": 12,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 12,
+          "case_statuses": {
+            "checked": 12
+          },
+          "checked_cases": 12,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 12
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/context_parity.py",
+      "suite": "adaptation/context_encoding_extended",
+      "version": "3.2.0"
+    },
+    {
+      "case_count": 14,
+      "fixture": "conformance/adaptation/messaging.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 14,
+          "case_statuses": {
+            "checked": 14
+          },
+          "checked_cases": 14,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 14,
+          "case_statuses": {
+            "unsupported": 14
+          },
+          "checked_cases": 0,
+          "status": "unsupported"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 14
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/messaging_conformance.py",
+      "suite": "adaptation/messaging",
+      "version": "2.0.0"
+    },
+    {
+      "case_count": 14,
+      "fixture": "conformance/adaptation/state_machine.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 14,
+          "case_statuses": {
+            "checked": 14
+          },
+          "checked_cases": 14,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 14,
+          "case_statuses": {
+            "unsupported": 14
+          },
+          "checked_cases": 0,
+          "status": "unsupported"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 14
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/state_machine_conformance.py",
+      "suite": "adaptation/state_machine",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 6,
+      "fixture": "conformance/extensions/capability_negotiation.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 6,
+          "case_statuses": {
+            "checked": 6
+          },
+          "checked_cases": 6,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 6,
+          "case_statuses": {
+            "checked": 6
+          },
+          "checked_cases": 6,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 6
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/negotiation_parity.py",
+      "suite": "extensions/capability_negotiation",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 5,
+      "fixture": "conformance/extensions/competence.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 5,
+          "case_statuses": {
+            "checked": 5
+          },
+          "checked_cases": 5,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 5,
+          "case_statuses": {
+            "unsupported": 5
+          },
+          "checked_cases": 0,
+          "status": "unsupported"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 5
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/competence_conformance.py",
+      "suite": "extensions/competence",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 8,
+      "fixture": "conformance/extensions/consensus_voting.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 6,
+          "case_statuses": {
+            "checked": 6,
+            "not_applicable": 2
+          },
+          "checked_cases": 6,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 6,
+          "case_statuses": {
+            "checked": 6,
+            "not_applicable": 2
+          },
+          "checked_cases": 6,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 8
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/consensus_parity.py",
+      "suite": "extensions/consensus_voting",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 15,
+      "fixture": "conformance/extensions/personal_state.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 15,
+          "case_statuses": {
+            "checked": 15
+          },
+          "checked_cases": 15,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 15,
+          "case_statuses": {
+            "checked": 15
+          },
+          "checked_cases": 15,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 15
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/personal_parity.py",
+      "suite": "extensions/personal_state",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 17,
+      "fixture": "conformance/extensions/relational_context.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 14,
+          "case_statuses": {
+            "checked": 14,
+            "not_applicable": 3
+          },
+          "checked_cases": 14,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 14,
+          "case_statuses": {
+            "checked": 14,
+            "not_applicable": 3
+          },
+          "checked_cases": 14,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 17
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/relational_torch_parity.py",
+      "suite": "extensions/relational_context",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 3,
+      "fixture": "conformance/extensions/stateless_mcp.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 3,
+          "case_statuses": {
+            "unsupported": 3
+          },
+          "checked_cases": 0,
+          "status": "unsupported"
+        },
+        "rust": {
+          "applicable_cases": 3,
+          "case_statuses": {
+            "unsupported": 3
+          },
+          "checked_cases": 0,
+          "status": "unsupported"
+        },
+        "webmcp": {
+          "applicable_cases": 3,
+          "case_statuses": {
+            "unsupported": 3
+          },
+          "checked_cases": 0,
+          "status": "unsupported"
+        }
+      },
+      "maturity": "draft",
+      "runner": null,
+      "suite": "extensions/stateless_mcp",
+      "version": "0.1.0-draft"
+    },
+    {
+      "case_count": 7,
+      "fixture": "conformance/extensions/torch_handoff.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 6,
+          "case_statuses": {
+            "checked": 6,
+            "not_applicable": 1
+          },
+          "checked_cases": 6,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 6,
+          "case_statuses": {
+            "checked": 6,
+            "not_applicable": 1
+          },
+          "checked_cases": 6,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 7
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/relational_torch_parity.py",
+      "suite": "extensions/torch_handoff",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 3,
+      "fixture": "conformance/extensions/welfare.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 3,
+          "case_statuses": {
+            "unsupported": 3
+          },
+          "checked_cases": 0,
+          "status": "unsupported"
+        },
+        "rust": {
+          "applicable_cases": 3,
+          "case_statuses": {
+            "unsupported": 3
+          },
+          "checked_cases": 0,
+          "status": "unsupported"
+        },
+        "webmcp": {
+          "applicable_cases": 3,
+          "case_statuses": {
+            "unsupported": 3
+          },
+          "checked_cases": 0,
+          "status": "unsupported"
+        }
+      },
+      "maturity": "draft",
+      "runner": null,
+      "suite": "extensions/welfare",
+      "version": "0.1.0-draft"
+    },
+    {
+      "case_count": 10,
+      "fixture": "conformance/identity/token_canonicalization.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 10,
+          "case_statuses": {
+            "checked": 10
+          },
+          "checked_cases": 10,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 10,
+          "case_statuses": {
+            "checked": 10
+          },
+          "checked_cases": 10,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 10
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/identity_parity.py",
+      "suite": "identity/token_canonicalization",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 23,
+      "fixture": "conformance/identity/token_parsing.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 23,
+          "case_statuses": {
+            "checked": 23
+          },
+          "checked_cases": 23,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 23,
+          "case_statuses": {
+            "checked": 23
+          },
+          "checked_cases": 23,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 23
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/identity_parity.py",
+      "suite": "identity/token_parsing",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 2,
+      "fixture": "conformance/interop/complete_bundle.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 2
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/interop_parity.py",
+      "suite": "interop/complete_bundle",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 5,
+      "fixture": "conformance/interop/cross_impl_roundtrip.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 5,
+          "case_statuses": {
+            "checked": 5
+          },
+          "checked_cases": 5,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 5,
+          "case_statuses": {
+            "checked": 5
+          },
+          "checked_cases": 5,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 5
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/interop_parity.py",
+      "suite": "interop/cross_impl_roundtrip",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 10,
+      "fixture": "conformance/security/revocation-crl-responses.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 10,
+          "case_statuses": {
+            "checked": 10
+          },
+          "checked_cases": 10,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 10,
+          "case_statuses": {
+            "checked": 10
+          },
+          "checked_cases": 10,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 10
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/security_parity.py",
+      "suite": "security/revocation-crl-responses",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 8,
+      "fixture": "conformance/security/revocation-responses.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 8,
+          "case_statuses": {
+            "checked": 8
+          },
+          "checked_cases": 8,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 8,
+          "case_statuses": {
+            "checked": 8
+          },
+          "checked_cases": 8,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 8
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/security_parity.py",
+      "suite": "security/revocation-responses",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 10,
+      "fixture": "conformance/semantics/composition.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 8,
+          "case_statuses": {
+            "checked": 8,
+            "not_applicable": 2
+          },
+          "checked_cases": 8,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 8,
+          "case_statuses": {
+            "checked": 8,
+            "not_applicable": 2
+          },
+          "checked_cases": 8,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 10
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/composition_parity.py",
+      "suite": "semantics/composition",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 10,
+      "fixture": "conformance/semantics/csm1_encoding.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 10,
+          "case_statuses": {
+            "checked": 10
+          },
+          "checked_cases": 10,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 10,
+          "case_statuses": {
+            "checked": 10
+          },
+          "checked_cases": 10,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 10
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/csm1_parity.py",
+      "suite": "semantics/csm1_encoding",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 29,
+      "fixture": "conformance/semantics/csm1_parsing.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 29,
+          "case_statuses": {
+            "checked": 29
+          },
+          "checked_cases": 29,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 29,
+          "case_statuses": {
+            "checked": 29
+          },
+          "checked_cases": 29,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 29
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/csm1_parity.py",
+      "suite": "semantics/csm1_parsing",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 18,
+      "fixture": "conformance/semantics/persona_resolution.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 18,
+          "case_statuses": {
+            "checked": 18
+          },
+          "checked_cases": 18,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 18,
+          "case_statuses": {
+            "checked": 18
+          },
+          "checked_cases": 18,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 18
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/persona_parity.py",
+      "suite": "semantics/persona_resolution",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 8,
+      "fixture": "conformance/transport/bundle_verification.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 8,
+          "case_statuses": {
+            "checked": 8
+          },
+          "checked_cases": 8,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 8,
+          "case_statuses": {
+            "checked": 8
+          },
+          "checked_cases": 8,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 8
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/transport_parity.py",
+      "suite": "transport/bundle_verification",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 18,
+      "fixture": "conformance/transport/content_canonicalization.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 18,
+          "case_statuses": {
+            "checked": 18
+          },
+          "checked_cases": 18,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 18,
+          "case_statuses": {
+            "checked": 18
+          },
+          "checked_cases": 18,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 18
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/transport_parity.py",
+      "suite": "transport/content_canonicalization",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 13,
+      "fixture": "conformance/transport/content_hashing.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 13,
+          "case_statuses": {
+            "checked": 13
+          },
+          "checked_cases": 13,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 13,
+          "case_statuses": {
+            "checked": 13
+          },
+          "checked_cases": 13,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 13
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/transport_parity.py",
+      "suite": "transport/content_hashing",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 8,
+      "fixture": "conformance/transport/manifest_canonicalization.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 8,
+          "case_statuses": {
+            "checked": 8
+          },
+          "checked_cases": 8,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 8,
+          "case_statuses": {
+            "checked": 8
+          },
+          "checked_cases": 8,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 8
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/transport_parity.py",
+      "suite": "transport/manifest_canonicalization",
+      "version": "1.0.0"
+    },
+    {
+      "case_count": 9,
+      "fixture": "conformance/transport/signature_verification.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 9,
+          "case_statuses": {
+            "checked": 9
+          },
+          "checked_cases": 9,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 9,
+          "case_statuses": {
+            "checked": 9
+          },
+          "checked_cases": 9,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 9
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/transport_parity.py",
+      "suite": "transport/signature_verification",
+      "version": "1.0.0"
+    }
+  ],
+  "generated_by": "scripts/generate_feature_matrix.py",
+  "implementations": {
+    "python": "Full project-maintained implementation candidate",
+    "rust": "Full project-maintained implementation candidate",
+    "webmcp": "Narrow browser integration candidate, not a full implementation"
+  },
+  "schema": "vcp-feature-matrix/1",
+  "source": {
+    "path": "conformance/coverage-manifest.json",
+    "sha256": "7cd885d4495a70d612eaecdcf96dd2898f39781d8fe6decfe617e83e6adbcb3b"
+  }
+}

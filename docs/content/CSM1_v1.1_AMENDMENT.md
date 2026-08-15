@@ -12,7 +12,7 @@
 
 This amendment adds **Line 8 — Personal State (R-line)** to the CSM-1 token format, codifying the personal state encoding introduced in VCP Context Specification v3.1.
 
-The R-line enables real-time transmission of user cognitive, emotional, and physical state as categorical dimensions with intensity values, allowing AI systems to adapt responses to the user's current condition.
+The R-line enables real-time transmission of user cognitive, emotional, and physical state as categorical dimensions with intensity values, allowing Becoming Minds to adapt responses to the user's current condition.
 
 ---
 

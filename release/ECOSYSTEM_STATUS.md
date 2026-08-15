@@ -3,8 +3,8 @@
 <!-- vcp-document-control
 status: Generated source-only status
 normative-authority: Publication-state record
-protocol-version: VCP 3.1
-last-reviewed: 2026-08-13 generated from canonical state
+protocol-version: VCP 3.1 source baseline
+last-reviewed: 2026-08-15 generated from canonical state
 owner: VCP release maintainers
 evidence-boundary: Generated status, not publication receipt
 -->
@@ -16,19 +16,26 @@ evidence-boundary: Generated status, not publication receipt
 | Field | Value |
 |:---|:---|
 | Status | Source Only |
-| Protocol baseline | VCP 3.1 |
+| Source baseline | VCP 3.1 |
 | Candidate protocol | VCP 3.2, experimental |
+| Conformance cases | 294 |
+| Conformance fixtures | 27 |
+| Protocol layers | 6 |
+| Extension suites | 8 |
+| Implementation scope | 2 full project-controlled implementations, 1 browser integration, 0 independent implementations |
 | python | 4.2.0, source-only |
 | webmcp | 4.2.0, source-only |
 | rust-core | 4.2.0, source-only |
 | rust-cli | 4.2.0, source-only |
 | rust-wasm | 4.2.0, source-only |
 | Registry commands | Disallowed until publication receipts exist |
-| Generated | 2026-08-13 |
+| Generated | 2026-08-15 |
 
 ## Claim boundary
 
 Source-only candidate. No registry release is currently claimed.
+
+Same-programme candidate coverage. This is not independent interoperability or certification evidence.
 
 This page establishes source-repository state only. It does not establish
 registry publication, independent conformance, deployment identity, legal

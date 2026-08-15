@@ -20,11 +20,6 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "python" / "src"))
 
-from vcp.canonicalize import canonicalize_manifest, compute_content_hash
-from vcp.identity import Token
-from vcp.orchestrator import _verify_ed25519_signature
-from vcp.semantics.csm1 import CSM1Code
-
 
 def command(*parts: str, cwd: Path = ROOT) -> str:
     result = subprocess.run(
@@ -85,6 +80,11 @@ def measure(
 
 
 def python_metrics(iterations: int, hash_iterations: int) -> list[dict[str, Any]]:
+    from vcp.canonicalize import canonicalize_manifest, compute_content_hash
+    from vcp.identity import Token
+    from vcp.orchestrator import _verify_ed25519_signature
+    from vcp.semantics.csm1 import CSM1Code
+
     payload = "vcp-performance-payload\n" * 2_800
     token = Token.parse("company.product.safety.review.workflow.agent")
     large_manifest = {

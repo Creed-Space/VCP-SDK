@@ -19,14 +19,29 @@ def render_status(document: dict[str, object]) -> bytes:
     assert isinstance(protocol, dict)
     artifacts = document["artifacts"]
     assert isinstance(artifacts, list)
+    conformance = document["conformance"]
+    assert isinstance(conformance, dict)
     public_copy = document["public_copy_policy"]
     assert isinstance(public_copy, dict)
     rows = [
         ("Status", str(document["overall_state"]).replace("-", " ").title()),
-        ("Protocol baseline", f"VCP {protocol['published_baseline']}"),
+        ("Source baseline", f"VCP {protocol['source_baseline']}"),
         (
             "Candidate protocol",
             f"VCP {protocol['candidate']}, {protocol['candidate_maturity']}",
+        ),
+        ("Conformance cases", str(conformance["case_count"])),
+        ("Conformance fixtures", str(conformance["fixture_count"])),
+        ("Protocol layers", str(conformance["protocol_layer_count"])),
+        ("Extension suites", str(conformance["extension_suite_count"])),
+        (
+            "Implementation scope",
+            (
+                f"{conformance['full_project_controlled_implementations']} "
+                "full project-controlled implementations, "
+                f"{conformance['browser_integrations']} browser integration, "
+                f"{conformance['independent_implementations']} independent implementations"
+            ),
         ),
     ]
     for artifact in artifacts:
@@ -59,7 +74,7 @@ def render_status(document: dict[str, object]) -> bytes:
 <!-- vcp-document-control
 status: Generated source-only status
 normative-authority: Publication-state record
-protocol-version: VCP {protocol["published_baseline"]}
+protocol-version: VCP {protocol["source_baseline"]} source baseline
 last-reviewed: {document["as_of"]} generated from canonical state
 owner: VCP release maintainers
 evidence-boundary: Generated status, not publication receipt
@@ -76,6 +91,8 @@ evidence-boundary: Generated status, not publication receipt
 ## Claim boundary
 
 {public_copy["required_label"]}
+
+{conformance["claim_boundary"]}
 
 This page establishes source-repository state only. It does not establish
 registry publication, independent conformance, deployment identity, legal
@@ -104,6 +121,7 @@ def main() -> int:
 
     json_targets = {
         args.demo.expanduser().resolve() / "static/status/publication-state.json",
+        args.demo.expanduser().resolve() / "src/lib/data/publication-state.json",
         args.spec.expanduser().resolve() / "status/publication-state.json",
     }
     markdown = render_status(document)

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: VCP API
   description: |
-    Value-Context Protocol (VCP) operations for constitutional AI systems.
+    Value-Context Protocol (VCP) operations for constitutional Becoming Minds.
 
     VCP provides a three-layer protocol for managing AI constitutional alignment:
     - **VCP/I (Identity)**: Token-based identification of constitutional bundles

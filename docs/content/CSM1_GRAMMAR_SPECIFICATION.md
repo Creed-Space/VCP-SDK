@@ -24,7 +24,7 @@ CSM1 (Constitutional Safety Minicode, Version 1) is a compact encoding format fo
 7. [Parsing Algorithm](#7-parsing-algorithm)
 8. [Serialization](#8-serialization)
 9. [Examples](#9-examples)
-10. [Reference Implementation](#10-reference-implementation)
+10. [Project-Maintained Implementation](#10-project-maintained-implementation)
 
 ---
 
@@ -884,7 +884,7 @@ COMMON_CONFIGS = {
 
 ---
 
-## 10. Reference Implementation
+## 10. Project-Maintained Implementation
 
 ### 10.1 Complete Python Module
 
@@ -894,7 +894,7 @@ COMMON_CONFIGS = {
 """
 CSM1 (Constitutional Safety Minicode) Parser
 
-Reference implementation of CSM1 grammar specification.
+Project-maintained implementation of CSM1 grammar specification.
 """
 
 from dataclasses import dataclass, field

@@ -1,11 +1,20 @@
 [package]
 name = "vcp-core"
 description = "Value Context Protocol (VCP) core types and parsing"
+readme = "README.md"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage = "https://github.com/Creed-Space/VCP-SDK/tree/main/rust/vcp-core"
+documentation = "https://docs.rs/vcp-core"
+keywords = ["context", "protocol", "safety", "values", "verification"]
+categories = ["authentication", "encoding", "parser-implementations"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 base64 = "0.22"

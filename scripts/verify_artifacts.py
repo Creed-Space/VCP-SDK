@@ -219,6 +219,19 @@ def main() -> int:
             )
             smoke["name"] = f"{kind}-installed-smoke"
             checks.append(smoke)
+            mcp_extra = run(
+                [
+                    str(python),
+                    "-m",
+                    "pip",
+                    "install",
+                    "--disable-pip-version-check",
+                    f"value-context-protocol[mcp] @ {distribution.resolve().as_uri()}",
+                ],
+                env=env,
+            )
+            mcp_extra["name"] = f"{kind}-mcp-extra-install"
+            checks.append(mcp_extra)
             for example in PUBLIC_PYTHON_EXAMPLES:
                 example_check = run([str(python), str(example)], env=env)
                 example_check["name"] = f"{kind}-installed-example-{example.stem}"

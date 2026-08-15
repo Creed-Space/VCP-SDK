@@ -17,6 +17,8 @@ evidence-boundary: Navigation and implementation classification only
 4. [Artifact and publication status](../ARTIFACTS.md)
 5. [Conformance corpus](../conformance/README.md)
 6. [Coordinated release runbook](../release/COORDINATED_RELEASE_RUNBOOK.md)
+7. [Generated cross-language feature matrix](./FEATURE_MATRIX.md)
+8. [Runtime cancellation, cache, key custody, and observability contracts](./RUNTIME_CONTRACTS.md)
 
 VCP-Spec is the canonical protocol and governance authority. SDK documentation
 describes code in this repository and never promotes a draft VEP or candidate

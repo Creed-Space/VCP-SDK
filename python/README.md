@@ -1,6 +1,6 @@
 # VCP Python SDK
 
-The Python reference implementation for VCP parsing, signed bundles,
+The Python project-maintained implementation for VCP parsing, signed bundles,
 orchestration, policy enforcement, privacy filtering, hooks, messaging, and
 protocol extensions.
 
@@ -65,6 +65,13 @@ The historical host API adapter is archived outside the package source and is
 excluded from distributions. Development and CI use the committed lock file. Update it
 deliberately through the documented command in
 [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
+
+Signed-skill manifests are written as private workspace state by default. On
+POSIX platforms the atomic temporary file and installed `manifest.json` use
+mode `0600`. Windows does not provide equivalent POSIX mode semantics, so the
+application must protect the containing directory with its native access
+controls. A separately published manifest is a deliberate export and should
+receive only the permissions required by its publication target.
 
 ## Related surfaces
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import socket
+import ssl
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -321,6 +322,7 @@ class TestPinnedHttpsTransport:
             connection = _PinnedHTTPSConnection("status.example", 443, "93.184.216.34", 2.5)
             connection.connect()
 
+        assert context.minimum_version is ssl.TLSVersion.TLSv1_2
         connect.assert_called_once_with(("93.184.216.34", 443), timeout=2.5)
         context.wrap_socket.assert_called_once_with(raw_socket, server_hostname="status.example")
         assert connection.sock is wrapped_socket

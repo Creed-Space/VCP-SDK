@@ -1,21 +1,26 @@
 # Repository security controls
 
-**Status:** desired state recorded; external application pending
-**Observed:** 2026-08-14 through read-only GitHub API calls
+**Status:** repository security features applied; branch protection pending candidate integration
+**Observed:** 2026-08-15 through authenticated GitHub API changes and readback
 
 The current `main` protection exists, but its required contexts are stale:
 `Python SDK (3.12)`, `Rust SDK`, `TypeScript / WebMCP SDK`, and
 `Validate JSON Schemas`. Conversation resolution, administrator enforcement,
-code-owner review, last-push approval, and signed commits are not required.
-No repository ruleset exists. Secret scanning is disabled. Code scanning reports
-no analysis.
+code-owner review, last-push approval, and signed commits are not required. No
+repository ruleset exists.
 
-The candidate adds immutable CodeQL and dependency-review workflows and records
-the intended external state in `.github/repository-policy.json`. Source files
-cannot enable GitHub features or safely replace branch protection. An authorized
-repository administrator must apply the policy after the candidate workflows
-have produced their exact context names, then read the settings back and test a
-pull request.
+Private vulnerability reporting, Dependabot alerts and security updates, secret
+scanning, push protection, non-provider patterns, and validity checks are
+enabled. Default workflow permissions are read-only, Actions cannot approve
+pull requests, and repository metadata and topics are current. Code scanning
+reports no completed analysis before this candidate is integrated.
+
+The candidate adds CodeQL and dependency-review workflows and records the
+intended final state in `.github/repository-policy.json`. Source files cannot
+safely replace branch protection. The stale protection is retained until the
+candidate is integrated so future context names cannot deadlock the present
+merge. An authorized repository administrator must apply the final policy after
+the candidate workflows produce their exact context names.
 
 ## Acceptance probe
 
@@ -25,8 +30,9 @@ pull request.
 4. Enable pull requests, one approval, stale-review dismissal, code-owner and
    last-push approval, conversation resolution, administrator enforcement, and
    force-push and deletion blocks.
-5. Enable dependency graph, Dependabot alerts and security updates, secret
-   scanning, push protection, validity checks, and CodeQL.
+5. Confirm dependency graph, Dependabot alerts and security updates, secret
+   scanning, push protection, non-provider patterns, and validity checks remain
+   enabled. Confirm CodeQL has uploaded analysis.
 6. Keep default workflow permissions read-only. Grant job-specific permissions
    only inside reviewed workflows.
 7. Open a test pull request. Demonstrate that missing checks, unresolved

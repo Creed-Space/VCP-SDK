@@ -305,7 +305,11 @@ def sign_skill(
             handle.write(payload)
             handle.flush()
             os.fsync(handle.fileno())
-        os.chmod(temp_name, 0o644)
+        # Signed manifests reveal filenames, hashes, issuer identity, and
+        # timing metadata. Keep the local workspace copy private by default;
+        # an explicit packaging or publication step may relax permissions on
+        # a copied artifact when public distribution is intended.
+        os.chmod(temp_name, 0o600)
         os.replace(temp_name, manifest_path)
     finally:
         try:

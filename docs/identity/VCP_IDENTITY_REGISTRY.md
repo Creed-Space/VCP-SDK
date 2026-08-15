@@ -24,7 +24,7 @@ This specification defines the protocol for resolving UVC tokens to VCP bundle l
 5. [Discovery Methods](#5-discovery-methods)
 6. [Distributed Registry](#6-distributed-registry)
 7. [Security Considerations](#7-security-considerations)
-8. [Reference Implementation](#8-reference-implementation)
+8. [Project-Maintained Implementation](#8-project-maintained-implementation)
 
 ---
 
@@ -1014,7 +1014,7 @@ class DHTResolver:
 
 ---
 
-## 8. Reference Implementation
+## 8. Project-Maintained Implementation
 
 ### 8.1 Complete Resolver
 
@@ -1024,7 +1024,7 @@ class DHTResolver:
 """
 UVC Registry Protocol Implementation
 
-Reference implementation for resolving UVC tokens.
+Project-maintained implementation for resolving UVC tokens.
 """
 
 from dataclasses import dataclass, field

@@ -63,6 +63,12 @@ conformance/reports/badge.json
 conformance/reports/profiles/*.json
 ```
 
+The generated badge is labelled `VCP local suite`, remains non-publishable, and
+contains source identity, issue time, 30-day expiry, supersession, and
+revocation fields. `scripts/validate_conformance_claim.py` rejects an expired,
+revoked, superseded, or publicly enabled source-only claim. The publication
+state currently prohibits public conformance badges.
+
 The aggregate report is validated by
 `schemas/vcp-conformance-aggregate-report.schema.json`. It binds results to the
 Git HEAD, dirty-tree flag, complete source fingerprint, fixture hashes,

@@ -202,6 +202,11 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
 
     def __init__(self, hostname: str, port: int, resolved_ip: str, timeout: float):
         tls_context = ssl.create_default_context()
+        # Make the network security contract explicit. CPython's default
+        # context currently rejects TLS 1.0 and 1.1, but relying on an
+        # interpreter default makes the floor difficult to audit and can let
+        # platform policy drift change revocation-check behavior.
+        tls_context.minimum_version = ssl.TLSVersion.TLSv1_2
         super().__init__(hostname, port=port, timeout=timeout, context=tls_context)
         self._resolved_ip = resolved_ip
         self._tls_context = tls_context
