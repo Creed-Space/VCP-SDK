@@ -521,6 +521,10 @@ def validate_workflows(problems: Problems) -> None:
             problems.add(
                 f"{relative(path)} references the retired Python requirements file"
             )
+        if path.name == "fuzz.yml" and '"rust/vcp-core/**"' not in text:
+            problems.add(
+                "fuzz.yml must run for all vcp-core changes so its independent lockfile cannot drift"
+            )
 
 
 def main() -> int:
