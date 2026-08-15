@@ -20,6 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   revocations must include a non-empty reason and a strict RFC 3339 timestamp.
 - The Python HTTPS transport now enforces JSON content types, identity encoding,
   and response header limits in parity with Rust.
+- Reviewed Rust and release-tooling dependencies are current. The direct
+  `base64` 0.23 dependency disables its new `simd-unsafe` default and retains
+  only the safe standard-library engine. These updates do not change the SDK's
+  public API, wire behavior, package version, or Rust 1.87 minimum.
 
 ## [4.2.0] - 2026-04-22
 
