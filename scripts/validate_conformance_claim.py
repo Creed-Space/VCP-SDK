@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +16,7 @@ def timestamp(value: object, field: str) -> datetime:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
         raise ValueError(f"{field} must include a timezone")
-    return parsed.astimezone(UTC)
+    return parsed.astimezone(timezone.utc)
 
 
 def validate_claim(
@@ -70,7 +70,7 @@ def main() -> int:
         print("claim document does not contain an object")
         return 1
     publication_state = json.loads(args.publication_state.read_text(encoding="utf-8"))
-    now = timestamp(args.at, "--at") if args.at else datetime.now(UTC)
+    now = timestamp(args.at, "--at") if args.at else datetime.now(timezone.utc)
     errors = validate_claim(claim, publication_state, now)
     for error in errors:
         print(f"ERROR: {error}")
