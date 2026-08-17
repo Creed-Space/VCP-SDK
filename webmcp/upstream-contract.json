@@ -1,16 +1,17 @@
 {
   "schema": "vcp-webmcp-upstream-contract/1",
-  "reviewed_at": "2026-08-14",
-  "upstream_commit": "c3a63b22341b439ed66cd7d3d71367abccdb0554",
+  "reviewed_at": "2026-08-17",
+  "upstream_commit": "384e11010a690c3605e9556f63732e5ea19165b7",
   "source_url": "https://raw.githubusercontent.com/webmachinelearning/webmcp/main/index.bs",
-  "sha256": "18dcbf221df37b687f62e7db1604ca2d58c9af084a6a06e1e49ffc59defd3f11",
+  "sha256": "519ee8279a891811c609c21e2c36baa6596a7e4e22d9e0133a86a3fe63a95579",
   "maximum_bytes": 2097152,
   "required_fragments": [
     "partial interface Document {",
     "readonly attribute ModelContext modelContext;",
     "Promise<undefined> registerTool(ModelContextTool tool, optional ModelContextRegisterToolOptions options = {});",
     "dictionary ModelContextRegisterToolOptions {",
-    "AbortSignal signal;"
+    "AbortSignal signal;",
+    "object inputSchema;"
   ],
   "forbidden_fragments": []
 }
