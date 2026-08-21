@@ -13,12 +13,15 @@
 
 let polyfillLoaded = false;
 let loading: Promise<boolean> | null = null;
+let invokingLoader = false;
 
 export interface PolyfillLoadOptions {
 	/** Bundled or pinned application-owned loader. No network URL is accepted. */
 	loader?: () => Promise<void>;
 	/** Optional application-owned error sink. The SDK does not log by default. */
 	onError?: (error: Error) => void;
+	/** Loader deadline in milliseconds. Defaults to 5000. */
+	timeoutMs?: number;
 }
 
 /** Return true only when a usable current or legacy WebMCP API is present. */
@@ -58,17 +61,48 @@ export async function loadPolyfillIfRequested(
 	options: PolyfillLoadOptions = {}
 ): Promise<boolean> {
 	if (typeof window === 'undefined') return false;
-	if (polyfillLoaded) return true;
+	if (polyfillLoaded) {
+		if (hasWebMCPModelContext()) return true;
+		polyfillLoaded = false;
+	}
 	if (!isPolyfillRequested()) return false;
 	if (hasWebMCPModelContext()) return true;
 	if (!options.loader) return false;
 	const loader = options.loader;
+	const timeoutMs = options.timeoutMs ?? 5000;
+	if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) {
+		throw new RangeError('timeoutMs must be an integer from 1 to 30000');
+	}
 
-	if (loading) return loading;
+	if (loading) {
+		// Awaiting the same promise from inside its own loader creates a cycle.
+		// Report the still-unavailable state to a synchronous re-entrant call;
+		// independent concurrent callers continue to join the shared attempt.
+		if (invokingLoader) return false;
+		return loading;
+	}
 
-	loading = (async () => {
+	// Defer invocation until `loading` holds the promise. A re-entrant loader then
+	// observes and joins this same attempt instead of starting a second load.
+	loading = Promise.resolve().then(async () => {
+		let timer: ReturnType<typeof setTimeout> | undefined;
 		try {
-			await loader();
+			let attempt: Promise<void>;
+			invokingLoader = true;
+			try {
+				attempt = loader();
+			} finally {
+				invokingLoader = false;
+			}
+			await Promise.race([
+				attempt,
+				new Promise<never>((_resolve, reject) => {
+					timer = setTimeout(
+						() => reject(new Error(`Polyfill loader timed out after ${timeoutMs}ms`)),
+						timeoutMs,
+					);
+				}),
+			]);
 			if (!hasWebMCPModelContext()) {
 				throw new Error(
 					'Application-owned loader completed without exposing document.modelContext'
@@ -77,12 +111,24 @@ export async function loadPolyfillIfRequested(
 			polyfillLoaded = true;
 			return true;
 		} catch (err) {
-			const error = err instanceof Error ? err : new Error(String(err));
-			options.onError?.(error);
-			loading = null;
+			let error: Error;
+			try {
+				error = err instanceof Error ? err : new Error(String(err));
+			} catch {
+				error = new Error('unknown polyfill error');
+			}
+			try {
+				options.onError?.(error);
+			} catch {
+				// Error sinks are observational and must not poison future retries.
+			}
 			return false;
+		} finally {
+			if (timer !== undefined) clearTimeout(timer);
+			invokingLoader = false;
+			loading = null;
 		}
-	})();
+	});
 
 	return loading;
 }

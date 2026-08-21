@@ -22,7 +22,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::VcpResult;
+use crate::error::{VcpError, VcpResult};
 use crate::personal::PersonalState;
 use crate::situational::SituationalContext;
 
@@ -60,6 +60,12 @@ impl ConformanceLevel {
 /// The separator between the situational and personal halves of the
 /// full context wire format.
 pub const WIRE_SEPARATOR: char = '\u{2016}'; // double vertical line
+
+/// Maximum Unicode scalar values accepted for a context wire string.
+pub const MAX_CONTEXT_WIRE_CHARS: usize = 8_192;
+
+/// Backward-compatible alias for the historical, inaccurately named limit.
+pub const MAX_CONTEXT_WIRE_BYTES: usize = MAX_CONTEXT_WIRE_CHARS;
 
 /// Full VCP context combining situational and personal state (VCP v3.2).
 ///
@@ -136,10 +142,33 @@ impl FullContext {
         if wire.is_empty() {
             return Ok(Self::default());
         }
+        if wire.chars().count() > MAX_CONTEXT_WIRE_CHARS {
+            return Err(VcpError::ParseError(format!(
+                "context exceeds {MAX_CONTEXT_WIRE_CHARS} characters"
+            )));
+        }
+        if wire
+            .chars()
+            .any(|character| character.is_whitespace() || character.is_control())
+        {
+            return Err(VcpError::ParseError(
+                "context contains whitespace or control characters".to_string(),
+            ));
+        }
+        if wire.matches(WIRE_SEPARATOR).count() > 1 {
+            return Err(VcpError::ParseError(
+                "context contains multiple personal-state separators".to_string(),
+            ));
+        }
 
         if let Some(sep_idx) = wire.find(WIRE_SEPARATOR) {
             let sit_part = &wire[..sep_idx];
             let per_part = &wire[sep_idx + WIRE_SEPARATOR.len_utf8()..];
+            if per_part.is_empty() {
+                return Err(VcpError::ParseError(
+                    "personal-state separator must be followed by a dimension".to_string(),
+                ));
+            }
 
             let situational = SituationalContext::from_wire(sit_part)?;
             let personal = PersonalState::from_wire(per_part)?;
@@ -228,6 +257,35 @@ mod tests {
     fn from_wire_empty() {
         let ctx = FullContext::from_wire("").unwrap();
         assert!(!ctx.has_any());
+    }
+
+    #[test]
+    fn from_wire_rejects_noncanonical_separators_and_whitespace() {
+        for malformed in [
+            "\u{2016}",
+            "\u{23F0}\u{1F305}\u{2016}",
+            "\u{2016}\u{1F9E0}focused:4\u{2016}\u{1F4AD}calm:3",
+            "\u{23F0}\u{1F305} \u{2016}\u{1F9E0}focused:4",
+        ] {
+            assert!(
+                FullContext::from_wire(malformed).is_err(),
+                "accepted {malformed:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn from_wire_enforces_encoded_size_boundary() {
+        let prefix = crate::situational::SituationalDimension::Time.symbol();
+        let maximum = format!(
+            "{prefix}{}",
+            "😀".repeat(MAX_CONTEXT_WIRE_CHARS - prefix.chars().count())
+        );
+        assert_eq!(maximum.chars().count(), MAX_CONTEXT_WIRE_CHARS);
+        assert!(FullContext::from_wire(&maximum).is_ok());
+
+        let excessive = format!("{maximum}😀");
+        assert!(FullContext::from_wire(&excessive).is_err());
     }
 
     #[test]

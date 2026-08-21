@@ -1,5 +1,7 @@
 """Tests for VCP/A State Tracker."""
 
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
 from vcp.adaptation import (
@@ -174,12 +176,43 @@ class TestStateTracker:
             tracker.record(encoder.encode(time="morning" if i % 2 == 0 else "evening"))
         assert tracker.history_count == 5
 
+    @pytest.mark.parametrize("max_history", [0, -1, True, 1.5])
+    def test_invalid_history_limits_are_rejected(self, max_history: object) -> None:
+        with pytest.raises(ValueError, match="max_history"):
+            StateTracker(max_history=max_history)  # type: ignore[arg-type]
+
     def test_get_recent(self, tracker, encoder):
         """get_recent should return limited history."""
         for _ in range(10):
             tracker.record(encoder.encode(time="morning"))
         recent = tracker.get_recent(3)
         assert len(recent) == 3
+
+    def test_get_recent_zero_is_empty_and_negative_is_invalid(self, tracker, encoder):
+        tracker.record(encoder.encode(time="morning"))
+        assert tracker.get_recent(0) == []
+        with pytest.raises(ValueError, match="count"):
+            tracker.get_recent(-1)
+
+    def test_recorded_history_is_isolated_from_caller_mutation(self):
+        original = VCPContext(dimensions={Dimension.TIME: ["morning"]})
+        tracker = StateTracker()
+        tracker.record(original)
+        original.dimensions[Dimension.TIME].append("night")
+        current = tracker.current
+        assert current is not None
+        assert current.get(Dimension.TIME) == ["morning"]
+        current.dimensions[Dimension.TIME].append("evening")
+        assert tracker.current is not None
+        assert tracker.current.get(Dimension.TIME) == ["morning"]
+
+    def test_bounded_concurrent_records_preserve_history_limit(self):
+        tracker = StateTracker(max_history=16)
+        contexts = [VCPContext(dimensions={Dimension.TIME: [f"value-{i}"]}) for i in range(64)]
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            list(pool.map(tracker.record, contexts))
+        assert tracker.history_count == 16
+        assert len(tracker.history) == 16
 
     def test_clear(self, tracker, encoder):
         """clear should remove all history."""

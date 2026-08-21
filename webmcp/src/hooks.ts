@@ -165,6 +165,49 @@ const HOOK_NAME_PATTERN = /^[a-z0-9_-]{1,64}$/;
 
 /** Set of valid HookType values for runtime validation. */
 const VALID_HOOK_TYPES = new Set<string>(Object.values(HookType));
+const VALID_RESULT_STATUSES = new Set<ResultStatus>(['continue', 'abort', 'modify']);
+const MAX_REASON_LENGTH = 4096;
+const MAX_REGISTERED_HOOKS = 1024;
+const MAX_EVENT_LISTENERS = 1024;
+const MAX_CHAIN_TIMEOUT_BUDGET_MS = 30000;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function safeErrorMessage(error: unknown): string {
+	try {
+		if (error instanceof Error && typeof error.message === 'string') return error.message;
+		return String(error);
+	} catch {
+		return 'unknown error';
+	}
+}
+
+function normalizeHookResult(value: unknown): HookResult {
+	if (!isRecord(value) || !VALID_RESULT_STATUSES.has(value.status as ResultStatus)) {
+		return { status: 'abort', reason: 'Hook returned an invalid result' };
+	}
+	if (
+		value.reason !== undefined &&
+		(typeof value.reason !== 'string' || value.reason.length > MAX_REASON_LENGTH)
+	) {
+		return { status: 'abort', reason: 'Hook returned an invalid reason' };
+	}
+	if (value.status === 'abort' && (!value.reason || typeof value.reason !== 'string')) {
+		return { status: 'abort', reason: 'Hook aborted without a reason' };
+	}
+	if (value.annotations !== undefined && !isRecord(value.annotations)) {
+		return { status: 'abort', reason: 'Hook returned invalid annotations' };
+	}
+	return value as unknown as HookResult;
+}
+
+function assertHookType(type: HookType): void {
+	if (!VALID_HOOK_TYPES.has(type)) {
+		throw new TypeError(`Invalid hook type: '${String(type)}'.`);
+	}
+}
 
 /**
  * Validate a hook definition. Throws a descriptive Error on failure.
@@ -173,6 +216,9 @@ const VALID_HOOK_TYPES = new Set<string>(Object.values(HookType));
  * @throws Error if any validation check fails
  */
 function validateHookDefinition(hook: HookDefinition): void {
+	if (!isRecord(hook)) {
+		throw new Error('Hook definition must be an object.');
+	}
 	if (!HOOK_NAME_PATTERN.test(hook.name)) {
 		throw new Error(
 			`Invalid hook name: '${hook.name}'. ` +
@@ -209,6 +255,21 @@ function validateHookDefinition(hook: HookDefinition): void {
 
 	if (typeof hook.handler !== 'function') {
 		throw new Error('Hook handler must be a function.');
+	}
+
+	if (hook.enabled !== undefined && typeof hook.enabled !== 'boolean') {
+		throw new Error('Hook enabled must be a boolean.');
+	}
+
+	if (
+		hook.description !== undefined &&
+		(typeof hook.description !== 'string' || hook.description.length > 4096)
+	) {
+		throw new Error('Hook description must be a string of at most 4096 characters.');
+	}
+
+	if (hook.metadata !== undefined && !isRecord(hook.metadata)) {
+		throw new Error('Hook metadata must be an object.');
 	}
 }
 
@@ -273,10 +334,26 @@ export class HookRegistry {
 				);
 			}
 		}
+		const hookCount = [...this.hooks.values()].reduce((total, chain) => total + chain.length, 0);
+		if (hookCount >= MAX_REGISTERED_HOOKS) {
+			throw new RangeError(`Hook registry exceeds ${MAX_REGISTERED_HOOKS} entries.`);
+		}
 
 		const chain = this.hooks.get(hook.type);
 		if (!chain) {
 			throw new Error(`No chain found for hook type: '${hook.type}'.`);
+		}
+		if (hook.enabled !== false) {
+			const timeoutBudget = chain.reduce(
+				(total, registered) =>
+					total + (registered.enabled === false ? 0 : registered.timeoutMs),
+				0,
+			);
+			if (timeoutBudget + hook.timeoutMs > MAX_CHAIN_TIMEOUT_BUDGET_MS) {
+				throw new RangeError(
+					`Hook chain timeout budget exceeds ${MAX_CHAIN_TIMEOUT_BUDGET_MS}ms.`,
+				);
+			}
 		}
 
 		// Insert maintaining descending priority order.
@@ -288,7 +365,11 @@ export class HookRegistry {
 				break;
 			}
 		}
-		chain.splice(insertIdx, 0, hook);
+		const stored = Object.freeze({
+			...hook,
+			metadata: hook.metadata ? Object.freeze({ ...hook.metadata }) : undefined
+		});
+		chain.splice(insertIdx, 0, stored);
 
 		this.emit({
 			type: 'registered',
@@ -329,7 +410,8 @@ export class HookRegistry {
 	 * @returns Readonly array of hook definitions in execution order
 	 */
 	getChain(type: HookType): readonly HookDefinition[] {
-		return this.hooks.get(type) ?? [];
+		assertHookType(type);
+		return [...(this.hooks.get(type) ?? [])];
 	}
 
 	/**
@@ -340,16 +422,22 @@ export class HookRegistry {
 	 * - `abort`: halt chain, return aborted result
 	 * - `modify`: pass modified context/constitution to next hook
 	 *
-	 * Disabled hooks are skipped. Exceptions in handlers are caught
-	 * and treated as `continue` (fail-open). Timeouts are enforced
-	 * via Date.now() comparison.
+	 * Disabled hooks are skipped. Handler exceptions, invalid results, and
+	 * timeouts abort the chain so security-sensitive hook failures remain
+	 * fail closed. Timeouts are enforced via Date.now() comparison.
 	 *
 	 * @param type - The hook type to fire
 	 * @param input - The input payload for hook handlers
 	 * @returns The chain execution result
 	 */
 	fire(type: HookType, input: HookInput): ChainResult {
-		const chain = this.hooks.get(type) ?? [];
+		assertHookType(type);
+		if (!isRecord(input) || !isRecord(input.session) || !isRecord(input.chainState)) {
+			throw new TypeError('Hook input, session, and chainState must be objects.');
+		}
+		// One fire observes one immutable registry snapshot. Re-entrant registration
+		// and deregistration take effect on the next fire, never midway through this one.
+		const chain = [...(this.hooks.get(type) ?? [])];
 		const results: ChainHookResult[] = [];
 
 		let currentContext = input.context;
@@ -402,8 +490,12 @@ export class HookRegistry {
 							elapsedMs: elapsed,
 						},
 					});
-					// Per spec: timed-out hook treated as { status: "continue" }
-					result = { status: 'continue' };
+					result = {
+						status: 'abort',
+						reason: `Hook exceeded timeout of ${hook.timeoutMs}ms`,
+					};
+				} else {
+					result = normalizeHookResult(result);
 				}
 			} catch (err) {
 				const elapsed = Date.now() - startTime;
@@ -412,13 +504,14 @@ export class HookRegistry {
 					hookName: hook.name,
 					timestamp: Date.now(),
 					details: {
-						error:
-							err instanceof Error ? err.message : String(err),
+						error: safeErrorMessage(err),
 						elapsedMs: elapsed,
 					},
 				});
-				// Per spec: exceptions treated as { status: "continue" }
-				result = { status: 'continue' };
+				result = {
+					status: 'abort',
+					reason: `Hook handler threw: ${safeErrorMessage(err)}`,
+				};
 			}
 
 			const durationMs = Date.now() - startTime;
@@ -469,6 +562,13 @@ export class HookRegistry {
 	 * @param listener - Callback invoked for each lifecycle event
 	 */
 	addEventListener(listener: HookEventListener): void {
+		if (typeof listener !== 'function') {
+			throw new TypeError('Hook event listener must be a function.');
+		}
+		if (this.listeners.includes(listener)) return;
+		if (this.listeners.length >= MAX_EVENT_LISTENERS) {
+			throw new RangeError(`Hook event listener registry exceeds ${MAX_EVENT_LISTENERS} entries.`);
+		}
 		this.listeners.push(listener);
 	}
 
@@ -492,7 +592,7 @@ export class HookRegistry {
 	 * Listener exceptions are caught silently to prevent cascading failures.
 	 */
 	private emit(event: HookEvent): void {
-		for (const listener of this.listeners) {
+		for (const listener of [...this.listeners]) {
 			try {
 				listener(event);
 			} catch {

@@ -71,6 +71,8 @@ export interface TransmissionSummary {
 export interface VCPWebMCPConfig {
 	/** Base URL for the chat API endpoint. Defaults to '/api/chat'. */
 	chatEndpoint?: string;
+	/** End-to-end chat request deadline in milliseconds. Defaults to 30000. */
+	chatTimeoutMs?: number;
 
 	/** Custom persona list. Defaults to the 7 standard VCP personas. */
 	personas?: PersonaInfo[];
@@ -113,6 +115,9 @@ export interface VCPWebMCPConfig {
 
 	/** Receives a sanitized registration failure without forcing console output. */
 	onRegistrationError?: (failure: WebMCPRegistrationFailure) => void;
+
+	/** Per-tool registration deadline in milliseconds. Defaults to 5000. */
+	registrationTimeoutMs?: number;
 }
 
 export interface WebMCPRegistrationFailure {

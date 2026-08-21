@@ -44,6 +44,7 @@ Conformance levels (per VEP-0004):
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -57,6 +58,8 @@ from ..metrics import track_duration, vcp_context_encode_duration_seconds, vcp_c
 PERSONAL_SEPARATOR = "\u2016"  # ‖  U+2016 DOUBLE VERTICAL LINE
 DIM_SEPARATOR = "|"
 INTENSITY_SEPARATOR = ":"
+_RELATIONSHIP_RE = re.compile(r"^[^:|\u2016]+:[^:|\u2016]+$")
+_TRAILING_INTEGER_RE = re.compile(r".*:[+-]?\d+\s*$")
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -327,7 +330,17 @@ class PersonalState:
     intensity: int | None = None  # 1-5 if present; None means unspecified
 
     def __post_init__(self) -> None:
-        if self.intensity is not None and not (1 <= self.intensity <= 5):
+        if not isinstance(self.value, str) or not self.value:
+            raise ValueError("PersonalState value must be a non-empty string")
+        if DIM_SEPARATOR in self.value or PERSONAL_SEPARATOR in self.value:
+            raise ValueError("PersonalState value must not contain wire-format separators")
+        if self.intensity is None and _TRAILING_INTEGER_RE.fullmatch(self.value):
+            raise ValueError("PersonalState value has an ambiguous trailing integer intensity")
+        if self.intensity is not None and (
+            not isinstance(self.intensity, int)
+            or isinstance(self.intensity, bool)
+            or not 1 <= self.intensity <= 5
+        ):
             raise ValueError(f"PersonalState intensity must be 1-5 or None, got {self.intensity}")
 
     def encode(self) -> str:
@@ -380,8 +393,53 @@ class VCPContext:
                 "VCPContext: pass either 'situational' or the deprecated "
                 "'dimensions' alias — not both."
             )
-        object.__setattr__(self, "situational", dict(situational or dimensions or {}))
-        object.__setattr__(self, "personal", dict(personal or {}))
+        raw_situational = situational if situational is not None else dimensions
+        situational_source = {} if raw_situational is None else raw_situational
+        personal_source = {} if personal is None else personal
+        object.__setattr__(self, "situational", self._validated_situational(situational_source))
+        object.__setattr__(self, "personal", self._validated_personal(personal_source))
+
+    @staticmethod
+    def _validated_situational(
+        value: dict[SituationalDimension, list[str]],
+    ) -> dict[SituationalDimension, list[str]]:
+        if not isinstance(value, dict):
+            raise TypeError("situational context must be a dictionary")
+        result: dict[SituationalDimension, list[str]] = {}
+        for dimension, items in value.items():
+            if not isinstance(dimension, SituationalDimension):
+                raise ValueError("situational context keys must be SituationalDimension values")
+            if not isinstance(items, list) or any(
+                not isinstance(item, str) or not item for item in items
+            ):
+                raise ValueError("situational context values must be lists of non-empty strings")
+            if dimension.is_free_form and any(
+                _RELATIONSHIP_RE.fullmatch(item) is None for item in items
+            ):
+                raise ValueError(
+                    "relationship values must use an unambiguous '{tie}:{function}' form"
+                )
+            if any(DIM_SEPARATOR in item or PERSONAL_SEPARATOR in item for item in items):
+                raise ValueError("situational values must not contain wire-format separators")
+            result[dimension] = list(items)
+        return result
+
+    @staticmethod
+    def _validated_personal(
+        value: dict[PersonalStateDimension, PersonalState],
+    ) -> dict[PersonalStateDimension, PersonalState]:
+        if not isinstance(value, dict):
+            raise TypeError("personal context must be a dictionary")
+        result: dict[PersonalStateDimension, PersonalState] = {}
+        for dimension, state in value.items():
+            if not isinstance(dimension, PersonalStateDimension) or not isinstance(
+                state, PersonalState
+            ):
+                raise ValueError(
+                    "personal context must map PersonalStateDimension values to PersonalState"
+                )
+            result[dimension] = state
+        return result
 
     # Backwards-compat alias: older v3.0 code used `ctx.dimensions[Dimension.TIME]`
     # both for reads and for mutation. We expose a writable attribute-style alias
@@ -393,7 +451,7 @@ class VCPContext:
 
     @dimensions.setter
     def dimensions(self, value: dict[SituationalDimension, list[str]]) -> None:
-        object.__setattr__(self, "situational", dict(value))
+        object.__setattr__(self, "situational", self._validated_situational(value))
 
     # ── Wire format ────────────────────────────────────────────────────────
     def encode(self) -> str:
@@ -405,6 +463,10 @@ class VCPContext:
         `symbol+value[:intensity]` per dim, pipe-separated. The ‖ separator
         and personal band are omitted when no personal dims are set.
         """
+        # The backwards-compatible ``dimensions`` mapping is intentionally
+        # writable, so validate again at the serialization boundary.
+        self._validated_situational(self.situational)
+        self._validated_personal(self.personal)
         sit_parts: list[str] = []
         for dim in SituationalDimension:
             if dim in self.situational and self.situational[dim]:
@@ -525,7 +587,7 @@ class VCPContext:
         """
         out: dict[str, Any] = {
             "situational": {
-                dim._name: self.situational.get(dim, []) for dim in SituationalDimension
+                dim._name: list(self.situational.get(dim, [])) for dim in SituationalDimension
             },
             "personal": {
                 pdim._name: {
@@ -545,6 +607,8 @@ class VCPContext:
         Accepts either the v3.2 nested shape `{situational: {...}, personal: {...}}`
         or the legacy flat shape `{"time": [...], "space": [...], ...}`.
         """
+        if not isinstance(data, dict):
+            raise ValueError("context JSON must be an object")
         situational: dict[SituationalDimension, list[str]] = {}
         personal: dict[PersonalStateDimension, PersonalState] = {}
 
@@ -552,17 +616,21 @@ class VCPContext:
         per_src: dict[str, Any]
 
         if "situational" in data or "personal" in data:
-            sit_src = data.get("situational", {}) or {}
-            per_src = data.get("personal", {}) or {}
+            sit_src = data.get("situational", {})
+            per_src = data.get("personal", {})
         else:
             # Legacy flat shape — everything is situational.
             sit_src = data
             per_src = {}
+        if not isinstance(sit_src, dict) or not isinstance(per_src, dict):
+            raise ValueError("situational and personal context fields must be objects")
 
         for dim in SituationalDimension:
             key = dim._name
             if key in sit_src and sit_src[key]:
                 values = sit_src[key] if isinstance(sit_src[key], list) else [sit_src[key]]
+                if any(not isinstance(item, str) or not item for item in values):
+                    raise ValueError(f"situational.{key} must contain non-empty strings")
                 situational[dim] = list(values)
 
         for pdim in PersonalStateDimension:
@@ -572,10 +640,14 @@ class VCPContext:
                 if isinstance(entry, str):
                     personal[pdim] = PersonalState.decode(entry)
                 elif isinstance(entry, dict):
+                    if "value" not in entry:
+                        raise ValueError(f"personal.{key}.value is required")
                     personal[pdim] = PersonalState(
                         value=entry["value"],
                         intensity=entry.get("intensity"),
                     )
+                else:
+                    raise ValueError(f"personal.{key} must be a string or object")
 
         return cls(situational=situational, personal=personal)
 
@@ -636,11 +708,7 @@ class VCPContext:
             return NotImplemented
         return self.situational == other.situational and self.personal == other.personal
 
-    def __hash__(self) -> int:  # noqa: D401
-        # Contexts aren't ordinarily hashable because they hold lists/dicts,
-        # but override here to mirror the frozen-style equality. Use encode()
-        # output as the hash basis.
-        return hash(self.encode())
+    __hash__ = None  # type: ignore[assignment]
 
 
 # ────────────────────────────────────────────────────────────────────────────

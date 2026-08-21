@@ -39,7 +39,9 @@ use serde_json::Value;
 
 use crate::error::{VcpError, VcpResult, VerificationCode};
 use crate::revocation::{RevocationChecker, RevocationDecision};
-use crate::transport::{verify_content_hash, verify_ed25519_signature, verify_manifest_signature};
+use crate::transport::{
+    parse_json_strict, verify_content_hash, verify_ed25519_signature, verify_manifest_signature,
+};
 use crate::trust::TrustConfig;
 
 // ── Constants ────────────────────────────────────────────────
@@ -263,7 +265,7 @@ fn canonicalize_attestation(attestation: &Value, content_hash: &str) -> Option<V
         "content_hash".to_string(),
         Value::String(content_hash.to_string()),
     );
-    serde_json::to_vec(&Value::Object(payload)).ok()
+    serde_json_canonicalizer::to_vec(&Value::Object(payload)).ok()
 }
 
 // ── Orchestrator ─────────────────────────────────────────────
@@ -352,7 +354,7 @@ impl Orchestrator {
         }
 
         // Step 2: Parse manifest JSON + validate required fields.
-        let Ok(manifest) = serde_json::from_str::<Value>(manifest_json) else {
+        let Ok(manifest) = parse_json_strict(manifest_json) else {
             return VerificationCode::InvalidSchema;
         };
         let Some(bundle) = manifest.get("bundle") else {
@@ -456,6 +458,9 @@ impl Orchestrator {
         else {
             return Some(VerificationCode::UntrustedIssuer);
         };
+        let Some(claimed_public_key) = issuer.get("public_key").and_then(Value::as_str) else {
+            return Some(VerificationCode::InvalidSchema);
+        };
         if !anchor.algorithm.eq_ignore_ascii_case("ed25519") {
             return Some(VerificationCode::InvalidSignature);
         }
@@ -469,9 +474,10 @@ impl Orchestrator {
         let Some(sig_value) = signature.get("value").and_then(Value::as_str) else {
             return Some(VerificationCode::InvalidSignature);
         };
-        let expected_fields: HashSet<&str> = manifest
-            .as_object()
-            .expect("manifest parsed as object")
+        let Some(manifest_object) = manifest.as_object() else {
+            return Some(VerificationCode::InvalidSchema);
+        };
+        let expected_fields: HashSet<&str> = manifest_object
             .keys()
             .map(String::as_str)
             .filter(|field| *field != "signature")
@@ -490,6 +496,12 @@ impl Orchestrator {
         let Some(key_bytes) = decode_public_key(&anchor.public_key) else {
             return Some(VerificationCode::InvalidSignature);
         };
+        let Some(claimed_key_bytes) = decode_public_key(claimed_public_key) else {
+            return Some(VerificationCode::InvalidSignature);
+        };
+        if claimed_key_bytes != key_bytes {
+            return Some(VerificationCode::UntrustedIssuer);
+        }
         if !matches!(
             verify_manifest_signature(manifest, &key_bytes, sig_value),
             Ok(true)
@@ -941,6 +953,11 @@ mod tests {
     /// Helper: build a valid manifest JSON string for a given content.
     fn valid_manifest(content: &str) -> String {
         let hash = compute_content_hash(content).unwrap();
+        let issuer_key = SigningKey::from_bytes(&ISSUER_SEED);
+        let issuer_public_key = format!(
+            "ed25519:{}",
+            base64::engine::general_purpose::STANDARD.encode(issuer_key.verifying_key().to_bytes())
+        );
         let now = Utc::now();
         let nbf = (now - ChronoDuration::hours(1)).to_rfc3339();
         let exp = (now + ChronoDuration::days(30)).to_rfc3339();
@@ -956,6 +973,7 @@ mod tests {
             "issuer": {
                 "id": "test-issuer",
                 "key_id": "key-01",
+                "public_key": issuer_public_key,
             },
             "safety_attestation": {
                 "auditor": "test-auditor",
@@ -1016,6 +1034,20 @@ mod tests {
 
         let code = orch.verify("not json at all", "content", &ctx);
         assert_eq!(code, VerificationCode::InvalidSchema);
+    }
+
+    #[test]
+    fn duplicate_manifest_keys_return_invalid_schema() {
+        let trust = test_trust_config();
+        let mut orch = Orchestrator::new(trust.clone());
+        let ctx = VerificationContext::new(trust);
+        let manifest = valid_manifest("content");
+        let duplicated = format!(r#"{{"vcp_version":"2.0",{}"#, &manifest[1..]);
+
+        assert_eq!(
+            orch.verify(&duplicated, "content", &ctx),
+            VerificationCode::InvalidSchema
+        );
     }
 
     #[test]
@@ -1185,6 +1217,27 @@ mod tests {
 
         let code = orch.verify(&manifest, content, &ctx);
         assert_eq!(code, VerificationCode::UntrustedIssuer);
+    }
+
+    #[test]
+    fn signed_manifest_cannot_advertise_an_untrusted_issuer_key() {
+        let trust = test_trust_config();
+        let mut orch = Orchestrator::new(trust.clone());
+        let ctx = VerificationContext::new(trust);
+        let content = "Be kind.";
+        let mut manifest: Value = serde_json::from_str(&valid_manifest(content)).unwrap();
+        let unrelated_key = SigningKey::from_bytes(&[31; 32]);
+        manifest["issuer"]["public_key"] = Value::String(format!(
+            "ed25519:{}",
+            base64::engine::general_purpose::STANDARD
+                .encode(unrelated_key.verifying_key().to_bytes())
+        ));
+        sign_test_manifest(&mut manifest);
+
+        assert_eq!(
+            orch.verify(&manifest.to_string(), content, &ctx),
+            VerificationCode::UntrustedIssuer
+        );
     }
 
     // ── Scope mismatch test ──────────────────────────────────

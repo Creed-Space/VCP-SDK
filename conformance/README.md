@@ -2,7 +2,7 @@
 
 This directory contains authored, language-neutral fixtures and checked runners
 for the Value-Context Protocol source candidate. The corpus currently contains
-27 JSON fixtures and 294 cases. Presence in the corpus is not a pass.
+27 JSON fixtures and 337 cases. Presence in the corpus is not a pass.
 [`coverage-manifest.json`](coverage-manifest.json) is the machine-readable
 authority for every vector's source, applicability, runner, fixture hash, and
 Python, Rust, and WebMCP status.
@@ -35,8 +35,9 @@ attestation.
 
 Welfare and stateless MCP fixtures are draft profiles without claimed SDK
 implementations. They remain visibly `unsupported`, rather than being counted
-as passes. The WebMCP package has one separate checked surface: its packed npm
-artifact is imported and exercised against the experimental
+as passes. WebMCP capability-negotiation and relational behavior vectors run
+through the declared cross-runtime conformance runners. Separately, the packed
+npm artifact is imported and exercised against the experimental
 `document.modelContext` lifecycle.
 
 ## Run the complete gate

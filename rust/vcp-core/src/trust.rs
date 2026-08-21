@@ -35,6 +35,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{VcpError, VcpResult};
 
+/// Maximum encoded trust configuration size accepted by [`TrustConfig::from_json`].
+pub const MAX_TRUST_CONFIG_BYTES: usize = 16 * 1024 * 1024;
+
 // ── Anchor types ────────────────────────────────────────────
 
 /// The role an anchor fulfills in the trust chain.
@@ -147,10 +150,31 @@ impl TrustAnchor {
             .and_then(|v| v.as_str())
             .ok_or_else(|| VcpError::ParseError("missing 'public_key' in trust anchor".into()))?;
 
-        let anchor_type_str = obj.get("type").and_then(|v| v.as_str()).unwrap_or("issuer");
+        if entity_id.trim().is_empty() || key_id.trim().is_empty() {
+            return Err(VcpError::ParseError(
+                "trust anchor entity and key identifiers must be non-empty".into(),
+            ));
+        }
+        if algorithm.trim().is_empty() || public_key.trim().is_empty() {
+            return Err(VcpError::ParseError(
+                "trust anchor algorithm and public_key must be non-empty".into(),
+            ));
+        }
+
+        let anchor_type_str = match obj.get("type") {
+            None => "issuer",
+            Some(value) => value
+                .as_str()
+                .ok_or_else(|| VcpError::ParseError("trust anchor type must be a string".into()))?,
+        };
         let anchor_type = match anchor_type_str {
+            "issuer" => AnchorType::Issuer,
             "auditor" => AnchorType::Auditor,
-            _ => AnchorType::Issuer,
+            other => {
+                return Err(VcpError::ParseError(format!(
+                    "unknown trust anchor type: {other}"
+                )))
+            }
         };
 
         let valid_from = parse_datetime(
@@ -165,16 +189,29 @@ impl TrustAnchor {
                 .ok_or_else(|| VcpError::ParseError("missing 'valid_until'".into()))?,
         )?;
 
-        let state_str = obj
-            .get("state")
-            .and_then(|v| v.as_str())
-            .unwrap_or("active");
+        let state_str = match obj.get("state") {
+            None => "active",
+            Some(value) => value.as_str().ok_or_else(|| {
+                VcpError::ParseError("trust anchor state must be a string".into())
+            })?,
+        };
         let state = match state_str {
+            "active" => AnchorState::Active,
             "rotating" => AnchorState::Rotating,
             "retired" => AnchorState::Retired,
             "compromised" => AnchorState::Compromised,
-            _ => AnchorState::Active,
+            other => {
+                return Err(VcpError::ParseError(format!(
+                    "unknown trust anchor state: {other}"
+                )))
+            }
         };
+
+        if valid_from > valid_until {
+            return Err(VcpError::ParseError(
+                "trust anchor valid_from must not be after valid_until".into(),
+            ));
+        }
 
         Ok(Self {
             id: entity_id.to_string(),
@@ -189,25 +226,10 @@ impl TrustAnchor {
     }
 }
 
-/// Parse a datetime string, stripping a trailing `Z` if present and
-/// falling back to RFC 3339 parsing.
+/// Parse a timezone-qualified RFC 3339 datetime string.
 fn parse_datetime(s: &str) -> VcpResult<DateTime<Utc>> {
-    // The Python SDK does `fromisoformat(data.rstrip("Z"))`. We handle
-    // both `2025-01-01T00:00:00Z` and `2025-01-01T00:00:00` (naive, treated as UTC).
-    let trimmed = s.trim_end_matches('Z');
-    let with_tz = if trimmed.contains('+') || trimmed.contains('-') && trimmed.len() > 10 {
-        // Already has timezone offset, try as-is first.
-        s.to_string()
-    } else {
-        format!("{trimmed}+00:00")
-    };
-
-    DateTime::parse_from_rfc3339(&with_tz)
+    DateTime::parse_from_rfc3339(s)
         .map(|dt| dt.with_timezone(&Utc))
-        .or_else(|_| {
-            // Try with Z suffix.
-            DateTime::parse_from_rfc3339(&format!("{trimmed}Z")).map(|dt| dt.with_timezone(&Utc))
-        })
         .map_err(|e| VcpError::ParseError(format!("invalid datetime '{s}': {e}")))
 }
 
@@ -255,6 +277,9 @@ impl TrustConfig {
         let anchors = self.issuers.get(issuer_id)?;
         let now = Utc::now();
         anchors.iter().find(|a| {
+            if a.id != issuer_id || a.anchor_type != AnchorType::Issuer {
+                return false;
+            }
             if let Some(kid) = key_id {
                 if a.key_id != kid {
                     return false;
@@ -273,6 +298,9 @@ impl TrustConfig {
         let anchors = self.auditors.get(auditor_id)?;
         let now = Utc::now();
         anchors.iter().find(|a| {
+            if a.id != auditor_id || a.anchor_type != AnchorType::Auditor {
+                return false;
+            }
             if let Some(kid) = key_id {
                 if a.key_id != kid {
                     return false;
@@ -305,15 +333,30 @@ impl TrustConfig {
     pub fn from_dict(data: &serde_json::Value) -> VcpResult<Self> {
         let mut config = Self::new();
 
-        let Some(anchors_obj) = data.get("trust_anchors").and_then(|v| v.as_object()) else {
-            return Ok(config); // No trust anchors, return empty config.
+        let root = data
+            .as_object()
+            .ok_or_else(|| VcpError::ParseError("trust config must be an object".into()))?;
+        let Some(anchors_value) = root.get("trust_anchors") else {
+            return Ok(config);
         };
+        let anchors_obj = anchors_value
+            .as_object()
+            .ok_or_else(|| VcpError::ParseError("'trust_anchors' must be an object".into()))?;
 
         for (entity_id, entity_data) in anchors_obj {
-            let entity_type = entity_data
-                .get("type")
-                .and_then(|v| v.as_str())
-                .unwrap_or("issuer");
+            let entity_type = match entity_data.get("type") {
+                None => "issuer",
+                Some(value) => value.as_str().ok_or_else(|| {
+                    VcpError::ParseError(format!(
+                        "trust anchor type for '{entity_id}' must be a string"
+                    ))
+                })?,
+            };
+            if !matches!(entity_type, "issuer" | "auditor") {
+                return Err(VcpError::ParseError(format!(
+                    "unknown trust anchor type for '{entity_id}': {entity_type}"
+                )));
+            }
 
             let keys = entity_data
                 .get("keys")
@@ -351,7 +394,12 @@ impl TrustConfig {
     /// Returns [`VcpError::JsonError`] if the JSON is invalid, or
     /// [`VcpError::ParseError`] if the structure is malformed.
     pub fn from_json(json_str: &str) -> VcpResult<Self> {
-        let data: serde_json::Value = serde_json::from_str(json_str)?;
+        if json_str.len() > MAX_TRUST_CONFIG_BYTES {
+            return Err(VcpError::ParseError(format!(
+                "trust config exceeds {MAX_TRUST_CONFIG_BYTES} bytes"
+            )));
+        }
+        let data = crate::transport::parse_json_strict(json_str)?;
         Self::from_dict(&data)
     }
 
@@ -722,6 +770,11 @@ mod tests {
     }
 
     #[test]
+    fn config_from_json_rejects_duplicate_keys() {
+        assert!(TrustConfig::from_json(r#"{"trust_anchors": {}, "trust_anchors": {}}"#).is_err());
+    }
+
+    #[test]
     fn config_empty_trust_anchors() {
         let data = serde_json::json!({});
         let config = TrustConfig::from_dict(&data).unwrap();
@@ -780,13 +833,112 @@ mod tests {
     }
 
     #[test]
-    fn parse_datetime_variants() {
-        // With Z suffix.
+    fn parse_datetime_requires_an_explicit_timezone() {
         assert!(parse_datetime("2025-01-01T00:00:00Z").is_ok());
-        // Without Z suffix (treated as UTC).
-        assert!(parse_datetime("2025-01-01T00:00:00").is_ok());
-        // Invalid.
+        assert!(parse_datetime("2025-01-01T01:00:00+01:00").is_ok());
+        assert!(parse_datetime("2025-01-01T00:00:00").is_err());
         assert!(parse_datetime("not-a-date").is_err());
+    }
+
+    #[test]
+    fn anchor_from_dict_rejects_unknown_security_enums() {
+        let base = serde_json::json!({
+            "id": "k1",
+            "algorithm": "ed25519",
+            "public_key": "base64:test",
+            "valid_from": "2020-01-01T00:00:00Z",
+            "valid_until": "2030-01-01T00:00:00Z"
+        });
+
+        for (field, value) in [("type", "superuser"), ("state", "trusted")] {
+            let mut malformed = base.clone();
+            malformed[field] = serde_json::json!(value);
+            assert!(TrustAnchor::from_dict("entity", &malformed).is_err());
+        }
+        for field in ["type", "state"] {
+            let mut malformed = base.clone();
+            malformed[field] = serde_json::json!(false);
+            assert!(TrustAnchor::from_dict("entity", &malformed).is_err());
+        }
+    }
+
+    #[test]
+    fn anchor_from_dict_rejects_empty_identifiers_and_reversed_window() {
+        let mut data = serde_json::json!({
+            "id": "",
+            "algorithm": "ed25519",
+            "public_key": "base64:test",
+            "valid_from": "2030-01-01T00:00:00Z",
+            "valid_until": "2020-01-01T00:00:00Z"
+        });
+
+        assert!(TrustAnchor::from_dict("entity", &data).is_err());
+        data["id"] = serde_json::json!("k1");
+        assert!(TrustAnchor::from_dict("entity", &data).is_err());
+        data["valid_from"] = serde_json::json!("2020-01-01T00:00:00Z");
+        assert!(TrustAnchor::from_dict("", &data).is_err());
+    }
+
+    #[test]
+    fn config_from_dict_rejects_malformed_anchor_container_and_type() {
+        assert!(TrustConfig::from_dict(&serde_json::json!([])).is_err());
+        assert!(TrustConfig::from_dict(&serde_json::json!({
+            "trust_anchors": []
+        }))
+        .is_err());
+        assert!(TrustConfig::from_dict(&serde_json::json!({
+            "trust_anchors": {
+                "entity": {"type": "root", "keys": []}
+            }
+        }))
+        .is_err());
+        assert!(TrustConfig::from_dict(&serde_json::json!({
+            "trust_anchors": {
+                "entity": {"type": false, "keys": []}
+            }
+        }))
+        .is_err());
+    }
+
+    #[test]
+    fn config_from_json_enforces_inclusive_size_limit() {
+        let at_limit = format!("{}{{}}", " ".repeat(MAX_TRUST_CONFIG_BYTES - 2));
+        assert_eq!(at_limit.len(), MAX_TRUST_CONFIG_BYTES);
+        assert!(TrustConfig::from_json(&at_limit).is_ok());
+
+        assert!(TrustConfig::from_json(&format!(" {at_limit}")).is_err());
+    }
+
+    #[test]
+    fn lookup_rejects_misfiled_anchor_role_or_identity() {
+        let mut config = TrustConfig::new();
+        config.add_issuer(
+            "issuer-map-key",
+            make_anchor(
+                "different-id",
+                "k1",
+                AnchorType::Issuer,
+                AnchorState::Active,
+                1,
+                365,
+            ),
+        );
+        config.add_issuer(
+            "auditor-in-issuer-map",
+            make_anchor(
+                "auditor-in-issuer-map",
+                "k2",
+                AnchorType::Auditor,
+                AnchorState::Active,
+                1,
+                365,
+            ),
+        );
+
+        assert!(config.get_issuer_key("issuer-map-key", None).is_none());
+        assert!(config
+            .get_issuer_key("auditor-in-issuer-map", None)
+            .is_none());
     }
 
     #[test]

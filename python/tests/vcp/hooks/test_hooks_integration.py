@@ -390,8 +390,8 @@ class TestStateTrackerOnTransitionHook:
         # History should still only have the first entry
         assert tracker.history_count == 1
 
-    def test_hook_exception_is_fail_open(self, encoder: ContextEncoder) -> None:
-        """If hook raises, transition should still complete (fail-open)."""
+    def test_hook_exception_is_fail_closed(self, encoder: ContextEncoder) -> None:
+        """If a transition hook raises, the transition must roll back."""
 
         def exploding_hook(inp: HookInput) -> HookResult:
             raise RuntimeError("Hook crashed")
@@ -402,12 +402,29 @@ class TestStateTrackerOnTransitionHook:
         ctx1 = encoder.encode(time="morning")
         ctx2 = encoder.encode(time="evening")
         tracker.record(ctx1)
-        transition = tracker.record(ctx2)
+        assert tracker.record(ctx2) is None
+        assert tracker.history_count == 1
 
-        # Fail-open: hook crash does not block transition
-        assert transition is not None
-        assert transition.severity != TransitionSeverity.NONE
-        assert tracker.history_count == 2
+    def test_executor_level_exception_is_fail_closed(
+        self, encoder: ContextEncoder, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        executor = _make_executor_with_hook(
+            HookType.ON_TRANSITION,
+            lambda _input: HookResult(status=ResultStatus.CONTINUE),
+        )
+
+        def explode(*_args: object, **_kwargs: object) -> None:
+            raise RuntimeError("executor failed before producing a result")
+
+        monkeypatch.setattr(executor, "execute", explode)
+        tracker = StateTracker(hook_executor=executor)
+        handler_calls: list[object] = []
+        tracker.register_handler(TransitionSeverity.MINOR, handler_calls.append)
+        tracker.record(encoder.encode(time="morning"))
+
+        assert tracker.record(encoder.encode(time="evening")) is None
+        assert tracker.history_count == 1
+        assert handler_calls == []
 
     def test_handlers_still_called_after_hook(self, encoder: ContextEncoder) -> None:
         """Existing handlers should still be invoked after hook fires."""
@@ -539,8 +556,8 @@ class TestComposerOnConflictHook:
         assert len(result.merged_rules) == 2
         assert fired == []
 
-    def test_hook_exception_is_fail_open(self) -> None:
-        """If hook raises, composition should fall through to normal error handling."""
+    def test_hook_exception_is_fail_closed(self) -> None:
+        """A failed conflict hook cannot approve a conflicting composition."""
 
         def exploding_hook(inp: HookInput) -> HookResult:
             raise RuntimeError("Hook crashed")
@@ -551,7 +568,6 @@ class TestComposerOnConflictHook:
         const1 = Constitution(id="a", rules=["Never share personal data."])
         const2 = Constitution(id="b", rules=["Always share personal data."])
 
-        # Fail-open: hook crash falls through, original error still raised
         with pytest.raises(CompositionConflictError):
             composer.compose([const1, const2], CompositionMode.EXTEND)
 

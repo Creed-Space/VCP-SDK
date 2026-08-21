@@ -222,7 +222,10 @@ class Hook:
         Raises:
             HookValidationError: If any validation check fails.
         """
-        if not HOOK_NAME_PATTERN.match(self.name):
+        if (
+            not isinstance(self.name, str)
+            or HOOK_NAME_PATTERN.fullmatch(self.name) is None
+        ):
             raise HookValidationError(
                 f"Invalid hook name: '{self.name}'. Must match [a-z0-9_-]{{1,64}}"
             )
@@ -230,16 +233,32 @@ class Hook:
             raise HookValidationError(
                 f"Invalid hook type: '{self.type}'. Must be a HookType enum value"
             )
-        if not (MIN_PRIORITY <= self.priority <= MAX_PRIORITY):
+        if (
+            not isinstance(self.priority, int)
+            or isinstance(self.priority, bool)
+            or not MIN_PRIORITY <= self.priority <= MAX_PRIORITY
+        ):
             raise HookValidationError(
                 f"Priority must be {MIN_PRIORITY}-{MAX_PRIORITY}, got: {self.priority}"
             )
-        if not (MIN_TIMEOUT_MS <= self.timeout_ms <= MAX_TIMEOUT_MS):
+        if (
+            not isinstance(self.timeout_ms, int)
+            or isinstance(self.timeout_ms, bool)
+            or not MIN_TIMEOUT_MS <= self.timeout_ms <= MAX_TIMEOUT_MS
+        ):
             raise HookValidationError(
                 f"Timeout must be {MIN_TIMEOUT_MS}-{MAX_TIMEOUT_MS}ms, got: {self.timeout_ms}"
             )
         if not callable(self.action):
             raise HookValidationError("Hook action must be callable")
+        if not isinstance(self.enabled, bool):
+            raise HookValidationError("Hook enabled must be a boolean")
+        if self.condition is not None and not callable(self.condition):
+            raise HookValidationError("Hook condition must be callable or null")
+        if not isinstance(self.description, str):
+            raise HookValidationError("Hook description must be a string")
+        if not isinstance(self.metadata, dict):
+            raise HookValidationError("Hook metadata must be an object")
 
 
 @dataclass

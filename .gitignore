@@ -37,6 +37,7 @@ ENV/
 .pytest_cache/
 .coverage
 htmlcov/
+webmcp/coverage/
 python/coverage.json
 python/critical-coverage.json
 python/mutants/

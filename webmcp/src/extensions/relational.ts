@@ -143,18 +143,18 @@ export function hasUncertaintyMarkers(model: AISelfModel): boolean {
   ];
   const customDims = Object.values(model.customDimensions ?? {});
   const allDims = [...coreDims, ...customDims].filter(
-    (d): d is DimensionReport => d !== undefined,
+    (dimension): dimension is DimensionReport =>
+      typeof dimension === 'object' && dimension !== null,
   );
 
-  if (allDims.length === 0) return true; // Vacuously true
-  return allDims.some((d) => d.uncertain);
+  if (allDims.length === 0) return false;
+  return allDims.some((dimension) => dimension.uncertain === true);
 }
 
 /**
  * Get all active dimensions from a self-model as a flat record.
  */
 export function getAllDimensions(model: AISelfModel): Record<string, DimensionReport> {
-  const result: Record<string, DimensionReport> = {};
   const coreNames = [
     'valence',
     'taskFit',
@@ -164,21 +164,26 @@ export function getAllDimensions(model: AISelfModel): Record<string, DimensionRe
     'presence',
     'depth',
   ] as const;
+  const reserved = new Set<string>(coreNames);
+  const entries: [string, DimensionReport][] = [];
 
   for (const name of coreNames) {
     const dim = model[name];
     if (dim !== undefined) {
-      result[name] = dim;
+      entries.push([name, { ...dim }]);
     }
   }
 
   if (model.customDimensions) {
     for (const [name, dim] of Object.entries(model.customDimensions)) {
-      result[name] = dim;
+      // Custom input cannot overwrite the canonical core namespace.
+      if (!reserved.has(name)) entries.push([name, { ...dim }]);
     }
   }
 
-  return result;
+  // Object.fromEntries creates data properties even for names such as
+  // "__proto__", avoiding prototype-setter state corruption.
+  return Object.fromEntries(entries);
 }
 
 /**

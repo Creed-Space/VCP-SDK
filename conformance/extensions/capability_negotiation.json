@@ -1,310 +1,772 @@
 {
   "suite": "extensions/capability_negotiation",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "schema_version": "1.0.0",
-  "vcp_version": "3.1.0",
-  "description": "Conformance test vectors for VCP Hello/Ack capability negotiation",
+  "vcp_version": "3.1",
+  "description": "Canonical VCP Hello/Ack version and extension negotiation vectors.",
   "test_cases": [
     {
       "id": "full-match",
-      "description": "Client and server support identical extensions \u2014 all become active",
+      "description": "Highest mutual version activates every requested server extension and advertises only those capabilities.",
       "input": {
         "client_hello": {
-          "vcp_version": "3.1.0",
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
           "extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            },
-            {
-              "name": "relational_context",
-              "version": "1.0.0"
-            },
-            {
-              "name": "consensus_voting",
-              "version": "1.0.0"
-            }
+            "VCP-X-Personal",
+            "VCP-X-Consensus",
+            "VCP-X-Torch"
           ]
         },
         "server_capabilities": {
-          "vcp_version": "3.1.0",
-          "extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
             },
-            {
-              "name": "relational_context",
-              "version": "1.0.0"
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
             },
-            {
-              "name": "consensus_voting",
-              "version": "1.0.0"
+            "VCP-X-Torch": {
+              "lineage": true,
+              "degraded": false
             }
-          ]
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          },
+          "server_id": "server/4.2",
+          "session_id": "ses_full"
         }
       },
       "expected": {
         "server_ack": {
-          "vcp_version": "3.1.0",
-          "active_extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            },
-            {
-              "name": "relational_context",
-              "version": "1.0.0"
-            },
-            {
-              "name": "consensus_voting",
-              "version": "1.0.0"
-            }
+          "type": "vcp-ack",
+          "version": "3.1",
+          "supported": [
+            "VCP-X-Personal",
+            "VCP-X-Consensus",
+            "VCP-X-Torch"
           ],
-          "rejected_extensions": []
-        },
-        "active_count": 3,
-        "rejected_count": 0
+          "unsupported": [],
+          "capabilities": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            },
+            "VCP-X-Torch": {
+              "lineage": true,
+              "degraded": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          },
+          "server_id": "server/4.2",
+          "session_id": "ses_full"
+        }
       }
     },
     {
-      "id": "partial-match",
-      "description": "Client requests 5 extensions, server supports 3 \u2014 3 active, 2 rejected",
+      "id": "intent-without-personal-signals",
+      "description": "An active Intent extension without active Personal advertises that personal signals are unavailable, overriding stale server configuration.",
       "input": {
         "client_hello": {
-          "vcp_version": "3.1.0",
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
           "extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            },
-            {
-              "name": "relational_context",
-              "version": "1.0.0"
-            },
-            {
-              "name": "consensus_voting",
-              "version": "1.0.0"
-            },
-            {
-              "name": "torch_handoff",
-              "version": "1.0.0"
-            },
-            {
-              "name": "emotional_synthesis",
-              "version": "1.0.0"
-            }
+            "VCP-X-Intent"
           ]
         },
         "server_capabilities": {
-          "vcp_version": "3.1.0",
-          "extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            },
-            {
-              "name": "relational_context",
-              "version": "1.0.0"
-            },
-            {
-              "name": "consensus_voting",
-              "version": "1.0.0"
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Intent": {
+              "user_correction": true,
+              "personal_signals": true
             }
-          ]
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
         }
       },
       "expected": {
         "server_ack": {
-          "vcp_version": "3.1.0",
-          "active_extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            },
-            {
-              "name": "relational_context",
-              "version": "1.0.0"
-            },
-            {
-              "name": "consensus_voting",
-              "version": "1.0.0"
-            }
+          "type": "vcp-ack",
+          "version": "3.1",
+          "supported": [
+            "VCP-X-Intent"
           ],
-          "rejected_extensions": [
-            {
-              "name": "torch_handoff",
-              "reason": "not_supported"
-            },
-            {
-              "name": "emotional_synthesis",
-              "reason": "not_supported"
+          "unsupported": [],
+          "capabilities": {
+            "VCP-X-Intent": {
+              "user_correction": true,
+              "personal_signals": false
             }
-          ]
-        },
-        "active_count": 3,
-        "rejected_count": 2
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
       }
     },
     {
-      "id": "version-mismatch",
-      "description": "Client requests VCP 3.2.0, server supports 3.1.0 \u2014 negotiate to minimum",
+      "id": "partial-partition",
+      "description": "Supported and unsupported are a disjoint, client-order partition of valid requested extensions.",
       "input": {
         "client_hello": {
-          "vcp_version": "3.2.0",
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
           "extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.1.0"
-            }
+            "VCP-X-Relational",
+            "VCP-X-Personal",
+            "VCP-X-Intent",
+            "VCP-X-Consensus"
           ]
         },
         "server_capabilities": {
-          "vcp_version": "3.1.0",
-          "extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            },
+            "VCP-X-Torch": {
+              "lineage": true
             }
-          ]
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
         }
       },
       "expected": {
         "server_ack": {
-          "vcp_version": "3.1.0",
-          "active_extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            }
+          "type": "vcp-ack",
+          "version": "3.1",
+          "supported": [
+            "VCP-X-Personal",
+            "VCP-X-Consensus"
           ],
-          "rejected_extensions": []
-        },
-        "negotiated_vcp_version": "3.1.0",
-        "notes": "Protocol negotiates to minimum compatible version. Extension version also downgrades to server's supported version."
+          "unsupported": [
+            "VCP-X-Relational",
+            "VCP-X-Intent"
+          ],
+          "capabilities": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
       }
     },
     {
-      "id": "empty-extensions",
-      "description": "No extensions requested \u2014 baseline VCP only",
+      "id": "downgrade-disables-extensions",
+      "description": "A mutually supported version below 3.1 keeps every valid request in unsupported.",
       "input": {
         "client_hello": {
-          "vcp_version": "3.1.0",
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "3.0",
+          "extensions": [
+            "VCP-X-Personal",
+            "VCP-X-Torch"
+          ]
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            },
+            "VCP-X-Torch": {
+              "lineage": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-ack",
+          "version": "3.0",
+          "supported": [],
+          "unsupported": [
+            "VCP-X-Personal",
+            "VCP-X-Torch"
+          ],
+          "capabilities": {},
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      }
+    },
+    {
+      "id": "no-version-overlap",
+      "description": "A client range below every server version produces the canonical VERSION_UNSUPPORTED error.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "1.0",
+          "min_version": "1.0",
+          "extensions": [
+            "VCP-X-Personal"
+          ]
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            },
+            "VCP-X-Torch": {
+              "lineage": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-error",
+          "code": "VERSION_UNSUPPORTED",
+          "message": "No mutually supported VCP version",
+          "supported_versions": [
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "retry_after": null
+        }
+      }
+    },
+    {
+      "id": "empty-extension-request",
+      "description": "An empty request activates no extension even when the server advertises several.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
           "extensions": []
         },
         "server_capabilities": {
-          "vcp_version": "3.1.0",
-          "extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            },
-            {
-              "name": "relational_context",
-              "version": "1.0.0"
-            }
-          ]
-        }
-      },
-      "expected": {
-        "server_ack": {
-          "vcp_version": "3.1.0",
-          "active_extensions": [],
-          "rejected_extensions": []
-        },
-        "active_count": 0,
-        "rejected_count": 0,
-        "notes": "Baseline VCP context (categorical + personal dimensions) always available without extensions"
-      }
-    },
-    {
-      "id": "unknown-extension",
-      "description": "Client requests an unknown extension \u2014 rejected gracefully",
-      "input": {
-        "client_hello": {
-          "vcp_version": "3.1.0",
-          "extensions": [
-            {
-              "name": "quantum_entanglement",
-              "version": "99.0.0"
-            }
-          ]
-        },
-        "server_capabilities": {
-          "vcp_version": "3.1.0",
-          "extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            }
-          ]
-        }
-      },
-      "expected": {
-        "server_ack": {
-          "vcp_version": "3.1.0",
-          "active_extensions": [],
-          "rejected_extensions": [
-            {
-              "name": "quantum_entanglement",
-              "reason": "not_supported"
-            }
-          ]
-        },
-        "active_count": 0,
-        "rejected_count": 1,
-        "notes": "Unknown extensions are rejected gracefully, session continues with baseline VCP"
-      }
-    },
-    {
-      "id": "server-extra-extensions",
-      "description": "Server supports more extensions than client requests \u2014 only requested ones activated",
-      "input": {
-        "client_hello": {
-          "vcp_version": "3.1.0",
-          "extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            }
-          ]
-        },
-        "server_capabilities": {
-          "vcp_version": "3.1.0",
-          "extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            },
-            {
-              "name": "relational_context",
-              "version": "1.0.0"
-            },
-            {
-              "name": "consensus_voting",
-              "version": "1.0.0"
-            },
-            {
-              "name": "torch_handoff",
-              "version": "1.0.0"
-            }
-          ]
-        }
-      },
-      "expected": {
-        "server_ack": {
-          "vcp_version": "3.1.0",
-          "active_extensions": [
-            {
-              "name": "personal_state",
-              "version": "1.0.0"
-            }
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
           ],
-          "rejected_extensions": []
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            },
+            "VCP-X-Torch": {
+              "lineage": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-ack",
+          "version": "3.1",
+          "supported": [],
+          "unsupported": [],
+          "capabilities": {},
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      }
+    },
+    {
+      "id": "invalid-extension-identifiers-ignored",
+      "description": "Unique bounded strings outside the VCP-X-* namespace are ignored before partitioning.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
+          "extensions": [
+            "personal_state",
+            "VCP-X-",
+            "VCP-X-Personal",
+            "VCP-X-Unknown"
+          ]
         },
-        "active_count": 1,
-        "rejected_count": 0,
-        "notes": "Server-only extensions are not auto-activated. Activation requires explicit client request."
+        "server_capabilities": {
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            },
+            "VCP-X-Torch": {
+              "lineage": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-ack",
+          "version": "3.1",
+          "supported": [
+            "VCP-X-Personal"
+          ],
+          "unsupported": [
+            "VCP-X-Unknown"
+          ],
+          "capabilities": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      }
+    },
+    {
+      "id": "duplicate-extension-identifiers-rejected",
+      "description": "Duplicate raw extension strings violate the canonical Hello set and are rejected before negotiation.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
+          "extensions": [
+            "VCP-X-Personal",
+            "VCP-X-Personal"
+          ]
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      },
+      "expected": {
+        "rejected": true
+      }
+    },
+    {
+      "id": "server-only-extension-not-activated",
+      "description": "Server-only extensions never become active without an explicit client request.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
+          "extensions": [
+            "VCP-X-Personal"
+          ]
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            },
+            "VCP-X-Torch": {
+              "lineage": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-ack",
+          "version": "3.1",
+          "supported": [
+            "VCP-X-Personal"
+          ],
+          "unsupported": [],
+          "capabilities": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      }
+    },
+    {
+      "id": "unordered-duplicate-server-versions",
+      "description": "Version selection removes duplicates and selects the numeric maximum in range regardless of input order.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "2.0",
+          "extensions": []
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "3.0",
+            "2.0",
+            "3.1",
+            "3.0"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            },
+            "VCP-X-Torch": {
+              "lineage": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-ack",
+          "version": "3.1",
+          "supported": [],
+          "unsupported": [],
+          "capabilities": {},
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      }
+    },
+    {
+      "id": "reversed-client-range",
+      "description": "A min_version above version fails closed instead of silently reversing the range.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "2.0",
+          "min_version": "3.0",
+          "extensions": []
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            },
+            "VCP-X-Torch": {
+              "lineage": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-error",
+          "code": "VERSION_UNSUPPORTED",
+          "message": "No mutually supported VCP version",
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "retry_after": null
+        }
+      }
+    },
+    {
+      "id": "forward-compatible-unknown-fields",
+      "description": "Unknown hello, server, and capability fields do not disturb a compatible negotiation.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
+          "extensions": [
+            "VCP-X-Personal"
+          ],
+          "future_client_hint": {
+            "mode": "safe"
+          }
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "future_capability": {
+                "level": 2
+              }
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          },
+          "future_server_hint": true
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-ack",
+          "version": "3.1",
+          "supported": [
+            "VCP-X-Personal"
+          ],
+          "unsupported": [],
+          "capabilities": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "future_capability": {
+                "level": 2
+              }
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
       }
     }
   ]

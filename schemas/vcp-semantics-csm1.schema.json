@@ -4,14 +4,13 @@
   "title": "CSM1 Code Schema",
   "description": "JSON Schema for Constitutional Safety Minicode (CSM1) validation",
   "type": "object",
-
   "properties": {
     "code": {
       "type": "string",
       "description": "The CSM1 code string",
-      "pattern": "^(?![^:@]*(?:\\+F[^:@]*\\+A|\\+A[^:@]*\\+F|\\+V[^:@]*\\+A|\\+A[^:@]*\\+V|\\+H[^:@]*\\+A|\\+A[^:@]*\\+H))(?![^:@]*\\+([FWPETOVAHSR])(?:\\+[FWPETOVAHSR])*\\+\\1(?=\\+|[:@]|$))(?:C[0-5](?:\\+[FWPETOVAHSR])*:[A-Z]{1,8}|[NZGAMD][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?)(?:@(?:[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}|latest|canary))?$",
+      "pattern": "^(?![^:@]*(?:\\+F[^:@]*\\+A|\\+A[^:@]*\\+F|\\+V[^:@]*\\+A|\\+A[^:@]*\\+V|\\+H[^:@]*\\+A|\\+A[^:@]*\\+H))(?![^:@]*\\+([FWPETOVAHSR])(?:\\+[FWPETOVAHSR])*\\+\\1(?=\\+|[:@]|$))(?:C[0-5](?:\\+[FWPETOVAHSR])*:[A-Z]{1,8}|[NZGAMD][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?)(?:@(?:(?:0|[1-9][0-9]{0,2})\\.(?:0|[1-9][0-9]{0,2})\\.(?:0|[1-9][0-9]{0,2})|latest|canary))?$",
       "minLength": 2,
-      "maxLength": 50,
+      "maxLength": 45,
       "examples": [
         "N5",
         "N5+F",
@@ -21,36 +20,60 @@
         "C3+W:ACME"
       ]
     },
-
     "persona": {
       "type": "string",
       "description": "Persona code (single character)",
-      "enum": ["N", "Z", "G", "A", "M", "D", "C"]
+      "enum": [
+        "N",
+        "Z",
+        "G",
+        "A",
+        "M",
+        "D",
+        "C"
+      ]
     },
-
     "persona_name": {
       "type": "string",
       "description": "Full persona name",
-      "enum": ["nanny", "sentinel", "godparent", "ambassador", "muse", "mediator", "custom"]
+      "enum": [
+        "nanny",
+        "sentinel",
+        "godparent",
+        "ambassador",
+        "muse",
+        "mediator",
+        "custom"
+      ]
     },
-
     "adherence": {
       "type": "integer",
       "description": "Adherence level (0-5)",
       "minimum": 0,
       "maximum": 5
     },
-
     "scopes": {
       "type": "array",
       "description": "Active scope codes",
       "items": {
         "type": "string",
-        "enum": ["F", "W", "P", "E", "T", "O", "V", "A", "H", "S", "R"]
+        "enum": [
+          "F",
+          "W",
+          "P",
+          "E",
+          "T",
+          "O",
+          "V",
+          "A",
+          "H",
+          "S",
+          "R"
+        ]
       },
-      "uniqueItems": true
+      "uniqueItems": true,
+      "maxItems": 11
     },
-
     "namespace": {
       "oneOf": [
         {
@@ -63,34 +86,60 @@
         }
       ]
     },
-
     "version": {
       "oneOf": [
         {
           "type": "string",
           "description": "Semantic version",
-          "pattern": "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"
+          "pattern": "^(?:0|[1-9][0-9]{0,2})\\.(?:0|[1-9][0-9]{0,2})\\.(?:0|[1-9][0-9]{0,2})$"
         },
         {
           "type": "string",
-          "enum": ["latest", "canary"]
+          "enum": [
+            "latest",
+            "canary"
+          ]
         },
         {
           "type": "null"
         }
       ]
+    },
+    "canonical": {
+      "type": "string",
+      "description": "Canonical MICRO-tier serialization for hashing and comparison.",
+      "pattern": "^(?![^:@]*(?:\\+F[^:@]*\\+A|\\+A[^:@]*\\+F|\\+V[^:@]*\\+A|\\+A[^:@]*\\+V|\\+H[^:@]*\\+A|\\+A[^:@]*\\+H))(?![^:@]*\\+([FWPETOVAHSR])(?:\\+[FWPETOVAHSR])*\\+\\1(?=\\+|[:@]|$))(?:C[0-5](?:\\+[FWPETOVAHSR])*:[A-Z]{1,8}|[NZGAMD][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?)(?:@(?:(?:0|[1-9][0-9]{0,2})\\.(?:0|[1-9][0-9]{0,2})\\.(?:0|[1-9][0-9]{0,2})|latest|canary))?$",
+      "minLength": 2,
+      "maxLength": 45
+    },
+    "compact": {
+      "type": "string",
+      "description": "COMPACT representation with a bounded canonical UVC token and one or more scopes.",
+      "pattern": "^CS1\\|(nanny|sentinel|godparent|ambassador|muse|mediator|custom)\\|[0-5]\\|[a-z][a-z0-9-]{0,31}(?:\\.[a-z][a-z0-9-]{0,31}){2,9}(?:@(?:[\\^~]?(?:0|[1-9][0-9]{0,4})\\.(?:0|[1-9][0-9]{0,4})\\.(?:0|[1-9][0-9]{0,4})|latest|canary))?(?::[A-Z][A-Z0-9]{0,31})?\\|[FWPETOVAHSR](?:,[FWPETOVAHSR])*$",
+      "minLength": 18,
+      "maxLength": 294
     }
   },
-
-  "required": ["code", "persona", "adherence"],
-
+  "required": [
+    "code",
+    "persona",
+    "adherence"
+  ],
   "definitions": {
     "persona_definition": {
       "type": "object",
       "properties": {
         "code": {
           "type": "string",
-          "enum": ["N", "Z", "G", "A", "M", "D", "C"]
+          "enum": [
+            "N",
+            "Z",
+            "G",
+            "A",
+            "M",
+            "D",
+            "C"
+          ]
         },
         "name": {
           "type": "string"
@@ -105,21 +154,45 @@
         },
         "compatible_scopes": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
         "incompatible_scopes": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         }
-      }
+      },
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "name",
+        "focus",
+        "default_adherence",
+        "compatible_scopes",
+        "incompatible_scopes"
+      ]
     },
-
     "scope_definition": {
       "type": "object",
       "properties": {
         "code": {
           "type": "string",
-          "enum": ["F", "W", "P", "E", "T", "O", "V", "A", "H", "S", "R"]
+          "enum": [
+            "F",
+            "W",
+            "P",
+            "E",
+            "T",
+            "O",
+            "V",
+            "A",
+            "H",
+            "S",
+            "R"
+          ]
         },
         "name": {
           "type": "string"
@@ -127,9 +200,14 @@
         "description": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "name",
+        "description"
+      ]
     },
-
     "adherence_level": {
       "type": "object",
       "properties": {
@@ -140,7 +218,14 @@
         },
         "name": {
           "type": "string",
-          "enum": ["minimal", "relaxed", "moderate", "standard", "strict", "maximum"]
+          "enum": [
+            "minimal",
+            "relaxed",
+            "moderate",
+            "standard",
+            "strict",
+            "maximum"
+          ]
         },
         "enforcement": {
           "type": "string"
@@ -148,15 +233,23 @@
         "user_override": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "name",
+        "enforcement",
+        "user_override"
+      ]
     }
   },
-
   "allOf": [
     {
       "if": {
         "properties": {
-          "persona": { "const": "C" }
+          "persona": {
+            "const": "C"
+          }
         }
       },
       "then": {
@@ -166,16 +259,22 @@
             "minLength": 1
           }
         },
-        "required": ["namespace"]
+        "required": [
+          "namespace"
+        ]
       }
     },
     {
       "if": {
-        "required": ["scopes"],
+        "required": [
+          "scopes"
+        ],
         "properties": {
           "scopes": {
             "type": "array",
-            "contains": { "const": "F" }
+            "contains": {
+              "const": "F"
+            }
           }
         }
       },
@@ -184,7 +283,9 @@
           "scopes": {
             "type": "array",
             "not": {
-              "contains": { "const": "A" }
+              "contains": {
+                "const": "A"
+              }
             }
           }
         }
@@ -192,11 +293,15 @@
     },
     {
       "if": {
-        "required": ["scopes"],
+        "required": [
+          "scopes"
+        ],
         "properties": {
           "scopes": {
             "type": "array",
-            "contains": { "const": "V" }
+            "contains": {
+              "const": "V"
+            }
           }
         }
       },
@@ -205,7 +310,9 @@
           "scopes": {
             "type": "array",
             "not": {
-              "contains": { "const": "A" }
+              "contains": {
+                "const": "A"
+              }
             }
           }
         }
@@ -213,11 +320,15 @@
     },
     {
       "if": {
-        "required": ["scopes"],
+        "required": [
+          "scopes"
+        ],
         "properties": {
           "scopes": {
             "type": "array",
-            "contains": { "const": "H" }
+            "contains": {
+              "const": "H"
+            }
           }
         }
       },
@@ -226,21 +337,25 @@
           "scopes": {
             "type": "array",
             "not": {
-              "contains": { "const": "A" }
+              "contains": {
+                "const": "A"
+              }
             }
           }
         }
       }
     }
   ],
-
   "examples": [
     {
       "code": "N5+F+E",
       "persona": "N",
       "persona_name": "nanny",
       "adherence": 5,
-      "scopes": ["F", "E"],
+      "scopes": [
+        "F",
+        "E"
+      ],
       "namespace": null,
       "version": null
     },
@@ -249,7 +364,10 @@
       "persona": "Z",
       "persona_name": "sentinel",
       "adherence": 4,
-      "scopes": ["P", "W"],
+      "scopes": [
+        "P",
+        "W"
+      ],
       "namespace": "SEC",
       "version": "1.0.0"
     },
@@ -258,9 +376,13 @@
       "persona": "C",
       "persona_name": "custom",
       "adherence": 3,
-      "scopes": ["W", "O"],
+      "scopes": [
+        "W",
+        "O"
+      ],
       "namespace": "ACME",
       "version": null
     }
-  ]
+  ],
+  "additionalProperties": false
 }

@@ -6,6 +6,7 @@ afterEach(() => {
 	Reflect.deleteProperty(globalThis, 'navigator');
 	vi.restoreAllMocks();
 	vi.resetModules();
+	vi.useRealTimers();
 });
 
 function setWindow(search: string): void {
@@ -52,6 +53,67 @@ describe('application-owned polyfill loading', () => {
 		expect(loader).toHaveBeenCalledTimes(1);
 	});
 
+	it('rechecks a previously loaded contract and reloads after it disappears', async () => {
+		setWindow('?webmcp=polyfill');
+		const expose = () => {
+			Object.defineProperty(globalThis, 'document', {
+				configurable: true,
+				value: { modelContext: { registerTool: vi.fn(async () => undefined) } },
+			});
+		};
+		const first = vi.fn(async () => expose());
+		const second = vi.fn(async () => expose());
+		const { loadPolyfillIfRequested } = await import('../src/polyfill.js');
+
+		expect(await loadPolyfillIfRequested({ loader: first })).toBe(true);
+		Reflect.deleteProperty(globalThis, 'document');
+		expect(await loadPolyfillIfRequested({ loader: second })).toBe(true);
+		expect(first).toHaveBeenCalledOnce();
+		expect(second).toHaveBeenCalledOnce();
+	});
+
+	it('does not deadlock when a loader synchronously re-enters the API', async () => {
+		setWindow('?webmcp=polyfill');
+		const module = await import('../src/polyfill.js');
+		const nested: boolean[] = [];
+		const loader = vi.fn(async () => {
+			nested.push(await module.loadPolyfillIfRequested({ loader }));
+			Object.defineProperty(globalThis, 'document', {
+				configurable: true,
+				value: { modelContext: { registerTool: vi.fn(async () => undefined) } },
+			});
+		});
+		expect(await module.loadPolyfillIfRequested({ loader })).toBe(true);
+		expect(nested).toEqual([false]);
+		expect(loader).toHaveBeenCalledOnce();
+	});
+
+	it('times out a loader that never settles and permits a later retry', async () => {
+		vi.useFakeTimers();
+		setWindow('?webmcp=polyfill');
+		const { loadPolyfillIfRequested } = await import('../src/polyfill.js');
+		const errors: Error[] = [];
+		const pending = loadPolyfillIfRequested({
+			loader: async () => new Promise<void>(() => {}),
+			timeoutMs: 10,
+			onError: (error) => errors.push(error),
+		});
+		await vi.advanceTimersByTimeAsync(10);
+		expect(await pending).toBe(false);
+		expect(errors[0].message).toBe('Polyfill loader timed out after 10ms');
+
+		const retry = loadPolyfillIfRequested({
+			loader: async () => {
+				Object.defineProperty(globalThis, 'document', {
+					configurable: true,
+					value: { modelContext: { registerTool: vi.fn(async () => undefined) } },
+				});
+			},
+		});
+		await vi.runAllTimersAsync();
+		expect(await retry).toBe(true);
+	});
+
 	it('allows a retry after a failed loader', async () => {
 		setWindow('?webmcp=polyfill');
 		const first = vi.fn(async () => {
@@ -70,6 +132,31 @@ describe('application-owned polyfill loading', () => {
 		).toBe(false);
 		expect(errors[0].message).toBe('blocked');
 		expect(await loadPolyfillIfRequested({ loader: second })).toBe(true);
+	});
+
+	it('isolates a throwing error sink and still permits retry', async () => {
+		setWindow('?webmcp=polyfill');
+		const { loadPolyfillIfRequested } = await import('../src/polyfill.js');
+		expect(
+			await loadPolyfillIfRequested({
+				loader: async () => {
+					throw new Error('blocked');
+				},
+				onError: () => {
+					throw new Error('sink failed');
+				},
+			}),
+		).toBe(false);
+		expect(
+			await loadPolyfillIfRequested({
+				loader: async () => {
+					Object.defineProperty(globalThis, 'document', {
+						configurable: true,
+						value: { modelContext: { registerTool: vi.fn(async () => undefined) } },
+					});
+				},
+			}),
+		).toBe(true);
 	});
 
 	it('rejects a loader that does not expose the WebMCP contract', async () => {

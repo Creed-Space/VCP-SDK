@@ -187,9 +187,21 @@ class TestCSM1Validation:
         with pytest.raises(ValueError, match="Invalid CSM1"):
             CSM1Code.parse("N5:A1")
 
+    def test_wire_length_limit_matches_the_canonical_schema(self):
+        assert CSM1Code.MAX_LENGTH == 45
+        with pytest.raises(ValueError, match="maximum length 45"):
+            CSM1Code.parse("N5" + "X" * 44)
+
     @pytest.mark.parametrize("version", ["latest", "canary", "1.2.3"])
     def test_schema_versions_are_supported(self, version):
         assert CSM1Code.parse(f"N5@{version}").version == version
+
+    @pytest.mark.parametrize("version", ["01.2.3", "1.02.3", "1.2.03"])
+    def test_semver_components_with_leading_zero_are_rejected(self, version):
+        with pytest.raises(ValueError, match="Invalid CSM1"):
+            CSM1Code.parse(f"N5@{version}")
+        with pytest.raises(ValueError, match="Invalid CSM1 version"):
+            CSM1Code(Persona.NANNY, 5, version=version)
 
 
 class TestCSM1Encoding:

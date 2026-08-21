@@ -18,6 +18,22 @@ describe('SchulzeElection — constructor', () => {
 		expect(() => new SchulzeElection(['A', 'B', 'A'])).toThrow('candidates must be unique');
 	});
 
+	it('rejects malformed candidates and cubic-work resource exhaustion', () => {
+		expect(() => new SchulzeElection(null as never)).toThrow('candidates must be an array');
+		expect(() => new SchulzeElection([''])).toThrow(
+			'candidate identifiers must contain 1 to 256 characters',
+		);
+		expect(() => new SchulzeElection(['x'.repeat(257)])).toThrow(
+			'candidate identifiers must contain 1 to 256 characters',
+		);
+		expect(() =>
+			new SchulzeElection(Array.from({ length: 257 }, (_value, index) => `c${index}`)),
+		).toThrow('too many candidates');
+		expect(
+			new SchulzeElection(Array.from({ length: 256 }, (_value, index) => `c${index}`)).candidates,
+		).toHaveLength(256);
+	});
+
 	it('exposes candidates and initial ballot count', () => {
 		const election = new SchulzeElection(['A', 'B', 'C']);
 		expect(election.candidates).toEqual(['A', 'B', 'C']);
@@ -115,6 +131,16 @@ describe('SchulzeElection — ties', () => {
 		const cRanking = result.ranking.find(r => r.candidate === 'C');
 		expect(cRanking!.rank).toBeGreaterThan(1);
 	});
+
+	it('deduplicates tie pairs without delimiter collisions in candidate IDs', () => {
+		const candidates = ['a|b', 'c', 'a', 'b|c'];
+		const election = new SchulzeElection(candidates);
+		election.addBallot(ballot('forward', ...candidates.map((candidate) => [candidate])));
+		election.addBallot(
+			ballot('reverse', ...[...candidates].reverse().map((candidate) => [candidate])),
+		);
+		expect(election.compute().ties).toHaveLength(6);
+	});
 });
 
 // ---------------------------------------------------------------------------
@@ -129,6 +155,54 @@ describe('SchulzeElection — unranked candidates', () => {
 		election.addBallot(ballot('v2', ['A']));
 		const result = election.compute();
 		expect(result.winner).toBe('A');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Ballot validation and state isolation
+// ---------------------------------------------------------------------------
+
+describe('SchulzeElection — ballot validation and state isolation', () => {
+	it('rejects unknown candidates without mutating election state', () => {
+		const election = new SchulzeElection(['A', 'B']);
+		expect(() => election.addBallot(ballot('v1', ['A'], ['Z']))).toThrow(
+			'ballot contains an unknown candidate: Z',
+		);
+		expect(election.ballotCount).toBe(0);
+	});
+
+	it('snapshots ballot rankings and validates voter identifiers', () => {
+		const election = new SchulzeElection(['A', 'B']);
+		const rankings = [['A'], ['B']];
+		election.addBallot({ voterId: 'v1', rankings });
+		rankings[0][0] = 'B';
+		expect(election.compute().winner).toBe('A');
+		expect(() => election.addBallot({ voterId: '', rankings: [['A']] })).toThrow(
+			'voter identifiers must contain 1 to 256 characters',
+		);
+	});
+
+	it('enforces the 10000-ballot boundary before mutation', () => {
+		const election = new SchulzeElection(['A']);
+		for (let index = 0; index < 10_000; index++) {
+			election.addBallot(ballot(`v${index}`, ['A']));
+		}
+		expect(election.ballotCount).toBe(10_000);
+		expect(() => election.addBallot(ballot('overflow', ['A']))).toThrow('too many ballots');
+		expect(election.ballotCount).toBe(10_000);
+	});
+
+	it('bounds the combined candidate-by-ballot pairwise work before mutation', () => {
+		const candidates = Array.from({ length: 256 }, (_value, index) => `c${index}`);
+		const election = new SchulzeElection(candidates);
+		for (let index = 0; index < 306; index++) {
+			election.addBallot(ballot(`v${index}`, ['c0']));
+		}
+		expect(election.ballotCount).toBe(306);
+		expect(() => election.addBallot(ballot('overflow', ['c0']))).toThrow(
+			'election exceeds pairwise ballot work limit',
+		);
+		expect(election.ballotCount).toBe(306);
 	});
 });
 

@@ -64,6 +64,20 @@ NORMATIVE_SOURCES = {
     "extensions/stateless": "VCP-Spec/veps/VEP-0005-stateless-mcp.md",
 }
 
+WEBMCP_RELATIONAL_CASES = {
+    "trust-level-ordering",
+    "standing-level-ordering",
+    "trust-from-session-count-initial",
+    "trust-from-session-count-developing",
+    "trust-from-session-count-established",
+    "trust-from-session-count-deep",
+    "trust-from-session-count-boundaries",
+    "self-model-valid",
+    "self-model-no-uncertainty-invalid",
+    "relational-context-defaults",
+    "torch-receive-bootstraps-context",
+}
+
 
 def normative_source(suite: str) -> str:
     """Return the most specific canonical source pointer for a suite."""
@@ -84,6 +98,14 @@ def implementation_status(
     case_id = str(case["id"])
     if suite in {"extensions/welfare", "extensions/stateless_mcp"}:
         return "unsupported", "Draft profile has no claimed implementation"
+    if implementation == "webmcp" and suite == "extensions/capability_negotiation":
+        return "checked", "Executed by the declared checked runner"
+    if (
+        implementation == "webmcp"
+        and suite == "extensions/relational_context"
+        and case_id in WEBMCP_RELATIONAL_CASES
+    ):
+        return "checked", "Executed by the declared checked runner"
     if implementation == "webmcp":
         return "not_applicable", "Fixture does not exercise the WebMCP package surface"
     if suite == "adaptation/messaging" and implementation == "rust":
@@ -193,7 +215,7 @@ def build_manifest() -> dict[str, Any]:
             "fixture_count": len(suites),
             "vector_count": vector_total,
             "implementation_status": status_totals,
-            "webmcp_surface_checks": 1,
+            "webmcp_surface_checks": 2,
         },
         "webmcp_surface": {
             "runner": "webmcp/scripts/test-packed.mjs",

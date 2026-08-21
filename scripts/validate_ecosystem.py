@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run one evidence-producing validation pass across the VCP repositories."""
+"""Validate one exact Demo, Spec, and maintained SDK candidate set."""
 
 from __future__ import annotations
 
@@ -19,6 +19,10 @@ class Check:
     command: tuple[str, ...]
 
 
+VALIDATED_REPOSITORIES = ("demo", "spec", "sdk")
+EXCLUDED_SURFACES = ("Inspector", "standalone Python SDK")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Validate one exact VCP Demo, Spec, and SDK candidate set."
@@ -35,7 +39,11 @@ def parse_args() -> argparse.Namespace:
         "--mode",
         choices=("core", "full"),
         default="full",
-        help="core runs integrated behavior checks; full also builds packages and runs audits.",
+        help=(
+            "core runs three-repository behavior checks without coverage; full also "
+            "runs coverage, builds packages, and runs audits. Neither mode validates "
+            "Inspector or the standalone Python SDK."
+        ),
     )
     return parser.parse_args()
 
@@ -101,6 +109,7 @@ def checks_for(mode: str, python: str) -> list[Check]:
     ]
     if mode == "full":
         sdk_checks[1:1] = [
+            Check("sdk", ("make", "coverage", f"PYTHON={python}")),
             Check("sdk", ("make", "property", f"PYTHON={python}")),
             Check("sdk", ("make", "performance-smoke", f"PYTHON={python}")),
             Check(
@@ -119,7 +128,10 @@ def checks_for(mode: str, python: str) -> list[Check]:
         Check("demo", ("npm", "run", "test:hook")),
         Check("demo", ("npm", "run", "lint")),
         Check("demo", ("npm", "run", "check")),
-        Check("demo", ("npm", "test")),
+        Check(
+            "demo",
+            ("npm", "run", "test:coverage") if mode == "full" else ("npm", "test"),
+        ),
         Check("demo", ("npm", "run", "check:links")),
         Check("demo", ("npm", "run", "build")),
         Check("demo", ("npm", "run", "check:budget")),
@@ -176,9 +188,18 @@ def checks_for(mode: str, python: str) -> list[Check]:
             ]
         )
     checks.extend(
-        Check(name, ("git", "diff", "--check")) for name in ("spec", "sdk", "demo")
+        Check(name, ("git", "diff", "--check")) for name in VALIDATED_REPOSITORIES
     )
     return checks
+
+
+def success_summary(mode: str, check_count: int, elapsed: float) -> str:
+    """Return a scope-honest completion line for the three-repository helper."""
+    excluded = " and ".join(EXCLUDED_SURFACES)
+    return (
+        f"VCP Demo/Spec/SDK {mode} validation passed: {check_count} commands in "
+        f"{elapsed:.1f}s. Scope excludes {excluded}."
+    )
 
 
 def main() -> int:
@@ -193,8 +214,8 @@ def main() -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
-    print("VCP ecosystem candidate identity")
-    for label in ("demo", "spec", "sdk"):
+    print("VCP Demo/Spec/SDK candidate identity (three repositories only)")
+    for label in VALIDATED_REPOSITORIES:
         repository = repositories[label]
         head = git_output(repository, "rev-parse", "HEAD")
         dirty = bool(git_output(repository, "status", "--porcelain"))
@@ -240,10 +261,7 @@ def main() -> int:
             return result.returncode
 
     elapsed = time.monotonic() - started
-    print(
-        f"VCP ecosystem {args.mode} validation passed: "
-        f"{len(checks)} commands in {elapsed:.1f}s."
-    )
+    print(success_summary(args.mode, len(checks), elapsed))
     return 0
 
 

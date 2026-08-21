@@ -70,21 +70,21 @@
       "version": "3.2.0"
     },
     {
-      "case_count": 14,
+      "case_count": 41,
       "fixture": "conformance/adaptation/messaging.json",
       "implementations": {
         "python": {
-          "applicable_cases": 14,
+          "applicable_cases": 41,
           "case_statuses": {
-            "checked": 14
+            "checked": 41
           },
-          "checked_cases": 14,
+          "checked_cases": 41,
           "status": "full"
         },
         "rust": {
-          "applicable_cases": 14,
+          "applicable_cases": 41,
           "case_statuses": {
-            "unsupported": 14
+            "unsupported": 41
           },
           "checked_cases": 0,
           "status": "unsupported"
@@ -92,7 +92,7 @@
         "webmcp": {
           "applicable_cases": 0,
           "case_statuses": {
-            "not_applicable": 14
+            "not_applicable": 41
           },
           "checked_cases": 0,
           "status": "not_applicable"
@@ -138,38 +138,38 @@
       "version": "1.0.0"
     },
     {
-      "case_count": 6,
+      "case_count": 12,
       "fixture": "conformance/extensions/capability_negotiation.json",
       "implementations": {
         "python": {
-          "applicable_cases": 6,
+          "applicable_cases": 12,
           "case_statuses": {
-            "checked": 6
+            "checked": 12
           },
-          "checked_cases": 6,
+          "checked_cases": 12,
           "status": "full"
         },
         "rust": {
-          "applicable_cases": 6,
+          "applicable_cases": 12,
           "case_statuses": {
-            "checked": 6
+            "checked": 12
           },
-          "checked_cases": 6,
+          "checked_cases": 12,
           "status": "full"
         },
         "webmcp": {
-          "applicable_cases": 0,
+          "applicable_cases": 12,
           "case_statuses": {
-            "not_applicable": 6
+            "checked": 12
           },
-          "checked_cases": 0,
-          "status": "not_applicable"
+          "checked_cases": 12,
+          "status": "full"
         }
       },
       "maturity": "conformance-candidate",
       "runner": "conformance/runners/negotiation_parity.py",
       "suite": "extensions/capability_negotiation",
-      "version": "1.0.0"
+      "version": "2.0.0"
     },
     {
       "case_count": 5,
@@ -298,12 +298,13 @@
           "status": "full"
         },
         "webmcp": {
-          "applicable_cases": 0,
+          "applicable_cases": 11,
           "case_statuses": {
-            "not_applicable": 17
+            "checked": 11,
+            "not_applicable": 6
           },
-          "checked_cases": 0,
-          "status": "not_applicable"
+          "checked_cases": 11,
+          "status": "full"
         }
       },
       "maturity": "conformance-candidate",
@@ -450,29 +451,29 @@
       "version": "1.0.0"
     },
     {
-      "case_count": 23,
+      "case_count": 33,
       "fixture": "conformance/identity/token_parsing.json",
       "implementations": {
         "python": {
-          "applicable_cases": 23,
+          "applicable_cases": 33,
           "case_statuses": {
-            "checked": 23
+            "checked": 33
           },
-          "checked_cases": 23,
+          "checked_cases": 33,
           "status": "full"
         },
         "rust": {
-          "applicable_cases": 23,
+          "applicable_cases": 33,
           "case_statuses": {
-            "checked": 23
+            "checked": 33
           },
-          "checked_cases": 23,
+          "checked_cases": 33,
           "status": "full"
         },
         "webmcp": {
           "applicable_cases": 0,
           "case_statuses": {
-            "not_applicable": 23
+            "not_applicable": 33
           },
           "checked_cases": 0,
           "status": "not_applicable"
@@ -937,6 +938,6 @@
   "schema": "vcp-feature-matrix/1",
   "source": {
     "path": "conformance/coverage-manifest.json",
-    "sha256": "7cd885d4495a70d612eaecdcf96dd2898f39781d8fe6decfe617e83e6adbcb3b"
+    "sha256": "5f3df67d9d66ba6aeab4171e1801dbb005947f6b129d34cc42ffb3586593f207"
   }
 }

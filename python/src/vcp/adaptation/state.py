@@ -6,6 +6,7 @@ Tracks context state over time and detects transitions.
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -77,6 +78,8 @@ class StateTracker:
                           non-NONE severity transition is detected.
                           Import: ``from vcp.hooks import HookExecutor``.
         """
+        if not isinstance(max_history, int) or isinstance(max_history, bool) or max_history < 1:
+            raise ValueError("max_history must be a positive integer")
         self._history: list[tuple[datetime, VCPContext]] = []
         self._max_history = max_history
         self._handlers: dict[TransitionSeverity, list[Callable[[Transition], None]]] = {
@@ -84,6 +87,13 @@ class StateTracker:
         }
         self._hook_executor = hook_executor
         self._session_counted = False
+        self._lock = threading.RLock()
+
+    @staticmethod
+    def _snapshot(context: VCPContext) -> VCPContext:
+        if not isinstance(context, VCPContext):
+            raise TypeError("context must be a VCPContext")
+        return VCPContext.from_json(context.to_json())
 
     def record(self, context: VCPContext) -> Transition | None:
         """Record new context state, return transition if any.
@@ -94,7 +104,14 @@ class StateTracker:
         Returns:
             Transition if state changed, None if first record or no change
         """
+        context = self._snapshot(context)
         now = datetime.now(timezone.utc)
+
+        with self._lock:
+            return self._record_locked(context, now)
+
+    def _record_locked(self, context: VCPContext, now: datetime) -> Transition | None:
+        """Record a validated snapshot while holding ``_lock``."""
 
         if not self._history:
             self._history.append((now, context))
@@ -141,12 +158,15 @@ class StateTracker:
                     self._history.pop()
                     return None
             except Exception:
-                # Fail-open: if hook execution throws, continue with normal flow
+                # An executor-level failure is indistinguishable from a hook
+                # rejection. Roll back rather than bypassing the policy hook.
+                self._history.pop()
                 import logging
 
                 logging.getLogger(__name__).exception(
-                    "on_transition hook execution error; continuing"
+                    "on_transition hook execution error; transition rolled back"
                 )
+                return None
 
         # Invoke handlers and record metric
         if transition.severity != TransitionSeverity.NONE:
@@ -212,7 +232,10 @@ class StateTracker:
             severity: Severity level to handle
             handler: Function to call with transition
         """
-        self._handlers[severity].append(handler)
+        if not isinstance(severity, TransitionSeverity) or not callable(handler):
+            raise ValueError("severity and a callable handler are required")
+        with self._lock:
+            self._handlers[severity].append(handler)
 
     def unregister_handler(
         self,
@@ -228,11 +251,12 @@ class StateTracker:
         Returns:
             True if handler was found and removed
         """
-        try:
-            self._handlers[severity].remove(handler)
-            return True
-        except ValueError:
-            return False
+        with self._lock:
+            try:
+                self._handlers[severity].remove(handler)
+                return True
+            except (KeyError, ValueError):
+                return False
 
     @property
     def current(self) -> VCPContext | None:
@@ -241,7 +265,8 @@ class StateTracker:
         Returns:
             Current context or None if no history
         """
-        return self._history[-1][1] if self._history else None
+        with self._lock:
+            return self._snapshot(self._history[-1][1]) if self._history else None
 
     @property
     def history(self) -> list[tuple[datetime, VCPContext]]:
@@ -250,12 +275,14 @@ class StateTracker:
         Returns:
             List of (timestamp, context) tuples
         """
-        return list(self._history)
+        with self._lock:
+            return [(timestamp, self._snapshot(context)) for timestamp, context in self._history]
 
     @property
     def history_count(self) -> int:
         """Get number of history entries."""
-        return len(self._history)
+        with self._lock:
+            return len(self._history)
 
     def get_recent(self, count: int = 10) -> list[tuple[datetime, VCPContext]]:
         """Get recent history entries.
@@ -266,14 +293,23 @@ class StateTracker:
         Returns:
             List of recent (timestamp, context) tuples
         """
-        return self._history[-count:]
+        if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+            raise ValueError("count must be a non-negative integer")
+        if count == 0:
+            return []
+        with self._lock:
+            return [
+                (timestamp, self._snapshot(context))
+                for timestamp, context in self._history[-count:]
+            ]
 
     def clear(self) -> None:
         """Clear all history."""
-        if self._session_counted:
-            vcp_active_sessions.dec()
-            self._session_counted = False
-        self._history.clear()
+        with self._lock:
+            if self._session_counted:
+                vcp_active_sessions.dec()
+                self._session_counted = False
+            self._history.clear()
 
     def find_transitions(
         self,
@@ -287,7 +323,9 @@ class StateTracker:
         Returns:
             List of transitions
         """
-        if len(self._history) < 2:
+        with self._lock:
+            history = list(self._history)
+        if len(history) < 2:
             return []
 
         severity_order = [
@@ -303,9 +341,9 @@ class StateTracker:
             min_idx = 0
 
         transitions = []
-        for i in range(1, len(self._history)):
-            prev_ctx = self._history[i - 1][1]
-            curr_ctx = self._history[i][1]
+        for i in range(1, len(history)):
+            prev_ctx = history[i - 1][1]
+            curr_ctx = history[i][1]
             transition = self._detect_transition(prev_ctx, curr_ctx)
 
             try:

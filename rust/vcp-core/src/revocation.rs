@@ -511,7 +511,7 @@ fn parse_json_response(mut response: reqwest::blocking::Response) -> VcpResult<V
             "revocation response exceeds {MAX_RESPONSE_BYTES} bytes"
         )));
     }
-    let value: Value = serde_json::from_slice(&body)
+    let value = crate::strict_json::from_slice(&body)
         .map_err(|error| VcpError::RevocationError(format!("invalid revocation JSON: {error}")))?;
     if !value.is_object() {
         return Err(VcpError::RevocationError(
@@ -660,7 +660,14 @@ impl Crl {
     /// Returns [`VcpError::RevocationError`] if the JSON is invalid or does
     /// not match the expected CRL structure.
     pub fn from_json(json_str: &str) -> VcpResult<Self> {
-        let crl: Self = serde_json::from_str(json_str)
+        if json_str.len() > MAX_RESPONSE_BYTES {
+            return Err(VcpError::RevocationError(format!(
+                "CRL exceeds {MAX_RESPONSE_BYTES} bytes"
+            )));
+        }
+        let value = crate::strict_json::from_str(json_str)
+            .map_err(|e| VcpError::RevocationError(format!("failed to parse CRL: {e}")))?;
+        let crl: Self = serde_json::from_value(value)
             .map_err(|e| VcpError::RevocationError(format!("failed to parse CRL: {e}")))?;
         crl.validate(None)?;
         Ok(crl)
@@ -831,7 +838,6 @@ impl RevocationChecker {
             max_crl_cache_entries > 0,
             "CRL cache limit must be positive"
         );
-        assert!(!timeout.is_zero(), "revocation timeout must be positive");
         Self {
             cache_ttl,
             timeout,
@@ -873,6 +879,11 @@ impl RevocationChecker {
         ttl: Duration,
     ) {
         let now = Instant::now();
+        let Some(expires_at) = now.checked_add(ttl) else {
+            // An unrepresentable TTL must not crash verification. Skip the
+            // cache entry so the next request re-establishes status.
+            return;
+        };
         self.cache.retain(|_, entry| entry.expires_at > now);
         self.cache_order
             .retain(|candidate| candidate != &key && self.cache.contains_key(candidate));
@@ -883,13 +894,8 @@ impl RevocationChecker {
             self.cache.remove(&oldest);
         }
         self.cache_order.push_back(key.clone());
-        self.cache.insert(
-            key,
-            CachedDecision {
-                status,
-                expires_at: now + ttl,
-            },
-        );
+        self.cache
+            .insert(key, CachedDecision { status, expires_at });
     }
 
     /// Check the revocation status of a bundle by JTI.
@@ -1024,13 +1030,8 @@ impl RevocationChecker {
         let value = self.transport.get_json(uri, self.timeout)?;
         let crl: Crl = serde_json::from_value(value)
             .map_err(|error| VcpError::RevocationError(format!("failed to parse CRL: {error}")))?;
-        let (_, freshness) = crl_lookup_status(&crl, jti, expected_issuer)?;
+        let (status, freshness) = crl_lookup_status(&crl, jti, expected_issuer)?;
         self.insert_crl(uri, crl);
-        let (crl, _) = self
-            .crl_cache
-            .get(uri)
-            .expect("freshly inserted CRL is present");
-        let (status, _) = crl_lookup_status(crl, jti, expected_issuer)?;
         Ok((status, freshness))
     }
 
@@ -1109,6 +1110,24 @@ mod tests {
                 .pop_front()
                 .expect("fake response available")
                 .map_err(VcpError::RevocationError)
+        }
+    }
+
+    #[derive(Debug)]
+    struct RejectZeroTimeoutTransport;
+
+    impl RevocationTransport for RejectZeroTimeoutTransport {
+        fn get_json(&self, _uri: &str, timeout: Duration) -> VcpResult<Value> {
+            if timeout.is_zero() {
+                return Err(VcpError::RevocationError(
+                    "revocation timeout must be positive".to_string(),
+                ));
+            }
+            Ok(serde_json::json!({
+                "revoked": false,
+                "jti": "jti",
+                "issuer": "issuer"
+            }))
         }
     }
 
@@ -1377,6 +1396,15 @@ mod tests {
         assert!(result.is_err());
     }
 
+    #[test]
+    fn crl_from_json_rejects_duplicate_keys_and_oversized_input() {
+        assert!(Crl::from_json(
+            r#"{"issuer":"a","issuer":"b","updated_at":"2025-01-01T00:00:00Z","next_update":"2030-01-01T00:00:00Z","revoked":[]}"#
+        )
+        .is_err());
+        assert!(Crl::from_json(&" ".repeat(MAX_RESPONSE_BYTES + 1)).is_err());
+    }
+
     // ── RevocationStatus tests ──────────────────────────────
 
     #[test]
@@ -1597,6 +1625,22 @@ mod tests {
     }
 
     #[test]
+    fn zero_timeout_configuration_does_not_panic_and_fails_closed() {
+        let mut checker = RevocationChecker::with_transport(
+            Duration::from_secs(60),
+            Duration::ZERO,
+            RejectZeroTimeoutTransport,
+        );
+        let status = checker.check_with_issuer(
+            "jti",
+            Some("https://example.com/revocation"),
+            None,
+            Some("issuer"),
+        );
+        assert_eq!(status.decision, RevocationDecision::Unavailable);
+    }
+
+    #[test]
     fn checker_crl_cache_lookup() {
         let mut checker = RevocationChecker::new(Duration::from_secs(300), Duration::from_secs(5));
 
@@ -1791,6 +1835,19 @@ mod tests {
         assert!(status.revoked);
         let cached = checker.cache.values().next().expect("decision cached");
         assert!(cached.expires_at <= Instant::now() + Duration::from_secs(11));
+    }
+
+    #[test]
+    fn unrepresentable_cache_ttl_does_not_panic_or_cache() {
+        let mut checker = RevocationChecker::new(Duration::MAX, Duration::from_secs(5));
+        checker.insert_decision(
+            RevocationChecker::cache_key("https://example.com/status", None, "jti"),
+            RevocationStatus::not_revoked(),
+            Duration::MAX,
+        );
+
+        assert!(checker.cache.is_empty());
+        assert!(checker.cache_order.is_empty());
     }
 
     #[test]

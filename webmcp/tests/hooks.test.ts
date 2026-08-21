@@ -137,6 +137,41 @@ describe('HookRegistry — registration', () => {
 			)
 		).toThrow(/Duplicate hook name/);
 	});
+
+	it('rejects malformed optional definition fields before they enter registry state', () => {
+		const registry = new HookRegistry();
+		expect(() => registry.register(null as never)).toThrow('Hook definition must be an object');
+		expect(() =>
+			registry.register(makeHook({ name: 'bad-enabled', enabled: 'yes' as never })),
+		).toThrow('Hook enabled must be a boolean');
+		expect(() =>
+			registry.register(makeHook({ name: 'bad-description', description: 'x'.repeat(4097) })),
+		).toThrow('Hook description must be a string of at most 4096 characters');
+		expect(() =>
+			registry.register(makeHook({ name: 'bad-metadata', metadata: [] as never })),
+		).toThrow('Hook metadata must be an object');
+	});
+
+	it('bounds total registered hooks', () => {
+		const registry = new HookRegistry();
+		for (let index = 0; index < 1024; index++) {
+			registry.register(makeHook({ name: `bounded-${index}`, enabled: false }));
+		}
+		expect(() => registry.register(makeHook({ name: 'one-too-many' }))).toThrow(
+			'Hook registry exceeds 1024 entries.',
+		);
+	});
+
+	it('bounds cumulative enabled-hook timeout work per chain before mutation', () => {
+		const registry = new HookRegistry();
+		for (let index = 0; index < 30; index++) {
+			registry.register(makeHook({ name: `budget-${index}`, timeoutMs: 1000 }));
+		}
+		expect(() =>
+			registry.register(makeHook({ name: 'budget-overflow', timeoutMs: 1 })),
+		).toThrow('Hook chain timeout budget exceeds 30000ms.');
+		expect(registry.getChain(HookType.PreInject)).toHaveLength(30);
+	});
 });
 
 // ---------------------------------------------------------------------------
@@ -164,6 +199,21 @@ describe('HookRegistry — deregistration', () => {
 // ---------------------------------------------------------------------------
 
 describe('HookRegistry — fire', () => {
+	it('rejects unknown hook types and malformed runtime input', () => {
+		const registry = new HookRegistry();
+		expect(() => registry.getChain('unknown' as HookType)).toThrow(
+			"Invalid hook type: 'unknown'.",
+		);
+		expect(() => registry.fire('unknown' as HookType, makeInput())).toThrow(
+			"Invalid hook type: 'unknown'.",
+		);
+		expect(() => registry.fire(HookType.PreInject, null as never)).toThrow(
+			'Hook input, session, and chainState must be objects.',
+		);
+		expect(() =>
+			registry.fire(HookType.PreInject, makeInput({ chainState: [] as never })),
+		).toThrow('Hook input, session, and chainState must be objects.');
+	});
 	it('fire with empty chain returns completed', () => {
 		const registry = new HookRegistry();
 		const result = registry.fire(HookType.PreInject, makeInput());
@@ -321,7 +371,7 @@ describe('HookRegistry — fire', () => {
 		expect(result.results).toHaveLength(0);
 	});
 
-	it('exception in handler causes chain to continue', () => {
+	it('exception in handler aborts the chain fail closed', () => {
 		const registry = new HookRegistry();
 		const afterHandler = vi.fn((): HookResult => ({ status: 'continue' }));
 
@@ -345,13 +395,71 @@ describe('HookRegistry — fire', () => {
 
 		const result = registry.fire(HookType.PreInject, makeInput());
 
-		expect(result.completed).toBe(true);
-		// Chain should have continued past the exception
-		expect(afterHandler).toHaveBeenCalledOnce();
-		// Both hooks should have results
-		expect(result.results).toHaveLength(2);
-		// The crashing hook should have produced a continue result
-		expect(result.results[0].result.status).toBe('continue');
+		expect(result.completed).toBe(false);
+		expect(result.abortedBy).toBe('crasher');
+		expect(result.abortReason).toBe('Hook handler threw: handler exploded');
+		expect(afterHandler).not.toHaveBeenCalled();
+		expect(result.results).toHaveLength(1);
+		expect(result.results[0].result.status).toBe('abort');
+	});
+
+	it('timeout aborts the chain instead of accepting a late result', () => {
+		const registry = new HookRegistry();
+		registry.register(makeHook({ name: 'slow', timeoutMs: 1 }));
+		const clock = vi
+			.spyOn(Date, 'now')
+			.mockReturnValueOnce(0) // fired event
+			.mockReturnValueOnce(0) // start
+			.mockReturnValueOnce(2) // elapsed
+			.mockReturnValue(2);
+
+		const result = registry.fire(HookType.PreInject, makeInput());
+		expect(result).toMatchObject({
+			completed: false,
+			abortedBy: 'slow',
+			abortReason: 'Hook exceeded timeout of 1ms',
+		});
+		expect(clock).toHaveBeenCalled();
+	});
+
+	it.each([
+		['null result', null, 'Hook returned an invalid result'],
+		['unknown status', { status: 'skip' }, 'Hook returned an invalid result'],
+		['abort without reason', { status: 'abort' }, 'Hook aborted without a reason'],
+		['array annotations', { status: 'continue', annotations: [] }, 'Hook returned invalid annotations'],
+	])('invalid handler result %s aborts fail closed', (_name, handlerResult, reason) => {
+		const registry = new HookRegistry();
+		registry.register(
+			makeHook({ name: 'invalid-result', handler: () => handlerResult as never }),
+		);
+		const result = registry.fire(HookType.PreInject, makeInput());
+		expect(result).toMatchObject({
+			completed: false,
+			abortedBy: 'invalid-result',
+			abortReason: reason,
+		});
+	});
+
+	it('sanitizes hostile thrown values without reopening the chain', () => {
+		const registry = new HookRegistry();
+		const hostile = new Proxy(
+			{},
+			{
+				getPrototypeOf() {
+					throw new Error('prototype trap');
+			},
+			},
+		);
+		registry.register(
+			makeHook({
+				name: 'hostile-error',
+				handler: () => {
+					throw hostile;
+				},
+			}),
+		);
+		const result = registry.fire(HookType.PreInject, makeInput());
+		expect(result.abortReason).toBe('Hook handler threw: unknown error');
 	});
 
 	it('durationMs is set on hook results', () => {
@@ -513,6 +621,97 @@ describe('HookRegistry — chain state', () => {
 // ---------------------------------------------------------------------------
 
 describe('HookRegistry — edge cases', () => {
+	it('uses an immutable execution snapshot during re-entrant registry mutation', () => {
+		const registry = new HookRegistry();
+		const order: string[] = [];
+		let mutated = false;
+		registry.register(
+			makeHook({
+				name: 'mutator',
+				priority: 90,
+				handler: () => {
+					order.push('mutator');
+					if (!mutated) {
+						mutated = true;
+						registry.unregister('old-tail');
+						registry.register(
+							makeHook({
+								name: 'new-tail',
+								priority: 5,
+								handler: () => {
+									order.push('new-tail');
+									return { status: 'continue' };
+								},
+							}),
+						);
+					}
+					return { status: 'continue' };
+				},
+			}),
+		);
+		registry.register(
+			makeHook({
+				name: 'old-tail',
+				priority: 10,
+				handler: () => {
+					order.push('old-tail');
+					return { status: 'continue' };
+				},
+			}),
+		);
+
+		registry.fire(HookType.PreInject, makeInput());
+		expect(order).toEqual(['mutator', 'old-tail']);
+		order.length = 0;
+		registry.fire(HookType.PreInject, makeInput());
+		expect(order).toEqual(['mutator', 'new-tail']);
+	});
+
+	it('does not expose mutable registry arrays or caller-owned metadata', () => {
+		const registry = new HookRegistry();
+		const metadata = { owner: 'original' };
+		registry.register(makeHook({ name: 'snapshot', metadata }));
+		metadata.owner = 'mutated';
+		const chain = registry.getChain(HookType.PreInject);
+		expect(chain[0].metadata).toEqual({ owner: 'original' });
+		expect(Object.isFrozen(chain[0])).toBe(true);
+		(chain as HookDefinition[]).length = 0;
+		expect(registry.getChain(HookType.PreInject)).toHaveLength(1);
+	});
+
+	it('listener mutation takes effect after the current event snapshot', () => {
+		const registry = new HookRegistry();
+		const observed: string[] = [];
+		const second = () => observed.push('second');
+		registry.addEventListener(() => {
+			observed.push('first');
+			registry.removeEventListener(second);
+		});
+		registry.addEventListener(second);
+		registry.register(makeHook({ name: 'one' }));
+		expect(observed).toEqual(['first', 'second']);
+		registry.register(makeHook({ name: 'two', type: HookType.PostSelect }));
+		expect(observed).toEqual(['first', 'second', 'first']);
+	});
+
+	it('validates, deduplicates, and bounds event listeners', () => {
+		const registry = new HookRegistry();
+		expect(() => registry.addEventListener(null as never)).toThrow(
+			'Hook event listener must be a function.',
+		);
+		const duplicate = vi.fn();
+		registry.addEventListener(duplicate);
+		registry.addEventListener(duplicate);
+		registry.register(makeHook({ name: 'dedup-listener' }));
+		expect(duplicate).toHaveBeenCalledOnce();
+
+		const bounded = new HookRegistry();
+		for (let index = 0; index < 1024; index++) bounded.addEventListener(() => index);
+		expect(() => bounded.addEventListener(() => undefined)).toThrow(
+			'Hook event listener registry exceeds 1024 entries.',
+		);
+	});
+
 	it('accepts hook names at boundary (1 char and 64 chars)', () => {
 		const registry = new HookRegistry();
 

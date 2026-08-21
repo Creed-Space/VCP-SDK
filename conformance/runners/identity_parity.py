@@ -23,14 +23,14 @@ def load(path: Path) -> list[dict[str, Any]]:
     return json.loads(path.read_text(encoding="utf-8"))["vectors"]
 
 
-def python_token(raw: str) -> dict[str, Any]:
+def python_token(raw: str, *, uri: bool = False) -> dict[str, Any]:
     if str(PYTHON_SRC) not in sys.path:
         sys.path.insert(0, str(PYTHON_SRC))
     from vcp.identity import Token
 
     try:
-        token = Token.parse(raw)
-    except Exception as error:
+        token = Token.from_uri(raw) if uri else Token.parse(raw)
+    except ValueError as error:
         return {"valid": False, "error": f"{type(error).__name__}: {error}"}
     return {
         "valid": True,
@@ -48,9 +48,9 @@ def python_token(raw: str) -> dict[str, Any]:
     }
 
 
-def rust_token(raw: str) -> dict[str, Any]:
+def rust_token(raw: str, *, uri: bool = False) -> dict[str, Any]:
     result = subprocess.run(
-        [str(RUST_BINARY), "parse-token", raw],
+        [str(RUST_BINARY), "parse-uri" if uri else "parse-token", raw],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -64,7 +64,14 @@ def rust_token(raw: str) -> dict[str, Any]:
     version_record = token.get("version")
     version = None
     if version_record:
-        version = ".".join(str(version_record[key]) for key in ("major", "minor", "patch"))
+        prefix = {"caret": "^", "tilde": "~"}.get(token.get("version_constraint"), "")
+        numeric = ".".join(
+            str(version_record[key]) for key in ("major", "minor", "patch")
+        )
+        prerelease = token.get("version_prerelease")
+        version = f"{prefix}{numeric}{f'-{prerelease}' if prerelease else ''}"
+    elif token.get("version_alias"):
+        version = str(token["version_alias"])
     full = ".".join(segments)
     if version:
         full += f"@{version}"
@@ -83,7 +90,8 @@ def rust_token(raw: str) -> dict[str, Any]:
         "parent_canonical": ".".join(segments[:-1]) if len(segments) > 3 else None,
         "has_parent": len(segments) > 3,
         "uri_with_registry_creed_space": (
-            f"creed://creed.space/{'.'.join(segments)}" + (f"@{version}" if version else "")
+            f"creed://creed.space/{'.'.join(segments)}"
+            + (f"@{version}" if version else "")
         ),
     }
 
@@ -95,7 +103,7 @@ def canonicalize_python(raw: str) -> tuple[bool, str]:
 
     try:
         return True, canonicalize_token(raw)
-    except Exception as error:
+    except ValueError as error:
         return False, f"{type(error).__name__}: {error}"
 
 
@@ -113,10 +121,14 @@ def canonicalize_rust(raw: str) -> tuple[bool, str]:
     )
 
 
-def check_expected(case_id: str, actual: dict[str, Any], expected: dict[str, Any]) -> list[str]:
+def check_expected(
+    case_id: str, actual: dict[str, Any], expected: dict[str, Any]
+) -> list[str]:
     failures: list[str] = []
     if actual["valid"] != expected.get("valid", True):
-        failures.append(f"{case_id}: valid={actual['valid']}, expected={expected.get('valid', True)}")
+        failures.append(
+            f"{case_id}: valid={actual['valid']}, expected={expected.get('valid', True)}"
+        )
         return failures
     if not actual["valid"]:
         return failures
@@ -134,18 +146,32 @@ def check_expected(case_id: str, actual: dict[str, Any], expected: dict[str, Any
         "uri_with_registry_creed_space",
     ):
         if key in expected and actual.get(key) != expected[key]:
-            failures.append(f"{case_id}: {key}={actual.get(key)!r}, expected={expected[key]!r}")
+            failures.append(
+                f"{case_id}: {key}={actual.get(key)!r}, expected={expected[key]!r}"
+            )
     if "version_major" in expected and actual.get("version"):
         components = [int(part) for part in actual["version"].split(".")]
-        for index, key in enumerate(("version_major", "version_minor", "version_patch")):
+        for index, key in enumerate(
+            ("version_major", "version_minor", "version_patch")
+        ):
             if key in expected and components[index] != expected[key]:
-                failures.append(f"{case_id}: {key}={components[index]}, expected={expected[key]}")
+                failures.append(
+                    f"{case_id}: {key}={components[index]}, expected={expected[key]}"
+                )
     return failures
 
 
 def build_rust() -> None:
     subprocess.run(
-        ["cargo", "build", "--quiet", "--manifest-path", str(RUST_MANIFEST), "-p", "vcp-cli"],
+        [
+            "cargo",
+            "build",
+            "--quiet",
+            "--manifest-path",
+            str(RUST_MANIFEST),
+            "-p",
+            "vcp-cli",
+        ],
         cwd=ROOT,
         check=True,
     )
@@ -186,7 +212,9 @@ def main() -> int:
                 text=True,
                 check=False,
             )
-            rust_values = json.loads(rust_result.stdout) if rust_result.returncode == 0 else {}
+            rust_values = (
+                json.loads(rust_result.stdout) if rust_result.returncode == 0 else {}
+            )
             for key, value in expected.items():
                 if python_values[key] != value:
                     failures.append(f"{case_id}: Python hierarchy {key} mismatch")
@@ -195,8 +223,9 @@ def main() -> int:
             cases.append({"id": case_id, "python": python_values, "rust": rust_values})
             continue
         raw = vector["input"]
-        py = python_token(raw)
-        rs = rust_token(raw)
+        parse_uri = vector.get("operation") == "parse_uri"
+        py = python_token(raw, uri=parse_uri)
+        rs = rust_token(raw, uri=parse_uri)
         if "pattern" in vector and py["valid"] and rs["valid"]:
             from vcp.identity import Token
 
@@ -206,15 +235,22 @@ def main() -> int:
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
+                check=False,
             )
-            rs["matches"] = command.stdout.strip() == "true" if command.returncode == 0 else None
+            rs["matches"] = (
+                command.stdout.strip() == "true" if command.returncode == 0 else None
+            )
             if py["matches"] != expected["matches"]:
                 failures.append(f"{case_id}: Python pattern result mismatch")
             if rs["matches"] != expected["matches"]:
                 failures.append(f"{case_id}: Rust pattern result mismatch")
         else:
-            failures.extend(f"Python {failure}" for failure in check_expected(case_id, py, expected))
-            failures.extend(f"Rust {failure}" for failure in check_expected(case_id, rs, expected))
+            failures.extend(
+                f"Python {failure}" for failure in check_expected(case_id, py, expected)
+            )
+            failures.extend(
+                f"Rust {failure}" for failure in check_expected(case_id, rs, expected)
+            )
         if py["valid"] != rs["valid"]:
             failures.append(f"{case_id}: Python and Rust validity differ")
         cases.append({"id": case_id, "python": py, "rust": rs})
@@ -225,7 +261,9 @@ def main() -> int:
         py_ok, py = canonicalize_python(vector["input"])
         rs_ok, rs = canonicalize_rust(vector["input"])
         if not py_ok or py != expected:
-            failures.append(f"{case_id}: Python canonical={py!r}, expected={expected!r}")
+            failures.append(
+                f"{case_id}: Python canonical={py!r}, expected={expected!r}"
+            )
         if not rs_ok or rs != expected:
             failures.append(f"{case_id}: Rust canonical={rs!r}, expected={expected!r}")
         cases.append({"id": case_id, "python": py, "rust": rs})
@@ -235,13 +273,17 @@ def main() -> int:
         "profile": "identity-parity",
         "implementations": ["python", "rust"],
         "fixture_sha256": {
-            path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+            path.relative_to(ROOT).as_posix(): hashlib.sha256(
+                path.read_bytes()
+            ).hexdigest()
             for path in (PARSING, CANONICALIZATION)
         },
         "cases": cases,
         "summary": {
             "total": len(cases),
-            "passed": len(cases) if not failures else len(cases) - len({f.split(':')[0] for f in failures}),
+            "passed": len(cases)
+            if not failures
+            else len(cases) - len({f.split(":")[0] for f in failures}),
             "failed": len({failure.split(":")[0].split()[-1] for failure in failures}),
         },
         "attestation": "unsigned-local-result",

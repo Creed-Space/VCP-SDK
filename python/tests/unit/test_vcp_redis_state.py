@@ -10,11 +10,70 @@ Coverage target: redis_state.py 0% -> 80%+
 from __future__ import annotations
 
 import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+
+class _CASRedis:
+    """Deterministic in-memory Redis transaction model for lost-update tests."""
+
+    def __init__(self) -> None:
+        self.data: str | None = None
+        self.version = 0
+        self.lock = threading.Lock()
+        self.first_reads = threading.Barrier(2)
+        self.read_count = 0
+
+    def pipeline(self) -> _CASPipeline:
+        return _CASPipeline(self)
+
+    def get(self, _key: str) -> str | None:
+        with self.lock:
+            return self.data
+
+
+class _CASPipeline:
+    def __init__(self, backend: _CASRedis) -> None:
+        self.backend = backend
+        self.watched_version = -1
+        self.pending: str | None = None
+
+    def watch(self, _key: str) -> None:
+        with self.backend.lock:
+            self.watched_version = self.backend.version
+
+    def get(self, _key: str) -> str | None:
+        with self.backend.lock:
+            value = self.backend.data
+            should_wait = self.backend.read_count < 2
+            self.backend.read_count += 1
+        if should_wait:
+            self.backend.first_reads.wait(timeout=2)
+        return value
+
+    def multi(self) -> None:
+        return None
+
+    def setex(self, _key: str, _ttl: int, value: str) -> None:
+        self.pending = value
+
+    def execute(self) -> list[bool]:
+        from redis.exceptions import WatchError
+
+        with self.backend.lock:
+            if self.backend.version != self.watched_version:
+                raise WatchError
+            self.backend.data = self.pending
+            self.backend.version += 1
+        return [True]
+
+    def reset(self) -> None:
+        return None
 
 # ====================================================================================
 # GET SYNC REDIS CLIENT TESTS
@@ -98,6 +157,34 @@ class TestRedisStateTracker:
 
         assert tracker is not None
         assert tracker._session_id == "test-session"
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("session_id", ""),
+            ("max_history", 0),
+            ("max_history", True),
+            ("ttl_seconds", 0),
+            ("ttl_seconds", False),
+        ],
+    )
+    def test_invalid_storage_bounds_are_rejected(
+        self,
+        mock_redis: MagicMock,
+        field: str,
+        value: object,
+    ) -> None:
+        from vcp.adaptation.redis_state import RedisStateTracker
+
+        kwargs: dict[str, object] = {
+            "session_id": "session",
+            "redis_client": mock_redis,
+            "max_history": 100,
+            "ttl_seconds": 3600,
+        }
+        kwargs[field] = value
+        with pytest.raises(ValueError):
+            RedisStateTracker(**kwargs)  # type: ignore[arg-type]
 
     def test_tracker_history_key(self, tracker: Any) -> None:
         """Test history key generation."""
@@ -309,6 +396,79 @@ class TestRedisStateTracker:
         assert current is not None
         assert current.get(Dimension.TIME) == ["morning"]
         assert current.get(Dimension.SPACE) == ["home"]
+
+    def test_hybrid_current_falls_back_when_redis_read_returns_empty(
+        self, mock_redis: MagicMock
+    ) -> None:
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
+
+        mock_redis.get.return_value = None
+        tracker = HybridStateTracker("test-session", mock_redis)
+        memory_context = VCPContext(dimensions={Dimension.TIME: ["morning"]})
+        tracker._memory_tracker.record(memory_context)
+        assert tracker.current == memory_context
+        assert tracker.history_count == 1
+
+    def test_hybrid_handler_runs_once_per_logical_transition(self, mock_redis: MagicMock) -> None:
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import HybridStateTracker
+        from vcp.adaptation.state import TransitionSeverity
+
+        stored: str | None = None
+
+        def get(_key: str) -> str | None:
+            return stored
+
+        def setex(_key: str, _ttl: int, payload: str) -> None:
+            nonlocal stored
+            stored = payload
+
+        mock_redis.get.side_effect = get
+        mock_redis.setex.side_effect = setex
+        tracker = HybridStateTracker("test-session", mock_redis)
+        handler = MagicMock()
+        tracker.register_handler(TransitionSeverity.MINOR, handler)
+        tracker.record(VCPContext(dimensions={Dimension.TIME: ["morning"]}))
+        tracker.record(VCPContext(dimensions={Dimension.TIME: ["evening"]}))
+        handler.assert_called_once()
+
+    def test_two_trackers_retry_watch_conflict_without_losing_either_record(self) -> None:
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import RedisStateTracker
+
+        backend = _CASRedis()
+        first = RedisStateTracker("shared-session", backend)  # type: ignore[arg-type]
+        second = RedisStateTracker("shared-session", backend)  # type: ignore[arg-type]
+        contexts = [
+            VCPContext(dimensions={Dimension.TIME: ["morning"]}),
+            VCPContext(dimensions={Dimension.TIME: ["evening"]}),
+        ]
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            transitions = list(
+                pool.map(lambda pair: pair[0].record(pair[1]), zip((first, second), contexts))
+            )
+
+        history = json.loads(backend.data or "[]")
+        values = {
+            entry["context"]["situational"]["time"][0]
+            for entry in history
+        }
+        assert len(history) == 2
+        assert values == {"morning", "evening"}
+        assert sum(transition is None for transition in transitions) == 1
+
+    def test_corrupt_redis_history_is_replaced_by_next_record(self, mock_redis: MagicMock) -> None:
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.redis_state import RedisStateTracker
+
+        mock_redis.get.return_value = '{"unexpected": true}'
+        tracker = RedisStateTracker("test-session", mock_redis)
+        tracker.record(VCPContext(dimensions={Dimension.TIME: ["morning"]}))
+        stored = json.loads(mock_redis.setex.call_args.args[2])
+        assert len(stored) == 1
+        assert stored[0]["context"]["situational"]["time"] == ["morning"]
 
     def test_current_returns_none_when_empty(self, tracker: Any, mock_redis: MagicMock) -> None:
         """Test current returns None when no history."""

@@ -1,23 +1,24 @@
 {
   "suite": "adaptation/messaging",
   "version": "2.0.0",
-  "schema_version": "1.0.0",
-  "vcp_version": "2.0.0",
+  "schema_version": "2.0.0",
+  "vcp_version": "2.0",
   "implementation_profile": "vcp-inter-agent-messaging-2.0",
-  "description": "Checked VCP Inter-Agent Messaging v2.0 envelope validation vectors. This suite is intentionally separate from the VCP 3.1 context-envelope state machine.",
+  "description": "Adversarial exact-version VCP Inter-Agent Messaging v2.0 schema and runtime vectors.",
   "test_cases": [
     {
-      "id": "msg-context-share",
-      "description": "Valid context-share envelope",
+      "id": "msg-valid-context-minimal",
+      "description": "A minimal context-share carries both normative required payload fields.",
       "input": {
         "vcp_message": "2.0",
         "type": "context_share",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00Z",
         "payload": {
-          "context": "T:morning|S:office"
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
         }
       },
       "expected": {
@@ -26,17 +27,76 @@
       }
     },
     {
-      "id": "msg-constitution-announce",
-      "description": "Valid constitution announcement",
+      "id": "msg-valid-context-partial-personal-signed",
+      "description": "Partial R-line state accepts finite fractional boundary values and an exact 64-byte Ed25519 signature.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0",
+          "personal_state": {
+            "cognitive": 1.5,
+            "emotional": {
+              "valence": 1,
+              "arousal": 9
+            },
+            "body": {
+              "pain": 1,
+              "comfort": 9
+            }
+          }
+        },
+        "signature": "base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      },
+      "expected": {
+        "valid": true,
+        "error_codes": []
+      }
+    },
+    {
+      "id": "msg-valid-empty-personal-state",
+      "description": "An empty personal-state object represents no declared dimension.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0",
+          "personal_state": {}
+        }
+      },
+      "expected": {
+        "valid": true,
+        "error_codes": []
+      }
+    },
+    {
+      "id": "msg-valid-announce-empty-scope",
+      "description": "Optional scope arrays may be present and empty.",
       "input": {
         "vcp_message": "2.0",
         "type": "constitution_announce",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "sender": "agent-alpha",
-        "recipient": "broadcast",
+        "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00Z",
         "payload": {
-          "constitution_ref": "creed://creed.space/professional@1.0.0"
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0",
+          "manifest_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "scope": {
+            "model_families": [],
+            "purposes": [],
+            "environments": []
+          }
         }
       },
       "expected": {
@@ -45,19 +105,98 @@
       }
     },
     {
-      "id": "msg-constraint-propagate",
-      "description": "Valid constraint propagation",
+      "id": "msg-valid-announce-scope-boundary",
+      "description": "The inclusive 50-item scope boundary remains accepted.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "constitution_announce",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0",
+          "manifest_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "scope": {
+            "model_families": [
+              "model-0",
+              "model-1",
+              "model-2",
+              "model-3",
+              "model-4",
+              "model-5",
+              "model-6",
+              "model-7",
+              "model-8",
+              "model-9",
+              "model-10",
+              "model-11",
+              "model-12",
+              "model-13",
+              "model-14",
+              "model-15",
+              "model-16",
+              "model-17",
+              "model-18",
+              "model-19",
+              "model-20",
+              "model-21",
+              "model-22",
+              "model-23",
+              "model-24",
+              "model-25",
+              "model-26",
+              "model-27",
+              "model-28",
+              "model-29",
+              "model-30",
+              "model-31",
+              "model-32",
+              "model-33",
+              "model-34",
+              "model-35",
+              "model-36",
+              "model-37",
+              "model-38",
+              "model-39",
+              "model-40",
+              "model-41",
+              "model-42",
+              "model-43",
+              "model-44",
+              "model-45",
+              "model-46",
+              "model-47",
+              "model-48",
+              "model-49"
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": true,
+        "error_codes": []
+      }
+    },
+    {
+      "id": "msg-valid-constraint-null-value",
+      "description": "A constraint value is required but may be any JSON value, including null.",
       "input": {
         "vcp_message": "2.0",
         "type": "constraint_propagate",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00Z",
         "payload": {
           "constraints": [
-            "do_not_disclose"
-          ]
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            }
+          ],
+          "propagation_mode": "merge"
         }
       },
       "expected": {
@@ -66,17 +205,19 @@
       }
     },
     {
-      "id": "msg-escalation-info",
-      "description": "Informational escalation does not require acknowledgement",
+      "id": "msg-valid-escalation-info",
+      "description": "Informational escalation may explicitly decline acknowledgement.",
       "input": {
         "vcp_message": "2.0",
         "type": "escalation",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00Z",
         "payload": {
           "severity": "info",
+          "reason": "Context changed",
+          "context": "⏰🌅",
           "requires_ack": false
         }
       },
@@ -86,17 +227,20 @@
       }
     },
     {
-      "id": "msg-escalation-critical",
-      "description": "Critical escalation explicitly requires acknowledgement",
+      "id": "msg-valid-escalation-emergency",
+      "description": "Emergency escalation requires acknowledgement and permits a bounded blocked action.",
       "input": {
         "vcp_message": "2.0",
         "type": "escalation",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00Z",
         "payload": {
-          "severity": "critical",
+          "severity": "emergency",
+          "reason": "Safety boundary",
+          "context": "🎭🚨",
+          "blocked_action": "Unsafe operation",
           "requires_ack": true
         }
       },
@@ -106,16 +250,17 @@
       }
     },
     {
-      "id": "msg-err-missing-sender",
-      "description": "Missing required sender is rejected",
+      "id": "msg-invalid-missing-sender",
+      "description": "A required envelope field cannot be omitted.",
       "input": {
         "vcp_message": "2.0",
         "type": "context_share",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00Z",
         "payload": {
-          "context": "T:morning|S:office"
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
         }
       },
       "expected": {
@@ -126,38 +271,62 @@
       }
     },
     {
-      "id": "msg-err-invalid-type",
-      "description": "Unknown message type is rejected",
+      "id": "msg-invalid-empty-sender",
+      "description": "Sender identifiers are non-empty.",
       "input": {
         "vcp_message": "2.0",
-        "type": "state_update",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
-        "sender": "agent-alpha",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "",
         "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00Z",
         "payload": {
-          "context": "T:morning|S:office"
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
         }
       },
       "expected": {
         "valid": false,
         "error_codes": [
-          "invalid_type"
+          "invalid_sender"
         ]
       }
     },
     {
-      "id": "msg-err-version",
-      "description": "Protocol-major mismatch is rejected",
+      "id": "msg-invalid-sender-bound",
+      "description": "Sender identifiers are bounded to prevent envelope amplification.",
       "input": {
-        "vcp_message": "3.0",
+        "vcp_message": "2.0",
         "type": "context_share",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_sender"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-version",
+      "description": "Exact v2.0 validation rejects a different minor version.",
+      "input": {
+        "vcp_message": "2.1",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00Z",
         "payload": {
-          "context": "T:morning|S:office"
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
         }
       },
       "expected": {
@@ -168,17 +337,40 @@
       }
     },
     {
-      "id": "msg-err-uuid",
-      "description": "Malformed message identifier is rejected",
+      "id": "msg-invalid-type",
+      "description": "Unknown message types are rejected before payload dispatch.",
       "input": {
         "vcp_message": "2.0",
-        "type": "context_share",
-        "message_id": "not-a-uuid",
+        "type": "state_update",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00Z",
         "payload": {
-          "context": "T:morning|S:office"
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_type"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-uuid-version",
+      "description": "A syntactically valid UUIDv4 is not a UUIDv7 message identifier.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-4000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
         }
       },
       "expected": {
@@ -189,17 +381,40 @@
       }
     },
     {
-      "id": "msg-err-naive-time",
-      "description": "Timestamp without timezone is rejected",
+      "id": "msg-invalid-uppercase-uuid",
+      "description": "UUIDv7 identifiers use the canonical lowercase wire form.",
       "input": {
         "vcp_message": "2.0",
         "type": "context_share",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "message_id": "019502A4-7E5C-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_message_id"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-naive-time",
+      "description": "A timestamp without a UTC designator is rejected.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00",
         "payload": {
-          "context": "T:morning|S:office"
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
         }
       },
       "expected": {
@@ -210,17 +425,18 @@
       }
     },
     {
-      "id": "msg-err-non-utc-time",
-      "description": "Timestamp with a non-UTC offset is rejected",
+      "id": "msg-invalid-negative-zero-time",
+      "description": "The ambiguous RFC 3339 -00:00 designator is not literal UTC Z.",
       "input": {
         "vcp_message": "2.0",
         "type": "context_share",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
-        "timestamp": "2026-01-10T13:00:00+01:00",
+        "timestamp": "2026-01-10T12:00:00-00:00",
         "payload": {
-          "context": "T:morning|S:office"
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
         }
       },
       "expected": {
@@ -231,56 +447,34 @@
       }
     },
     {
-      "id": "msg-err-critical-ack",
-      "description": "Critical escalation without acknowledgement is rejected",
-      "input": {
-        "vcp_message": "2.0",
-        "type": "escalation",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
-        "sender": "agent-alpha",
-        "recipient": "agent-beta",
-        "timestamp": "2026-01-10T12:00:00Z",
-        "payload": {
-          "severity": "critical",
-          "requires_ack": false
-        }
-      },
-      "expected": {
-        "valid": false,
-        "error_codes": [
-          "ack_required"
-        ]
-      }
-    },
-    {
-      "id": "msg-err-severity",
-      "description": "Unknown escalation severity is rejected",
-      "input": {
-        "vcp_message": "2.0",
-        "type": "escalation",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
-        "sender": "agent-alpha",
-        "recipient": "agent-beta",
-        "timestamp": "2026-01-10T12:00:00Z",
-        "payload": {
-          "severity": "catastrophic",
-          "requires_ack": true
-        }
-      },
-      "expected": {
-        "valid": false,
-        "error_codes": [
-          "invalid_severity"
-        ]
-      }
-    },
-    {
-      "id": "msg-err-payload",
-      "description": "Non-object payload is rejected",
+      "id": "msg-invalid-calendar-timestamp",
+      "description": "A lexically valid UTC timestamp with an impossible calendar date is rejected.",
       "input": {
         "vcp_message": "2.0",
         "type": "context_share",
-        "message_id": "018d5f2a-7b3c-4d5e-8f90-123456789abc",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-02-29T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_timestamp"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-nonobject-payload",
+      "description": "Typed payload dispatch requires a JSON object.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
         "sender": "agent-alpha",
         "recipient": "agent-beta",
         "timestamp": "2026-01-10T12:00:00Z",
@@ -294,6 +488,1083 @@
         "valid": false,
         "error_codes": [
           "invalid_payload"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-unknown-envelope-field",
+      "description": "Exact v2.0 envelopes are closed to unknown fields.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        },
+        "future_hint": true
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "unknown_field"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-context-required-field",
+      "description": "Context-share requires its active constitution reference.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "missing_payload_field"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-empty-context",
+      "description": "Context strings are non-empty.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_context"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-context-bound",
+      "description": "Context strings are bounded to 8192 characters.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_context"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-personal-boolean",
+      "description": "JSON booleans cannot masquerade as numeric personal-state values.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0",
+          "personal_state": {
+            "cognitive": true
+          }
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_personal_state"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-context-unknown-field",
+      "description": "Typed context payloads are closed to misspelled or future exact-version fields.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0",
+          "raw_mood": "private"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "unknown_field"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-announce-required-field",
+      "description": "Constitution announcements require a manifest hash.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "constitution_announce",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "missing_payload_field"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-constitution-uri",
+      "description": "Constitution references use a structured creed URI.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "constitution_announce",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constitution_ref": "https://example.test/c",
+          "manifest_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_constitution_ref"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-manifest-hash",
+      "description": "Manifest hashes require lowercase 64-hex SHA-256 wire form.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "constitution_announce",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0",
+          "manifest_hash": "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_manifest_hash"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-scope-duplicates",
+      "description": "Scope arrays reject duplicate entries that could corrupt set semantics.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "constitution_announce",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0",
+          "manifest_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "scope": {
+            "purposes": [
+              "coding",
+              "coding"
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_scope"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-scope-resource-bound",
+      "description": "Scope arrays reject a 51st entry before unbounded processing.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "constitution_announce",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0",
+          "manifest_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "scope": {
+            "model_families": [
+              "model-0",
+              "model-1",
+              "model-2",
+              "model-3",
+              "model-4",
+              "model-5",
+              "model-6",
+              "model-7",
+              "model-8",
+              "model-9",
+              "model-10",
+              "model-11",
+              "model-12",
+              "model-13",
+              "model-14",
+              "model-15",
+              "model-16",
+              "model-17",
+              "model-18",
+              "model-19",
+              "model-20",
+              "model-21",
+              "model-22",
+              "model-23",
+              "model-24",
+              "model-25",
+              "model-26",
+              "model-27",
+              "model-28",
+              "model-29",
+              "model-30",
+              "model-31",
+              "model-32",
+              "model-33",
+              "model-34",
+              "model-35",
+              "model-36",
+              "model-37",
+              "model-38",
+              "model-39",
+              "model-40",
+              "model-41",
+              "model-42",
+              "model-43",
+              "model-44",
+              "model-45",
+              "model-46",
+              "model-47",
+              "model-48",
+              "model-49",
+              "model-50"
+            ]
+          }
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_scope"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-empty-constraints",
+      "description": "Constraint propagation requires at least one structured constraint.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "constraint_propagate",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constraints": [],
+          "propagation_mode": "merge"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_constraints"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-constraint-required-field",
+      "description": "Every constraint identifies its source constitution.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "constraint_propagate",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constraints": [
+            {
+              "type": "topic_block",
+              "value": [
+                "unsafe"
+              ]
+            }
+          ],
+          "propagation_mode": "merge"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "missing_payload_field"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-constraint-resource-bound",
+      "description": "Constraint arrays reject a 101st entry before quadratic downstream work.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "constraint_propagate",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constraints": [
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            },
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            }
+          ],
+          "propagation_mode": "merge"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_constraints"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-propagation-mode",
+      "description": "Unknown propagation modes cannot silently change child state semantics.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "constraint_propagate",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "constraints": [
+            {
+              "type": "topic_block",
+              "value": null,
+              "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+            }
+          ],
+          "propagation_mode": "append"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_propagation_mode"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-escalation-required-field",
+      "description": "Escalations require a human-readable reason.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "escalation",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "severity": "warning",
+          "context": "🎭🚨",
+          "requires_ack": false
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "missing_payload_field"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-escalation-severity",
+      "description": "Escalation severity is a closed vocabulary.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "escalation",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "severity": "catastrophic",
+          "reason": "Context changed",
+          "context": "⏰🌅",
+          "requires_ack": false
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_severity"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-critical-ack",
+      "description": "Critical escalation fails closed unless acknowledgement is required.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "escalation",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "severity": "critical",
+          "reason": "Context changed",
+          "context": "⏰🌅",
+          "requires_ack": false
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "ack_required"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-escalation-unknown-field",
+      "description": "Typed escalation payloads reject unknown exact-version fields.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "escalation",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "severity": "info",
+          "reason": "Context changed",
+          "context": "⏰🌅",
+          "requires_ack": false,
+          "priority": 10
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "unknown_field"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-timestamp-precision",
+      "description": "UTC timestamps reject more than nine fractional-second digits before parsing.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00.1234567890Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        }
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_timestamp"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-signature-pad-bits",
+      "description": "An exact-length Ed25519 signature with noncanonical base64 pad bits is rejected.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        },
+        "signature": "base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB=="
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_signature"
+        ]
+      }
+    },
+    {
+      "id": "msg-invalid-signature",
+      "description": "Signatures must be canonical base64 for exactly 64 Ed25519 bytes.",
+      "input": {
+        "vcp_message": "2.0",
+        "type": "context_share",
+        "message_id": "019502a4-7e5c-7000-8000-000000000001",
+        "sender": "agent-alpha",
+        "recipient": "agent-beta",
+        "timestamp": "2026-01-10T12:00:00Z",
+        "payload": {
+          "context": "⏰🌅|📍🏡",
+          "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+        },
+        "signature": "base64:AA=="
+      },
+      "expected": {
+        "valid": false,
+        "error_codes": [
+          "invalid_signature"
         ]
       }
     }

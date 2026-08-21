@@ -327,6 +327,17 @@ class TestRelationalContext:
         assert ctx.interaction_count == 0
         assert ctx.norms == []
         assert ctx.preference_model is None
+        assert ctx.torch is None
+
+    def test_protocol_defaults_include_explicit_null_optional_fields(self) -> None:
+        assert RelationalContext().to_protocol_dict() == {
+            "trust_level": "initial",
+            "standing": "none",
+            "continuity_depth": 0,
+            "established_norms": [],
+            "ai_self_model": None,
+            "torch": None,
+        }
 
     def test_active_norms(self) -> None:
         ctx = RelationalContext(
@@ -427,3 +438,13 @@ class TestRelationalContext:
         assert restored.preference_model is not None
         assert restored.preference_model.overall_confidence == 0.75
         assert restored.preference_model.exploratory_appetite == 0.4
+
+    def test_torch_roundtrip_does_not_alias_mutable_input(self) -> None:
+        source = {"primes": ["be direct"], "session_count": 2}
+        context = RelationalContext.from_dict({"torch": source})
+        source["primes"].append("mutated")
+
+        serialized = context.to_protocol_dict()
+        assert serialized["torch"] == {"primes": ["be direct"], "session_count": 2}
+        serialized["torch"]["primes"].append("also mutated")
+        assert context.torch == {"primes": ["be direct"], "session_count": 2}

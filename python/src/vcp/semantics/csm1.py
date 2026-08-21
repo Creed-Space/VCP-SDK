@@ -9,7 +9,8 @@ Format (ABNF):
     level = "0" / "1" / "2" / "3" / "4" / "5"
     scope = "F" / "W" / "P" / "E" / "T" / "O" / "V" / "A" / "H" / "S" / "R"
     namespace = 1*8UPALPHA
-    version = 1*DIGIT "." 1*DIGIT "." 1*DIGIT
+    version = version-component "." version-component "." version-component
+    version-component = "0" / (%x31-39 *2DIGIT)
 
 Examples:
     N5+F+E       - Nanny persona, level 5, Family+Education scopes
@@ -152,13 +153,14 @@ class CSM1Code:
         r"(?P<level>[0-5])"
         r"(?P<scopes>(?:\+[FWPETOVAHSR])*)"
         r"(?::(?P<namespace>[A-Z]{1,8}))?"
-        r"(?:@(?P<version>(?:[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
+        r"(?:@(?P<version>(?:(?:0|[1-9][0-9]{0,2})\."
+        r"(?:0|[1-9][0-9]{0,2})\.(?:0|[1-9][0-9]{0,2})"
         r"|latest|canary)))?$"
     )
 
     MIN_LEVEL = 0
     MAX_LEVEL = 5
-    MAX_LENGTH = 50
+    MAX_LENGTH = 45
 
     def __post_init__(self) -> None:
         if not self.MIN_LEVEL <= self.adherence_level <= self.MAX_LEVEL:
@@ -179,7 +181,8 @@ class CSM1Code:
         if self.namespace is not None and not re.fullmatch(r"[A-Z]{1,8}", self.namespace):
             raise ValueError("Namespace must be 1-8 uppercase letters")
         if self.version is not None and not re.fullmatch(
-            r"(?:[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|latest|canary)",
+            r"(?:(?:0|[1-9][0-9]{0,2})\."
+            r"(?:0|[1-9][0-9]{0,2})\.(?:0|[1-9][0-9]{0,2})|latest|canary)",
             self.version,
         ):
             raise ValueError("Invalid CSM1 version")

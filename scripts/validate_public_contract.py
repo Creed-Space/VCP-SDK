@@ -54,6 +54,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--demo", required=True, type=Path)
     parser.add_argument("--spec", required=True, type=Path)
     parser.add_argument("--sdk", type=Path, default=Path(__file__).parents[1])
+    parser.add_argument(
+        "--standalone-python-sdk",
+        type=Path,
+        help=(
+            "Optional legacy vcp-sdk-python checkout. It is validated as a separate "
+            "source candidate, never as part of the main SDK package set."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -175,6 +183,53 @@ def validate_exports(problems: list[str], sdk: Path) -> None:
         web_exports,
         ("export { registerVCPTools } from './registration.js';",),
     )
+
+
+def validate_standalone_python_sdk(
+    problems: list[str], standalone: Path
+) -> tuple[str, str]:
+    """Validate the explicit boundary around the legacy sibling implementation."""
+    project_data = load_toml(standalone / "pyproject.toml").get("project")
+    if not isinstance(project_data, dict):
+        raise TypeError("standalone Python SDK project metadata must be a table")
+    name = project_data.get("name")
+    version = project_data.get("version")
+    if not isinstance(name, str) or not name:
+        problems.append("standalone Python SDK needs a non-empty distribution name")
+        name = "unknown"
+    if not isinstance(version, str) or not version:
+        problems.append("standalone Python SDK needs a non-empty version")
+        version = "unknown"
+    if name == EXPECTED_PYTHON_PACKAGE:
+        problems.append(
+            "standalone Python SDK must not claim the maintained SDK distribution name"
+        )
+    if not (standalone / "src" / "vcp").is_dir():
+        problems.append(
+            "standalone Python SDK does not expose the expected vcp namespace"
+        )
+
+    readme_path = standalone / "README.md"
+    readme = readme_path.read_text(encoding="utf-8")
+    require_fragments(
+        problems,
+        "Standalone Python SDK boundary",
+        readme,
+        (
+            "legacy standalone implementation candidate",
+            "not the project-maintained VCP-SDK",
+            "no PyPI release or registry package name is claimed",
+            "both use the `vcp` Python import namespace",
+            "separate virtual environments",
+        ),
+    )
+    for pattern in REGISTRY_INSTALL_PATTERNS:
+        if pattern.search(readme):
+            problems.append(
+                "standalone Python SDK source-only copy contains a registry install "
+                f"command: {pattern.pattern}"
+            )
+    return name, version
 
 
 def validate_publication_state(
@@ -431,6 +486,14 @@ def main() -> int:
         publication_state = validate_publication_state(problems, demo, spec, sdk)
         validate_compatibility_docs(problems, demo, spec, sdk)
         validate_demo_copy(problems, demo)
+        standalone_identity = None
+        if args.standalone_python_sdk is not None:
+            standalone = root(args.standalone_python_sdk, "Standalone Python SDK")
+            if standalone == sdk or standalone == sdk / "python":
+                raise ValueError(
+                    "standalone Python SDK must be a separate repository checkout"
+                )
+            standalone_identity = validate_standalone_python_sdk(problems, standalone)
     except (
         KeyError,
         OSError,
@@ -451,11 +514,17 @@ def main() -> int:
         )
         return 1
 
+    sibling = (
+        f", standalone Python sibling {standalone_identity[0]} "
+        f"{standalone_identity[1]} isolated"
+        if standalone_identity is not None
+        else ""
+    )
     print(
         "VCP public contract passed: "
         f"Python {versions[0]}, WebMCP {versions[1]}, Rust {versions[2]}, "
         f"Demo {versions[3]}, protocol v3.1 source baseline, "
-        f"artifacts {publication_state['overall_state']}."
+        f"artifacts {publication_state['overall_state']}{sibling}."
     )
     return 0
 

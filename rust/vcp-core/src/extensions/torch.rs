@@ -48,7 +48,7 @@ impl TorchLineage {
     /// Add a torch summary to the chain.
     pub fn push(&mut self, summary: TorchSummary) {
         self.torch_chain.push(summary);
-        self.session_count += 1;
+        self.session_count = self.session_count.saturating_add(1);
     }
 }
 
@@ -86,8 +86,8 @@ impl TorchGenerator {
             .take(3)
             .map(|n| {
                 let desc = &n.description;
-                if desc.len() > 80 {
-                    format!("{}...", &desc[..77])
+                if desc.chars().count() > 80 {
+                    format!("{}...", desc.chars().take(77).collect::<String>())
                 } else {
                     desc.clone()
                 }
@@ -103,7 +103,7 @@ impl TorchGenerator {
             primes,
             gift: None, // Gift is human/AI-authored, not auto-generated
             handed_at,
-            session_count: Some(relational_ctx.continuity_depth + 1),
+            session_count: Some(relational_ctx.continuity_depth.saturating_add(1)),
             gestalt_token: gestalt,
         }
     }
@@ -383,7 +383,48 @@ mod tests {
             ..Default::default()
         };
         let torch = gen.generate_torch(&ctx, None, "2025-06-01T00:00:00Z".to_string());
-        assert!(torch.primes[0].len() <= 80);
+        assert!(torch.primes[0].chars().count() <= 80);
         assert!(torch.primes[0].ends_with("..."));
+    }
+
+    #[test]
+    fn torch_primes_truncate_multibyte_text_on_character_boundaries() {
+        let gen = TorchGenerator;
+        let long_desc = "🔥".repeat(81);
+        let ctx = RelationalContext {
+            established_norms: vec![RelationalNorm::new(
+                "n1",
+                long_desc,
+                NormOrigin::Human,
+                "2025-01-01",
+            )],
+            ..Default::default()
+        };
+
+        let torch = gen.generate_torch(&ctx, None, "2025-06-01T00:00:00Z".to_string());
+
+        assert_eq!(torch.primes[0].chars().count(), 80);
+        assert!(torch.primes[0].ends_with("..."));
+    }
+
+    #[test]
+    fn torch_session_counters_saturate_instead_of_overflowing() {
+        let mut lineage = TorchLineage {
+            session_count: u32::MAX,
+            ..Default::default()
+        };
+        lineage.push(TorchSummary {
+            date: "2025-01-01".to_string(),
+            gestalt_token: None,
+            session_id: None,
+        });
+        assert_eq!(lineage.session_count, u32::MAX);
+
+        let ctx = RelationalContext {
+            continuity_depth: u32::MAX,
+            ..Default::default()
+        };
+        let torch = TorchGenerator.generate_torch(&ctx, None, "2025-06-01T00:00:00Z".to_string());
+        assert_eq!(torch.session_count, Some(u32::MAX));
     }
 }

@@ -44,7 +44,12 @@ proptest! {
         level in 0u8..=5,
         scope_mask in 0u16..(1u16 << SCOPES.len()),
         namespace in "[A-Z]{1,8}",
-        version in prop_oneof![Just("latest".to_string()), Just("canary".to_string()), "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}"],
+        version in prop_oneof![
+            Just("latest".to_string()),
+            Just("canary".to_string()),
+            (0u16..=999, 0u16..=999, 0u16..=999)
+                .prop_map(|(major, minor, patch)| format!("{major}.{minor}.{patch}")),
+        ],
     ) {
         let selected: Vec<_> = SCOPES
             .iter()
@@ -72,6 +77,8 @@ proptest! {
     #[test]
     fn parsers_do_not_panic_on_arbitrary_text(raw in ".{0,256}") {
         let _ = Csm1Code::parse(&raw);
+        let _ = VcpToken::parse(&raw);
+        let _ = VcpToken::from_uri(&raw);
         let _ = FullContext::from_wire(&raw);
         let _ = Crl::from_json(&raw);
         let _ = validate_uri(&raw);

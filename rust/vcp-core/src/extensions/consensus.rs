@@ -11,6 +11,15 @@
 
 use std::collections::{HashMap, HashSet};
 
+/// Maximum candidates accepted by an election.
+pub const MAX_CANDIDATES: usize = 256;
+
+/// Maximum ballots retained by an election.
+pub const MAX_BALLOTS: usize = 10_000;
+
+/// Maximum Unicode scalar values in a candidate or voter identifier.
+pub const MAX_IDENTIFIER_CHARS: usize = 256;
+
 // ── Data types ─────────────────────────────────────────────────────────────
 
 /// A ranked ballot from a stakeholder.
@@ -105,10 +114,19 @@ impl SchulzeElection {
     /// Create a new election with the given candidates.
     ///
     /// # Errors
-    /// Returns an error if candidates is empty or contains duplicates.
+    /// Returns an error if candidates are empty, duplicated, excessively
+    /// numerous, or have empty or oversized identifiers.
     pub fn new(candidates: Vec<String>) -> Result<Self, &'static str> {
         if candidates.is_empty() {
             return Err("candidates must be non-empty");
+        }
+        if candidates.len() > MAX_CANDIDATES {
+            return Err("too many candidates");
+        }
+        if candidates.iter().any(|candidate| {
+            candidate.is_empty() || candidate.chars().count() > MAX_IDENTIFIER_CHARS
+        }) {
+            return Err("candidate identifiers must contain 1 to 256 characters");
         }
         let unique: HashSet<&str> = candidates.iter().map(String::as_str).collect();
         if unique.len() != candidates.len() {
@@ -137,8 +155,38 @@ impl SchulzeElection {
     }
 
     /// Add a ranked ballot from a stakeholder.
-    pub fn add_ballot(&mut self, ballot: Ballot) {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error without mutating the election if the ballot is empty,
+    /// contains empty groups, duplicate or unknown candidates, has an invalid
+    /// voter identifier, or would exceed the ballot resource limit.
+    pub fn add_ballot(&mut self, ballot: Ballot) -> Result<(), &'static str> {
+        if self.ballots.len() >= MAX_BALLOTS {
+            return Err("too many ballots");
+        }
+        if ballot.voter_id.is_empty() || ballot.voter_id.chars().count() > MAX_IDENTIFIER_CHARS {
+            return Err("voter identifiers must contain 1 to 256 characters");
+        }
+        if ballot.rankings.is_empty() {
+            return Err("rankings must be non-empty");
+        }
+        let mut seen = HashSet::new();
+        for group in &ballot.rankings {
+            if group.is_empty() {
+                return Err("ranking groups must be non-empty");
+            }
+            for candidate in group {
+                if !self.index.contains_key(candidate) {
+                    return Err("ballot contains an unknown candidate");
+                }
+                if !seen.insert(candidate.as_str()) {
+                    return Err("ballot candidates must be unique");
+                }
+            }
+        }
         self.ballots.push(ballot);
+        Ok(())
     }
 
     /// Run the Schulze method. Returns the complete election result.
@@ -373,6 +421,24 @@ mod tests {
     }
 
     #[test]
+    fn election_candidate_limits_are_inclusive() {
+        let maximum: Vec<String> = (0..MAX_CANDIDATES)
+            .map(|index| format!("c{index}"))
+            .collect();
+        assert!(SchulzeElection::new(maximum).is_ok());
+
+        let excessive: Vec<String> = (0..=MAX_CANDIDATES)
+            .map(|index| format!("c{index}"))
+            .collect();
+        assert_eq!(
+            SchulzeElection::new(excessive).err(),
+            Some("too many candidates")
+        );
+        assert!(SchulzeElection::new(vec![String::new()]).is_err());
+        assert!(SchulzeElection::new(vec!["x".repeat(MAX_IDENTIFIER_CHARS + 1)]).is_err());
+    }
+
+    #[test]
     fn test_no_ballots() {
         let election = SchulzeElection::new(cands(&["a", "b", "c"])).unwrap();
         let result = election.compute();
@@ -383,7 +449,9 @@ mod tests {
     #[test]
     fn test_single_ballot() {
         let mut election = SchulzeElection::new(cands(&["a", "b", "c"])).unwrap();
-        election.add_ballot(Ballot::new("v1", cands(&["b", "a", "c"])));
+        election
+            .add_ballot(Ballot::new("v1", cands(&["b", "a", "c"])))
+            .unwrap();
         let result = election.compute();
         assert_eq!(result.winner.as_deref(), Some("b"));
         assert_eq!(result.ballot_count, 1);
@@ -391,12 +459,59 @@ mod tests {
     }
 
     #[test]
+    fn unknown_ballot_candidate_is_rejected_without_state_mutation() {
+        let mut election = SchulzeElection::new(cands(&["a", "b"])).unwrap();
+
+        assert_eq!(
+            election.add_ballot(Ballot::new("v1", cands(&["a", "typo"]))),
+            Err("ballot contains an unknown candidate")
+        );
+        assert_eq!(election.ballot_count(), 0);
+        assert!(election.compute().winner.is_none());
+    }
+
+    #[test]
+    fn malformed_ballots_are_rejected_without_state_mutation() {
+        let mut election = SchulzeElection::new(cands(&["a", "b"])).unwrap();
+        let malformed = [
+            Ballot::with_ties("v1", Vec::new()),
+            Ballot::with_ties("v1", vec![Vec::new()]),
+            Ballot::with_ties("v1", vec![cands(&["a"]), cands(&["a"])]),
+            Ballot::new("", cands(&["a"])),
+            Ballot::new("v".repeat(MAX_IDENTIFIER_CHARS + 1), cands(&["a"])),
+        ];
+
+        for ballot in malformed {
+            assert!(election.add_ballot(ballot).is_err());
+            assert_eq!(election.ballot_count(), 0);
+        }
+    }
+
+    #[test]
+    fn ballot_limit_is_enforced_before_mutation() {
+        let mut election = SchulzeElection::new(cands(&["a"])).unwrap();
+        election.ballots = vec![Ballot::new("v", cands(&["a"])); MAX_BALLOTS];
+
+        assert_eq!(
+            election.add_ballot(Ballot::new("last", cands(&["a"]))),
+            Err("too many ballots")
+        );
+        assert_eq!(election.ballot_count(), MAX_BALLOTS);
+    }
+
+    #[test]
     fn test_condorcet_winner() {
         // b is the Condorcet winner (preferred by majority against each other)
         let mut election = SchulzeElection::new(cands(&["a", "b", "c"])).unwrap();
-        election.add_ballot(Ballot::new("v1", cands(&["b", "a", "c"])));
-        election.add_ballot(Ballot::new("v2", cands(&["b", "c", "a"])));
-        election.add_ballot(Ballot::new("v3", cands(&["a", "b", "c"])));
+        election
+            .add_ballot(Ballot::new("v1", cands(&["b", "a", "c"])))
+            .unwrap();
+        election
+            .add_ballot(Ballot::new("v2", cands(&["b", "c", "a"])))
+            .unwrap();
+        election
+            .add_ballot(Ballot::new("v3", cands(&["a", "b", "c"])))
+            .unwrap();
         let result = election.compute();
         assert_eq!(result.winner.as_deref(), Some("b"));
         assert!(result.has_condorcet_winner);
@@ -406,10 +521,12 @@ mod tests {
     fn test_tied_groups_ballot() {
         let mut election = SchulzeElection::new(cands(&["a", "b", "c"])).unwrap();
         // a and b are tied at top, c is below
-        election.add_ballot(Ballot::with_ties(
-            "v1",
-            vec![cands(&["a", "b"]), cands(&["c"])],
-        ));
+        election
+            .add_ballot(Ballot::with_ties(
+                "v1",
+                vec![cands(&["a", "b"]), cands(&["c"])],
+            ))
+            .unwrap();
         let result = election.compute();
         // Both a and b should beat c but not each other
         let a_idx = 0;
@@ -427,11 +544,15 @@ mod tests {
         let mut election = SchulzeElection::new(cands(&["a", "b", "c", "d"])).unwrap();
         // 3 voters: a > b > c > d
         for _ in 0..3 {
-            election.add_ballot(Ballot::new("v", cands(&["a", "b", "c", "d"])));
+            election
+                .add_ballot(Ballot::new("v", cands(&["a", "b", "c", "d"])))
+                .unwrap();
         }
         // 2 voters: d > c > b > a
         for _ in 0..2 {
-            election.add_ballot(Ballot::new("v", cands(&["d", "c", "b", "a"])));
+            election
+                .add_ballot(Ballot::new("v", cands(&["d", "c", "b", "a"])))
+                .unwrap();
         }
         let result = election.compute();
 
@@ -447,9 +568,15 @@ mod tests {
     #[test]
     fn test_schulze_ranking_order() {
         let mut election = SchulzeElection::new(cands(&["a", "b", "c"])).unwrap();
-        election.add_ballot(Ballot::new("v1", cands(&["c", "b", "a"])));
-        election.add_ballot(Ballot::new("v2", cands(&["c", "a", "b"])));
-        election.add_ballot(Ballot::new("v3", cands(&["b", "c", "a"])));
+        election
+            .add_ballot(Ballot::new("v1", cands(&["c", "b", "a"])))
+            .unwrap();
+        election
+            .add_ballot(Ballot::new("v2", cands(&["c", "a", "b"])))
+            .unwrap();
+        election
+            .add_ballot(Ballot::new("v3", cands(&["b", "c", "a"])))
+            .unwrap();
         let result = election.compute();
 
         // c wins 2 first-place votes, should be top
@@ -462,7 +589,9 @@ mod tests {
     fn test_unranked_candidates_at_bottom() {
         let mut election = SchulzeElection::new(cands(&["a", "b", "c"])).unwrap();
         // Only ranks "a", so b and c are tied at bottom
-        election.add_ballot(Ballot::new("v1", cands(&["a"])));
+        election
+            .add_ballot(Ballot::new("v1", cands(&["a"])))
+            .unwrap();
         let result = election.compute();
         assert_eq!(result.winner.as_deref(), Some("a"));
         // a should beat both b and c

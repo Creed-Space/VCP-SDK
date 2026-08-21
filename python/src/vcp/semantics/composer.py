@@ -332,11 +332,11 @@ class Composer:
                         mode_used=mode,
                     )
         except Exception:
-            # Fail-open: if hook execution throws, fall through to raise
+            # Fail closed through the normal unresolved-conflict rejection path.
             import logging
 
             logging.getLogger(__name__).exception(
-                "on_conflict hook execution error; continuing with normal conflict handling"
+                "on_conflict hook execution error; falling back to conflict rejection"
             )
 
         return None

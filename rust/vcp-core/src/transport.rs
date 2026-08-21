@@ -25,6 +25,18 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{VcpError, VcpResult, VerificationCode};
 
+/// Parse protocol JSON while rejecting duplicate object keys.
+///
+/// Duplicate keys are ambiguous across decoders and unsafe in signed data.
+///
+/// # Errors
+///
+/// Returns [`VcpError::JsonError`] for malformed JSON, duplicate object keys,
+/// non-finite numbers, or trailing data.
+pub fn parse_json_strict(input: &str) -> VcpResult<serde_json::Value> {
+    crate::strict_json::from_str(input).map_err(VcpError::from)
+}
+
 // ── Content canonicalization ────────────────────────────────
 
 /// Unicode codepoints that are forbidden in constitution content.
@@ -131,11 +143,11 @@ pub fn canonicalize_manifest(manifest: &serde_json::Value) -> VcpResult<Vec<u8>>
         .map(|(k, v)| (k.clone(), v.clone()))
         .collect();
 
-    // Serialize with sorted keys, no whitespace.
-    let canonical = serde_json::to_string(&serde_json::Value::Object(filtered))
-        .map_err(|e| VcpError::JsonError(e.to_string()))?;
-
-    Ok(canonical.into_bytes())
+    // JCS key ordering is based on UTF-16 code units and its number rendering
+    // follows ECMAScript. `serde_json::to_string` differs on both edge cases,
+    // so use an RFC 8785 serializer rather than relying on map insertion order.
+    serde_json_canonicalizer::to_vec(&serde_json::Value::Object(filtered))
+        .map_err(|e| VcpError::JsonError(e.to_string()))
 }
 
 // ── Ed25519 signature operations ────────────────────────────
@@ -394,7 +406,7 @@ pub fn verify_bundle_content(content: &str, expected_hash: &str) -> Verification
 /// Returns [`VcpError::JsonError`] if `manifest_json` is not valid JSON,
 /// or [`VcpError::ParseError`] if the manifest is missing required fields.
 pub fn verify_bundle(manifest_json: &str, content: &str) -> VcpResult<VerificationResult> {
-    let manifest: serde_json::Value = serde_json::from_str(manifest_json)?;
+    let manifest = parse_json_strict(manifest_json)?;
 
     let bundle = manifest
         .get("bundle")
@@ -537,6 +549,34 @@ mod tests {
     }
 
     #[test]
+    fn manifest_canonicalization_uses_utf16_key_order() {
+        // RFC 8785 sorts property names by UTF-16 code units. U+10000 starts
+        // with D800 and therefore precedes U+E000, even though scalar-value
+        // and UTF-8 byte ordering put U+E000 first.
+        let manifest = serde_json::json!({
+            "\u{e000}": 1,
+            "\u{10000}": 2,
+        });
+
+        assert_eq!(
+            canonicalize_manifest(&manifest).unwrap(),
+            "{\"\u{10000}\":2,\"\u{e000}\":1}".as_bytes()
+        );
+    }
+
+    #[test]
+    fn manifest_canonicalization_uses_ecmascript_numbers() {
+        let manifest = serde_json::json!({
+            "numbers": [333_333_333.333_333_3_f64, 1e30_f64, 4.50_f64, 2e-3_f64, 1e-27_f64]
+        });
+
+        assert_eq!(
+            canonicalize_manifest(&manifest).unwrap(),
+            br#"{"numbers":[333333333.3333333,1e+30,4.5,0.002,1e-27]}"#
+        );
+    }
+
+    #[test]
     fn verify_bundle_valid() {
         let content = "# My Constitution\n\nBe kind.";
         let hash = compute_content_hash(content).unwrap();
@@ -568,6 +608,20 @@ mod tests {
         .unwrap();
         assert!(!result.is_valid());
         assert_eq!(result.code, VerificationCode::HashMismatch);
+    }
+
+    #[test]
+    fn bundle_verification_rejects_duplicate_json_keys() {
+        let content = "hello";
+        let hash = compute_content_hash(content).unwrap();
+        let manifest = format!(
+            r#"{{"bundle":{{"content_hash":"{hash}"}},"bundle":{{"content_hash":"{hash}"}}}}"#
+        );
+
+        assert!(matches!(
+            verify_bundle(&manifest, content),
+            Err(VcpError::JsonError(message)) if message.contains("duplicate JSON object key")
+        ));
     }
 
     // ── Ed25519 signing tests ───────────────────────────────

@@ -7,7 +7,8 @@
     "node": ">=22.12.0 <23 || >=24.0.0 <25"
   },
   "scripts": {
-    "validate:schemas": "node scripts/check_strict_schemas.mjs"
+    "test:strict-json": "node --test scripts/strict_json.test.mjs",
+    "validate:schemas": "npm run test:strict-json --silent && node scripts/check_strict_schemas.mjs"
   },
   "devDependencies": {
     "ajv": "8.20.0",

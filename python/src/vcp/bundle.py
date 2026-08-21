@@ -14,7 +14,7 @@ from typing import Any
 
 import rfc8785
 
-from .canonicalize import canonicalize_manifest, compute_content_hash
+from .canonicalize import canonicalize_manifest, compute_content_hash, parse_json_strict
 from .types import (
     AttestationType,
     Budget,
@@ -220,6 +220,7 @@ class Manifest:
                 environments=data["scope"].get("environments", []),
                 audiences=data["scope"].get("audiences", []),
                 regions=data["scope"].get("regions", []),
+                competence_requirements=data["scope"].get("competence_requirements", {}),
             )
 
         composition = None
@@ -275,7 +276,10 @@ class Bundle:
     @classmethod
     def from_json(cls, json_str: str) -> "Bundle":
         """Parse bundle from JSON string."""
-        return cls.from_dict(json.loads(json_str))
+        data = parse_json_strict(json_str)
+        if not isinstance(data, dict):
+            raise ValueError("Bundle JSON must contain an object")
+        return cls.from_dict(data)
 
 
 class BundleBuilder:

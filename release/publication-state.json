@@ -11,7 +11,7 @@
   },
   "conformance": {
     "fixture_count": 27,
-    "case_count": 294,
+    "case_count": 337,
     "protocol_layer_count": 6,
     "extension_suite_count": 8,
     "full_project_controlled_implementations": 2,

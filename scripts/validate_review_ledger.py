@@ -10,8 +10,18 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
+
+_SCRIPT_DIR = str(Path(__file__).resolve().parent)
+_ADDED_SCRIPT_DIR = _SCRIPT_DIR not in sys.path
+if _ADDED_SCRIPT_DIR:
+    sys.path.insert(0, _SCRIPT_DIR)
+try:
+    from jsonschema_formats import strict_format_checker
+finally:
+    if _ADDED_SCRIPT_DIR:
+        sys.path.remove(_SCRIPT_DIR)
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SCHEMA = ROOT / "release/review-ledger.schema.json"
@@ -257,7 +267,7 @@ def main() -> int:
         problems.add(str(exc))
         return problems.finish()
 
-    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    validator = Draft202012Validator(schema, format_checker=strict_format_checker())
     for error in sorted(
         validator.iter_errors(ledger), key=lambda item: list(item.path)
     ):
