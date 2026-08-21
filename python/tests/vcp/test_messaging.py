@@ -133,7 +133,13 @@ class TestEnvelope:
 
     def test_envelope_length_boundaries_are_inclusive(self) -> None:
         assert _errors(sender="x" * 2048, recipient="y" * 2048) == []
-        assert _errors(timestamp="2026-02-15T10:30:00.123456789Z") == []
+
+    @pytest.mark.parametrize("fraction_digits", range(1, 10))
+    def test_timestamp_accepts_every_supported_fractional_precision(
+        self, fraction_digits: int
+    ) -> None:
+        fraction = "123456789"[:fraction_digits]
+        assert _errors(timestamp=f"2026-02-15T10:30:00.{fraction}Z") == []
 
     def test_validator_rejects_wrong_runtime_object_type(self) -> None:
         with pytest.raises(TypeError, match="VcpMessage"):

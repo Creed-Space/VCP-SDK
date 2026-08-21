@@ -587,8 +587,14 @@ def _parse_timestamp(ts: str) -> datetime:
     """
     if not isinstance(ts, str) or _TIMESTAMP_PATTERN.fullmatch(ts) is None:
         raise ValueError("timestamp must be an RFC 3339 UTC value ending in Z")
-    # Handle Z suffix for fromisoformat (Python <3.11 compat).
-    cleaned = ts[:-1] + "+00:00"
+    # Python 3.10 rejects otherwise valid RFC 3339 fractions longer than six
+    # digits. Normalize only the parser input to its microsecond precision;
+    # the validated wire value remains unchanged on the message.
+    cleaned = ts[:-1]
+    if "." in cleaned:
+        seconds, fraction = cleaned.split(".", 1)
+        cleaned = f"{seconds}.{fraction[:6].ljust(6, '0')}"
+    cleaned += "+00:00"
     parsed = datetime.fromisoformat(cleaned)
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError("timestamp must include a UTC offset")
