@@ -94,6 +94,48 @@ def test_manifest_signed_fields_must_be_complete(tmp_path: Path) -> None:
     assert "signed_fields" in reason
 
 
+def test_duplicate_manifest_keys_are_rejected(tmp_path: Path) -> None:
+    skill, _trust = _make_signed_skill(tmp_path)
+    manifest_path = skill / "manifest.json"
+    manifest_path.write_text(
+        '{"vcp_version":"2.0","vcp_version":"1.0"}',
+        encoding="utf-8",
+    )
+    valid, reason = verify_skill(skill, allow_structural_only=True)
+    assert not valid
+    assert "Duplicate JSON object key" in reason
+
+
+@pytest.mark.parametrize(
+    "timestamps",
+    [
+        "not-an-object",
+        {"iat": None, "nbf": None, "exp": None, "jti": "x"},
+        {"iat": "2026-01-01", "nbf": "2026-01-01", "exp": "2026-01-02", "jti": "x"},
+    ],
+)
+def test_malformed_timestamps_return_a_verification_failure(
+    tmp_path: Path,
+    timestamps: object,
+) -> None:
+    skill, _trust = _make_signed_skill(tmp_path)
+    manifest_path = skill / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["timestamps"] = timestamps
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    valid, reason = verify_skill(skill, allow_structural_only=True)
+    assert not valid
+    assert "timestamp" in reason.lower()
+
+
+@pytest.mark.parametrize("expires_days", [True, False, 0, 91, 1.5])
+def test_signing_rejects_invalid_validity_bounds(tmp_path: Path, expires_days: object) -> None:
+    skill, _trust = _make_signed_skill(tmp_path)
+    key_path = tmp_path / "unused-key.pem"
+    with pytest.raises(ValueError, match="expires_days"):
+        sign_skill(skill, key_path, expires_days=expires_days)  # type: ignore[arg-type]
+
+
 def test_declared_file_list_must_match_directory(tmp_path: Path) -> None:
     skill, _trust = _make_signed_skill(tmp_path)
     manifest_path = skill / "manifest.json"

@@ -18,7 +18,7 @@ evidence-boundary: Generated status, not publication receipt
 | Status | Source Only |
 | Source baseline | VCP 3.1 |
 | Candidate protocol | VCP 3.2, experimental |
-| Conformance cases | 294 |
+| Conformance cases | 337 |
 | Conformance fixtures | 27 |
 | Protocol layers | 6 |
 | Extension suites | 8 |

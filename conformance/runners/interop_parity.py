@@ -19,11 +19,21 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from scripts.jsonschema_formats import strict_format_checker
+
 PYTHON_SRC = ROOT / "python" / "src"
 RUST_BINARY = ROOT / "rust" / "target" / "debug" / "vcp-cli"
 COMPLETE = ROOT / "conformance" / "interop" / "complete_bundle.json"
 ROUNDTRIP = ROOT / "conformance" / "interop" / "cross_impl_roundtrip.json"
 MANIFEST_SCHEMA = ROOT / "schemas" / "vcp-manifest-v2.schema.json"
+
+
+def manifest_validator() -> Draft202012Validator:
+    """Build the manifest validator with mandatory semantic format checks."""
+    schema = json.loads(MANIFEST_SCHEMA.read_text(encoding="utf-8"))
+    return Draft202012Validator(schema, format_checker=strict_format_checker())
 
 
 def rust_file(
@@ -98,8 +108,7 @@ def main() -> int:
 
     failures: list[str] = []
     results: list[dict[str, Any]] = []
-    schema = json.loads(MANIFEST_SCHEMA.read_text(encoding="utf-8"))
-    validator = Draft202012Validator(schema)
+    validator = manifest_validator()
 
     complete = json.loads(COMPLETE.read_text(encoding="utf-8"))
     for case in complete["vectors"]:

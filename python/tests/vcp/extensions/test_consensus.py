@@ -35,6 +35,46 @@ class TestBallot:
         with pytest.raises(ValueError, match="Duplicate candidate"):
             Ballot(voter_id="v1", rankings=[["A"], ["A"]])
 
+    @pytest.mark.parametrize(
+        ("voter_id", "rankings"),
+        [
+            ("", [["A"]]),
+            (7, [["A"]]),
+            ("v1", "A"),
+            ("v1", [7]),
+            ("v1", [[7]]),
+            ("v1", [[""]]),
+        ],
+    )
+    def test_malformed_ballot_shape_is_rejected(
+        self, voter_id: object, rankings: object
+    ) -> None:
+        with pytest.raises(ValueError):
+            Ballot(voter_id=voter_id, rankings=rankings)  # type: ignore[arg-type]
+
+    def test_ballot_identifier_and_candidate_count_limits(self) -> None:
+        with pytest.raises(ValueError, match="1 to 256"):
+            Ballot(voter_id="v" * 257, rankings=[["A"]])
+        with pytest.raises(ValueError, match="1 to 256"):
+            Ballot(voter_id="v", rankings=[["A" * 257]])
+        with pytest.raises(ValueError, match="256-candidate"):
+            Ballot(
+                voter_id="v",
+                rankings=[[f"C{index}"] for index in range(257)],
+            )
+
+    def test_from_dict_requires_an_object(self) -> None:
+        with pytest.raises(TypeError, match="object"):
+            Ballot.from_dict([])  # type: ignore[arg-type]
+
+    def test_ballot_snapshots_nested_rankings_and_serialization(self) -> None:
+        rankings = [["A"], ["B"]]
+        ballot = Ballot(voter_id="v1", rankings=rankings)
+        rankings[0][0] = "mutated"
+        serialized = ballot.to_dict()
+        serialized["rankings"][0][0] = "also-mutated"
+        assert ballot.rankings == [["A"], ["B"]]
+
     def test_to_dict(self) -> None:
         ballot = Ballot(voter_id="v1", rankings=[["A"], ["B"]])
         d = ballot.to_dict()
@@ -58,6 +98,46 @@ class TestSchulzeElection:
     def test_duplicate_candidates(self) -> None:
         with pytest.raises(ValueError, match="candidates must be unique"):
             SchulzeElection(["A", "A", "B"])
+
+    @pytest.mark.parametrize("candidates", [None, "ABC", ["A", ""], ["A", 7]])
+    def test_malformed_candidate_sets_are_rejected(self, candidates: object) -> None:
+        with pytest.raises(ValueError):
+            SchulzeElection(candidates)  # type: ignore[arg-type]
+
+    def test_election_candidate_count_and_identifier_limits(self) -> None:
+        election = SchulzeElection([f"C{index}" for index in range(256)])
+        assert len(election.candidates) == 256
+        with pytest.raises(ValueError, match="more than 256"):
+            SchulzeElection([f"C{index}" for index in range(257)])
+        with pytest.raises(ValueError, match="1 to 256"):
+            SchulzeElection(["C" * 257])
+
+    def test_unknown_candidate_ballot_is_rejected_without_corrupting_state(self) -> None:
+        election = SchulzeElection(["A", "B"])
+        with pytest.raises(ValueError, match="unknown candidates: C"):
+            election.add_ballot(Ballot(voter_id="v1", rankings=[["A"], ["C"]]))
+        assert election.ballot_count == 0
+
+    def test_wrong_ballot_object_is_rejected(self) -> None:
+        election = SchulzeElection(["A", "B"])
+        with pytest.raises(TypeError, match="Ballot"):
+            election.add_ballot({"voter_id": "v1"})  # type: ignore[arg-type]
+
+    def test_election_snapshots_ballot_before_storage(self) -> None:
+        election = SchulzeElection(["A", "B"])
+        ballot = Ballot(voter_id="v1", rankings=[["A"], ["B"]])
+        election.add_ballot(ballot)
+        ballot.rankings.reverse()
+        assert election.compute().winner == "A"
+
+    def test_ballot_resource_limit_rejects_before_mutation(self) -> None:
+        election = SchulzeElection(["A"])
+        ballot = Ballot(voter_id="v", rankings=[["A"]])
+        for _ in range(10_000):
+            election.add_ballot(ballot)
+        with pytest.raises(ValueError, match="10000"):
+            election.add_ballot(ballot)
+        assert election.ballot_count == 10_000
 
     def test_no_ballots(self) -> None:
         election = SchulzeElection(["A", "B", "C"])

@@ -26,7 +26,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
-from .canonicalize import canonicalize_content, canonicalize_manifest
+from .canonicalize import canonicalize_content, canonicalize_manifest, parse_json_strict
 from .trust import TrustConfig
 
 MAX_SKILL_MARKDOWN_FILES = 256
@@ -34,6 +34,7 @@ MAX_SKILL_FILE_BYTES = 1_048_576
 MAX_SKILL_TOTAL_BYTES = 4_194_304
 MAX_SKILL_MANIFEST_BYTES = 65_536
 SIGNED_SKILL_FIELDS = ("vcp_version", "type", "skill", "issuer", "timestamps")
+MAX_SKILL_VALIDITY = timedelta(days=90)
 
 # ---------------------------------------------------------------------------
 # Frontmatter parsing
@@ -237,8 +238,12 @@ def sign_skill(
     Raises:
         FileNotFoundError: If skill dir, SKILL.md, or key file is missing.
     """
+    if not isinstance(expires_days, int) or isinstance(expires_days, bool):
+        raise ValueError("expires_days must be an integer between 1 and 90")
     if not 1 <= expires_days <= 90:
         raise ValueError("expires_days must be between 1 and 90")
+    if not isinstance(issuer, str) or not issuer.strip():
+        raise ValueError("issuer must be a non-empty string")
     skill_dir = skill_dir.resolve(strict=True)
 
     # -- Parse SKILL.md frontmatter for metadata --------------------------
@@ -248,7 +253,12 @@ def sign_skill(
 
     frontmatter = _parse_frontmatter(skill_md.read_text(encoding="utf-8"))
     skill_name = frontmatter.get("name", skill_dir.name)
-    skill_version = str(frontmatter.get("version", "0.1.0"))
+    skill_version = frontmatter.get("version", "0.1.0")
+    if not isinstance(skill_name, str) or not skill_name.strip():
+        raise ValueError("SKILL.md frontmatter name must be a non-empty string")
+    if not isinstance(skill_version, (str, int, float)) or isinstance(skill_version, bool):
+        raise ValueError("SKILL.md frontmatter version must be a string or number")
+    skill_version = str(skill_version)
 
     # -- Content hash -----------------------------------------------------
     content_hash = compute_skill_hash(skill_dir)
@@ -365,9 +375,12 @@ def verify_skill(
         return False, f"Could not inspect manifest.json: {exc}"
 
     try:
-        manifest: dict[str, Any] = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError) as exc:
+        parsed_manifest = parse_json_strict(manifest_path.read_text(encoding="utf-8"))
+    except (ValueError, OSError, UnicodeError) as exc:
         return False, f"Failed to parse manifest.json: {exc}"
+    if not isinstance(parsed_manifest, dict):
+        return False, "manifest.json must contain a JSON object"
+    manifest: dict[str, Any] = parsed_manifest
 
     # -- Structural checks ------------------------------------------------
     for required in ("vcp_version", "type", "skill", "issuer", "timestamps", "signature"):
@@ -376,6 +389,8 @@ def verify_skill(
 
     if manifest.get("type") != "skill":
         return False, f"Expected type 'skill', got '{manifest.get('type')}'"
+    if manifest.get("vcp_version") != "2.0":
+        return False, "Invalid vcp_version (expected '2.0')"
 
     # -- Content hash verification ----------------------------------------
     try:
@@ -387,25 +402,53 @@ def verify_skill(
     skill = manifest.get("skill")
     if not isinstance(skill, dict):
         return False, "Invalid skill object"
-    expected_hash = skill.get("content_hash", "")
+    if not isinstance(skill.get("name"), str) or not skill["name"].strip():
+        return False, "Invalid skill name"
+    if not isinstance(skill.get("version"), str) or not skill["version"].strip():
+        return False, "Invalid skill version"
+    expected_hash = skill.get("content_hash")
+    if not isinstance(expected_hash, str):
+        return False, "Invalid skill content_hash"
     if computed_hash != expected_hash:
         return False, "Content modified after signing"
-    if skill.get("files") != files:
+    declared_files = skill.get("files")
+    if (
+        not isinstance(declared_files, list)
+        or any(not isinstance(path, str) for path in declared_files)
+        or declared_files != files
+    ):
         return False, "Signed skill file list does not match directory contents"
 
     # -- Temporal checks --------------------------------------------------
+    timestamps = manifest.get("timestamps")
+    if not isinstance(timestamps, dict):
+        return False, "Invalid timestamps object"
+
+    def parse_timestamp(field: str) -> datetime:
+        value = timestamps.get(field)
+        if not isinstance(value, str):
+            raise ValueError(f"{field} must be an RFC 3339 string")
+        normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
+        parsed = datetime.fromisoformat(normalized)
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            raise ValueError(f"{field} must include a timezone")
+        return parsed.astimezone(timezone.utc)
+
     try:
-        nbf = datetime.fromisoformat(manifest["timestamps"]["nbf"])
-        exp = datetime.fromisoformat(manifest["timestamps"]["exp"])
-    except (KeyError, ValueError) as exc:
+        iat = parse_timestamp("iat")
+        nbf = parse_timestamp("nbf")
+        exp = parse_timestamp("exp")
+    except (TypeError, ValueError) as exc:
         return False, f"Invalid timestamps: {exc}"
+    jti = timestamps.get("jti")
+    if not isinstance(jti, str) or not jti.strip():
+        return False, "Invalid timestamps: jti must be a non-empty string"
+    if iat > nbf or nbf > exp:
+        return False, "Invalid timestamps: expected iat <= nbf <= exp"
+    if exp - iat > MAX_SKILL_VALIDITY:
+        return False, "Invalid timestamps: validity period exceeds 90 days"
 
     now = datetime.now(tz=timezone.utc)
-    if nbf.tzinfo is None or nbf.utcoffset() is None:
-        return False, "Invalid timestamps: nbf must include a timezone"
-    if exp.tzinfo is None or exp.utcoffset() is None:
-        return False, "Invalid timestamps: exp must include a timezone"
-
     if now < nbf:
         return False, f"Manifest not yet valid (nbf: {nbf.isoformat()})"
     if now > exp:
@@ -431,8 +474,15 @@ def verify_skill(
         return False, "Trust configuration is required (or explicitly allow structural-only checks)"
 
     if trust_config is not None:
-        issuer_id = manifest.get("issuer", {}).get("id", "")
-        key_id = manifest.get("issuer", {}).get("key_id")
+        issuer = manifest.get("issuer")
+        if not isinstance(issuer, dict):
+            return False, "Invalid issuer object"
+        issuer_id = issuer.get("id")
+        key_id = issuer.get("key_id")
+        if not isinstance(issuer_id, str) or not issuer_id.strip():
+            return False, "Invalid issuer id"
+        if not isinstance(key_id, str) or not key_id.strip():
+            return False, "Invalid issuer key_id"
 
         anchor = trust_config.get_issuer_key(issuer_id, key_id)
         if anchor is None:
@@ -442,7 +492,7 @@ def verify_skill(
         try:
             if anchor.algorithm.lower() != "ed25519":
                 return False, "Trusted issuer key must use ed25519"
-            pub_value = anchor.public_key.removeprefix("base64:")
+            pub_value = anchor.public_key.removeprefix("base64:").removeprefix("ed25519:")
             pub_bytes = base64.b64decode(pub_value, validate=True)
             if len(pub_bytes) != 32:
                 return False, "Issuer public key must be 32 bytes"
@@ -451,8 +501,8 @@ def verify_skill(
             return False, f"Failed to load issuer public key: {exc}"
 
         # Extract signature
-        sig_value = signature.get("value", "")
-        if not sig_value.startswith("base64:"):
+        sig_value = signature.get("value")
+        if not isinstance(sig_value, str) or not sig_value.startswith("base64:"):
             return False, "Invalid signature format (expected 'base64:' prefix)"
 
         try:
@@ -463,16 +513,16 @@ def verify_skill(
             return False, f"Failed to decode signature: {exc}"
 
         # Canonicalize manifest (excludes signature) and verify
-        canonical = canonicalize_manifest(manifest)
         try:
+            canonical = canonicalize_manifest(manifest)
             public_key.verify(sig_bytes, canonical)
         except Exception:
             return False, "Invalid signature"
 
     # -- All checks passed ------------------------------------------------
-    iat = manifest["timestamps"].get("iat", "unknown")
-    issuer_id = manifest.get("issuer", {}).get("id", "unknown")
-    return True, f"Verified: {issuer_id}, signed {iat}, expires {exp.isoformat()}"
+    issuer = manifest.get("issuer")
+    issuer_id = issuer.get("id", "unknown") if isinstance(issuer, dict) else "unknown"
+    return True, f"Verified: {issuer_id}, signed {iat.isoformat()}, expires {exp.isoformat()}"
 
 
 # ---------------------------------------------------------------------------
@@ -561,7 +611,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.trust_config:
             try:
                 trust_cfg = TrustConfig.from_file(str(args.trust_config))
-            except (OSError, json.JSONDecodeError) as exc:
+            except (OSError, ValueError, UnicodeError) as exc:
                 print(f"FAILED: Could not load trust config: {exc}", file=sys.stderr)
                 return 1
 

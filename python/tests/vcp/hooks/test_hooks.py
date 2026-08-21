@@ -6,6 +6,7 @@ error recovery, built-in hooks, and integration scenarios.
 
 from __future__ import annotations
 
+import threading
 import time
 
 import pytest
@@ -45,13 +46,15 @@ def executor(registry: HookRegistry) -> HookExecutor:
 
 
 def _make_hook(
-    name: str = "test_hook",
+    name: object = "test_hook",
     hook_type: HookType = HookType.PRE_INJECT,
-    priority: int = 50,
+    priority: object = 50,
     action: object | None = None,
-    timeout_ms: int = 5000,
-    enabled: bool = True,
+    timeout_ms: object = 5000,
+    enabled: object = True,
     condition: object | None = None,
+    description: object = "",
+    metadata: object | None = None,
 ) -> Hook:
     """Helper to create a hook with defaults."""
     if action is None:
@@ -60,13 +63,15 @@ def _make_hook(
             return HookResult(status=ResultStatus.CONTINUE)
 
     return Hook(
-        name=name,
+        name=name,  # type: ignore[arg-type]
         type=hook_type,
-        priority=priority,
+        priority=priority,  # type: ignore[arg-type]
         action=action,
-        timeout_ms=timeout_ms,
-        enabled=enabled,
-        condition=condition,
+        timeout_ms=timeout_ms,  # type: ignore[arg-type]
+        enabled=enabled,  # type: ignore[arg-type]
+        condition=condition,  # type: ignore[arg-type]
+        description=description,  # type: ignore[arg-type]
+        metadata={} if metadata is None else metadata,  # type: ignore[arg-type]
     )
 
 
@@ -167,6 +172,7 @@ class TestHookValidation:
             "x" * 65,  # too long
             "special!char",  # special chars
             "dots.not.allowed",  # dots
+            "safe\n",  # regex end anchors must not admit a final newline
         ]
         for name in invalid_names:
             hook = _make_hook(name=name)
@@ -183,6 +189,8 @@ class TestHookValidation:
         # Boundary values should be accepted
         _make_hook(priority=0).validate()
         _make_hook(priority=100).validate()
+        with pytest.raises(HookValidationError):
+            _make_hook(priority=True).validate()
 
     def test_timeout_bounds(self) -> None:
         """Timeout outside 1-30000 should raise HookValidationError."""
@@ -194,6 +202,8 @@ class TestHookValidation:
         # Boundary values should be accepted
         _make_hook(timeout_ms=1).validate()
         _make_hook(timeout_ms=30000).validate()
+        with pytest.raises(HookValidationError):
+            _make_hook(timeout_ms=True).validate()
 
     def test_non_callable_action_rejected(self) -> None:
         """Non-callable action should raise HookValidationError."""
@@ -206,6 +216,22 @@ class TestHookValidation:
         )
         with pytest.raises(HookValidationError, match="callable"):
             hook.validate()
+
+    @pytest.mark.parametrize(
+        "overrides",
+        [
+            {"name": None},
+            {"enabled": 1},
+            {"condition": "predicate"},
+            {"description": 7},
+            {"metadata": []},
+        ],
+    )
+    def test_malformed_hook_configuration_types_are_rejected(
+        self, overrides: dict[str, object]
+    ) -> None:
+        with pytest.raises(HookValidationError):
+            _make_hook(**overrides).validate()  # type: ignore[arg-type]
 
 
 # =============================================================================
@@ -406,10 +432,10 @@ class TestPredicateEvaluation:
         executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
         assert fired == []
 
-    def test_condition_exception_skips_hook(
+    def test_condition_exception_aborts_chain(
         self, registry: HookRegistry, executor: HookExecutor
     ) -> None:
-        """If predicate throws, hook should be skipped (not crash chain)."""
+        """A broken security predicate must fail closed."""
         fired: list[bool] = []
 
         def action(inp: HookInput) -> HookResult:
@@ -422,7 +448,8 @@ class TestPredicateEvaluation:
         registry.register(_make_hook(name="cond-err", action=action, condition=bad_condition))
 
         result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
-        assert result.status == "completed"
+        assert result.status == "aborted"
+        assert result.aborted_by == "cond-err"
         assert fired == []
 
 
@@ -434,40 +461,43 @@ class TestPredicateEvaluation:
 class TestTimeoutHandling:
     """Test hook timeout enforcement."""
 
-    def test_slow_hook_treated_as_continue(
+    def test_slow_hook_aborts(
         self, registry: HookRegistry, executor: HookExecutor
     ) -> None:
-        """Hook exceeding timeout should be treated as continue."""
+        """A hook timeout must fail closed."""
 
         def slow_action(inp: HookInput) -> HookResult:
-            time.sleep(2)  # 2 seconds, well over timeout
+            time.sleep(0.1)
             return HookResult(status=ResultStatus.ABORT, reason="should not reach")
 
-        registry.register(_make_hook(name="slow", action=slow_action, timeout_ms=100))
+        registry.register(_make_hook(name="slow", action=slow_action, timeout_ms=10))
 
         result = executor.execute(HookType.PRE_INJECT, "s1", {"ctx": 1}, None, PreInjectEvent())
-        # Should complete, not abort
-        assert result.status == "completed"
+        assert result.status == "aborted"
+        assert result.aborted_by == "slow"
+        assert result.reason == "Hook 'slow' timed out"
         assert result.context == {"ctx": 1}
 
-    def test_timeout_chain_continues(self, registry: HookRegistry, executor: HookExecutor) -> None:
-        """Chain should continue after a timed-out hook."""
+    def test_timeout_stops_downstream_hooks(
+        self, registry: HookRegistry, executor: HookExecutor
+    ) -> None:
+        """A timed-out hook must prevent lower-priority hooks from running."""
         order: list[str] = []
 
         def slow_action(inp: HookInput) -> HookResult:
-            time.sleep(2)
+            time.sleep(0.1)
             return HookResult(status=ResultStatus.CONTINUE)
 
         def fast_action(inp: HookInput) -> HookResult:
             order.append("fast")
             return HookResult(status=ResultStatus.CONTINUE)
 
-        registry.register(_make_hook(name="slow", priority=90, action=slow_action, timeout_ms=100))
+        registry.register(_make_hook(name="slow", priority=90, action=slow_action, timeout_ms=10))
         registry.register(_make_hook(name="fast", priority=10, action=fast_action, timeout_ms=5000))
 
         result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
-        assert result.status == "completed"
-        assert order == ["fast"]
+        assert result.status == "aborted"
+        assert order == []
 
 
 # =============================================================================
@@ -476,12 +506,12 @@ class TestTimeoutHandling:
 
 
 class TestExceptionHandling:
-    """Test hook exception handling (fail-open)."""
+    """Test fail-closed hook exception handling."""
 
-    def test_exception_treated_as_continue(
+    def test_exception_aborts_chain(
         self, registry: HookRegistry, executor: HookExecutor
     ) -> None:
-        """Hook raising an exception should be treated as continue."""
+        """Hook action exceptions must abort the chain."""
 
         def bad_action(inp: HookInput) -> HookResult:
             raise ValueError("hook exploded")
@@ -489,13 +519,15 @@ class TestExceptionHandling:
         registry.register(_make_hook(name="bad", action=bad_action))
 
         result = executor.execute(HookType.PRE_INJECT, "s1", {"safe": True}, None, PreInjectEvent())
-        assert result.status == "completed"
+        assert result.status == "aborted"
+        assert result.aborted_by == "bad"
+        assert result.reason == "Hook 'bad' failed"
         assert result.context == {"safe": True}
 
-    def test_exception_chain_continues(
+    def test_exception_stops_downstream_hooks(
         self, registry: HookRegistry, executor: HookExecutor
     ) -> None:
-        """Chain should continue past a hook that throws."""
+        """Lower-priority hooks must not run after a hook exception."""
         order: list[str] = []
 
         def bad_action(inp: HookInput) -> HookResult:
@@ -509,53 +541,98 @@ class TestExceptionHandling:
         registry.register(_make_hook(name="good", priority=10, action=good_action))
 
         result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
-        assert result.status == "completed"
-        assert order == ["good"]
+        assert result.status == "aborted"
+        assert order == []
 
+    @pytest.mark.parametrize(
+        "invalid_result",
+        [
+            None,
+            "continue",
+            {"status": "continue"},
+            True,
+            HookResult(status="continue"),  # type: ignore[arg-type]
+            HookResult(status=ResultStatus.ABORT),
+            HookResult(status=ResultStatus.CONTINUE, annotations=[]),  # type: ignore[arg-type]
+        ],
+    )
+    def test_malformed_hook_return_never_crashes_chain(
+        self,
+        registry: HookRegistry,
+        executor: HookExecutor,
+        invalid_result: object,
+    ) -> None:
+        registry.register(
+            _make_hook(
+                name="malformed",
+                action=lambda _input: invalid_result,  # type: ignore[arg-type,return-value]
+            )
+        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", {"safe": True}, None, PreInjectEvent())
+        assert result.status == "aborted"
+        assert result.aborted_by == "malformed"
+        assert result.context == {"safe": True}
 
-# =============================================================================
-# 8. Cascading Failure Detection
-# =============================================================================
-
-
-class TestCascadingFailure:
-    """Test cascading failure detection (>50% hooks fail)."""
-
-    def test_cascade_failure_detected(self, registry: HookRegistry, executor: HookExecutor) -> None:
-        """If >50% of hooks fail, cascade_failure should be True."""
-
-        def bad_action(inp: HookInput) -> HookResult:
-            raise RuntimeError("fail")
-
-        def good_action(inp: HookInput) -> HookResult:
-            return HookResult(status=ResultStatus.CONTINUE)
-
-        # 2 bad, 1 good => 66% failure rate
-        registry.register(_make_hook(name="bad-1", priority=90, action=bad_action))
-        registry.register(_make_hook(name="bad-2", priority=80, action=bad_action))
-        registry.register(_make_hook(name="good-1", priority=10, action=good_action))
-
-        result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
-        assert result.cascade_failure is True
-
-    def test_no_cascade_failure_below_threshold(
+    def test_timed_out_hook_cannot_mutate_returned_or_caller_state_later(
         self, registry: HookRegistry, executor: HookExecutor
     ) -> None:
-        """If <=50% of hooks fail, cascade_failure should be False."""
+        finished = threading.Event()
+        context = {"safe": True}
 
-        def bad_action(inp: HookInput) -> HookResult:
-            raise RuntimeError("fail")
-
-        def good_action(inp: HookInput) -> HookResult:
+        def late_mutation(inp: HookInput) -> HookResult:
+            time.sleep(0.03)
+            inp.context["safe"] = False
+            finished.set()
             return HookResult(status=ResultStatus.CONTINUE)
 
-        # 1 bad, 2 good => 33% failure rate
-        registry.register(_make_hook(name="bad-1", priority=90, action=bad_action))
-        registry.register(_make_hook(name="good-1", priority=80, action=good_action))
-        registry.register(_make_hook(name="good-2", priority=10, action=good_action))
+        registry.register(
+            _make_hook(name="late", action=late_mutation, timeout_ms=5)
+        )
+        result = executor.execute(
+            HookType.PRE_INJECT, "s1", context, None, PreInjectEvent()
+        )
+        assert result.status == "aborted"
+        assert finished.wait(timeout=1)
+        assert context == {"safe": True}
+        assert result.context == {"safe": True}
 
-        result = executor.execute(HookType.PRE_INJECT, "s1", None, None, PreInjectEvent())
-        assert result.cascade_failure is False
+    def test_unsnapshotable_hook_input_aborts_before_action(
+        self, registry: HookRegistry, executor: HookExecutor
+    ) -> None:
+        class Unsnapshotable:
+            def __deepcopy__(self, memo: object) -> object:
+                raise RuntimeError("cannot copy")
+
+        fired: list[bool] = []
+        registry.register(
+            _make_hook(
+                name="snapshot",
+                action=lambda _input: (
+                    fired.append(True),
+                    HookResult(status=ResultStatus.CONTINUE),
+                )[1],
+            )
+        )
+        result = executor.execute(
+            HookType.PRE_INJECT, "s1", Unsnapshotable(), None, PreInjectEvent()
+        )
+        assert result.status == "aborted"
+        assert result.reason == "Hook 'snapshot' input snapshot failed"
+        assert fired == []
+
+    def test_falsey_non_object_session_info_is_rejected(
+        self, registry: HookRegistry, executor: HookExecutor
+    ) -> None:
+        registry.register(_make_hook())
+        with pytest.raises(TypeError, match="session_info"):
+            executor.execute(
+                HookType.PRE_INJECT,
+                "s1",
+                None,
+                None,
+                PreInjectEvent(),
+                session_info=[],
+            )
 
 
 # =============================================================================

@@ -32,6 +32,7 @@
     "build": "tsc",
     "check": "tsc --noEmit",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:packed": "node scripts/test-packed.mjs",
     "clean": "rm -rf dist",
     "prepack": "npm run clean && npm run build && npm run check:package",
@@ -58,6 +59,7 @@
     "provenance": true
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "4.1.10",
     "fast-check": "4.9.0",
     "typescript": "7.0.2",
     "vitest": "4.1.10",

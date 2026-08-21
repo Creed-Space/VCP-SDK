@@ -29,6 +29,40 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 
+MAX_RAW_TOKEN_LENGTH = 4096
+MAX_IDENTITY_URI_LENGTH = 518
+_DOMAIN_LABEL_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
+_NUMERIC_VERSION_PATTERN = re.compile(
+    r"(?P<prefix>[\^~]?)(?P<major>[0-9]{1,5})\."
+    r"(?P<minor>[0-9]{1,5})\.(?P<patch>[0-9]{1,5})"
+    r"(?P<prerelease>-[a-zA-Z0-9.-]+)?"
+)
+
+
+def _canonical_version(version: str) -> str:
+    """Normalize numeric selectors while preserving alias selectors."""
+    match = _NUMERIC_VERSION_PATTERN.fullmatch(version)
+    if match is None:
+        return version
+    return (
+        f"{match['prefix']}{int(match['major'])}."
+        f"{int(match['minor'])}.{int(match['patch'])}"
+        f"{(match['prerelease'] or '').lower()}"
+    )
+
+
+def _validate_registry_domain(registry: object) -> str:
+    """Return a normalized DNS registry name or fail closed."""
+    if not isinstance(registry, str) or not registry or len(registry) > 253:
+        raise ValueError("registry must be a valid domain name")
+    labels = registry.split(".")
+    if not any(character.isascii() and character.isalpha() for character in registry) or any(
+        _DOMAIN_LABEL_PATTERN.fullmatch(label) is None for label in labels
+    ):
+        raise ValueError("registry must be a valid domain name")
+    return registry.lower()
+
+
 def canonicalize_token(raw: str) -> str:
     """Return the validated canonical identity-token representation.
 
@@ -39,6 +73,8 @@ def canonicalize_token(raw: str) -> str:
     """
     if not isinstance(raw, str) or not raw:
         raise ValueError("Token cannot be empty")
+    if len(raw) > MAX_RAW_TOKEN_LENGTH:
+        raise ValueError(f"Raw token exceeds max length {MAX_RAW_TOKEN_LENGTH}")
     normalized = unicodedata.normalize("NFKC", raw).strip()
     normalized = re.sub(r"\s+", "", normalized)
 
@@ -65,6 +101,11 @@ def canonicalize_token(raw: str) -> str:
     if namespace is not None:
         candidate += f":{namespace}"
     return Token.parse(candidate).full
+
+
+def uri_to_canonical(uri: str) -> str:
+    """Convert a strict VCP/I URI to its canonical token representation."""
+    return Token.from_uri(uri).full
 
 
 @dataclass(frozen=True)
@@ -120,6 +161,8 @@ class Token:
                 )
         if self.version is not None and not self.VERSION_PATTERN.fullmatch(self.version):
             raise ValueError(f"Invalid version format: {self.version}")
+        if self.version is not None:
+            object.__setattr__(self, "version", _canonical_version(self.version))
         if self.namespace is not None and not self.NAMESPACE_PATTERN.fullmatch(self.namespace):
             raise ValueError(f"Invalid namespace format: {self.namespace}")
         if len(self.full) > self.MAX_LENGTH:
@@ -138,13 +181,13 @@ class Token:
         Raises:
             ValueError: If token format is invalid
         """
-        if not raw:
+        if not isinstance(raw, str) or not raw:
             raise ValueError("Token cannot be empty")
 
         if len(raw) > cls.MAX_LENGTH:
             raise ValueError(f"Token exceeds max length {cls.MAX_LENGTH}: {len(raw)}")
 
-        match = cls.TOKEN_PATTERN.match(raw)
+        match = cls.TOKEN_PATTERN.fullmatch(raw)
         if not match:
             raise ValueError(f"Invalid VCP/I token format: {raw}")
 
@@ -173,6 +216,59 @@ class Token:
     def canonicalize(cls, raw: str) -> str:
         """Canonicalize and validate a potentially non-canonical token."""
         return canonicalize_token(raw)
+
+    @classmethod
+    def from_uri(cls, raw: str) -> Self:
+        """Parse a bounded VCP/I URI into a validated canonical token.
+
+        ``creed://`` requires a DNS issuer and accepts the canonical dotted
+        token path or the legacy slash-separated path. ``vcp://`` carries only
+        a dotted token path. Namespaces, URL decorations, percent escapes,
+        non-ASCII data, and ambiguous mixed separators are rejected.
+        """
+        if not isinstance(raw, str) or not raw or len(raw) > MAX_IDENTITY_URI_LENGTH:
+            raise ValueError(
+                f"Identity URI must contain 1 to {MAX_IDENTITY_URI_LENGTH} ASCII characters"
+            )
+        if (
+            not raw.isascii()
+            or any(
+                character.isspace() or ord(character) < 32 or ord(character) == 127
+                for character in raw
+            )
+            or any(forbidden in raw for forbidden in ("?", "#", "%", "\\"))
+        ):
+            raise ValueError("Identity URI contains forbidden or non-ASCII characters")
+
+        allow_legacy_slashes = False
+        if raw.startswith("creed://"):
+            rest = raw.removeprefix("creed://")
+            issuer, separator, identity = rest.partition("/")
+            if not separator or not issuer or not identity:
+                raise ValueError("creed identity URI requires an issuer and path")
+            _validate_registry_domain(issuer)
+            allow_legacy_slashes = True
+        elif raw.startswith("vcp://"):
+            identity = raw.removeprefix("vcp://")
+        else:
+            raise ValueError("Identity URI scheme must be creed:// or vcp://")
+
+        if not identity or ":" in identity:
+            raise ValueError("Identity URI path is empty or contains a namespace")
+
+        path, marker, version = identity.partition("@")
+        if "/" in path:
+            if (
+                not allow_legacy_slashes
+                or "." in path
+                or path.startswith("/")
+                or path.endswith("/")
+                or "//" in path
+            ):
+                raise ValueError("Identity URI has an ambiguous slash path")
+            path = path.replace("/", ".")
+        candidate = path + (f"@{version}" if marker else "")
+        return cls.parse(candidate)
 
     # Backward compatibility properties
 
@@ -228,7 +324,7 @@ class Token:
             URI in format creed://registry/canonical[@version]
         """
         version_part = f"@{self.version}" if self.version else ""
-        return f"creed://{registry}/{self.canonical}{version_part}"
+        return f"creed://{_validate_registry_domain(registry)}/{self.canonical}{version_part}"
 
     def with_version(self, version: str) -> Token:
         """Return new token with specified version.
@@ -239,7 +335,7 @@ class Token:
         Returns:
             New Token with version set
         """
-        if not self.VERSION_PATTERN.match(version):
+        if not self.VERSION_PATTERN.fullmatch(version):
             raise ValueError(f"Invalid version format: {version}")
 
         return Token(
@@ -257,7 +353,7 @@ class Token:
         Returns:
             New Token with namespace set
         """
-        if not self.NAMESPACE_PATTERN.match(namespace):
+        if not self.NAMESPACE_PATTERN.fullmatch(namespace):
             raise ValueError(f"Invalid namespace format: {namespace}")
 
         return Token(
@@ -303,7 +399,7 @@ class Token:
         Returns:
             New Token with additional segment
         """
-        if not self.SEGMENT_PATTERN.match(segment):
+        if not self.SEGMENT_PATTERN.fullmatch(segment):
             raise ValueError(f"Invalid segment format: {segment}")
 
         if len(self.segments) >= self.MAX_SEGMENTS:

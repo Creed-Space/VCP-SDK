@@ -4,7 +4,6 @@
   "title": "VCP Context Schema v3.2",
   "description": "JSON Schema for VCP/A Adaptation Layer context validation. 13 situational dimensions (VCP v3.2, incl. VEP-0004 positions 10-13) plus 5 personal-state dimensions (R-line, v3.1+) with optional 1-5 intensity. The ‖ (U+2016 DOUBLE VERTICAL LINE) separator divides the situational and personal bands in the wire format.",
   "type": "object",
-
   "properties": {
     "context": {
       "type": "string",
@@ -13,9 +12,11 @@
         "⏰🌅|📍🏡|👥👶",
         "⏰🌙|📍🏢|👥👔|🔶⚖️",
         "⏰🌅|📍🏢|👥👔|🎭💼|🧍✋|↔️🤏|🪢colleague:professional|🎩💼‖🧠focused:4|💭calm:5|🔋rested:4|⚡unhurried:2|🩺neutral:1"
-      ]
+      ],
+      "minLength": 1,
+      "maxLength": 8192,
+      "pattern": "^[^\\s\\u0000-\\u001F\\u007F]+$"
     },
-
     "parsed": {
       "type": "object",
       "description": "Parsed context dimensions (situational + personal bands).",
@@ -24,23 +25,55 @@
           "type": "object",
           "description": "13 situational dimensions (positions 1-13).",
           "properties": {
-            "time": { "$ref": "#/definitions/dimension_values" },
-            "space": { "$ref": "#/definitions/dimension_values" },
-            "company": { "$ref": "#/definitions/dimension_values" },
-            "culture": { "$ref": "#/definitions/dimension_values" },
-            "occasion": { "$ref": "#/definitions/dimension_values" },
-            "environment": { "$ref": "#/definitions/dimension_values" },
-            "agency": { "$ref": "#/definitions/dimension_values" },
-            "constraints": { "$ref": "#/definitions/dimension_values" },
-            "system_context": { "$ref": "#/definitions/dimension_values" },
-            "embodiment": { "$ref": "#/definitions/dimension_values" },
-            "proximity": { "$ref": "#/definitions/dimension_values" },
+            "time": {
+              "$ref": "#/definitions/dimension_values"
+            },
+            "space": {
+              "$ref": "#/definitions/dimension_values"
+            },
+            "company": {
+              "$ref": "#/definitions/dimension_values"
+            },
+            "culture": {
+              "$ref": "#/definitions/dimension_values"
+            },
+            "occasion": {
+              "$ref": "#/definitions/dimension_values"
+            },
+            "environment": {
+              "$ref": "#/definitions/dimension_values"
+            },
+            "agency": {
+              "$ref": "#/definitions/dimension_values"
+            },
+            "constraints": {
+              "$ref": "#/definitions/dimension_values"
+            },
+            "system_context": {
+              "$ref": "#/definitions/dimension_values"
+            },
+            "embodiment": {
+              "$ref": "#/definitions/dimension_values"
+            },
+            "proximity": {
+              "$ref": "#/definitions/dimension_values"
+            },
             "relationship": {
               "type": "array",
               "description": "Free-form compound strings of form '{tie}:{function}' (VEP-0004).",
-              "items": { "type": "string", "pattern": "^[^:]+:[^:]+$" }
+              "items": {
+                "type": "string",
+                "pattern": "^(?:(?:stranger|acquaintance|colleague|friend|family|intimate|long_term|trusted_collaborator)(?::(?:transactional|professional|educational|therapeutic|social|intimate|adversarial))?|:(?:transactional|professional|educational|therapeutic|social|intimate|adversarial))$",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "minItems": 1,
+              "maxItems": 16,
+              "uniqueItems": true
             },
-            "formality": { "$ref": "#/definitions/dimension_values" }
+            "formality": {
+              "$ref": "#/definitions/dimension_values"
+            }
           },
           "additionalProperties": false
         },
@@ -48,23 +81,36 @@
           "type": "object",
           "description": "5 personal-state dimensions (R-line, v3.1+).",
           "properties": {
-            "cognitive_state": { "$ref": "#/definitions/personal_state_value" },
-            "emotional_tone": { "$ref": "#/definitions/personal_state_value" },
-            "energy_level": { "$ref": "#/definitions/personal_state_value" },
-            "perceived_urgency": { "$ref": "#/definitions/personal_state_value" },
-            "body_signals": { "$ref": "#/definitions/personal_state_value" }
+            "cognitive_state": {
+              "$ref": "#/definitions/personal_state_value"
+            },
+            "emotional_tone": {
+              "$ref": "#/definitions/personal_state_value"
+            },
+            "energy_level": {
+              "$ref": "#/definitions/personal_state_value"
+            },
+            "perceived_urgency": {
+              "$ref": "#/definitions/personal_state_value"
+            },
+            "body_signals": {
+              "$ref": "#/definitions/personal_state_value"
+            }
           },
           "additionalProperties": false
         }
-      }
+      },
+      "additionalProperties": false
     },
-
     "conformance_level": {
       "type": "string",
-      "enum": ["VCP-Minimal", "VCP-Standard", "VCP-Extended"],
+      "enum": [
+        "VCP-Minimal",
+        "VCP-Standard",
+        "VCP-Extended"
+      ],
       "description": "Minimal=9 situational only; Standard=9 situational + 5 personal; Extended=adds any VEP-0004 dim (positions 10-13)."
     },
-
     "metadata": {
       "type": "object",
       "properties": {
@@ -82,25 +128,31 @@
         },
         "risk_level": {
           "type": "string",
-          "enum": ["normal", "standard", "elevated", "critical"]
+          "enum": [
+            "normal",
+            "standard",
+            "elevated",
+            "critical"
+          ]
         }
-      }
+      },
+      "additionalProperties": false
     },
-
     "timestamp": {
       "type": "string",
       "format": "date-time",
       "description": "When context was captured."
     },
-
     "session_id": {
       "type": "string",
-      "description": "Session identifier."
+      "description": "Session identifier.",
+      "minLength": 1,
+      "maxLength": 256
     }
   },
-
-  "required": ["context"],
-
+  "required": [
+    "context"
+  ],
   "definitions": {
     "dimension_values": {
       "type": "array",
@@ -109,152 +161,276 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 16
-      }
+      },
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true
     },
-
     "personal_state_value": {
       "type": "object",
       "description": "Personal-state value with optional 1-5 intensity.",
       "properties": {
-        "value": { "type": "string", "minLength": 1 },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z_]*$"
+        },
         "intensity": {
           "oneOf": [
-            { "type": "integer", "minimum": 1, "maximum": 5 },
-            { "type": "null" }
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
-      "required": ["value"],
+      "required": [
+        "value"
+      ],
       "additionalProperties": false
     },
-
     "dimension_symbol": {
       "type": "string",
       "description": "Situational dimension identifier emoji (13 dims in VCP v3.2).",
-      "enum": ["⏰", "📍", "👥", "🌍", "🎭", "🌡️", "🔷", "🔶", "📡", "🧍", "↔️", "🪢", "🎩"]
+      "enum": [
+        "⏰",
+        "📍",
+        "👥",
+        "🌍",
+        "🎭",
+        "🌡️",
+        "🔷",
+        "🔶",
+        "📡",
+        "🧍",
+        "↔️",
+        "🪢",
+        "🎩"
+      ]
     },
-
     "personal_dimension_symbol": {
       "type": "string",
       "description": "Personal-state dimension identifier emoji (5 dims).",
-      "enum": ["🧠", "💭", "🔋", "⚡", "🩺"]
+      "enum": [
+        "🧠",
+        "💭",
+        "🔋",
+        "⚡",
+        "🩺"
+      ]
     },
-
     "time_values": {
       "type": "string",
       "description": "TIME ⏰ (position 1)",
-      "enum": ["🌅", "☀️", "🌆", "🌙"]
+      "enum": [
+        "🌅",
+        "☀️",
+        "🌆",
+        "🌙"
+      ]
     },
-
     "space_values": {
       "type": "string",
       "description": "SPACE 📍 (position 2)",
-      "enum": ["🏡", "🏢", "🏫", "🏥", "🚗"]
+      "enum": [
+        "🏡",
+        "🏢",
+        "🏫",
+        "🏥",
+        "🚗"
+      ]
     },
-
     "company_values": {
       "type": "string",
       "description": "COMPANY 👥 (position 3)",
-      "enum": ["👤", "👶", "👔", "👨‍👩‍👧", "👥"]
+      "enum": [
+        "👤",
+        "👶",
+        "👔",
+        "👨‍👩‍👧",
+        "👥"
+      ]
     },
-
     "culture_values": {
       "type": "string",
       "description": "CULTURE 🌍 (position 4) — communication styles per CSM1, NOT nationalities.",
-      "enum": ["🔇", "📢", "🎩", "😎", "🌐"]
+      "enum": [
+        "🔇",
+        "📢",
+        "🎩",
+        "😎",
+        "🌐"
+      ]
     },
-
     "occasion_values": {
       "type": "string",
       "description": "OCCASION 🎭 (position 5)",
-      "enum": ["➖", "🎂", "😢", "🚨", "💼"]
+      "enum": [
+        "➖",
+        "🎂",
+        "😢",
+        "🚨",
+        "💼"
+      ]
     },
-
     "environment_values": {
       "type": "string",
       "description": "ENVIRONMENT 🌡️ (position 6)",
-      "enum": ["☀️", "🥵", "🥶", "🔇", "🔊"]
+      "enum": [
+        "☀️",
+        "🥵",
+        "🥶",
+        "🔇",
+        "🔊"
+      ]
     },
-
     "agency_values": {
       "type": "string",
       "description": "AGENCY 🔷 (position 7)",
-      "enum": ["👑", "🤝", "📋", "🔐"]
+      "enum": [
+        "👑",
+        "🤝",
+        "📋",
+        "🔐"
+      ]
     },
-
     "constraints_values": {
       "type": "string",
       "description": "CONSTRAINTS 🔶 (position 8)",
-      "enum": ["○", "⚖️", "💸", "⏱️"]
+      "enum": [
+        "○",
+        "⚖️",
+        "💸",
+        "⏱️"
+      ]
     },
-
     "system_context_values": {
       "type": "string",
       "description": "SYSTEM_CONTEXT 📡 (position 9)",
-      "enum": ["🟢", "🟡", "🔴", "🔒", "🧪"]
+      "enum": [
+        "🟢",
+        "🟡",
+        "🔴",
+        "🔒",
+        "🧪"
+      ]
     },
-
     "embodiment_values": {
       "type": "string",
       "description": "EMBODIMENT 🧍 (position 10, VEP-0004)",
-      "enum": ["🪑", "🚶", "✋", "📦", "🛑"]
+      "enum": [
+        "🪑",
+        "🚶",
+        "✋",
+        "📦",
+        "🛑"
+      ]
     },
-
     "proximity_values": {
       "type": "string",
       "description": "PROXIMITY ↔️ (position 11, VEP-0004)",
-      "enum": ["🌐", "🏠", "👣", "🤏", "👆"]
+      "enum": [
+        "🌐",
+        "🏠",
+        "👣",
+        "🤏",
+        "👆"
+      ]
     },
-
     "relationship_value": {
       "type": "string",
       "description": "RELATIONSHIP 🪢 (position 12, VEP-0004). Compound '{tie}:{function}' string.",
-      "pattern": "^[^:]+:[^:]+$",
-      "examples": ["colleague:professional", "friend:social", "family:caregiving", "stranger:service"]
+      "pattern": "^(?:(?:stranger|acquaintance|colleague|friend|family|intimate|long_term|trusted_collaborator)(?::(?:transactional|professional|educational|therapeutic|social|intimate|adversarial))?|:(?:transactional|professional|educational|therapeutic|social|intimate|adversarial))$",
+      "examples": [
+        "colleague:professional",
+        "friend:social",
+        "family:intimate",
+        "stranger:transactional"
+      ],
+      "minLength": 1,
+      "maxLength": 64
     },
-
     "formality_values": {
       "type": "string",
       "description": "FORMALITY 🎩 (position 13, VEP-0004)",
-      "enum": ["😎", "💼", "🎓", "🏛️"]
+      "enum": [
+        "😎",
+        "💼",
+        "🎓",
+        "🏛️"
+      ]
     },
-
     "cognitive_state_values": {
       "type": "string",
       "description": "COGNITIVE_STATE 🧠 (personal position 1). Value vocabularies are canonically defined in the extensions.personal module; wire format accepts any string value + optional :intensity (1-5).",
-      "examples": ["focused", "scattered", "contemplative", "alert", "foggy"]
+      "examples": [
+        "focused",
+        "scattered",
+        "contemplative",
+        "alert",
+        "foggy"
+      ]
     },
-
     "emotional_tone_values": {
       "type": "string",
       "description": "EMOTIONAL_TONE 💭 (personal position 2)",
-      "examples": ["calm", "anxious", "joyful", "frustrated", "melancholy", "neutral"]
+      "examples": [
+        "calm",
+        "anxious",
+        "joyful",
+        "frustrated",
+        "melancholy",
+        "neutral"
+      ]
     },
-
     "energy_level_values": {
       "type": "string",
       "description": "ENERGY_LEVEL 🔋 (personal position 3)",
-      "examples": ["depleted", "low", "moderate", "rested", "energized"]
+      "examples": [
+        "depleted",
+        "low",
+        "moderate",
+        "rested",
+        "energized"
+      ]
     },
-
     "perceived_urgency_values": {
       "type": "string",
       "description": "PERCEIVED_URGENCY ⚡ (personal position 4)",
-      "examples": ["unhurried", "mild_urgency", "pressing", "critical"]
+      "examples": [
+        "unhurried",
+        "mild_urgency",
+        "pressing",
+        "critical"
+      ]
     },
-
     "body_signals_values": {
       "type": "string",
       "description": "BODY_SIGNALS 🩺 (personal position 5)",
-      "examples": ["neutral", "tense", "relaxed", "discomfort", "pain"]
+      "examples": [
+        "neutral",
+        "tense",
+        "relaxed",
+        "discomfort",
+        "pain"
+      ]
     },
-
     "transition": {
       "type": "object",
       "properties": {
         "severity": {
           "type": "string",
-          "enum": ["none", "minor", "major", "emergency"]
+          "enum": [
+            "none",
+            "minor",
+            "major",
+            "emergency"
+          ]
         },
         "changes": {
           "type": "object",
@@ -262,7 +438,21 @@
             "type": "array",
             "minItems": 2,
             "maxItems": 2,
-            "items": { "type": "array" }
+            "items": {
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 16,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              }
+            }
+          },
+          "maxProperties": 18,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z_]{0,63}$"
           }
         },
         "timestamp": {
@@ -270,24 +460,39 @@
           "format": "date-time"
         },
         "from_context": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192,
+          "pattern": "^[^\\s\\u0000-\\u001F\\u007F]+$"
         },
         "to_context": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192,
+          "pattern": "^[^\\s\\u0000-\\u001F\\u007F]+$"
         }
-      }
+      },
+      "additionalProperties": false
     }
   },
-
   "examples": [
     {
       "context": "⏰🌅|📍🏡|👥👶👨‍👩‍👧|🎭➖",
       "parsed": {
         "situational": {
-          "time": ["🌅"],
-          "space": ["🏡"],
-          "company": ["👶", "👨‍👩‍👧"],
-          "occasion": ["➖"]
+          "time": [
+            "🌅"
+          ],
+          "space": [
+            "🏡"
+          ],
+          "company": [
+            "👶",
+            "👨‍👩‍👧"
+          ],
+          "occasion": [
+            "➖"
+          ]
         },
         "personal": {}
       },
@@ -304,12 +509,21 @@
       "context": "📍🏢|👥👔|🔶⚖️‖🧠focused:4",
       "parsed": {
         "situational": {
-          "space": ["🏢"],
-          "company": ["👔"],
-          "constraints": ["⚖️"]
+          "space": [
+            "🏢"
+          ],
+          "company": [
+            "👔"
+          ],
+          "constraints": [
+            "⚖️"
+          ]
         },
         "personal": {
-          "cognitive_state": { "value": "focused", "intensity": 4 }
+          "cognitive_state": {
+            "value": "focused",
+            "intensity": 4
+          }
         }
       },
       "conformance_level": "VCP-Standard",
@@ -324,21 +538,52 @@
       "context": "⏰🌅|📍🏢|👥👔|🎭💼|🧍✋|↔️🤏|🪢colleague:professional|🎩💼‖🧠focused:4|💭calm:5|🔋rested:4|⚡unhurried:2|🩺neutral:1",
       "parsed": {
         "situational": {
-          "time": ["🌅"],
-          "space": ["🏢"],
-          "company": ["👔"],
-          "occasion": ["💼"],
-          "embodiment": ["✋"],
-          "proximity": ["🤏"],
-          "relationship": ["colleague:professional"],
-          "formality": ["💼"]
+          "time": [
+            "🌅"
+          ],
+          "space": [
+            "🏢"
+          ],
+          "company": [
+            "👔"
+          ],
+          "occasion": [
+            "💼"
+          ],
+          "embodiment": [
+            "✋"
+          ],
+          "proximity": [
+            "🤏"
+          ],
+          "relationship": [
+            "colleague:professional"
+          ],
+          "formality": [
+            "💼"
+          ]
         },
         "personal": {
-          "cognitive_state": { "value": "focused", "intensity": 4 },
-          "emotional_tone": { "value": "calm", "intensity": 5 },
-          "energy_level": { "value": "rested", "intensity": 4 },
-          "perceived_urgency": { "value": "unhurried", "intensity": 2 },
-          "body_signals": { "value": "neutral", "intensity": 1 }
+          "cognitive_state": {
+            "value": "focused",
+            "intensity": 4
+          },
+          "emotional_tone": {
+            "value": "calm",
+            "intensity": 5
+          },
+          "energy_level": {
+            "value": "rested",
+            "intensity": 4
+          },
+          "perceived_urgency": {
+            "value": "unhurried",
+            "intensity": 2
+          },
+          "body_signals": {
+            "value": "neutral",
+            "intensity": 1
+          }
         }
       },
       "conformance_level": "VCP-Extended",
@@ -349,5 +594,6 @@
         "risk_level": "standard"
       }
     }
-  ]
+  ],
+  "additionalProperties": false
 }

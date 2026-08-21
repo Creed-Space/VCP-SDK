@@ -6,6 +6,7 @@ CARGO_AUDIT ?= cargo audit
 validate: repository schemas conformance
 
 repository:
+	$(PYTHON) -m unittest discover -s scripts/tests -p 'test_*.py'
 	$(PYTHON) -m ruff check scripts
 	$(PYTHON) -m ruff format --check scripts
 	$(PYTHON) scripts/validate_repo.py
@@ -52,9 +53,10 @@ rust:
 
 webmcp:
 	cd webmcp && npm run check
-	cd webmcp && npm test
+	cd webmcp && npm run test:coverage
 	cd webmcp && npm run prepack
 	cd webmcp && npm pack --dry-run
+	cd webmcp && npm run test:packed
 
 artifacts:
 	$(PYTHON) scripts/verify_artifacts.py

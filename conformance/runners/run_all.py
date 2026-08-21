@@ -15,9 +15,13 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from scripts.jsonschema_formats import strict_format_checker
+
 REPORT_DIR = ROOT / "conformance" / "reports"
 DEFAULT_REPORT = REPORT_DIR / "latest.json"
 SCHEMA = ROOT / "schemas" / "vcp-conformance-aggregate-report.schema.json"
@@ -312,9 +316,9 @@ def main() -> int:
     }
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     errors = sorted(
-        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(
-            report
-        ),
+        Draft202012Validator(
+            schema, format_checker=strict_format_checker()
+        ).iter_errors(report),
         key=lambda error: list(error.path),
     )
     if errors:

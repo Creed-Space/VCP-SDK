@@ -113,7 +113,7 @@ await loadPolyfillIfRequested({
 
 ## Conformance and schemas
 
-The fixture corpus currently contains 27 JSON fixtures and 294 cases.
+The fixture corpus currently contains 27 JSON fixtures and 337 cases.
 Fixture presence alone does not establish a pass. The vector-level coverage
 manifest distinguishes checked, unsupported, and not-applicable behavior. Run
 the complete checked gate and repository validator:
@@ -136,7 +136,10 @@ python3 scripts/validate_ecosystem.py \
 ```
 
 The default `full` mode builds every distribution and runs dependency and secret
-audits. `--mode core` is the shorter integrated behavior gate.
+audits plus maintained-SDK and Demo coverage. `--mode core` is the shorter
+integrated behavior gate without coverage. This helper covers exactly Demo,
+Spec, and the maintained SDK; validate Inspector and the legacy standalone
+Python candidate separately.
 
 For a coordinated local checkout, compare the SDK schema copies with the exact
 Spec candidate:

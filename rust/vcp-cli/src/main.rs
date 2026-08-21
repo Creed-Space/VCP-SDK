@@ -6,6 +6,7 @@
 //!
 //! ```text
 //! vcp-cli parse-token family.safe.guide@1.2.0
+//! vcp-cli parse-uri creed://creed.space/family.safe.guide@1.2.0
 //! vcp-cli parse-csm1 N5+F+E
 //! vcp-cli encode-csm1 '{"persona":"Nanny","adherence_level":5,...}'
 //! vcp-cli hash <content-file>
@@ -13,6 +14,7 @@
 //! ```
 
 use std::fs;
+use std::io::Read;
 use std::process;
 
 use clap::{Parser, Subcommand};
@@ -26,10 +28,15 @@ use vcp_core::extensions::personal::{
     PersonalDimension,
 };
 use vcp_core::identity::VcpToken;
-use vcp_core::negotiation::{negotiate_versioned, VersionedExtension};
-use vcp_core::orchestrator::{classify_temporal_claims, Orchestrator, MAX_CONTENT_SIZE};
+use vcp_core::negotiation::{negotiate_handshake, MAX_HANDSHAKE_BYTES};
+use vcp_core::orchestrator::{
+    classify_temporal_claims, Orchestrator, MAX_CONTENT_SIZE, MAX_MANIFEST_SIZE,
+};
 use vcp_core::transport;
 use vcp_core::trust::TrustConfig;
+
+const MAX_GENERAL_JSON_BYTES: usize = 16 * 1024 * 1024;
+const MAX_SIGNED_PAYLOAD_BYTES: usize = 16 * 1024 * 1024;
 
 #[derive(Parser)]
 #[command(name = "vcp-cli")]
@@ -61,6 +68,12 @@ enum Commands {
     ParseToken {
         /// Token string (e.g. "family.safe.guide@1.2.0").
         token: String,
+    },
+
+    /// Parse a strict creed:// or vcp:// identity URI.
+    ParseUri {
+        /// Identity URI (e.g. "creed://creed.space/family.safe.guide@1.2.0").
+        uri: String,
     },
 
     /// Parse a CSM-1 compact code and display its components.
@@ -183,6 +196,7 @@ fn main() {
             descendant,
         } => cmd_token_hierarchy(&ancestor, &descendant),
         Commands::ParseToken { token } => cmd_parse_token(&token),
+        Commands::ParseUri { uri } => cmd_parse_uri(&uri),
         Commands::ParseCsm1 { code } => cmd_parse_csm1(&code),
         Commands::ResolvePersona { code } => cmd_resolve_persona(&code),
         Commands::ParseCsm1Token { path } => cmd_parse_csm1_token(&path),
@@ -278,6 +292,15 @@ fn cmd_token_hierarchy(ancestor_raw: &str, descendant_raw: &str) -> Result<(), S
 
 fn cmd_parse_token(raw: &str) -> Result<(), String> {
     let token = VcpToken::parse(raw).map_err(|e| e.to_string())?;
+    print_parsed_token(&token)
+}
+
+fn cmd_parse_uri(raw: &str) -> Result<(), String> {
+    let token = VcpToken::from_uri(raw).map_err(|e| e.to_string())?;
+    print_parsed_token(&token)
+}
+
+fn print_parsed_token(token: &VcpToken) -> Result<(), String> {
     let json = serde_json::to_string_pretty(&token).map_err(|e| e.to_string())?;
     println!("{json}");
     println!();
@@ -285,7 +308,7 @@ fn cmd_parse_token(raw: &str) -> Result<(), String> {
     println!("approach:  {}", token.approach());
     println!("role:      {}", token.role());
     println!("depth:     {}", token.depth());
-    if let Some(ref v) = token.version {
+    if let Some(v) = token.version_text() {
         println!("version:   {v}");
     }
     if let Some(ref ns) = token.namespace {
@@ -351,14 +374,9 @@ fn cmd_resolve_persona(raw: &str) -> Result<(), String> {
 
 fn cmd_parse_csm1_token(path: &str) -> Result<(), String> {
     let input = if path == "-" {
-        use std::io::Read;
-        let mut buf = String::new();
-        std::io::stdin()
-            .read_to_string(&mut buf)
-            .map_err(|e| e.to_string())?;
-        buf
+        read_utf8_limited(std::io::stdin(), Csm1Token::MAX_TOKEN_BYTES, "CSM1 token")?
     } else {
-        fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?
+        read_text_file_limited(path, Csm1Token::MAX_TOKEN_BYTES, "CSM1 token")?
     };
 
     let token = Csm1Token::parse(&input).map_err(|e| e.to_string())?;
@@ -368,7 +386,8 @@ fn cmd_parse_csm1_token(path: &str) -> Result<(), String> {
 }
 
 fn cmd_encode_csm1(json: &str) -> Result<(), String> {
-    let code: Csm1Code = serde_json::from_str(json).map_err(|e| e.to_string())?;
+    let value = transport::parse_json_strict(json).map_err(|error| error.to_string())?;
+    let code: Csm1Code = serde_json::from_value(value).map_err(|e| e.to_string())?;
     println!("{}", code.encode());
     Ok(())
 }
@@ -417,13 +436,42 @@ fn cmd_encode_context(path: &str) -> Result<(), String> {
 }
 
 fn read_json(path: &str) -> Result<serde_json::Value, String> {
-    let raw = fs::read_to_string(path).map_err(|error| format!("cannot read {path}: {error}"))?;
-    serde_json::from_str(&raw).map_err(|error| error.to_string())
+    let raw = read_text_file_limited(path, MAX_GENERAL_JSON_BYTES, "JSON")?;
+    transport::parse_json_strict(&raw).map_err(|error| error.to_string())
+}
+
+fn read_utf8_limited<R: Read>(
+    reader: R,
+    maximum_bytes: usize,
+    label: &str,
+) -> Result<String, String> {
+    let mut raw = String::new();
+    reader
+        .take(maximum_bytes.saturating_add(1) as u64)
+        .read_to_string(&mut raw)
+        .map_err(|error| format!("cannot read {label}: {error}"))?;
+    if raw.len() > maximum_bytes {
+        return Err(format!("{label} exceeds {maximum_bytes} bytes"));
+    }
+    Ok(raw)
+}
+
+fn read_text_file_limited(path: &str, maximum_bytes: usize, label: &str) -> Result<String, String> {
+    let file = fs::File::open(path).map_err(|error| format!("cannot read {path}: {error}"))?;
+    read_utf8_limited(file, maximum_bytes, label)
+}
+
+fn read_json_limited(
+    path: &str,
+    maximum_bytes: usize,
+    label: &str,
+) -> Result<serde_json::Value, String> {
+    let raw = read_text_file_limited(path, maximum_bytes, &format!("{label} JSON"))?;
+    transport::parse_json_strict(&raw).map_err(|error| format!("invalid {label} JSON: {error}"))
 }
 
 fn cmd_canonicalize_content(path: &str) -> Result<(), String> {
-    let content =
-        fs::read_to_string(path).map_err(|error| format!("cannot read {path}: {error}"))?;
+    let content = read_text_file_limited(path, MAX_CONTENT_SIZE, "content")?;
     let canonical = transport::canonicalize_content(&content).map_err(|error| error.to_string())?;
     let canonical = String::from_utf8(canonical).map_err(|error| error.to_string())?;
     println!(
@@ -434,7 +482,7 @@ fn cmd_canonicalize_content(path: &str) -> Result<(), String> {
 }
 
 fn cmd_canonicalize_manifest(path: &str) -> Result<(), String> {
-    let manifest = read_json(path)?;
+    let manifest = read_json_limited(path, MAX_MANIFEST_SIZE, "manifest")?;
     let canonical =
         transport::canonicalize_manifest(&manifest).map_err(|error| error.to_string())?;
     println!(
@@ -445,7 +493,7 @@ fn cmd_canonicalize_manifest(path: &str) -> Result<(), String> {
 }
 
 fn cmd_sign_manifest(path: &str, seed_byte: u8) -> Result<(), String> {
-    let manifest = read_json(path)?;
+    let manifest = read_json_limited(path, MAX_MANIFEST_SIZE, "manifest")?;
     let signature =
         transport::sign_manifest(&manifest, &[seed_byte; 32]).map_err(|error| error.to_string())?;
     println!("{signature}");
@@ -472,7 +520,7 @@ fn cmd_verify_manifest_signature(
     public_key_hex: &str,
     signature: &str,
 ) -> Result<(), String> {
-    let manifest = read_json(path)?;
+    let manifest = read_json_limited(path, MAX_MANIFEST_SIZE, "manifest")?;
     let public_key = decode_hex_32(public_key_hex)?;
     let valid = transport::verify_manifest_signature(&manifest, &public_key, signature)
         .map_err(|error| error.to_string())?;
@@ -485,9 +533,19 @@ fn cmd_verify_manifest_signature(
 }
 
 fn cmd_verify_ed25519(path: &str, public_key_hex: &str, signature: &str) -> Result<(), String> {
-    let payload = fs::read(path).map_err(|e| format!("cannot read {path}: {e}"))?;
+    let payload = fs::File::open(path).map_err(|error| format!("cannot read {path}: {error}"))?;
+    let mut payload = payload.take(MAX_SIGNED_PAYLOAD_BYTES.saturating_add(1) as u64);
+    let mut bytes = Vec::new();
+    payload
+        .read_to_end(&mut bytes)
+        .map_err(|error| format!("cannot read {path}: {error}"))?;
+    if bytes.len() > MAX_SIGNED_PAYLOAD_BYTES {
+        return Err(format!(
+            "signed payload exceeds {MAX_SIGNED_PAYLOAD_BYTES} bytes"
+        ));
+    }
     let public_key = decode_hex_32(public_key_hex)?;
-    let valid = transport::verify_ed25519_signature(&payload, &public_key, signature)
+    let valid = transport::verify_ed25519_signature(&bytes, &public_key, signature)
         .map_err(|e| e.to_string())?;
     if !valid {
         return Err("signature did not verify".to_string());
@@ -497,10 +555,8 @@ fn cmd_verify_ed25519(path: &str, public_key_hex: &str, signature: &str) -> Resu
 }
 
 fn cmd_classify_temporal(path: &str) -> Result<(), String> {
-    let value: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?,
-    )
-    .map_err(|e| format!("invalid temporal fixture JSON: {e}"))?;
+    let value =
+        read_json(path).map_err(|error| format!("invalid temporal fixture JSON: {error}"))?;
     let timestamps = value
         .get("timestamps")
         .ok_or_else(|| "timestamps are required".to_string())?;
@@ -535,7 +591,11 @@ fn cmd_classify_temporal(path: &str) -> Result<(), String> {
 }
 
 fn cmd_content_policy(path: &str) -> Result<(), String> {
-    let content = fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?;
+    let content = read_text_file_limited(
+        path,
+        MAX_CONTENT_SIZE.saturating_add(1),
+        "content policy input",
+    )?;
     let orchestrator = Orchestrator::new(TrustConfig::default());
     println!(
         "{}",
@@ -564,7 +624,9 @@ fn cmd_personal_decay(
 ) -> Result<(), String> {
     use std::time::{Duration, SystemTime};
     let declared_at = SystemTime::UNIX_EPOCH;
-    let now = declared_at + Duration::from_secs(elapsed_seconds);
+    let now = declared_at
+        .checked_add(Duration::from_secs(elapsed_seconds))
+        .ok_or_else(|| "elapsed_seconds exceeds the supported timestamp range".to_string())?;
     let config = personal_config(half_life_seconds, baseline, pinned);
     println!(
         "{}",
@@ -585,7 +647,9 @@ fn cmd_personal_lifecycle(
 ) -> Result<(), String> {
     use std::time::{Duration, SystemTime};
     let declared_at = SystemTime::UNIX_EPOCH;
-    let now = declared_at + Duration::from_secs(elapsed_seconds);
+    let now = declared_at
+        .checked_add(Duration::from_secs(elapsed_seconds))
+        .ok_or_else(|| "elapsed_seconds exceeds the supported timestamp range".to_string())?;
     let mut config = personal_config(half_life_seconds, baseline, pinned);
     config.fresh_window_seconds = fresh_window_seconds;
     config.stale_threshold = stale_threshold;
@@ -626,44 +690,16 @@ fn cmd_personal_configs() -> Result<(), String> {
 }
 
 fn cmd_negotiate_extensions(path: &str) -> Result<(), String> {
-    let value: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?,
-    )
-    .map_err(|e| format!("invalid negotiation JSON: {e}"))?;
+    // The CLI fixture wraps both individually bounded wire messages.
+    let fixture_limit = MAX_HANDSHAKE_BYTES.saturating_mul(2).saturating_add(4096);
+    let value = read_json_limited(path, fixture_limit, "negotiation")?;
     let client = value
         .get("client_hello")
         .ok_or_else(|| "client_hello is required".to_string())?;
     let server = value
         .get("server_capabilities")
         .ok_or_else(|| "server_capabilities is required".to_string())?;
-    let client_version = client
-        .get("vcp_version")
-        .and_then(serde_json::Value::as_str)
-        .ok_or_else(|| "client vcp_version is required".to_string())?;
-    let server_version = server
-        .get("vcp_version")
-        .and_then(serde_json::Value::as_str)
-        .ok_or_else(|| "server vcp_version is required".to_string())?;
-    let client_extensions: Vec<VersionedExtension> = serde_json::from_value(
-        client
-            .get("extensions")
-            .cloned()
-            .unwrap_or_else(|| serde_json::json!([])),
-    )
-    .map_err(|e| format!("invalid client extensions: {e}"))?;
-    let server_extensions: Vec<VersionedExtension> = serde_json::from_value(
-        server
-            .get("extensions")
-            .cloned()
-            .unwrap_or_else(|| serde_json::json!([])),
-    )
-    .map_err(|e| format!("invalid server extensions: {e}"))?;
-    let result = negotiate_versioned(
-        client_version,
-        &client_extensions,
-        server_version,
-        &server_extensions,
-    )?;
+    let result = negotiate_handshake(client, server)?;
     println!(
         "{}",
         serde_json::to_string(&result).map_err(|e| e.to_string())?
@@ -672,10 +708,7 @@ fn cmd_negotiate_extensions(path: &str) -> Result<(), String> {
 }
 
 fn cmd_run_consensus(path: &str) -> Result<(), String> {
-    let value: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?,
-    )
-    .map_err(|e| format!("invalid consensus JSON: {e}"))?;
+    let value = read_json(path).map_err(|error| format!("invalid consensus JSON: {error}"))?;
     let candidates: Vec<String> = serde_json::from_value(
         value
             .get("candidates")
@@ -692,7 +725,7 @@ fn cmd_run_consensus(path: &str) -> Result<(), String> {
     .map_err(|e| format!("invalid ballots: {e}"))?;
     let mut election = SchulzeElection::new(candidates).map_err(str::to_string)?;
     for ballot in ballots {
-        election.add_ballot(ballot);
+        election.add_ballot(ballot).map_err(str::to_string)?;
     }
     println!(
         "{}",
@@ -702,10 +735,7 @@ fn cmd_run_consensus(path: &str) -> Result<(), String> {
 }
 
 fn cmd_run_layered_composition(path: &str) -> Result<(), String> {
-    let value: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?,
-    )
-    .map_err(|e| format!("invalid composition JSON: {e}"))?;
+    let value = read_json(path).map_err(|error| format!("invalid composition JSON: {error}"))?;
     let bundles: Vec<LayeredBundle> = serde_json::from_value(
         value
             .get("bundles")
@@ -729,17 +759,15 @@ fn cmd_run_layered_composition(path: &str) -> Result<(), String> {
 }
 
 fn cmd_hash(path: &str) -> Result<(), String> {
-    let content = fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?;
+    let content = read_text_file_limited(path, MAX_CONTENT_SIZE, "content")?;
     let hash = transport::compute_content_hash(&content).map_err(|e| e.to_string())?;
     println!("{hash}");
     Ok(())
 }
 
 fn cmd_verify(manifest_path: &str, content_path: &str) -> Result<(), String> {
-    let manifest_json = fs::read_to_string(manifest_path)
-        .map_err(|e| format!("cannot read {manifest_path}: {e}"))?;
-    let content =
-        fs::read_to_string(content_path).map_err(|e| format!("cannot read {content_path}: {e}"))?;
+    let manifest_json = read_text_file_limited(manifest_path, MAX_MANIFEST_SIZE, "manifest")?;
+    let content = read_text_file_limited(content_path, MAX_CONTENT_SIZE, "content")?;
 
     let result = transport::verify_bundle(&manifest_json, &content).map_err(|e| e.to_string())?;
 
@@ -751,4 +779,31 @@ fn cmd_verify(manifest_path: &str, content_path: &str) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::Cursor;
+
+    use super::{cmd_personal_decay, cmd_personal_lifecycle, read_utf8_limited};
+
+    #[test]
+    fn bounded_reader_accepts_exact_limit_and_rejects_one_byte_over() {
+        assert_eq!(
+            read_utf8_limited(Cursor::new(b"1234"), 4, "fixture").unwrap(),
+            "1234"
+        );
+        assert!(read_utf8_limited(Cursor::new(b"12345"), 4, "fixture").is_err());
+    }
+
+    #[test]
+    fn bounded_reader_rejects_invalid_utf8() {
+        assert!(read_utf8_limited(Cursor::new([0xff]), 1, "fixture").is_err());
+    }
+
+    #[test]
+    fn personal_time_commands_reject_unrepresentable_elapsed_seconds() {
+        assert!(cmd_personal_decay(5, 60.0, 1, u64::MAX, false).is_err());
+        assert!(cmd_personal_lifecycle(5, 60.0, 1, u64::MAX, 30.0, 1.5, false).is_err());
+    }
 }

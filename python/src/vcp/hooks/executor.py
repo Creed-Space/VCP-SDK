@@ -1,8 +1,8 @@
 """
 VCP Hook Chain Executor.
 
-Runs hook chains with timeout enforcement, error handling, predicate
-evaluation, and cascading failure detection.
+Runs hook chains with timeout enforcement, fail-closed error handling,
+and predicate evaluation.
 
 Spec reference: VCP_HOOKS.md sections 5, 7.
 """
@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from copy import deepcopy
 from typing import Any
 
 from ..metrics import vcp_hook_duration_seconds, vcp_hook_executions_total
@@ -35,10 +36,9 @@ class HookExecutor:
     running before session hooks at equal priority. Handles:
     - Predicate evaluation (skip hooks whose condition returns False)
     - Timeout enforcement per hook
-    - Exception handling (fail-open: treat as "continue")
+    - Exception handling (fail closed: abort the chain)
     - Abort semantics (halt chain on first abort)
     - Modify semantics (pass modified data to next hook)
-    - Cascading failure detection (>50% hooks fail -> warning)
     - Chain state passing between hooks
     """
 
@@ -73,6 +73,8 @@ class HookExecutor:
             ChainResult with final context/constitution and per-hook results.
         """
         chain = self._registry.get_chain(hook_type, session_id)
+        if session_info is not None and not isinstance(session_info, dict):
+            raise TypeError("session_info must be an object or null")
 
         if not chain:
             return ChainResult(
@@ -85,22 +87,38 @@ class HookExecutor:
         current_context = context
         current_constitution = constitution
         results: list[tuple[str, HookResult]] = []
-        errors = 0
-        executed = 0
-
         for hook in chain:
             if not hook.enabled:
                 logger.debug("hook.skipped: name=%s reason=disabled", hook.name)
                 continue
 
             # Build input for this hook
-            hook_input = HookInput(
-                context=current_context,
-                constitution=current_constitution,
-                event=event,
-                session=session_info or {},
-                chain_state=chain_state,
-            )
+            try:
+                hook_input = HookInput(
+                    context=deepcopy(current_context),
+                    constitution=deepcopy(current_constitution),
+                    event=deepcopy(event),
+                    session=deepcopy({} if session_info is None else session_info),
+                    chain_state=deepcopy(chain_state),
+                )
+            except Exception:
+                logger.error(
+                    "hook.error: name=%s reason=input_snapshot_failed",
+                    hook.name,
+                    exc_info=True,
+                )
+                result = HookResult(
+                    status=ResultStatus.ABORT,
+                    reason=f"Hook '{hook.name}' input snapshot failed",
+                )
+                return ChainResult(
+                    status="aborted",
+                    reason=result.reason,
+                    context=current_context,
+                    constitution=current_constitution,
+                    hook_results=[*results, (hook.name, result)],
+                    aborted_by=hook.name,
+                )
 
             # Evaluate predicate
             if hook.condition is not None:
@@ -112,20 +130,32 @@ class HookExecutor:
                         )
                         continue
                 except Exception:
-                    logger.warning(
-                        "hook.skipped: name=%s reason=predicate_error",
+                    logger.error(
+                        "hook.error: name=%s reason=predicate_error",
                         hook.name,
                         exc_info=True,
                     )
-                    continue
+                    result = HookResult(
+                        status=ResultStatus.ABORT,
+                        reason=f"Hook '{hook.name}' predicate failed",
+                    )
+                    results.append((hook.name, result))
+                    return ChainResult(
+                        status="aborted",
+                        reason=result.reason,
+                        context=current_context,
+                        constitution=current_constitution,
+                        hook_results=results,
+                        aborted_by=hook.name,
+                    )
 
             # Execute with timeout
-            executed += 1
             logger.debug("hook.fired: name=%s type=%s", hook.name, hook_type.value)
             start_ns = time.monotonic_ns()
 
             try:
                 result = self._execute_with_timeout(hook, hook_input)
+                chain_state = hook_input.chain_state
             except _HookTimeoutError:
                 elapsed_ms = (time.monotonic_ns() - start_ns) // 1_000_000
                 logger.warning(
@@ -134,8 +164,10 @@ class HookExecutor:
                     hook.timeout_ms,
                     elapsed_ms,
                 )
-                result = HookResult(status=ResultStatus.CONTINUE)
-                errors += 1
+                result = HookResult(
+                    status=ResultStatus.ABORT,
+                    reason=f"Hook '{hook.name}' timed out",
+                )
             except Exception:
                 elapsed_ms = (time.monotonic_ns() - start_ns) // 1_000_000
                 logger.error(
@@ -144,8 +176,10 @@ class HookExecutor:
                     elapsed_ms,
                     exc_info=True,
                 )
-                result = HookResult(status=ResultStatus.CONTINUE)
-                errors += 1
+                result = HookResult(
+                    status=ResultStatus.ABORT,
+                    reason=f"Hook '{hook.name}' failed",
+                )
 
             # Record duration and metrics
             duration_ms = (time.monotonic_ns() - start_ns) // 1_000_000
@@ -187,23 +221,11 @@ class HookExecutor:
                 if result.modified_constitution is not None:
                     current_constitution = result.modified_constitution
 
-        # Cascading failure detection
-        cascade_failure = False
-        if executed > 0 and errors / executed > 0.5:
-            logger.warning(
-                "hook.cascade_failure: type=%s total=%d errors=%d",
-                hook_type.value,
-                executed,
-                errors,
-            )
-            cascade_failure = True
-
         return ChainResult(
             status="completed",
             context=current_context,
             constitution=current_constitution,
             hook_results=results,
-            cascade_failure=cascade_failure,
         )
 
     @staticmethod
@@ -245,15 +267,18 @@ class HookExecutor:
         if error_container[0] is not None:
             raise error_container[0]
 
-        if result_container[0] is None:
-            # Hook returned None - treat as continue per spec (invalid result)
-            logger.warning(
-                "hook.invalid_result: name=%s returned None, treating as continue",
-                hook.name,
-            )
-            return HookResult(status=ResultStatus.CONTINUE)
-
-        return result_container[0]
+        result = result_container[0]
+        if not isinstance(result, HookResult):
+            raise TypeError(f"Hook '{hook.name}' must return HookResult")
+        if not isinstance(result.status, ResultStatus):
+            raise TypeError(f"Hook '{hook.name}' returned an invalid result status")
+        if result.status is ResultStatus.ABORT and (
+            not isinstance(result.reason, str) or not result.reason
+        ):
+            raise TypeError(f"Hook '{hook.name}' abort result must include a reason")
+        if not isinstance(result.annotations, dict):
+            raise TypeError(f"Hook '{hook.name}' annotations must be an object")
+        return result
 
 
 class _HookTimeoutError(Exception):

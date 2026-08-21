@@ -8,6 +8,21 @@ import type {
 } from './types.js';
 import { createVCPTools } from './tools.js';
 
+const DEFAULT_REGISTRATION_TIMEOUT_MS = 5000;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function safeErrorMessage(error: unknown): string {
+	try {
+		if (error instanceof Error && typeof error.message === 'string') return error.message;
+		return String(error);
+	} catch {
+		return 'unknown registration error';
+	}
+}
+
 function emptyResult(): VCPWebMCPResult {
 	return {
 		registered: [],
@@ -20,8 +35,28 @@ function emptyResult(): VCPWebMCPResult {
 function registrationFailure(name: string, error: unknown): WebMCPRegistrationFailure {
 	return {
 		name,
-		reason: error instanceof Error ? error.message : String(error)
+		reason: safeErrorMessage(error)
 	};
+}
+
+async function registerWithTimeout(
+	operation: Promise<void>,
+	timeoutMs: number,
+): Promise<void> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	try {
+		await Promise.race([
+			operation,
+			new Promise<never>((_resolve, reject) => {
+				timer = setTimeout(
+					() => reject(new Error(`registration timed out after ${timeoutMs}ms`)),
+					timeoutMs,
+				);
+			}),
+		]);
+	} finally {
+		if (timer !== undefined) clearTimeout(timer);
+	}
 }
 
 function findModelContext(): {
@@ -62,19 +97,34 @@ export async function registerVCPTools(
 ): Promise<VCPWebMCPResult> {
 	const resolved = findModelContext();
 	if (!resolved) return emptyResult();
+	const safeConfig: VCPWebMCPConfig = isRecord(config) ? config : {};
+	const timeoutMs = safeConfig.registrationTimeoutMs ?? DEFAULT_REGISTRATION_TIMEOUT_MS;
+	if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) {
+		throw new RangeError('registrationTimeoutMs must be an integer from 1 to 30000');
+	}
 
-	const controller = new AbortController();
+	const ownedControllers: AbortController[] = [];
 	const registered: string[] = [];
 	const failed: WebMCPRegistrationFailure[] = [];
 
-	for (const tool of createVCPTools(config)) {
+	for (const tool of createVCPTools(safeConfig)) {
+		const controller = new AbortController();
 		try {
-			await resolved.context.registerTool(tool, { signal: controller.signal });
+			await registerWithTimeout(
+				resolved.context.registerTool(tool, { signal: controller.signal }),
+				timeoutMs,
+			);
 			registered.push(tool.name);
+			ownedControllers.push(controller);
 		} catch (error) {
+			controller.abort();
 			const failure = registrationFailure(tool.name, error);
 			failed.push(failure);
-			config.onRegistrationError?.(failure);
+			try {
+				safeConfig.onRegistrationError?.(failure);
+			} catch {
+				// Error reporting cannot interrupt ownership of later registrations.
+			}
 		}
 	}
 
@@ -86,7 +136,7 @@ export async function registerVCPTools(
 		cleanup() {
 			if (cleaned) return;
 			cleaned = true;
-			controller.abort();
+			for (const controller of ownedControllers) controller.abort();
 		}
 	};
 }

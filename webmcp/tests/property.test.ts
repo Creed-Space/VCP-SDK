@@ -13,6 +13,16 @@ import { negotiate } from "../src/extensions/negotiation.js";
 
 const PROPERTY_OPTIONS = { numRuns: 500, seed: 0x564350 } as const;
 const identifier = fc.stringMatching(/^[a-z][a-z0-9_]{0,31}$/);
+const extensionIdentifier = fc
+  .stringMatching(/^[A-Za-z][A-Za-z0-9-]{0,31}$/)
+  .map((suffix) => `VCP-X-${suffix}`);
+const coreFeatures = {
+  encryption: true,
+  injection_scanning: true,
+  revocation: true,
+  audit_chain: true,
+  context_opacity: true,
+} as const;
 
 describe("deterministic generative invariants", () => {
   it("round-trips protocol-safe personal state values", () => {
@@ -34,24 +44,37 @@ describe("deterministic generative invariants", () => {
   it("partitions requested capabilities without loss or invention", () => {
     fc.assert(
       fc.property(
-        fc.uniqueArray(identifier, { maxLength: 32 }),
-        fc.uniqueArray(identifier, { maxLength: 32 }),
+        fc.uniqueArray(extensionIdentifier, { maxLength: 32 }),
+        fc.uniqueArray(extensionIdentifier, { maxLength: 32 }),
         (requested, supported) => {
           const result = negotiate(
-            { version: "3.1.0", requestedCapabilities: requested },
-            supported,
+            {
+              type: "vcp-hello",
+              version: "3.1",
+              min_version: "1.0",
+              extensions: requested,
+            },
+            {
+              supported_versions: ["1.0", "3.1"],
+              extensions: Object.fromEntries(
+                supported.map((extension) => [extension, {}]),
+              ),
+              core_features: coreFeatures,
+            },
           );
+          expect(result.type).toBe("vcp-ack");
+          if (result.type !== "vcp-ack") return;
           const supportedSet = new Set(supported);
-          expect(result.grantedCapabilities).toEqual(
+          expect(result.supported).toEqual(
             requested.filter((capability) => supportedSet.has(capability)),
           );
-          expect(result.deniedCapabilities).toEqual(
+          expect(result.unsupported).toEqual(
             requested.filter((capability) => !supportedSet.has(capability)),
           );
           expect(
             [
-              ...result.grantedCapabilities,
-              ...result.deniedCapabilities,
+              ...result.supported,
+              ...result.unsupported,
             ].sort(),
           ).toEqual([...requested].sort());
         },

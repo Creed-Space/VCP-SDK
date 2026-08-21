@@ -14,6 +14,8 @@ cargo build --manifest-path rust/Cargo.toml -p vcp-cli
 cargo run --manifest-path rust/Cargo.toml -p vcp-cli -- --help
 cargo run --manifest-path rust/Cargo.toml -p vcp-cli -- \
   parse-token family.safe.guide@1.2.0
+cargo run --manifest-path rust/Cargo.toml -p vcp-cli -- \
+  parse-uri creed://creed.space/family.safe.guide@1.2.0
 ```
 
 The CLI writes successful command results to standard output and diagnostics

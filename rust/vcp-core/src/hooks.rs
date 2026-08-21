@@ -151,6 +151,10 @@ pub struct HookResult {
 ///
 /// Handlers must be `Send + Sync` to support registration from
 /// multiple threads, though chain execution itself is sequential.
+/// Because synchronous Rust handlers cannot be pre-empted, implementations
+/// must not mutate shared adaptation state or exercise external side-effect
+/// authority directly. All proposed mutations must travel through the returned
+/// [`HookResult`], allowing the executor to discard a late or failed result.
 pub trait HookHandler: Send + Sync {
     /// Execute this hook against the given input.
     fn execute(&self, input: &HookInput) -> HookResult;
@@ -439,6 +443,10 @@ pub struct HookExecutor<'a> {
     registry: &'a HookRegistry,
 }
 
+fn deadline_exceeded(elapsed: Duration, timeout: Duration) -> bool {
+    elapsed >= timeout
+}
+
 impl<'a> HookExecutor<'a> {
     /// Create an executor backed by the given registry.
     pub fn new(registry: &'a HookRegistry) -> Self {
@@ -454,9 +462,10 @@ impl<'a> HookExecutor<'a> {
     /// - `Continue` passes through unchanged.
     /// - `Abort` halts the chain immediately.
     /// - `Modify` updates the context/constitution for subsequent hooks.
-    /// - Panics in handlers are caught via `catch_unwind` and treated as `Continue`.
+    /// - Panics in handlers are caught via `catch_unwind` and abort the chain.
     /// - Timeout enforcement is best-effort (the handler runs synchronously; the
-    ///   duration is recorded but cannot be pre-empted in a sync context).
+    ///   duration is recorded but cannot be pre-empted in a sync context). A
+    ///   result produced after the deadline is rejected and aborts the chain.
     pub fn execute(
         &self,
         hook_type: HookType,
@@ -476,26 +485,35 @@ impl<'a> HookExecutor<'a> {
             let start = Instant::now();
 
             // Execute with panic safety. We use AssertUnwindSafe because
-            // HookInput contains types that are not UnwindSafe by default,
-            // but we accept this for the fail-open semantics required by spec.
+            // HookInput contains types that are not UnwindSafe by default.
             let panic_result =
                 panic::catch_unwind(AssertUnwindSafe(|| hook.handler.execute(&input)));
 
             let elapsed = start.elapsed();
 
             let hook_result = match panic_result {
+                Ok(_) if deadline_exceeded(elapsed, hook.timeout) => HookResult {
+                    action: HookAction::Abort {
+                        reason: format!(
+                            "hook '{}' exceeded its {}ms timeout",
+                            hook.name,
+                            hook.timeout.as_millis()
+                        ),
+                    },
+                    annotations: HashMap::new(),
+                    duration: elapsed,
+                },
                 Ok(mut result) => {
                     result.duration = elapsed;
                     result
                 }
-                Err(_) => {
-                    // Spec: exception -> treat as Continue, chain continues.
-                    HookResult {
-                        action: HookAction::Continue,
-                        annotations: HashMap::new(),
-                        duration: elapsed,
-                    }
-                }
+                Err(_) => HookResult {
+                    action: HookAction::Abort {
+                        reason: format!("hook '{}' panicked", hook.name),
+                    },
+                    annotations: HashMap::new(),
+                    duration: elapsed,
+                },
             };
 
             match &hook_result.action {
@@ -507,8 +525,10 @@ impl<'a> HookExecutor<'a> {
                         completed: false,
                         aborted_by: Some(hook_name),
                         abort_reason: Some(abort_reason),
-                        modified_context,
-                        modified_constitution,
+                        // Modifications are staged for subsequent hooks only.
+                        // Any abort rolls the chain back to its committed input.
+                        modified_context: None,
+                        modified_constitution: None,
                         results,
                     };
                 }
@@ -601,6 +621,18 @@ mod tests {
     impl HookHandler for PanicHandler {
         fn execute(&self, _input: &HookInput) -> HookResult {
             panic!("intentional panic for testing");
+        }
+    }
+
+    struct SlowHandler;
+    impl HookHandler for SlowHandler {
+        fn execute(&self, _input: &HookInput) -> HookResult {
+            std::thread::sleep(Duration::from_millis(5));
+            HookResult {
+                action: HookAction::Continue,
+                annotations: HashMap::new(),
+                duration: Duration::ZERO,
+            }
         }
     }
 
@@ -988,7 +1020,7 @@ mod tests {
     }
 
     #[test]
-    fn panic_in_handler_treated_as_continue() {
+    fn panic_in_handler_aborts_fail_closed() {
         let mut reg = HookRegistry::new();
         reg.register(
             make_hook("panicker", HookType::PreInject, 90, Box::new(PanicHandler)),
@@ -1011,11 +1043,75 @@ mod tests {
         let executor = HookExecutor::new(&reg);
         let result = executor.execute(HookType::PreInject, "s", make_input());
 
-        // Chain should complete despite the panic.
-        assert!(result.completed);
+        assert!(!result.completed);
+        assert_eq!(result.aborted_by.as_deref(), Some("panicker"));
+        assert_eq!(result.results.len(), 1);
+        assert!(matches!(
+            result.results[0].1.action,
+            HookAction::Abort { .. }
+        ));
+    }
+
+    #[test]
+    fn abort_discards_modifications_staged_by_earlier_hooks() {
+        let mut reg = HookRegistry::new();
+        reg.register(
+            make_hook(
+                "staged-modifier",
+                HookType::PreInject,
+                90,
+                Box::new(ModifyHandler {
+                    value: serde_json::json!({"context": {"staged": true}}),
+                }),
+            ),
+            HookScope::Deployment,
+            None,
+        )
+        .unwrap();
+        reg.register(
+            make_hook("panicker", HookType::PreInject, 80, Box::new(PanicHandler)),
+            HookScope::Deployment,
+            None,
+        )
+        .unwrap();
+
+        let result = HookExecutor::new(&reg).execute(HookType::PreInject, "s", make_input());
+
+        assert!(!result.completed);
+        assert_eq!(result.aborted_by.as_deref(), Some("panicker"));
         assert_eq!(result.results.len(), 2);
-        // The panicking hook's result should be Continue.
-        assert_eq!(result.results[0].1.action, HookAction::Continue);
+        assert!(result.modified_context.is_none());
+        assert!(result.modified_constitution.is_none());
+    }
+
+    #[test]
+    fn handler_result_after_timeout_aborts_fail_closed() {
+        let mut reg = HookRegistry::new();
+        let mut hook = make_hook("slow-hook", HookType::PreInject, 50, Box::new(SlowHandler));
+        hook.timeout = Duration::from_millis(1);
+        reg.register(hook, HookScope::Deployment, None).unwrap();
+
+        let result = HookExecutor::new(&reg).execute(HookType::PreInject, "s", make_input());
+
+        assert!(!result.completed);
+        assert_eq!(result.aborted_by.as_deref(), Some("slow-hook"));
+        assert!(result
+            .abort_reason
+            .as_deref()
+            .is_some_and(|reason| reason.contains("timeout")));
+        assert!(result.results[0].1.duration >= Duration::from_millis(1));
+    }
+
+    #[test]
+    fn timeout_boundary_is_inclusive() {
+        assert!(!deadline_exceeded(
+            Duration::from_nanos(999_999),
+            Duration::from_millis(1)
+        ));
+        assert!(deadline_exceeded(
+            Duration::from_millis(1),
+            Duration::from_millis(1)
+        ));
     }
 
     #[test]

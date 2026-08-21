@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import subprocess
 import sys
@@ -87,6 +88,42 @@ PERSONAL_FIELDS = {
     "body_signals",
 }
 FORBIDDEN_PERSONAL_FIELDS = {"cognitive", "emotional", "energy", "urgency", "body"}
+MAX_JSON_BYTES = 16 * 1024 * 1024
+EXPECTED_CONFORMANCE_FILES = 27
+EXPECTED_VECTOR_CASES = 226
+EXPECTED_TEST_CASES = 111
+
+
+class DuplicateJsonKeyError(ValueError):
+    """Raised when JSON repeats a key within one object."""
+
+
+class NonFiniteJsonNumberError(ValueError):
+    """Raised when a JSON number overflows the runtime's finite float range."""
+
+
+def strict_json_loads(text: str) -> object:
+    """Parse JSON without JSON.parse-style last-key-wins ambiguity."""
+
+    def reject_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        value: dict[str, object] = {}
+        for key, item in pairs:
+            if key in value:
+                raise DuplicateJsonKeyError(f"duplicate object key {key!r}")
+            value[key] = item
+        return value
+
+    parsed = json.loads(text, object_pairs_hook=reject_duplicates)
+    pending = [parsed]
+    while pending:
+        value = pending.pop()
+        if isinstance(value, float) and not math.isfinite(value):
+            raise NonFiniteJsonNumberError("JSON contains a non-finite number")
+        if isinstance(value, dict):
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+    return parsed
 
 
 class Problems:
@@ -139,8 +176,20 @@ def excluded(path: Path) -> bool:
 
 def load_json(path: Path, problems: Problems) -> object | None:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        if path.stat().st_size > MAX_JSON_BYTES:
+            problems.add(
+                f"{relative(path)} exceeds the {MAX_JSON_BYTES}-byte JSON validation limit"
+            )
+            return None
+        return strict_json_loads(path.read_text(encoding="utf-8"))
+    except (
+        OSError,
+        UnicodeError,
+        json.JSONDecodeError,
+        DuplicateJsonKeyError,
+        NonFiniteJsonNumberError,
+        RecursionError,
+    ) as exc:
         problems.add(f"{relative(path)} is not valid UTF-8 JSON: {exc}")
         return None
 
@@ -166,11 +215,14 @@ def validate_conformance(problems: Problems) -> None:
         for path in (ROOT / "conformance").rglob("*.json")
         if path.name != "coverage-manifest.json" and "reports" not in path.parts
     )
-    if len(files) != 27:
-        problems.add(f"expected 27 conformance fixture files, found {len(files)}")
+    if len(files) != EXPECTED_CONFORMANCE_FILES:
+        problems.add(
+            f"expected {EXPECTED_CONFORMANCE_FILES} conformance fixture files, "
+            f"found {len(files)}"
+        )
 
     total_vectors = 0
-    total_extension_cases = 0
+    total_test_cases = 0
     global_ids: dict[str, Path] = {}
     for path in files:
         loaded = load_json(path, problems)
@@ -191,7 +243,7 @@ def validate_conformance(problems: Problems) -> None:
             )
             continue
         if key == "test_cases":
-            total_extension_cases += len(cases)
+            total_test_cases += len(cases)
         else:
             total_vectors += len(cases)
         local_ids: set[str] = set()
@@ -219,13 +271,17 @@ def validate_conformance(problems: Problems) -> None:
                     f"{relative(path)} {case_id} needs expected results or a verification checklist"
                 )
 
-    if total_vectors != 216:
-        problems.add(f"expected 216 top-level vectors, found {total_vectors}")
-    if total_extension_cases != 78:
-        problems.add(f"expected 78 extension test cases, found {total_extension_cases}")
+    if total_vectors != EXPECTED_VECTOR_CASES:
+        problems.add(
+            f"expected {EXPECTED_VECTOR_CASES} vector cases, found {total_vectors}"
+        )
+    if total_test_cases != EXPECTED_TEST_CASES:
+        problems.add(
+            f"expected {EXPECTED_TEST_CASES} test cases, found {total_test_cases}"
+        )
     print(
         f"conformance inventory: {len(files)} files, "
-        f"{total_vectors} vectors, {total_extension_cases} extension cases"
+        f"{total_vectors} vectors, {total_test_cases} test cases"
     )
 
 

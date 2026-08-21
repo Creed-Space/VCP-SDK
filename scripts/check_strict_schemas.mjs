@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 
+import { parseStrictJson } from "./strict_json.mjs";
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const directory = path.join(root, "schemas");
 const schemas = fs
@@ -17,7 +19,7 @@ let failed = false;
 for (const file of schemas) {
   const label = path.relative(root, file);
   try {
-    const schema = JSON.parse(fs.readFileSync(file, "utf8"));
+    const schema = parseStrictJson(fs.readFileSync(file, "utf8"), { label });
     const ajv = new Ajv2020({ allErrors: true, strict: true });
     addFormats(ajv);
     ajv.compile(schema);

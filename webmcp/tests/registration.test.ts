@@ -28,6 +28,7 @@ function useDocumentContext(context: WebMCPModelContext): void {
 
 afterEach(() => {
 	vi.unstubAllGlobals();
+	vi.useRealTimers();
 });
 
 describe('registerVCPTools', () => {
@@ -62,16 +63,17 @@ describe('registerVCPTools', () => {
 			{ name: 'vcp_list_personas', reason: 'duplicate name' }
 		]);
 		expect(failures).toHaveBeenCalledWith(result.failed[0]);
-		expect(calls.every((call) => call.signal === calls[0].signal)).toBe(true);
+		expect(calls[0].signal?.aborted).toBe(false);
+		expect(calls[1].signal?.aborted).toBe(true);
+		expect(calls[0].signal).not.toBe(calls[1].signal);
 
 		result.cleanup();
 		expect(calls[0].signal?.aborted).toBe(true);
-		result.cleanup();
-		expect(calls[0].signal?.aborted).toBe(true);
+		expect(() => result.cleanup()).not.toThrow();
 	});
 
 	it('reports total failure without claiming a registration', async () => {
-		const { context } = contextWith(async () => {
+		const { context, calls } = contextWith(async () => {
 			throw new TypeError('registration denied');
 		});
 		useDocumentContext(context);
@@ -83,6 +85,64 @@ describe('registerVCPTools', () => {
 			'vcp_chat',
 			'vcp_list_personas'
 		]);
+		expect(calls.every((call) => call.signal?.aborted)).toBe(true);
+	});
+
+	it('bounds a registration that never settles and aborts its lifecycle signal', async () => {
+		vi.useFakeTimers();
+		const { context, calls } = contextWith(
+			async () => new Promise<void>(() => {}),
+		);
+		useDocumentContext(context);
+
+		const pending = registerVCPTools({
+			enableChat: false,
+			registrationTimeoutMs: 10,
+		});
+		await vi.advanceTimersByTimeAsync(10);
+		const result = await pending;
+
+		expect(result.registered).toEqual([]);
+		expect(result.failed).toEqual([
+			{ name: 'vcp_list_personas', reason: 'registration timed out after 10ms' },
+		]);
+		expect(calls[0].signal?.aborted).toBe(true);
+	});
+
+	it('sanitizes hostile rejection values and isolates a throwing observer', async () => {
+		const hostile = new Proxy(
+			{},
+			{
+				getPrototypeOf() {
+					throw new Error('prototype trap');
+				},
+			},
+		);
+		const { context } = contextWith(async () => Promise.reject(hostile));
+		useDocumentContext(context);
+		const result = await registerVCPTools({
+			enableChat: false,
+			onRegistrationError: () => {
+				throw new Error('observer failed');
+			},
+		});
+		expect(result.failed).toEqual([
+			{ name: 'vcp_list_personas', reason: 'unknown registration error' },
+		]);
+	});
+
+	it('accepts malformed runtime config as empty but rejects an invalid timeout', async () => {
+		const registerTool = vi.fn(async () => {});
+		useDocumentContext({ registerTool });
+		const result = await registerVCPTools(null as never);
+		expect(result.registered).toEqual([
+			'vcp_chat',
+			'vcp_list_personas',
+		]);
+		result.cleanup();
+		await expect(registerVCPTools({ registrationTimeoutMs: 0 })).rejects.toThrow(
+			'registrationTimeoutMs must be an integer from 1 to 30000',
+		);
 	});
 
 	it('prefers Document over the deprecated Navigator location', async () => {

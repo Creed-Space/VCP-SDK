@@ -10,45 +10,83 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from jsonschema import Draft202012Validator
+
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from scripts.jsonschema_formats import strict_format_checker
+
 PYTHON_SRC = ROOT / "python" / "src"
 FIXTURE = ROOT / "conformance" / "adaptation" / "messaging.json"
+SCHEMA = ROOT / "schemas" / "vcp-messaging-v2.0.schema.json"
 
 
 def classify_error(error: str) -> str:
     """Map human-readable validator output to stable conformance metadata."""
     mappings = (
+        ("unknown field", "unknown_field"),
+        ("unknown fields", "unknown_field"),
         ("vcp_message must be", "invalid_version"),
         ("type must be one of", "invalid_type"),
         ("message_id", "invalid_message_id"),
-        ("sender is required", "missing_sender"),
-        ("recipient is required", "missing_recipient"),
+        ("sender must be", "invalid_sender"),
+        ("recipient must be", "invalid_recipient"),
         ("timestamp", "invalid_timestamp"),
         ("payload must be", "invalid_payload"),
+        ("payload.context", "invalid_context"),
+        ("payload.personal_state", "invalid_personal_state"),
+        ("constitution_ref", "invalid_constitution_ref"),
+        ("manifest_hash", "invalid_manifest_hash"),
+        ("payload.scope", "invalid_scope"),
+        ("payload.constraints", "invalid_constraints"),
+        ("propagation_mode", "invalid_propagation_mode"),
         ("severity must be", "invalid_severity"),
-        ("requires_ack", "ack_required"),
+        ("requires_ack must be true", "ack_required"),
+        ("signature", "invalid_signature"),
     )
+    if error.startswith("payload.") and error.endswith(" is required"):
+        return "missing_payload_field"
+    if error.startswith("payload.constraints[") and error.endswith(" is required"):
+        return "missing_payload_field"
     for fragment, code in mappings:
         if fragment in error:
             return code
     return "validation_error"
 
 
-def run_case(data: dict[str, Any]) -> dict[str, Any]:
+def run_case(data: dict[str, Any], validator: Draft202012Validator) -> dict[str, Any]:
     if str(PYTHON_SRC) not in sys.path:
         sys.path.insert(0, str(PYTHON_SRC))
     from vcp.messaging import message_from_dict, message_to_dict, validate_message
 
+    schema_errors = sorted(
+        validator.iter_errors(data), key=lambda error: list(error.absolute_path)
+    )
     try:
         message = message_from_dict(data)
     except KeyError as error:
         field = str(error.args[0])
-        return {"valid": False, "error_codes": [f"missing_{field}"]}
+        return {
+            "valid": False,
+            "schema_valid": not schema_errors,
+            "schema_error": schema_errors[0].message if schema_errors else None,
+            "error_codes": [f"missing_{field}"],
+        }
+    except (TypeError, ValueError) as error:
+        return {
+            "valid": False,
+            "schema_valid": not schema_errors,
+            "schema_error": schema_errors[0].message if schema_errors else None,
+            "error_codes": [classify_error(str(error))],
+        }
     errors = validate_message(message)
     serialized = message_to_dict(message)
     roundtrip = message_to_dict(message_from_dict(serialized)) == serialized
     return {
         "valid": not errors,
+        "schema_valid": not schema_errors,
+        "schema_error": schema_errors[0].message if schema_errors else None,
         "error_codes": sorted({classify_error(error) for error in errors}),
         "roundtrip": roundtrip,
     }
@@ -59,11 +97,19 @@ def main() -> int:
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
     document = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+    Draft202012Validator.check_schema(schema)
+    validator = Draft202012Validator(schema, format_checker=strict_format_checker())
     failures: list[str] = []
     results: list[dict[str, Any]] = []
     for case in document["test_cases"]:
-        actual = run_case(case["input"])
+        actual = run_case(case["input"], validator)
         expected = case["expected"]
+        if actual["schema_valid"] != expected["valid"]:
+            failures.append(
+                f"{case['id']}: schema_valid={actual['schema_valid']!r}, "
+                f"expected={expected['valid']!r}; {actual['schema_error']}"
+            )
         if actual["valid"] != expected["valid"]:
             failures.append(
                 f"{case['id']}: valid={actual['valid']!r}, expected={expected['valid']!r}"
@@ -80,7 +126,10 @@ def main() -> int:
     report = {
         "schema": "vcp-conformance-report/1",
         "profile": "messaging-2.0",
-        "implementations": {"python": "passed" if not failures else "failed", "rust": "unsupported"},
+        "implementations": {
+            "python": "passed" if not failures else "failed",
+            "rust": "unsupported",
+        },
         "fixture_sha256": hashlib.sha256(FIXTURE.read_bytes()).hexdigest(),
         "summary": {"cases": len(results), "failures": len(failures), "unsupported": 1},
         "results": results,
@@ -93,7 +142,9 @@ def main() -> int:
     if failures:
         print("\n".join(f"ERROR: {failure}" for failure in failures), file=sys.stderr)
         return 1
-    print(f"Messaging conformance passed: {len(results)} Python cases; Rust unsupported.")
+    print(
+        f"Messaging conformance passed: {len(results)} Python cases; Rust unsupported."
+    )
     return 0
 
 

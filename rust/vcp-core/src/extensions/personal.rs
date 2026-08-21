@@ -244,9 +244,6 @@ pub fn default_decay_config(dim: PersonalDimension) -> DecayConfig {
 ///
 /// When intensity decays to baseline (1), the signal effectively clears.
 ///
-/// # Panics
-///
-/// Panics if step thresholds contain NaN values (`partial_cmp` unwrap in sort).
 pub fn compute_decayed_intensity(
     declared_intensity: u8,
     declared_at: SystemTime,
@@ -268,6 +265,9 @@ pub fn compute_decayed_intensity(
 
     match config.curve {
         DecayCurve::Exponential => {
+            if !config.half_life_seconds.is_finite() || config.half_life_seconds <= 0.0 {
+                return declared_intensity;
+            }
             if declared_intensity <= config.baseline {
                 return config.baseline;
             }
@@ -281,7 +281,7 @@ pub fn compute_decayed_intensity(
         }
         DecayCurve::Linear => {
             let full_decay = match config.full_decay_seconds {
-                Some(fd) if fd > 0.0 => fd,
+                Some(fd) if fd.is_finite() && fd > 0.0 => fd,
                 _ => return declared_intensity,
             };
             if declared_intensity <= config.baseline {
@@ -299,8 +299,14 @@ pub fn compute_decayed_intensity(
                 return declared_intensity;
             }
             // Sort thresholds descending by after_seconds, pick the first that applies.
-            let mut sorted: Vec<&StepThreshold> = config.step_thresholds.iter().collect();
-            sorted.sort_by(|a, b| b.after_seconds.partial_cmp(&a.after_seconds).unwrap());
+            let mut sorted: Vec<&StepThreshold> = config
+                .step_thresholds
+                .iter()
+                .filter(|threshold| {
+                    threshold.after_seconds.is_finite() && threshold.after_seconds >= 0.0
+                })
+                .collect();
+            sorted.sort_by(|a, b| b.after_seconds.total_cmp(&a.after_seconds));
             for threshold in &sorted {
                 if elapsed >= threshold.after_seconds {
                     return threshold.intensity.max(config.baseline);
@@ -488,6 +494,37 @@ mod tests {
             compute_decayed_intensity(5, base, &config, time_plus_secs(base, 500.0)),
             1
         );
+    }
+
+    #[test]
+    fn invalid_decay_parameters_are_ignored_without_panicking() {
+        let base = SystemTime::now();
+        let now = time_plus_secs(base, 120.0);
+
+        for half_life in [0.0, -1.0, f64::NAN, f64::INFINITY] {
+            let config = DecayConfig::exponential(half_life);
+            assert_eq!(compute_decayed_intensity(5, base, &config, now), 5);
+        }
+
+        let mut config = DecayConfig::linear(f64::INFINITY);
+        assert_eq!(compute_decayed_intensity(5, base, &config, now), 5);
+
+        config.curve = DecayCurve::Step;
+        config.step_thresholds = vec![
+            StepThreshold {
+                after_seconds: f64::NAN,
+                intensity: 1,
+            },
+            StepThreshold {
+                after_seconds: -1.0,
+                intensity: 2,
+            },
+            StepThreshold {
+                after_seconds: 60.0,
+                intensity: 3,
+            },
+        ];
+        assert_eq!(compute_decayed_intensity(5, base, &config, now), 3);
     }
 
     #[test]

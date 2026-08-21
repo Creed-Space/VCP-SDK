@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vcp.creed.space/schema/messaging/v2.json",
-  "title": "VCP Messaging Schema v2.0",
-  "description": "JSON Schema for Value-Context Protocol Messaging (VCP/M) v2.0 inter-agent message envelopes",
+  "$id": "https://vcp.creed.space/schema/messaging/v2.0.json",
+  "title": "VCP Inter-Agent Messaging Schema v2.0",
+  "description": "Normative JSON Schema for VCP/M v2.0 inter-agent message envelopes and type-specific payloads.",
   "type": "object",
   "required": [
     "vcp_message",
@@ -17,7 +17,7 @@
     "vcp_message": {
       "type": "string",
       "const": "2.0",
-      "description": "VCP/M protocol version"
+      "description": "VCP messaging protocol version; exact v2.0 schema validation requires 2.0."
     },
     "type": {
       "type": "string",
@@ -31,114 +31,54 @@
     },
     "message_id": {
       "type": "string",
-      "format": "uuid",
-      "description": "Unique message identifier (UUID v4)"
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUIDv7 message identifier for deduplication"
     },
     "sender": {
       "type": "string",
-      "description": "Sender agent or service identifier"
+      "minLength": 1,
+      "description": "Agent identifier (URI or opaque string)",
+      "maxLength": 2048
     },
     "recipient": {
       "type": "string",
-      "description": "Recipient agent or service identifier"
+      "minLength": 1,
+      "description": "Target agent identifier or 'broadcast'",
+      "maxLength": 2048
     },
     "timestamp": {
       "type": "string",
       "format": "date-time",
-      "description": "Message timestamp (ISO8601)"
+      "description": "RFC 3339 UTC timestamp of message creation, with the required literal Z designator.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$",
+      "maxLength": 30
     },
     "payload": {
       "type": "object",
-      "description": "Message payload, structure depends on message type"
+      "description": "Type-specific payload (validated by conditional schemas below)"
     },
     "signature": {
       "type": "string",
-      "description": "Optional Ed25519 signature of the message envelope"
+      "pattern": "^base64:[A-Za-z0-9+/]{85}[AQgw]==$",
+      "description": "Ed25519 signature of canonical message (excluding this field)",
+      "maxLength": 95,
+      "minLength": 95
     }
   },
+  "additionalProperties": false,
   "allOf": [
     {
       "if": {
         "properties": {
-          "type": { "const": "context_share" }
-        },
-        "required": ["type"]
+          "type": {
+            "const": "context_share"
+          }
+        }
       },
       "then": {
         "properties": {
           "payload": {
-            "type": "object",
-            "required": ["context", "constitution_ref"],
-            "properties": {
-              "context": {
-                "type": "string",
-                "description": "Context string (e.g. Enneagram emoji-encoded context)"
-              },
-              "constitution_ref": {
-                "type": "string",
-                "description": "creed:// URI referencing the active constitution",
-                "pattern": "^creed://[a-z0-9.-]+/[a-zA-Z0-9._/-]+$"
-              },
-              "personal_state": {
-                "type": "object",
-                "description": "R-line personal state object from CSM-1 v1.1",
-                "properties": {
-                  "cognitive": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 9,
-                    "description": "Cognitive load/clarity (1-9)"
-                  },
-                  "emotional": {
-                    "type": "object",
-                    "properties": {
-                      "valence": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 9,
-                        "description": "Negative (1) to positive (9)"
-                      },
-                      "arousal": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 9,
-                        "description": "Calm (1) to activated (9)"
-                      }
-                    }
-                  },
-                  "energy": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 9,
-                    "description": "Depleted (1) to energized (9)"
-                  },
-                  "urgency": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 9,
-                    "description": "Relaxed (1) to urgent (9)"
-                  },
-                  "body": {
-                    "type": "object",
-                    "properties": {
-                      "pain": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 9,
-                        "description": "No pain (1) to severe (9)"
-                      },
-                      "comfort": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 9,
-                        "description": "Uncomfortable (1) to comfortable (9)"
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "additionalProperties": false
+            "$ref": "#/$defs/context_share_payload"
           }
         }
       }
@@ -146,46 +86,15 @@
     {
       "if": {
         "properties": {
-          "type": { "const": "constitution_announce" }
-        },
-        "required": ["type"]
+          "type": {
+            "const": "constitution_announce"
+          }
+        }
       },
       "then": {
         "properties": {
           "payload": {
-            "type": "object",
-            "required": ["constitution_ref", "manifest_hash"],
-            "properties": {
-              "constitution_ref": {
-                "type": "string",
-                "description": "creed:// URI of the announced constitution",
-                "pattern": "^creed://[a-z0-9.-]+/[a-zA-Z0-9._/-]+$"
-              },
-              "manifest_hash": {
-                "type": "string",
-                "pattern": "^sha256:[a-f0-9]{64}$",
-                "description": "SHA-256 hash of the manifest"
-              },
-              "scope": {
-                "type": "object",
-                "description": "Optional scope constraints for the announcement",
-                "properties": {
-                  "model_families": {
-                    "type": "array",
-                    "items": { "type": "string" }
-                  },
-                  "environments": {
-                    "type": "array",
-                    "items": { "type": "string" }
-                  },
-                  "audiences": {
-                    "type": "array",
-                    "items": { "type": "string" }
-                  }
-                }
-              }
-            },
-            "additionalProperties": false
+            "$ref": "#/$defs/constitution_announce_payload"
           }
         }
       }
@@ -193,46 +102,15 @@
     {
       "if": {
         "properties": {
-          "type": { "const": "constraint_propagate" }
-        },
-        "required": ["type"]
+          "type": {
+            "const": "constraint_propagate"
+          }
+        }
       },
       "then": {
         "properties": {
           "payload": {
-            "type": "object",
-            "required": ["constraints", "propagation_mode"],
-            "properties": {
-              "constraints": {
-                "type": "array",
-                "description": "Constraints to propagate to downstream agents",
-                "items": {
-                  "type": "object",
-                  "required": ["type", "value", "source_constitution_ref"],
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "description": "Constraint type identifier"
-                    },
-                    "value": {
-                      "description": "Constraint value (type depends on constraint type)"
-                    },
-                    "source_constitution_ref": {
-                      "type": "string",
-                      "description": "creed:// URI of the constitution originating this constraint",
-                      "pattern": "^creed://[a-z0-9.-]+/[a-zA-Z0-9._/-]+$"
-                    }
-                  }
-                },
-                "minItems": 1
-              },
-              "propagation_mode": {
-                "type": "string",
-                "enum": ["merge", "override"],
-                "description": "How constraints combine with existing constraints: merge adds, override replaces"
-              }
-            },
-            "additionalProperties": false
+            "$ref": "#/$defs/constraint_propagate_payload"
           }
         }
       }
@@ -240,58 +118,352 @@
     {
       "if": {
         "properties": {
-          "type": { "const": "escalation" }
-        },
-        "required": ["type"]
+          "type": {
+            "const": "escalation"
+          }
+        }
       },
       "then": {
         "properties": {
           "payload": {
-            "type": "object",
-            "required": ["severity", "reason", "context", "requires_ack"],
-            "properties": {
-              "severity": {
-                "type": "string",
-                "enum": ["info", "warning", "critical", "emergency"],
-                "description": "Escalation severity level"
-              },
-              "reason": {
-                "type": "string",
-                "description": "Human-readable reason for escalation"
-              },
-              "context": {
-                "type": "string",
-                "description": "Context in which the escalation occurred"
-              },
-              "blocked_action": {
-                "type": "string",
-                "description": "Optional description of the action that was blocked"
-              },
-              "requires_ack": {
-                "type": "boolean",
-                "description": "Whether the recipient must acknowledge this escalation"
-              }
-            },
-            "additionalProperties": false
+            "$ref": "#/$defs/escalation_payload"
           }
         }
       }
     }
   ],
+  "$defs": {
+    "context_share_payload": {
+      "type": "object",
+      "required": [
+        "context",
+        "constitution_ref"
+      ],
+      "properties": {
+        "context": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Enneagram context string (emoji-encoded)",
+          "examples": [
+            "⏰🌅|📍🏡|👥👶",
+            "⏰🌙|📍🏢|👥👔|🔶⚖️",
+            "🎭🚨|🧠😰"
+          ],
+          "maxLength": 8192
+        },
+        "constitution_ref": {
+          "type": "string",
+          "pattern": "^creed://[a-z0-9.-]+/[a-zA-Z0-9._/@-]+$",
+          "description": "Active constitution URI (creed:// scheme)",
+          "examples": [
+            "creed://creed.space/family.safe.guide@1.2.0"
+          ],
+          "maxLength": 2048
+        },
+        "personal_state": {
+          "$ref": "#/$defs/r_line_state",
+          "description": "R-line personal state object (OPTIONAL)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "r_line_state": {
+      "type": "object",
+      "properties": {
+        "cognitive": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 9,
+          "description": "Cognitive load/clarity (1=overloaded, 9=clear)"
+        },
+        "emotional": {
+          "type": "object",
+          "required": [
+            "valence",
+            "arousal"
+          ],
+          "properties": {
+            "valence": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 9,
+              "description": "Negative (1) to positive (9)"
+            },
+            "arousal": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 9,
+              "description": "Calm (1) to activated (9)"
+            }
+          },
+          "additionalProperties": false
+        },
+        "energy": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 9,
+          "description": "Depleted (1) to energized (9)"
+        },
+        "urgency": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 9,
+          "description": "Relaxed (1) to urgent (9)"
+        },
+        "body": {
+          "type": "object",
+          "properties": {
+            "pain": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 9,
+              "description": "No pain (1) to severe pain (9)"
+            },
+            "comfort": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 9,
+              "description": "Uncomfortable (1) to comfortable (9)"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "constitution_announce_payload": {
+      "type": "object",
+      "required": [
+        "constitution_ref",
+        "manifest_hash"
+      ],
+      "properties": {
+        "constitution_ref": {
+          "type": "string",
+          "pattern": "^creed://[a-z0-9.-]+/[a-zA-Z0-9._/@-]+$",
+          "description": "Constitution URI (creed:// scheme)",
+          "examples": [
+            "creed://creed.space/enterprise.compliance@2.0.1"
+          ],
+          "maxLength": 2048
+        },
+        "manifest_hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "description": "SHA-256 hash of the constitution manifest",
+          "examples": [
+            "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+          ]
+        },
+        "scope": {
+          "$ref": "#/$defs/scope_object",
+          "description": "Applicability scope (OPTIONAL)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "scope_object": {
+      "type": "object",
+      "properties": {
+        "model_families": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9*-]+$",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "description": "Allowed model families (glob patterns)",
+          "examples": [
+            [
+              "gpt-*",
+              "claude-*"
+            ]
+          ],
+          "maxItems": 50,
+          "uniqueItems": true
+        },
+        "purposes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "description": "Allowed purposes",
+          "examples": [
+            [
+              "general-assistant",
+              "coding-assistant"
+            ]
+          ],
+          "maxItems": 50,
+          "uniqueItems": true
+        },
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "production",
+              "staging",
+              "development",
+              "testing"
+            ]
+          },
+          "description": "Allowed environments",
+          "maxItems": 50,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "constraint_propagate_payload": {
+      "type": "object",
+      "required": [
+        "constraints",
+        "propagation_mode"
+      ],
+      "properties": {
+        "constraints": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/constraint_object"
+          },
+          "description": "Array of constraint objects",
+          "maxItems": 100
+        },
+        "propagation_mode": {
+          "type": "string",
+          "enum": [
+            "merge",
+            "override"
+          ],
+          "description": "How the receiver must apply constraints"
+        }
+      },
+      "additionalProperties": false
+    },
+    "constraint_object": {
+      "type": "object",
+      "required": [
+        "type",
+        "value",
+        "source_constitution_ref"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Constraint type identifier (e.g. 'topic_block', 'token_limit', 'audience_restrict', 'safety_floor')",
+          "examples": [
+            "topic_block",
+            "token_limit",
+            "audience_restrict",
+            "safety_floor"
+          ],
+          "maxLength": 128
+        },
+        "value": {
+          "description": "Constraint value (type depends on constraint type)"
+        },
+        "source_constitution_ref": {
+          "type": "string",
+          "pattern": "^creed://[a-z0-9.-]+/[a-zA-Z0-9._/@-]+$",
+          "description": "Constitution URI that originated this constraint",
+          "maxLength": 2048
+        }
+      },
+      "additionalProperties": false
+    },
+    "escalation_payload": {
+      "type": "object",
+      "required": [
+        "severity",
+        "reason",
+        "context",
+        "requires_ack"
+      ],
+      "properties": {
+        "severity": {
+          "type": "string",
+          "enum": [
+            "info",
+            "warning",
+            "critical",
+            "emergency"
+          ],
+          "description": "Escalation severity level"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "description": "Human-readable description of the escalation cause"
+        },
+        "context": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Current Enneagram context string at time of escalation",
+          "examples": [
+            "⏰☀️|📍🏡|👥👶|🧠😰",
+            "🎭🚨|🧠😡"
+          ],
+          "maxLength": 8192
+        },
+        "blocked_action": {
+          "type": "string",
+          "maxLength": 1024,
+          "description": "Description of the action blocked by this escalation (OPTIONAL)"
+        },
+        "requires_ack": {
+          "type": "boolean",
+          "description": "Whether the sender requires explicit acknowledgment"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "severity": {
+                "enum": [
+                  "critical",
+                  "emergency"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "requires_ack": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
   "examples": [
     {
       "vcp_message": "2.0",
       "type": "context_share",
-      "message_id": "550e8400-e29b-41d4-a716-446655440000",
-      "sender": "agent-alpha",
-      "recipient": "agent-beta",
-      "timestamp": "2026-03-08T12:00:00Z",
+      "message_id": "019502a4-7e5c-7000-8000-000000000001",
+      "sender": "agent://home.local/living-room-agent",
+      "recipient": "agent://home.local/kitchen-agent",
+      "timestamp": "2026-02-15T10:30:00Z",
       "payload": {
         "context": "⏰🌅|📍🏡|👥👶",
-        "constitution_ref": "creed://creed.space/family.safe.guide",
+        "constitution_ref": "creed://creed.space/family.safe.guide@1.2.0",
         "personal_state": {
           "cognitive": 6,
-          "emotional": { "valence": 7, "arousal": 4 },
+          "emotional": {
+            "valence": 7,
+            "arousal": 4
+          },
           "energy": 7,
           "urgency": 3
         }
@@ -299,35 +471,67 @@
     },
     {
       "vcp_message": "2.0",
-      "type": "escalation",
-      "message_id": "660e8400-e29b-41d4-a716-446655440001",
-      "sender": "safety-monitor",
-      "recipient": "supervisor-agent",
-      "timestamp": "2026-03-08T12:05:00Z",
+      "type": "constitution_announce",
+      "message_id": "019502a4-8b3d-7000-8000-000000000002",
+      "sender": "agent://cluster.prod/safety-monitor",
+      "recipient": "broadcast",
+      "timestamp": "2026-02-15T10:31:00Z",
       "payload": {
-        "severity": "critical",
-        "reason": "Content generation violates child safety constitution",
-        "context": "⏰🌅|📍🏡|👥👶",
-        "blocked_action": "generate_story with violent themes",
-        "requires_ack": true
+        "constitution_ref": "creed://creed.space/enterprise.compliance@2.0.1",
+        "manifest_hash": "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+        "scope": {
+          "model_families": [
+            "claude-*",
+            "gpt-*"
+          ],
+          "purposes": [
+            "general-assistant"
+          ],
+          "environments": [
+            "production"
+          ]
+        }
       }
     },
     {
       "vcp_message": "2.0",
       "type": "constraint_propagate",
-      "message_id": "770e8400-e29b-41d4-a716-446655440002",
-      "sender": "orchestrator",
-      "recipient": "worker-pool",
-      "timestamp": "2026-03-08T12:10:00Z",
+      "message_id": "019502a4-9c1e-7000-8000-000000000003",
+      "sender": "agent://orchestrator.prod/parent-001",
+      "recipient": "agent://orchestrator.prod/child-007",
+      "timestamp": "2026-02-15T10:32:00Z",
       "payload": {
         "constraints": [
           {
-            "type": "content_filter",
-            "value": "no_violence",
-            "source_constitution_ref": "creed://creed.space/family.safe.guide"
+            "type": "topic_block",
+            "value": [
+              "weapons",
+              "illegal_substances"
+            ],
+            "source_constitution_ref": "creed://creed.space/family.safe.guide@1.2.0"
+          },
+          {
+            "type": "token_limit",
+            "value": 2048,
+            "source_constitution_ref": "creed://creed.space/enterprise.compliance@2.0.1"
           }
         ],
         "propagation_mode": "merge"
+      }
+    },
+    {
+      "vcp_message": "2.0",
+      "type": "escalation",
+      "message_id": "019502a4-ad0f-7000-8000-000000000004",
+      "sender": "agent://orchestrator.prod/child-007",
+      "recipient": "agent://orchestrator.prod/parent-001",
+      "timestamp": "2026-02-15T10:33:00Z",
+      "payload": {
+        "severity": "critical",
+        "reason": "User requested content that conflicts with active constitution safety_floor constraint.",
+        "context": "⏰☀️|📍🏡|👥👶|🧠😰",
+        "blocked_action": "generate_response:topic=weapons_detailed",
+        "requires_ack": true
       }
     }
   ]

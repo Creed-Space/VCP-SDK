@@ -25,7 +25,8 @@
 
 use std::fmt;
 
-use serde::{Deserialize, Serialize};
+use serde::de::Error as _;
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::error::{VcpError, VcpResult};
 use crate::personal::PersonalState;
@@ -239,7 +240,7 @@ impl fmt::Display for Scope {
 // ── CSM-1 Compact Code ─────────────────────────────────────
 
 /// Parsed CSM-1 compact code: `<persona><level>[+scopes][:namespace][@version]`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Csm1Code {
     pub persona: Persona,
     /// Adherence level 0-5 (0 = disabled, 5 = maximum).
@@ -252,6 +253,9 @@ pub struct Csm1Code {
 }
 
 impl Csm1Code {
+    /// Maximum encoded length from the canonical CSM-1 schema.
+    pub const MAX_CODE_BYTES: usize = 45;
+
     fn split_version(raw: &str) -> VcpResult<(&str, Option<String>)> {
         if raw.matches('@').count() > 1 {
             return Err(VcpError::ParseError(
@@ -268,6 +272,7 @@ impl Csm1Code {
                 !part.is_empty()
                     && part.len() <= 3
                     && part.as_bytes().iter().all(u8::is_ascii_digit)
+                    && (part.len() == 1 || !part.starts_with('0'))
             });
         if !matches!(version, "latest" | "canary") && !valid_semver {
             return Err(VcpError::ParseError(format!("invalid version: {version}")));
@@ -366,10 +371,11 @@ impl Csm1Code {
         if raw.is_empty() {
             return Err(VcpError::ParseError("CSM1 code cannot be empty".into()));
         }
-        if raw.len() > 50 {
-            return Err(VcpError::ParseError(
-                "CSM1 code exceeds maximum length 50".into(),
-            ));
+        if raw.len() > Self::MAX_CODE_BYTES {
+            return Err(VcpError::ParseError(format!(
+                "CSM1 code exceeds maximum length {}",
+                Self::MAX_CODE_BYTES
+            )));
         }
         if !raw.is_ascii() {
             return Err(VcpError::ParseError(
@@ -506,6 +512,34 @@ impl Csm1Code {
     }
 }
 
+impl<'de> Deserialize<'de> for Csm1Code {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct WireCode {
+            persona: Persona,
+            adherence_level: u8,
+            scopes: Vec<Scope>,
+            namespace: Option<String>,
+            version: Option<String>,
+        }
+
+        let wire = WireCode::deserialize(deserializer)?;
+        let code = Csm1Code {
+            persona: wire.persona,
+            adherence_level: wire.adherence_level,
+            scopes: wire.scopes,
+            namespace: wire.namespace,
+            version: wire.version,
+        };
+        Csm1Code::parse(&code.encode()).map_err(D::Error::custom)?;
+        Ok(code)
+    }
+}
+
 impl fmt::Display for Csm1Code {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.encode())
@@ -516,6 +550,7 @@ impl fmt::Display for Csm1Code {
 
 /// Reference to a constitution with version.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ConstitutionRef {
     pub id: String,
     pub version: String,
@@ -523,6 +558,7 @@ pub struct ConstitutionRef {
 
 /// Goal context for line 4 of the 8-line token.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GoalContext {
     pub goal: String,
     pub experience: String,
@@ -545,7 +581,7 @@ pub struct ConstraintFlag(pub String);
 /// S:internal-marker
 /// R:focused:4|calm:3
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Csm1Token {
     /// Protocol version (e.g. "1.0").
     pub version: String,
@@ -572,21 +608,41 @@ pub struct Csm1Token {
 }
 
 impl Csm1Token {
+    /// Maximum accepted encoded token size.
+    pub const MAX_TOKEN_BYTES: usize = 65_536;
+
     /// Parse an 8-line CSM-1 token string.
     ///
     /// # Errors
     ///
-    /// Returns [`VcpError::ParseError`] if the token has fewer than 7 lines,
+    /// Returns [`VcpError::ParseError`] if the token does not have 7 or 8 lines,
     /// if any line is missing its required prefix, or if the persona,
     /// adherence, goal, constraint, flag, or personal-state fields are
     /// malformed.
     #[allow(clippy::too_many_lines)]
     pub fn parse(raw: &str) -> VcpResult<Self> {
+        if raw.len() > Self::MAX_TOKEN_BYTES {
+            return Err(VcpError::ParseError(format!(
+                "CSM1 token exceeds maximum length {}",
+                Self::MAX_TOKEN_BYTES
+            )));
+        }
+        if raw
+            .chars()
+            .any(|character| character.is_control() && !matches!(character, '\n' | '\r'))
+            || raw.as_bytes().iter().enumerate().any(|(index, byte)| {
+                *byte == b'\r' && raw.as_bytes().get(index + 1) != Some(&b'\n')
+            })
+        {
+            return Err(VcpError::ParseError(
+                "CSM1 token contains a forbidden control character".into(),
+            ));
+        }
         let token_lines: Vec<&str> = raw.lines().collect();
 
-        if token_lines.len() < 7 {
+        if !(7..=8).contains(&token_lines.len()) {
             return Err(VcpError::ParseError(format!(
-                "CSM1 token requires at least 7 lines, got {}",
+                "CSM1 token requires 7 or 8 lines, got {}",
                 token_lines.len()
             )));
         }
@@ -599,6 +655,8 @@ impl Csm1Token {
                 token_lines[0]
             ))
         })?;
+        Self::validate_required_field(version, "protocol version")?;
+        Self::validate_required_field(profile_id, "profile id")?;
 
         // Line 2: C:<constitution>@<version>
         let const_line = Self::strip_and_validate(token_lines[1], "C:")?;
@@ -608,6 +666,8 @@ impl Csm1Token {
                 token_lines[1]
             ))
         })?;
+        Self::validate_required_field(const_id, "constitution id")?;
+        Self::validate_required_field(const_ver, "constitution version")?;
 
         // Line 3: P:<persona>:<adherence>
         let persona_line = Self::strip_and_validate(token_lines[2], "P:")?;
@@ -617,11 +677,21 @@ impl Csm1Token {
                 token_lines[2]
             ))
         })?;
-        let persona_char = persona_str
-            .chars()
+        let mut persona_chars = persona_str.chars();
+        let persona_char = persona_chars
             .next()
             .ok_or_else(|| VcpError::ParseError("empty persona in line 3".into()))?;
-        let persona = Persona::from_char(persona_char)?;
+        if persona_chars.next().is_some() {
+            return Err(VcpError::ParseError(
+                "persona in line 3 must be exactly one character".into(),
+            ));
+        }
+        let persona = Persona::from_wire_char(persona_char)?;
+        if adherence_str.len() != 1 || !adherence_str.as_bytes()[0].is_ascii_digit() {
+            return Err(VcpError::ParseError(format!(
+                "invalid adherence: {adherence_str}"
+            )));
+        }
         let adherence: u8 = adherence_str
             .parse()
             .map_err(|_| VcpError::ParseError(format!("invalid adherence: {adherence_str}")))?;
@@ -653,36 +723,18 @@ impl Csm1Token {
 
         // Line 5: X:<constraints>
         let constraint_line = Self::strip_and_validate(token_lines[4], "X:")?;
-        let constraints = if constraint_line.is_empty() {
-            Vec::new()
-        } else {
-            constraint_line
-                .split(',')
-                .map(|s| ConstraintFlag(s.trim().to_string()))
-                .collect()
-        };
+        let constraints = Self::parse_unique_list(constraint_line, "constraint")?
+            .into_iter()
+            .map(ConstraintFlag)
+            .collect();
 
         // Line 6: F:<flags>
         let flags_line = Self::strip_and_validate(token_lines[5], "F:")?;
-        let flags = if flags_line.is_empty() {
-            Vec::new()
-        } else {
-            flags_line
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect()
-        };
+        let flags = Self::parse_unique_list(flags_line, "flag")?;
 
         // Line 7: S:<private-markers>
         let markers_line = Self::strip_and_validate(token_lines[6], "S:")?;
-        let private_markers = if markers_line.is_empty() {
-            Vec::new()
-        } else {
-            markers_line
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect()
-        };
+        let private_markers = Self::parse_unique_list(markers_line, "private marker")?;
 
         // Line 8 (optional): R:<personal-state>
         let personal_state = if token_lines.len() > 7 {
@@ -761,6 +813,80 @@ impl Csm1Token {
                 "expected line to start with '{prefix}', got: {line}"
             ))
         })
+    }
+
+    fn validate_required_field(value: &str, name: &str) -> VcpResult<()> {
+        if value.is_empty() || value.chars().any(char::is_control) {
+            return Err(VcpError::ParseError(format!(
+                "CSM1 token {name} must be non-empty and contain no control characters"
+            )));
+        }
+        Ok(())
+    }
+
+    fn parse_unique_list(raw: &str, name: &str) -> VcpResult<Vec<String>> {
+        if raw.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut values = Vec::new();
+        for candidate in raw.split(',') {
+            let value = candidate.trim();
+            if value.is_empty() || value.chars().any(char::is_control) {
+                return Err(VcpError::ParseError(format!(
+                    "CSM1 token {name} entries must be non-empty and contain no control characters"
+                )));
+            }
+            if values.iter().any(|existing| existing == value) {
+                return Err(VcpError::ParseError(format!(
+                    "CSM1 token {name} entries must be unique"
+                )));
+            }
+            values.push(value.to_string());
+        }
+        Ok(values)
+    }
+}
+
+impl<'de> Deserialize<'de> for Csm1Token {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct WireToken {
+            version: String,
+            profile_id: String,
+            constitution: ConstitutionRef,
+            persona: Persona,
+            adherence: u8,
+            goal: Option<GoalContext>,
+            constraints: Vec<ConstraintFlag>,
+            flags: Vec<String>,
+            private_markers: Vec<String>,
+            personal_state: Option<PersonalState>,
+        }
+
+        let wire = WireToken::deserialize(deserializer)?;
+        let token = Csm1Token {
+            version: wire.version,
+            profile_id: wire.profile_id,
+            constitution: wire.constitution,
+            persona: wire.persona,
+            adherence: wire.adherence,
+            goal: wire.goal,
+            constraints: wire.constraints,
+            flags: wire.flags,
+            private_markers: wire.private_markers,
+            personal_state: wire.personal_state,
+        };
+        let reparsed = Csm1Token::parse(&token.encode()).map_err(D::Error::custom)?;
+        if reparsed != token {
+            return Err(D::Error::custom(
+                "CSM1 token fields cannot be represented without ambiguity",
+            ));
+        }
+        Ok(token)
     }
 }
 
@@ -993,6 +1119,9 @@ mod tests {
         assert!(Csm1Code::parse("N5:lower").is_err());
         assert!(Csm1Code::parse("N5:A1").is_err());
         assert!(Csm1Code::parse("N5@1000.2.3").is_err());
+        for version in ["01.2.3", "1.02.3", "1.2.03"] {
+            assert!(Csm1Code::parse(&format!("N5@{version}")).is_err());
+        }
         for version in ["latest", "canary", "1.2.3"] {
             assert_eq!(
                 Csm1Code::parse(&format!("N5@{version}"))
@@ -1014,6 +1143,33 @@ mod tests {
     #[test]
     fn parse_missing_level() {
         assert!(Csm1Code::parse("N").is_err());
+    }
+
+    #[test]
+    fn compact_code_deserialization_cannot_bypass_wire_invariants() {
+        let valid = serde_json::to_value(Csm1Code::parse("Z4+P:SEC@1.2.3").unwrap()).unwrap();
+        assert!(serde_json::from_value::<Csm1Code>(valid).is_ok());
+
+        for invalid in [
+            serde_json::json!({
+                "persona": "Nanny", "adherence_level": 6, "scopes": [],
+                "namespace": null, "version": null
+            }),
+            serde_json::json!({
+                "persona": "Nanny", "adherence_level": 5,
+                "scopes": ["Family", "Family"], "namespace": null, "version": null
+            }),
+            serde_json::json!({
+                "persona": "Custom", "adherence_level": 3, "scopes": [],
+                "namespace": null, "version": null
+            }),
+            serde_json::json!({
+                "persona": "Nanny", "adherence_level": 5, "scopes": [],
+                "namespace": null, "version": null, "unexpected": true
+            }),
+        ] {
+            assert!(serde_json::from_value::<Csm1Code>(invalid).is_err());
+        }
     }
 
     // ── Compact Code Encoding ───────────────────────────
@@ -1185,5 +1341,64 @@ R:\u{1F9E0}focused:4|\u{1F4AD}calm:3";
     fn token_invalid_adherence() {
         let bad = SAMPLE_TOKEN_7.replace("P:N:5", "P:N:9");
         assert!(Csm1Token::parse(&bad).is_err());
+    }
+
+    #[test]
+    fn token_rejects_extra_lines_instead_of_silently_ignoring_them() {
+        assert!(Csm1Token::parse(&format!("{SAMPLE_TOKEN_8}\nS:shadow-state")).is_err());
+    }
+
+    #[test]
+    fn token_size_limit_accepts_boundary_and_rejects_one_byte_over() {
+        const SUFFIX: &str = "\nC:c@1\nP:N:5\nG:\nX:\nF:\nS:";
+        let prefix = "VCP:1.0:";
+        let profile_len = Csm1Token::MAX_TOKEN_BYTES - prefix.len() - SUFFIX.len();
+        let at_limit = format!("{prefix}{}{SUFFIX}", "p".repeat(profile_len));
+        assert_eq!(at_limit.len(), Csm1Token::MAX_TOKEN_BYTES);
+        assert!(Csm1Token::parse(&at_limit).is_ok());
+
+        let over_limit = at_limit.replacen(prefix, "VCP:01.0:", 1);
+        assert_eq!(over_limit.len(), Csm1Token::MAX_TOKEN_BYTES + 1);
+        assert!(Csm1Token::parse(&over_limit).is_err());
+    }
+
+    #[test]
+    fn token_rejects_ambiguous_or_empty_structural_fields() {
+        for bad in [
+            SAMPLE_TOKEN_7.replace("VCP:1.0:", "VCP::"),
+            SAMPLE_TOKEN_7.replace("profile-123", ""),
+            SAMPLE_TOKEN_7.replace("family-safe@1.2.0", "@1.2.0"),
+            SAMPLE_TOKEN_7.replace("family-safe@1.2.0", "family-safe@"),
+            SAMPLE_TOKEN_7.replace("P:N:5", "P:NN:5"),
+            SAMPLE_TOKEN_7.replace("P:N:5", "P:n:5"),
+            SAMPLE_TOKEN_7.replace("P:N:5", "P:N:05"),
+            SAMPLE_TOKEN_7.replace("G:protect:guided:gentle", "G:protect:\0guided:gentle"),
+            SAMPLE_TOKEN_7.replace("X:no-profanity,no-violence", "X:no-profanity,"),
+            SAMPLE_TOKEN_7.replace("X:no-profanity,no-violence", "X:no-profanity,no-profanity"),
+        ] {
+            assert!(
+                Csm1Token::parse(&bad).is_err(),
+                "accepted malformed token: {bad}"
+            );
+        }
+    }
+
+    #[test]
+    fn token_deserialization_cannot_inject_or_bypass_wire_invariants() {
+        let token = Csm1Token::parse(SAMPLE_TOKEN_7).unwrap();
+        let valid = serde_json::to_value(&token).unwrap();
+        assert_eq!(serde_json::from_value::<Csm1Token>(valid).unwrap(), token);
+
+        let mut invalid_adherence = serde_json::to_value(&token).unwrap();
+        invalid_adherence["adherence"] = serde_json::json!(0);
+        assert!(serde_json::from_value::<Csm1Token>(invalid_adherence).is_err());
+
+        let mut injected_line = serde_json::to_value(&token).unwrap();
+        injected_line["flags"] = serde_json::json!(["safe\nS:forged"]);
+        assert!(serde_json::from_value::<Csm1Token>(injected_line).is_err());
+
+        let mut unknown_field = serde_json::to_value(&token).unwrap();
+        unknown_field["unexpected"] = serde_json::json!(true);
+        assert!(serde_json::from_value::<Csm1Token>(unknown_field).is_err());
     }
 }

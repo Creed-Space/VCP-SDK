@@ -18,18 +18,18 @@ This file is generated from `conformance/coverage-manifest.json`. Run
 |:---|:---|:---|---:|:---|:---|:---|
 | adaptation/context_encoding | 3.2.0 | conformance-candidate | 9 | full | full | not_applicable |
 | adaptation/context_encoding_extended | 3.2.0 | conformance-candidate | 12 | full | full | not_applicable |
-| adaptation/messaging | 2.0.0 | conformance-candidate | 14 | full | unsupported | not_applicable |
+| adaptation/messaging | 2.0.0 | conformance-candidate | 41 | full | unsupported | not_applicable |
 | adaptation/state_machine | 1.0.0 | conformance-candidate | 14 | full | unsupported | not_applicable |
-| extensions/capability_negotiation | 1.0.0 | conformance-candidate | 6 | full | full | not_applicable |
+| extensions/capability_negotiation | 2.0.0 | conformance-candidate | 12 | full | full | full |
 | extensions/competence | 1.0.0 | conformance-candidate | 5 | full | unsupported | not_applicable |
 | extensions/consensus_voting | 1.0.0 | conformance-candidate | 8 | full | full | not_applicable |
 | extensions/personal_state | 1.0.0 | conformance-candidate | 15 | full | full | not_applicable |
-| extensions/relational_context | 1.0.0 | conformance-candidate | 17 | full | full | not_applicable |
+| extensions/relational_context | 1.0.0 | conformance-candidate | 17 | full | full | full |
 | extensions/stateless_mcp | 0.1.0-draft | draft | 3 | unsupported | unsupported | unsupported |
 | extensions/torch_handoff | 1.0.0 | conformance-candidate | 7 | full | full | not_applicable |
 | extensions/welfare | 0.1.0-draft | draft | 3 | unsupported | unsupported | unsupported |
 | identity/token_canonicalization | 1.0.0 | conformance-candidate | 10 | full | full | not_applicable |
-| identity/token_parsing | 1.0.0 | conformance-candidate | 23 | full | full | not_applicable |
+| identity/token_parsing | 1.0.0 | conformance-candidate | 33 | full | full | not_applicable |
 | interop/complete_bundle | 1.0.0 | conformance-candidate | 2 | full | full | not_applicable |
 | interop/cross_impl_roundtrip | 1.0.0 | conformance-candidate | 5 | full | full | not_applicable |
 | security/revocation-crl-responses | 1.0.0 | conformance-candidate | 10 | full | full | not_applicable |

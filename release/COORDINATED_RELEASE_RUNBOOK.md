@@ -141,6 +141,10 @@ python scripts/validate_ecosystem.py \
   --mode full
 ```
 
+This integrated helper covers exactly Demo, Spec, and the maintained SDK. It
+runs maintained-SDK and Demo coverage in `full` mode. Inspector and the legacy
+standalone Python candidate require separate, candidate-bound evidence.
+
 ### 5.2 New regression programmes
 
 ```bash

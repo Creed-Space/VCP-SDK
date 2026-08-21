@@ -427,12 +427,12 @@
       "version": "3.2.0"
     },
     {
-      "case_count": 14,
+      "case_count": 41,
       "cases": [
         {
           "applicability": "protocol_behavior",
-          "description": "Valid context-share envelope",
-          "id": "msg-context-share",
+          "description": "A minimal context-share carries both normative required payload fields.",
+          "id": "msg-valid-context-minimal",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -450,8 +450,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Valid constitution announcement",
-          "id": "msg-constitution-announce",
+          "description": "Partial R-line state accepts finite fractional boundary values and an exact 64-byte Ed25519 signature.",
+          "id": "msg-valid-context-partial-personal-signed",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -469,8 +469,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Valid constraint propagation",
-          "id": "msg-constraint-propagate",
+          "description": "An empty personal-state object represents no declared dimension.",
+          "id": "msg-valid-empty-personal-state",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -488,8 +488,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Informational escalation does not require acknowledgement",
-          "id": "msg-escalation-info",
+          "description": "Optional scope arrays may be present and empty.",
+          "id": "msg-valid-announce-empty-scope",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -507,8 +507,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Critical escalation explicitly requires acknowledgement",
-          "id": "msg-escalation-critical",
+          "description": "The inclusive 50-item scope boundary remains accepted.",
+          "id": "msg-valid-announce-scope-boundary",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -526,8 +526,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Missing required sender is rejected",
-          "id": "msg-err-missing-sender",
+          "description": "A constraint value is required but may be any JSON value, including null.",
+          "id": "msg-valid-constraint-null-value",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -545,8 +545,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Unknown message type is rejected",
-          "id": "msg-err-invalid-type",
+          "description": "Informational escalation may explicitly decline acknowledgement.",
+          "id": "msg-valid-escalation-info",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -564,8 +564,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Protocol-major mismatch is rejected",
-          "id": "msg-err-version",
+          "description": "Emergency escalation requires acknowledgement and permits a bounded blocked action.",
+          "id": "msg-valid-escalation-emergency",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -583,8 +583,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Malformed message identifier is rejected",
-          "id": "msg-err-uuid",
+          "description": "A required envelope field cannot be omitted.",
+          "id": "msg-invalid-missing-sender",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -602,8 +602,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Timestamp without timezone is rejected",
-          "id": "msg-err-naive-time",
+          "description": "Sender identifiers are non-empty.",
+          "id": "msg-invalid-empty-sender",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -621,8 +621,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Timestamp with a non-UTC offset is rejected",
-          "id": "msg-err-non-utc-time",
+          "description": "Sender identifiers are bounded to prevent envelope amplification.",
+          "id": "msg-invalid-sender-bound",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -640,8 +640,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Critical escalation without acknowledgement is rejected",
-          "id": "msg-err-critical-ack",
+          "description": "Exact v2.0 validation rejects a different minor version.",
+          "id": "msg-invalid-version",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -659,8 +659,8 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Unknown escalation severity is rejected",
-          "id": "msg-err-severity",
+          "description": "Unknown message types are rejected before payload dispatch.",
+          "id": "msg-invalid-type",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -678,8 +678,521 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Non-object payload is rejected",
-          "id": "msg-err-payload",
+          "description": "A syntactically valid UUIDv4 is not a UUIDv7 message identifier.",
+          "id": "msg-invalid-uuid-version",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "UUIDv7 identifiers use the canonical lowercase wire form.",
+          "id": "msg-invalid-uppercase-uuid",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A timestamp without a UTC designator is rejected.",
+          "id": "msg-invalid-naive-time",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "The ambiguous RFC 3339 -00:00 designator is not literal UTC Z.",
+          "id": "msg-invalid-negative-zero-time",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A lexically valid UTC timestamp with an impossible calendar date is rejected.",
+          "id": "msg-invalid-calendar-timestamp",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Typed payload dispatch requires a JSON object.",
+          "id": "msg-invalid-nonobject-payload",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Exact v2.0 envelopes are closed to unknown fields.",
+          "id": "msg-invalid-unknown-envelope-field",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Context-share requires its active constitution reference.",
+          "id": "msg-invalid-context-required-field",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Context strings are non-empty.",
+          "id": "msg-invalid-empty-context",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Context strings are bounded to 8192 characters.",
+          "id": "msg-invalid-context-bound",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "JSON booleans cannot masquerade as numeric personal-state values.",
+          "id": "msg-invalid-personal-boolean",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Typed context payloads are closed to misspelled or future exact-version fields.",
+          "id": "msg-invalid-context-unknown-field",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Constitution announcements require a manifest hash.",
+          "id": "msg-invalid-announce-required-field",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Constitution references use a structured creed URI.",
+          "id": "msg-invalid-constitution-uri",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Manifest hashes require lowercase 64-hex SHA-256 wire form.",
+          "id": "msg-invalid-manifest-hash",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Scope arrays reject duplicate entries that could corrupt set semantics.",
+          "id": "msg-invalid-scope-duplicates",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Scope arrays reject a 51st entry before unbounded processing.",
+          "id": "msg-invalid-scope-resource-bound",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Constraint propagation requires at least one structured constraint.",
+          "id": "msg-invalid-empty-constraints",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Every constraint identifies its source constitution.",
+          "id": "msg-invalid-constraint-required-field",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Constraint arrays reject a 101st entry before quadratic downstream work.",
+          "id": "msg-invalid-constraint-resource-bound",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Unknown propagation modes cannot silently change child state semantics.",
+          "id": "msg-invalid-propagation-mode",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Escalations require a human-readable reason.",
+          "id": "msg-invalid-escalation-required-field",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Escalation severity is a closed vocabulary.",
+          "id": "msg-invalid-escalation-severity",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Critical escalation fails closed unless acknowledgement is required.",
+          "id": "msg-invalid-critical-ack",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Typed escalation payloads reject unknown exact-version fields.",
+          "id": "msg-invalid-escalation-unknown-field",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "UTC timestamps reject more than nine fractional-second digits before parsing.",
+          "id": "msg-invalid-timestamp-precision",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "An exact-length Ed25519 signature with noncanonical base64 pad bits is rejected.",
+          "id": "msg-invalid-signature-pad-bits",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Rust does not claim VCP messaging v2.0",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Signatures must be canonical base64 for exactly 64 Ed25519 bytes.",
+          "id": "msg-invalid-signature",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -697,7 +1210,7 @@
         }
       ],
       "fixture": "conformance/adaptation/messaging.json",
-      "fixture_sha256": "cf05b3d0a471c99fc6f2fc27087310bea274b3baefc47c553da25812901403e5",
+      "fixture_sha256": "925bf14d233c82aeba09af004f6d9681ad02be1496dd32d9540f0327a3a45215",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md#messaging",
       "runner": "conformance/runners/messaging_conformance.py",
@@ -983,11 +1496,11 @@
       "version": "1.0.0"
     },
     {
-      "case_count": 6,
+      "case_count": 12,
       "cases": [
         {
           "applicability": "protocol_behavior",
-          "description": "Client and server support identical extensions — all become active",
+          "description": "Highest mutual version activates every requested server extension and advertises only those capabilities.",
           "id": "full-match",
           "implementations": {
             "python": {
@@ -999,15 +1512,15 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Client requests 5 extensions, server supports 3 — 3 active, 2 rejected",
-          "id": "partial-match",
+          "description": "An active Intent extension without active Personal advertises that personal signals are unavailable, overriding stale server configuration.",
+          "id": "intent-without-personal-signals",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -1018,15 +1531,15 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Client requests VCP 3.2.0, server supports 3.1.0 — negotiate to minimum",
-          "id": "version-mismatch",
+          "description": "Supported and unsupported are a disjoint, client-order partition of valid requested extensions.",
+          "id": "partial-partition",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -1037,15 +1550,15 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
         {
           "applicability": "protocol_behavior",
-          "description": "No extensions requested — baseline VCP only",
-          "id": "empty-extensions",
+          "description": "A mutually supported version below 3.1 keeps every valid request in unsupported.",
+          "id": "downgrade-disables-extensions",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -1056,15 +1569,15 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Client requests an unknown extension — rejected gracefully",
-          "id": "unknown-extension",
+          "description": "A client range below every server version produces the canonical VERSION_UNSUPPORTED error.",
+          "id": "no-version-overlap",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -1075,15 +1588,15 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Server supports more extensions than client requests — only requested ones activated",
-          "id": "server-extra-extensions",
+          "description": "An empty request activates no extension even when the server advertises several.",
+          "id": "empty-extension-request",
           "implementations": {
             "python": {
               "reason": "Executed by the declared checked runner",
@@ -1094,19 +1607,133 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Unique bounded strings outside the VCP-X-* namespace are ignored before partitioning.",
+          "id": "invalid-extension-identifiers-ignored",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Duplicate raw extension strings violate the canonical Hello set and are rejected before negotiation.",
+          "id": "duplicate-extension-identifiers-rejected",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Server-only extensions never become active without an explicit client request.",
+          "id": "server-only-extension-not-activated",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Version selection removes duplicates and selects the numeric maximum in range regardless of input order.",
+          "id": "unordered-duplicate-server-versions",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A min_version above version fails closed instead of silently reversing the range.",
+          "id": "reversed-client-range",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Unknown hello, server, and capability fields do not disturb a compatible negotiation.",
+          "id": "forward-compatible-unknown-fields",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         }
       ],
       "fixture": "conformance/extensions/capability_negotiation.json",
-      "fixture_sha256": "0c9ce97cc8446506c13e19627c6eabe7165c5d47cb389b61e9918ae95bf2e7c2",
+      "fixture_sha256": "1b7b44f3975cb000de250055b11b7e84591bf9997968a474400f49c5a6ef298f",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md#capability-negotiation",
       "runner": "conformance/runners/negotiation_parity.py",
       "suite": "extensions/capability_negotiation",
-      "version": "1.0.0"
+      "version": "2.0.0"
     },
     {
       "case_count": 5,
@@ -1693,8 +2320,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -1712,8 +2339,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -1731,8 +2358,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -1750,8 +2377,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -1769,8 +2396,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -1788,8 +2415,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -1807,8 +2434,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -1826,8 +2453,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -1845,8 +2472,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -1921,8 +2548,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -1940,8 +2567,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2497,7 +3124,7 @@
       "version": "1.0.0"
     },
     {
-      "case_count": 23,
+      "case_count": 33,
       "cases": [
         {
           "applicability": "protocol_behavior",
@@ -2672,7 +3299,7 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "URI generation with default registry",
+          "description": "URI generation uses a dotted token path, canonicalizes leading-zero version components, and omits the non-URI namespace",
           "id": "token-010",
           "implementations": {
             "python": {
@@ -2935,10 +3562,200 @@
               "status": "not_applicable"
             }
           }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "The mandatory creed scheme accepts a dotted token path and canonicalizes leading-zero version components",
+          "id": "token-uri-001",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "The recommended vcp shorthand accepts only a dotted token path",
+          "id": "token-uri-002",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A legacy creed slash path is receive-only and normalizes to dotted canonical output",
+          "id": "token-uri-003",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Unsupported URI schemes are rejected rather than treated as token text",
+          "id": "token-uri-err-001",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "URI encoding rejects the token namespace suffix that must be carried separately",
+          "id": "token-uri-err-002",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Query parameters cannot smuggle identity state into a VCP URI",
+          "id": "token-uri-err-003",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Fragments cannot create parser-dependent VCP identities",
+          "id": "token-uri-err-004",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "User information is rejected in the creed issuer authority",
+          "id": "token-uri-err-005",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "The vcp shorthand rejects legacy slash-separated token paths",
+          "id": "token-uri-err-006",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Mixed dotted and slash-separated creed paths are rejected as ambiguous",
+          "id": "token-uri-err-007",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
         }
       ],
       "fixture": "conformance/identity/token_parsing.json",
-      "fixture_sha256": "285ae2dcc591e05f58a5340a52c7de3d02bb9c14c8c532cf1c99e8a90f1fdd0d",
+      "fixture_sha256": "be093ebbdcb833cc934fa6fdfee7bbc188ce45b467c84c9bbb7d202a26232b66",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/specs/VCP_IDENTITY_v2.0.md",
       "runner": "conformance/runners/identity_parity.py",
@@ -5918,23 +6735,23 @@
     "fixture_count": 27,
     "implementation_status": {
       "python": {
-        "checked": 280,
+        "checked": 323,
         "not_applicable": 8,
         "unsupported": 6
       },
       "rust": {
-        "checked": 247,
+        "checked": 263,
         "not_applicable": 8,
-        "unsupported": 39
+        "unsupported": 66
       },
       "webmcp": {
-        "checked": 0,
-        "not_applicable": 288,
+        "checked": 23,
+        "not_applicable": 308,
         "unsupported": 6
       }
     },
-    "vector_count": 294,
-    "webmcp_surface_checks": 1
+    "vector_count": 337,
+    "webmcp_surface_checks": 2
   },
   "webmcp_surface": {
     "claim_boundary": "Chromium-only experimental WebMCP API",

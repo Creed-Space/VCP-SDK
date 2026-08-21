@@ -17,6 +17,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+MAX_CANDIDATES = 256
+MAX_BALLOTS = 10_000
+MAX_IDENTIFIER_LENGTH = 256
+
 
 @dataclass
 class Ballot:
@@ -34,27 +38,46 @@ class Ballot:
     rankings: list[list[str]]
 
     def __post_init__(self) -> None:
-        if not self.rankings:
+        if (
+            not isinstance(self.voter_id, str)
+            or not self.voter_id
+            or len(self.voter_id) > MAX_IDENTIFIER_LENGTH
+        ):
+            raise ValueError("voter_id must be a string of 1 to 256 characters")
+        if not isinstance(self.rankings, list) or not self.rankings:
             raise ValueError("rankings must be non-empty")
+        if len(self.rankings) > MAX_CANDIDATES:
+            raise ValueError("rankings exceed the 256-candidate limit")
         seen: set[str] = set()
         for group in self.rankings:
-            if not group:
+            if not isinstance(group, list) or not group:
                 raise ValueError("Each ranking group must be non-empty")
             for candidate in group:
+                if (
+                    not isinstance(candidate, str)
+                    or not candidate
+                    or len(candidate) > MAX_IDENTIFIER_LENGTH
+                ):
+                    raise ValueError("candidate identifiers must contain 1 to 256 characters")
                 if candidate in seen:
                     raise ValueError(f"Duplicate candidate: {candidate}")
                 seen.add(candidate)
+                if len(seen) > MAX_CANDIDATES:
+                    raise ValueError("rankings exceed the 256-candidate limit")
+        self.rankings = [list(group) for group in self.rankings]
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to plain dict."""
         return {
             "voter_id": self.voter_id,
-            "rankings": self.rankings,
+            "rankings": [list(group) for group in self.rankings],
         }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Ballot:
         """Deserialize from dict."""
+        if not isinstance(data, dict):
+            raise TypeError("ballot data must be an object")
         return cls(
             voter_id=data["voter_id"],
             rankings=data["rankings"],
@@ -157,8 +180,17 @@ class SchulzeElection:
         Raises:
             ValueError: If candidates is empty or contains duplicates.
         """
-        if not candidates:
+        if not isinstance(candidates, list) or not candidates:
             raise ValueError("candidates must be non-empty")
+        if len(candidates) > MAX_CANDIDATES:
+            raise ValueError("election cannot contain more than 256 candidates")
+        if any(
+            not isinstance(candidate, str)
+            or not candidate
+            or len(candidate) > MAX_IDENTIFIER_LENGTH
+            for candidate in candidates
+        ):
+            raise ValueError("candidate identifiers must contain 1 to 256 characters")
         if len(candidates) != len(set(candidates)):
             raise ValueError("candidates must be unique")
         self._candidates = list(candidates)
@@ -181,7 +213,19 @@ class SchulzeElection:
         Args:
             ballot: Ranked ballot to add.
         """
-        self._ballots.append(ballot)
+        if not isinstance(ballot, Ballot):
+            raise TypeError("ballot must be a Ballot")
+        if len(self._ballots) >= MAX_BALLOTS:
+            raise ValueError("election cannot contain more than 10000 ballots")
+        unknown = sorted(
+            candidate
+            for group in ballot.rankings
+            for candidate in group
+            if candidate not in self._index
+        )
+        if unknown:
+            raise ValueError(f"ballot contains unknown candidates: {', '.join(unknown)}")
+        self._ballots.append(Ballot.from_dict(ballot.to_dict()))
 
     def compute(self) -> ElectionResult:
         """Run Schulze method. Returns full ranking with pairwise data.

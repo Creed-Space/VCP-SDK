@@ -130,6 +130,16 @@ class TestPersonalState:
         with pytest.raises(ValueError):
             PersonalState(value="x", intensity=6)
 
+    @pytest.mark.parametrize("intensity", [True, False, 1.5, "3"])
+    def test_intensity_rejects_non_integer_runtime_types(self, intensity: object) -> None:
+        with pytest.raises(ValueError, match="intensity"):
+            PersonalState(value="focused", intensity=intensity)  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize("value", ["", "focused|💭calm", "focused‖💭calm", "focused:4"])
+    def test_value_rejects_empty_or_wire_ambiguous_text(self, value: str) -> None:
+        with pytest.raises(ValueError):
+            PersonalState(value=value)
+
     def test_decode_with_intensity(self):
         assert PersonalState.decode("focused:4") == PersonalState("focused", 4)
 
@@ -308,6 +318,22 @@ class TestVCPContextEncoding:
         ctx = VCPContext.decode("🪢friend:social")
         assert ctx.get(SituationalDimension.RELATIONSHIP) == ["friend:social"]
 
+    def test_relationship_cannot_smuggle_a_second_dimension(self) -> None:
+        with pytest.raises(ValueError, match="relationship"):
+            ContextEncoder().encode(relationship="friend:social|📍🏡")
+
+    def test_mutable_context_is_intentionally_unhashable(self) -> None:
+        with pytest.raises(TypeError):
+            hash(VCPContext())
+
+    def test_constructor_and_json_output_do_not_alias_nested_lists(self) -> None:
+        values = ["🌅"]
+        ctx = VCPContext(situational={SituationalDimension.TIME: values})
+        values.append("🌙")
+        encoded = ctx.to_json()
+        encoded["situational"]["time"].append("🌆")
+        assert ctx.get(SituationalDimension.TIME) == ["🌅"]
+
     def test_roundtrip_core(self):
         original = VCPContext(
             situational={
@@ -397,10 +423,39 @@ class TestVCPContextJSON:
         assert ctx.get(SituationalDimension.TIME) == ["🌅"]
         assert ctx.get(SituationalDimension.SPACE) == ["🏡"]
 
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            [],
+            {"situational": []},
+            {"personal": {"cognitive_state": 3}},
+            {"personal": {"cognitive_state": {"intensity": 3}}},
+            {"situational": {"time": [None]}},
+        ],
+    )
+    def test_from_json_rejects_malformed_runtime_shapes(self, payload: object) -> None:
+        with pytest.raises((TypeError, ValueError)):
+            VCPContext.from_json(payload)  # type: ignore[arg-type]
+
     def test_from_json_string_value(self):
         data = {"situational": {"time": "🌅"}}
         ctx = VCPContext.from_json(data)
         assert ctx.get(SituationalDimension.TIME) == ["🌅"]
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"situational": []},
+            {"situational": ""},
+            {"personal": []},
+            {"personal": ""},
+        ],
+    )
+    def test_constructor_does_not_coerce_falsey_wrong_shapes_to_empty(
+        self, kwargs: dict[str, object]
+    ) -> None:
+        with pytest.raises((TypeError, ValueError)):
+            VCPContext(**kwargs)  # type: ignore[arg-type]
 
     def test_json_roundtrip(self):
         original = VCPContext(

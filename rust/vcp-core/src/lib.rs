@@ -57,6 +57,7 @@ pub mod orchestrator;
 pub mod personal;
 pub mod revocation;
 pub mod situational;
+mod strict_json;
 pub mod transport;
 pub mod trust;
 

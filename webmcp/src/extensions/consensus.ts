@@ -53,6 +53,19 @@ export interface ElectionResult {
   readonly ties: readonly (readonly [string, string])[];
 }
 
+const MAX_CANDIDATES = 256;
+const MAX_BALLOTS = 10_000;
+const MAX_IDENTIFIER_CHARS = 256;
+const MAX_PAIRWISE_BALLOT_WORK = 10_000_000;
+
+function validIdentifier(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    [...value].length <= MAX_IDENTIFIER_CHARS
+  );
+}
+
 // === Schulze Election Class ===
 
 export class SchulzeElection {
@@ -61,8 +74,17 @@ export class SchulzeElection {
   private readonly _index: ReadonlyMap<string, number>;
 
   constructor(candidates: readonly string[]) {
+    if (!Array.isArray(candidates)) {
+      throw new TypeError('candidates must be an array');
+    }
     if (candidates.length === 0) {
       throw new Error('candidates must be non-empty');
+    }
+    if (candidates.length > MAX_CANDIDATES) {
+      throw new Error('too many candidates');
+    }
+    if (candidates.some((candidate) => !validIdentifier(candidate))) {
+      throw new Error('candidate identifiers must contain 1 to 256 characters');
     }
     if (new Set(candidates).size !== candidates.length) {
       throw new Error('candidates must be unique');
@@ -72,7 +94,7 @@ export class SchulzeElection {
   }
 
   get candidates(): readonly string[] {
-    return this._candidates;
+    return [...this._candidates];
   }
 
   get ballotCount(): number {
@@ -80,7 +102,51 @@ export class SchulzeElection {
   }
 
   addBallot(ballot: Ballot): void {
-    this._ballots.push(ballot);
+    if (typeof ballot !== 'object' || ballot === null || Array.isArray(ballot)) {
+      throw new TypeError('ballot must be an object');
+    }
+    if (this._ballots.length >= MAX_BALLOTS) {
+      throw new Error('too many ballots');
+    }
+    const candidatePairs = this._candidates.length * (this._candidates.length - 1) / 2;
+    if ((this._ballots.length + 1) * candidatePairs > MAX_PAIRWISE_BALLOT_WORK) {
+      throw new Error('election exceeds pairwise ballot work limit');
+    }
+    if (!validIdentifier(ballot.voterId)) {
+      throw new Error('voter identifiers must contain 1 to 256 characters');
+    }
+    if (!Array.isArray(ballot.rankings)) {
+      throw new TypeError('rankings must be an array');
+    }
+    if (ballot.rankings.length === 0) {
+      throw new Error('rankings must be non-empty');
+    }
+    const seen = new Set<string>();
+    const rankings = ballot.rankings.map((group) => {
+      if (!Array.isArray(group)) {
+        throw new TypeError('ranking groups must be arrays');
+      }
+      if (group.length === 0) {
+        throw new Error('ranking groups must be non-empty');
+      }
+      const copy = [...group];
+      for (const candidate of copy) {
+        if (!validIdentifier(candidate)) {
+          throw new Error('candidate identifiers must contain 1 to 256 characters');
+        }
+        if (!this._index.has(candidate)) {
+          throw new Error(`ballot contains an unknown candidate: ${candidate}`);
+        }
+        if (seen.has(candidate)) {
+          throw new Error(`duplicate ranked candidate: ${candidate}`);
+        }
+        seen.add(candidate);
+      }
+      return Object.freeze(copy);
+    });
+    this._ballots.push(
+      Object.freeze({ voterId: ballot.voterId, rankings: Object.freeze(rankings) }),
+    );
   }
 
   compute(): ElectionResult {
@@ -278,7 +344,7 @@ export class SchulzeElection {
     const seen = new Set<string>();
     const dedupedTies: [string, string][] = [];
     for (const [a, b] of rawTies) {
-      const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+      const key = JSON.stringify(a < b ? [a, b] : [b, a]);
       if (!seen.has(key)) {
         seen.add(key);
         dedupedTies.push(a < b ? [a, b] : [b, a]);

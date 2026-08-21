@@ -124,10 +124,13 @@
     },
     {
       "id": "token-010",
-      "description": "URI generation with default registry",
-      "input": "family.safe.guide@1.0.0",
+      "description": "URI generation uses a dotted token path, canonicalizes leading-zero version components, and omits the non-URI namespace",
+      "input": "family.safe.guide@01.00.000:SEC",
       "expected": {
         "valid": true,
+        "canonical_display": "family.safe.guide@1.0.0:SEC",
+        "version": "1.0.0",
+        "namespace": "SEC",
         "uri_with_registry_creed_space": "creed://creed.space/family.safe.guide@1.0.0"
       }
     },
@@ -248,6 +251,115 @@
         "is_ancestor": true,
         "is_descendant": true,
         "reverse_is_ancestor": false
+      }
+    },
+    {
+      "id": "token-uri-001",
+      "description": "The mandatory creed scheme accepts a dotted token path and canonicalizes leading-zero version components",
+      "operation": "parse_uri",
+      "input": "creed://creed.space/family.safe.guide@01.02.003",
+      "expected": {
+        "valid": true,
+        "canonical_display": "family.safe.guide@1.2.3",
+        "version": "1.2.3",
+        "namespace": null,
+        "uri_with_registry_creed_space": "creed://creed.space/family.safe.guide@1.2.3"
+      }
+    },
+    {
+      "id": "token-uri-002",
+      "description": "The recommended vcp shorthand accepts only a dotted token path",
+      "operation": "parse_uri",
+      "input": "vcp://family.safe.guide@01.02.003",
+      "expected": {
+        "valid": true,
+        "canonical_display": "family.safe.guide@1.2.3",
+        "version": "1.2.3",
+        "namespace": null,
+        "uri_with_registry_creed_space": "creed://creed.space/family.safe.guide@1.2.3"
+      }
+    },
+    {
+      "id": "token-uri-003",
+      "description": "A legacy creed slash path is receive-only and normalizes to dotted canonical output",
+      "operation": "parse_uri",
+      "input": "creed://creed.space/family/safe/guide@01.02.003-RC.1",
+      "expected": {
+        "valid": true,
+        "canonical_display": "family.safe.guide@1.2.3-rc.1",
+        "version": "1.2.3-rc.1",
+        "namespace": null,
+        "uri_with_registry_creed_space": "creed://creed.space/family.safe.guide@1.2.3-rc.1"
+      }
+    },
+    {
+      "id": "token-uri-err-001",
+      "description": "Unsupported URI schemes are rejected rather than treated as token text",
+      "operation": "parse_uri",
+      "input": "https://creed.space/family.safe.guide",
+      "expected": {
+        "valid": false,
+        "error": "invalid_uri_scheme"
+      }
+    },
+    {
+      "id": "token-uri-err-002",
+      "description": "URI encoding rejects the token namespace suffix that must be carried separately",
+      "operation": "parse_uri",
+      "input": "creed://creed.space/family.safe.guide@1.2.3:SEC",
+      "expected": {
+        "valid": false,
+        "error": "uri_namespace_forbidden"
+      }
+    },
+    {
+      "id": "token-uri-err-003",
+      "description": "Query parameters cannot smuggle identity state into a VCP URI",
+      "operation": "parse_uri",
+      "input": "creed://creed.space/family.safe.guide?version=1.2.3",
+      "expected": {
+        "valid": false,
+        "error": "uri_query_forbidden"
+      }
+    },
+    {
+      "id": "token-uri-err-004",
+      "description": "Fragments cannot create parser-dependent VCP identities",
+      "operation": "parse_uri",
+      "input": "creed://creed.space/family.safe.guide#SEC",
+      "expected": {
+        "valid": false,
+        "error": "uri_fragment_forbidden"
+      }
+    },
+    {
+      "id": "token-uri-err-005",
+      "description": "User information is rejected in the creed issuer authority",
+      "operation": "parse_uri",
+      "input": "creed://user@creed.space/family.safe.guide",
+      "expected": {
+        "valid": false,
+        "error": "invalid_uri_issuer"
+      }
+    },
+    {
+      "id": "token-uri-err-006",
+      "description": "The vcp shorthand rejects legacy slash-separated token paths",
+      "operation": "parse_uri",
+      "input": "vcp://family/safe/guide@1.2.3",
+      "expected": {
+        "valid": false,
+        "error": "ambiguous_uri_path"
+      }
+    },
+    {
+      "id": "token-uri-err-007",
+      "description": "Mixed dotted and slash-separated creed paths are rejected as ambiguous",
+      "operation": "parse_uri",
+      "input": "creed://creed.space/family.safe/guide@1.2.3",
+      "expected": {
+        "valid": false,
+        "error": "ambiguous_uri_path"
       }
     }
   ]

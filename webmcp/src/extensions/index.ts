@@ -59,11 +59,19 @@ export type { TorchSummary, TorchLineage } from './torch.js';
 
 // Negotiation
 export {
+  VCPExtension,
   VCPCapability,
   negotiate,
   createFullHello,
 } from './negotiation.js';
-export type { VCPHello, VCPAck } from './negotiation.js';
+export type {
+  VCPHello,
+  VCPCoreFeatures,
+  VCPServerCapabilities,
+  VCPAck,
+  VCPError,
+  VCPNegotiationResult,
+} from './negotiation.js';
 
 // VCP/A Situational + Personal-state context encoder (v3.2, incl. VEP-0004)
 export {

@@ -2,7 +2,7 @@
 
 import pytest
 
-from vcp.identity import Token, canonicalize_token
+from vcp.identity import Token, canonicalize_token, uri_to_canonical
 
 
 class TestTokenCanonicalization:
@@ -44,6 +44,10 @@ class TestTokenCanonicalization:
         with pytest.raises(ValueError, match="cannot be empty"):
             canonicalize_token(None)  # type: ignore[arg-type]
 
+    def test_raw_canonicalization_input_is_bounded_before_normalization(self) -> None:
+        with pytest.raises(ValueError, match="Raw token exceeds"):
+            canonicalize_token(" " * 4097 + "family.safe.guide")
+
 
 class TestTokenParsing:
     """Test token parsing from strings."""
@@ -63,6 +67,21 @@ class TestTokenParsing:
         assert t.version == "1.2.0"
         assert t.canonical == "family.safe.guide"
         assert t.full == "family.safe.guide@1.2.0"
+
+    @pytest.mark.parametrize(
+        ("raw_version", "canonical_version"),
+        [
+            ("01.2.3", "1.2.3"),
+            ("^00001.00002.00003-RC.1", "^1.2.3-rc.1"),
+        ],
+    )
+    def test_parse_canonicalizes_numeric_version(
+        self, raw_version: str, canonical_version: str
+    ) -> None:
+        token = Token.parse(f"family.safe.guide@{raw_version}")
+        assert token.version == canonical_version
+        assert token.full == f"family.safe.guide@{canonical_version}"
+        assert token.to_uri() == f"creed://creed.space/family.safe.guide@{canonical_version}"
 
     def test_namespaced_token(self):
         """Parse token with namespace."""
@@ -101,6 +120,20 @@ class TestTokenParsing:
         assert t.domain == "work-life"
         assert t.approach == "balanced-approach"
         assert t.role == "team-lead"
+
+    @pytest.mark.parametrize(
+        "token",
+        [
+            "family.safe.guide\n",
+            "family.safe.guide@1.2.0\n",
+            "family.safe.guide:SEC\n",
+            "family.safe.guide\r",
+            "family.safe.guide\x00",
+        ],
+    )
+    def test_wire_parser_rejects_trailing_control_characters(self, token: str) -> None:
+        with pytest.raises(ValueError, match="Invalid VCP/I token"):
+            Token.parse(token)
 
 
 class TestTokenValidation:
@@ -158,6 +191,7 @@ class TestTokenValidation:
             Token(segments=("family", "UPPER", "guide"))
         with pytest.raises(ValueError, match="Invalid version"):
             Token(segments=("family", "safe", "guide"), version="1.2")
+        assert Token(segments=("family", "safe", "guide"), version="01.02.003").version == "1.2.3"
 
 
 class TestTokenImmutability:
@@ -204,6 +238,30 @@ class TestTokenMethods:
         t = Token.parse("family.safe.guide")
         assert t.to_uri("custom.registry") == "creed://custom.registry/family.safe.guide"
 
+    def test_to_uri_normalizes_registry_case(self):
+        t = Token.parse("family.safe.guide")
+        assert t.to_uri("Creed.Space") == "creed://creed.space/family.safe.guide"
+
+    @pytest.mark.parametrize(
+        "registry",
+        [
+            "",
+            "evil/x",
+            "evil\nattack",
+            "a..b",
+            "user@example.test",
+            "-bad.example",
+            "bad-.example",
+            "x" * 64 + ".example",
+            "x" * 254,
+            "127.0.0.1",
+            None,
+        ],
+    )
+    def test_to_uri_rejects_malformed_registry_domains(self, registry: object):
+        with pytest.raises(ValueError, match="valid domain"):
+            Token.parse("family.safe.guide").to_uri(registry)  # type: ignore[arg-type]
+
     def test_str_returns_full(self):
         """str() returns full token."""
         t = Token.parse("family.safe.guide@1.2.0:ELEM")
@@ -213,6 +271,76 @@ class TestTokenMethods:
         """repr() includes type name."""
         t = Token.parse("family.safe.guide")
         assert repr(t) == "Token('family.safe.guide')"
+
+
+class TestTokenUriParsing:
+    """URI decoding is strict, bounded, and canonical across supported forms."""
+
+    @pytest.mark.parametrize(
+        ("uri", "expected"),
+        [
+            (
+                "creed://creed.space/family.safe.guide@01.002.00003",
+                "family.safe.guide@1.2.3",
+            ),
+            (
+                "creed://acme.example/company/acme/legal@latest",
+                "company.acme.legal@latest",
+            ),
+            ("vcp://core.ethics.consent", "core.ethics.consent"),
+        ],
+    )
+    def test_accepts_required_alternative_and_legacy_uri_forms(
+        self, uri: str, expected: str
+    ) -> None:
+        token = Token.from_uri(uri)
+        assert token.full == expected
+        assert uri_to_canonical(uri) == expected
+        assert token.to_uri() == f"creed://creed.space/{expected}"
+
+    def test_identity_uri_resource_bound_is_inclusive(self) -> None:
+        issuer = ".".join(("a" * 63, "b" * 63, "c" * 63, "d" * 61))
+        token = ".".join((*(["a" * 32] * 7), "b" * 25))
+        uri = f"creed://{issuer}/{token}"
+        assert len(uri) == 518
+        assert Token.from_uri(uri).full == token
+        with pytest.raises(ValueError, match="1 to 518"):
+            Token.from_uri(uri + "x")
+
+    @pytest.mark.parametrize(
+        "uri",
+        [
+            "",
+            "https://creed.space/family.safe.guide",
+            "CREED://creed.space/family.safe.guide",
+            "vcp://",
+            "creed://creed.space",
+            "creed:///family.safe.guide",
+            "creed://127.0.0.1/family.safe.guide",
+            "creed://user@creed.space/family.safe.guide",
+            "creed://creed.space:443/family.safe.guide",
+            "creed://creed.space/family.safe.guide:SEC",
+            "creed://creed.space/family/safe.guide",
+            "creed://creed.space//family/safe/guide",
+            "creed://creed.space/family/safe/guide/",
+            "creed://creed.space/family//safe/guide",
+            "vcp://family/safe/guide",
+            "creed://creed.space/family.safe.guide?version=1",
+            "creed://creed.space/family.safe.guide#fragment",
+            "creed://creed.space/family%2Esafe%2Eguide",
+            "creed://creed.space/family.safe.guide\\suffix",
+            "creed://creed.space/family.safe.guide\n",
+            "creed://creed.space/family.safe.guide\x7f",
+            "creed://creed.space/family.safé.guide",
+        ],
+    )
+    def test_rejects_malformed_or_ambiguous_uris(self, uri: str) -> None:
+        with pytest.raises(ValueError):
+            Token.from_uri(uri)
+
+    def test_rejects_non_string_uri_without_type_confusion(self) -> None:
+        with pytest.raises(ValueError, match="1 to 518"):
+            Token.from_uri(None)  # type: ignore[arg-type]
 
 
 class TestTokenPatternMatching:
@@ -311,6 +439,10 @@ class TestMultiSegmentTokens:
         assert child.canonical == "family.safe.guide.extra"
         assert child.depth == 4
 
+    def test_child_rejects_trailing_control_character(self):
+        with pytest.raises(ValueError, match="Invalid segment format"):
+            Token.parse("family.safe.guide").child("extra\n")
+
     def test_is_ancestor_of(self):
         """Check ancestor relationship."""
         ancestor = Token.parse("company.acme.legal")
@@ -346,6 +478,11 @@ class TestWithVersionValidation:
         with pytest.raises(ValueError, match="Invalid version format"):
             t.with_version("1.0")
 
+    def test_version_modifier_rejects_trailing_newline(self):
+        t = Token.parse("family.safe.guide")
+        with pytest.raises(ValueError, match="Invalid version format"):
+            t.with_version("1.0.0\n")
+
 
 class TestWithNamespaceValidation:
     """Test namespace validation in with_namespace."""
@@ -361,3 +498,8 @@ class TestWithNamespaceValidation:
         t = Token.parse("family.safe.guide")
         with pytest.raises(ValueError, match="Invalid namespace format"):
             t.with_namespace("lowercase")
+
+    def test_namespace_modifier_rejects_trailing_newline(self):
+        t = Token.parse("family.safe.guide")
+        with pytest.raises(ValueError, match="Invalid namespace format"):
+            t.with_namespace("SEC\n")

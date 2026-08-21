@@ -43,6 +43,7 @@ from .identity import (  # noqa: F401
     NamespaceConfig,
     NamespaceTier,
     Token,
+    uri_to_canonical,
     validate_namespace_access,
 )
 from .injection import (  # noqa: F401
@@ -81,8 +82,10 @@ from .metrics import (  # noqa: F401
 )
 from .negotiation import (  # noqa: F401
     VCPAck,
+    VCPError,
     VCPHello,
     negotiate,
+    negotiate_handshake,
 )
 from .orchestrator import Orchestrator, VerificationContext, VerificationError  # noqa: F401
 from .privacy import (  # noqa: F401
@@ -180,6 +183,7 @@ __all__ = [
     "AuditLevel",
     # VCP/I (Identity Layer)
     "Token",
+    "uri_to_canonical",
     "NamespaceTier",
     "NamespaceConfig",
     "validate_namespace_access",
@@ -207,7 +211,9 @@ __all__ = [
     "extensions",
     "VCPHello",
     "VCPAck",
+    "VCPError",
     "negotiate",
+    "negotiate_handshake",
     # VCP v2.0 Types
     "TokenType",
     "EnforcementMode",

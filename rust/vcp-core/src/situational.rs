@@ -33,6 +33,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{VcpError, VcpResult};
 
+const MAX_SITUATIONAL_WIRE_CHARS: usize = 8_192;
+
 /// The thirteen situational context dimensions (VCP v3.2, incl. VEP-0004).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -301,39 +303,58 @@ impl SituationalContext {
         if wire.is_empty() {
             return Ok(ctx);
         }
+        if wire.chars().count() > MAX_SITUATIONAL_WIRE_CHARS {
+            return Err(VcpError::ParseError(format!(
+                "situational context exceeds {MAX_SITUATIONAL_WIRE_CHARS} characters"
+            )));
+        }
+        if wire
+            .chars()
+            .any(|character| character.is_whitespace() || character.is_control())
+        {
+            return Err(VcpError::ParseError(
+                "situational context contains whitespace or control characters".to_string(),
+            ));
+        }
 
         for segment in wire.split('|') {
-            let segment = segment.trim();
             if segment.is_empty() {
-                continue;
+                return Err(VcpError::ParseError(
+                    "situational context contains an empty dimension segment".to_string(),
+                ));
             }
 
             let (dim, rest) = split_situational_symbol(segment)?;
-            let tags = if rest.is_empty() {
-                Vec::new()
-            } else {
-                // Tags are the remaining content. Relationship values
-                // are free-form `{tie}:{function}` strings and must
-                // be kept intact. Other dimensions' remainders are
-                // treated as a single opaque tag.
-                vec![rest.to_string()]
-            };
-
-            match dim {
-                SituationalDimension::Time => ctx.time = Some(tags),
-                SituationalDimension::Space => ctx.space = Some(tags),
-                SituationalDimension::Company => ctx.company = Some(tags),
-                SituationalDimension::Culture => ctx.culture = Some(tags),
-                SituationalDimension::Occasion => ctx.occasion = Some(tags),
-                SituationalDimension::Environment => ctx.environment = Some(tags),
-                SituationalDimension::Agency => ctx.agency = Some(tags),
-                SituationalDimension::Constraints => ctx.constraints = Some(tags),
-                SituationalDimension::SystemContext => ctx.system_context = Some(tags),
-                SituationalDimension::Embodiment => ctx.embodiment = Some(tags),
-                SituationalDimension::Proximity => ctx.proximity = Some(tags),
-                SituationalDimension::Relationship => ctx.relationship = Some(tags),
-                SituationalDimension::Formality => ctx.formality = Some(tags),
+            if rest.is_empty() {
+                return Err(VcpError::ParseError(format!(
+                    "situational dimension {dim} has no value"
+                )));
             }
+            // Relationship values are free-form `{tie}:{function}` strings
+            // and remain intact. Other remainders are one opaque tag.
+            let tags = vec![rest.to_string()];
+
+            let slot = match dim {
+                SituationalDimension::Time => &mut ctx.time,
+                SituationalDimension::Space => &mut ctx.space,
+                SituationalDimension::Company => &mut ctx.company,
+                SituationalDimension::Culture => &mut ctx.culture,
+                SituationalDimension::Occasion => &mut ctx.occasion,
+                SituationalDimension::Environment => &mut ctx.environment,
+                SituationalDimension::Agency => &mut ctx.agency,
+                SituationalDimension::Constraints => &mut ctx.constraints,
+                SituationalDimension::SystemContext => &mut ctx.system_context,
+                SituationalDimension::Embodiment => &mut ctx.embodiment,
+                SituationalDimension::Proximity => &mut ctx.proximity,
+                SituationalDimension::Relationship => &mut ctx.relationship,
+                SituationalDimension::Formality => &mut ctx.formality,
+            };
+            if slot.is_some() {
+                return Err(VcpError::ParseError(format!(
+                    "duplicate situational dimension: {dim}"
+                )));
+            }
+            *slot = Some(tags);
         }
 
         Ok(ctx)
@@ -522,6 +543,27 @@ mod tests {
     fn from_wire_empty() {
         let ctx = SituationalContext::from_wire("").unwrap();
         assert!(!ctx.has_any());
+    }
+
+    #[test]
+    fn from_wire_rejects_ambiguous_or_noncanonical_segments() {
+        for malformed in [
+            "|",
+            "\u{23F0}\u{1F305}|",
+            "\u{23F0}",
+            "\u{23F0}\u{1F305}|\u{23F0}\u{1F319}",
+            "\u{23F0}\u{1F305} ",
+        ] {
+            assert!(
+                SituationalContext::from_wire(malformed).is_err(),
+                "accepted {malformed:?}"
+            );
+        }
+        let oversized = format!("⏰{}", "a".repeat(MAX_SITUATIONAL_WIRE_CHARS));
+        assert!(SituationalContext::from_wire(&oversized)
+            .unwrap_err()
+            .to_string()
+            .contains("8192 characters"));
     }
 
     #[test]

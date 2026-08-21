@@ -12,6 +12,7 @@ Design principles:
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -337,6 +338,7 @@ class RelationalContext:
         interaction_count: Number of interactions in this partnership.
         norms: Co-authored norms established through practice.
         preference_model: Metadata about confidence and provenance of user preferences.
+        torch: Relational handoff received from the previous session.
     """
 
     trust_level: TrustLevel = TrustLevel.INITIAL
@@ -345,6 +347,7 @@ class RelationalContext:
     interaction_count: int = 0
     norms: list[RelationalNorm] = field(default_factory=list)
     preference_model: PreferenceModelMeta | None = None
+    torch: dict[str, Any] | None = None
 
     def active_norms(self) -> list[RelationalNorm]:
         """Return only active norms."""
@@ -362,6 +365,8 @@ class RelationalContext:
             result["self_model"] = self.self_model.to_dict()
         if self.preference_model is not None:
             result["preference_model"] = self.preference_model.to_dict()
+        if self.torch is not None:
+            result["torch"] = deepcopy(self.torch)
         return result
 
     def to_protocol_dict(self) -> dict[str, Any]:
@@ -372,6 +377,7 @@ class RelationalContext:
             "continuity_depth": self.interaction_count,
             "established_norms": [norm.to_dict() for norm in self.norms],
             "ai_self_model": self.self_model.to_dict() if self.self_model else None,
+            "torch": deepcopy(self.torch),
         }
 
     @classmethod
@@ -395,4 +401,5 @@ class RelationalContext:
             interaction_count=data.get("interaction_count", data.get("continuity_depth", 0)),
             norms=norms,
             preference_model=preference_model,
+            torch=deepcopy(data.get("torch")) if isinstance(data.get("torch"), dict) else None,
         )

@@ -5,10 +5,39 @@ Implements RFC 8785 (JCS) for manifest and content canonicalization.
 """
 
 import hashlib
+import json
 import unicodedata
 from typing import Any
 
 import rfc8785
+
+
+def parse_json_strict(value: str | bytes | bytearray) -> Any:
+    """Parse interoperable JSON without ambiguous object keys or numbers.
+
+    Python's default decoder silently keeps the last occurrence of a duplicate
+    object key and accepts the non-standard ``NaN`` and infinity constants.
+    Both behaviours are unsafe for signed or security-sensitive documents,
+    because different implementations can assign different meaning to the
+    same bytes.
+    """
+
+    def _object_without_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in result:
+                raise ValueError(f"Duplicate JSON object key: {key!r}")
+            result[key] = item
+        return result
+
+    def _reject_constant(constant: str) -> Any:
+        raise ValueError(f"Non-finite JSON number is not permitted: {constant}")
+
+    return json.loads(
+        value,
+        object_pairs_hook=_object_without_duplicates,
+        parse_constant=_reject_constant,
+    )
 
 
 def canonicalize_content(text: str) -> bytes:

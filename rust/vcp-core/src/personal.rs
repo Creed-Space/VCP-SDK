@@ -9,9 +9,12 @@
 
 use std::fmt;
 
-use serde::{Deserialize, Serialize};
+use serde::de::Error as _;
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::error::{VcpError, VcpResult};
+
+const MAX_PERSONAL_WIRE_CHARS: usize = 8_192;
 
 // ── Dimension enums ─────────────────────────────────────────
 
@@ -79,7 +82,7 @@ impl fmt::Display for PersonalDimensionKind {
 
 /// A single personal-state dimension with a categorical value,
 /// intensity (1-5, default 3), and optional extended sub-signal.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PersonalDimension {
     /// Categorical value (e.g. "focused", "calm", "rested").
     pub value: String,
@@ -91,17 +94,52 @@ pub struct PersonalDimension {
 }
 
 impl PersonalDimension {
+    const MAX_VALUE_CHARS: usize = 64;
+    const MAX_EXTENDED_CHARS: usize = 256;
+
+    fn validate(value: &str, intensity: u8, extended: Option<&str>) -> VcpResult<()> {
+        let valid_value = !value.is_empty()
+            && value.chars().count() <= Self::MAX_VALUE_CHARS
+            && value
+                .bytes()
+                .next()
+                .is_some_and(|byte| byte.is_ascii_lowercase())
+            && value
+                .chars()
+                .all(|character| character.is_ascii_lowercase() || character == '_');
+        if !valid_value {
+            return Err(VcpError::ParseError(
+                "personal value must match [a-z][a-z_]{0,63}".to_string(),
+            ));
+        }
+        if !(1..=5).contains(&intensity) {
+            return Err(VcpError::InvalidIntensity(intensity));
+        }
+        if let Some(extended) = extended {
+            if extended.is_empty()
+                || extended.chars().count() > Self::MAX_EXTENDED_CHARS
+                || extended.chars().any(|character| {
+                    character.is_control() || matches!(character, '[' | ']' | '|' | '\u{2016}')
+                })
+            {
+                return Err(VcpError::ParseError(
+                    "extended personal value is empty, oversized, or wire-ambiguous".to_string(),
+                ));
+            }
+        }
+        Ok(())
+    }
+
     /// Create with validation.
     ///
     /// # Errors
     ///
     /// Returns [`VcpError::InvalidIntensity`] if `intensity` is not in 1..=5.
     pub fn new(value: impl Into<String>, intensity: u8) -> VcpResult<Self> {
-        if !(1..=5).contains(&intensity) {
-            return Err(VcpError::InvalidIntensity(intensity));
-        }
+        let value = value.into();
+        Self::validate(&value, intensity, None)?;
         Ok(Self {
-            value: value.into(),
+            value,
             intensity,
             extended: None,
         })
@@ -117,13 +155,13 @@ impl PersonalDimension {
         intensity: u8,
         extended: impl Into<String>,
     ) -> VcpResult<Self> {
-        if !(1..=5).contains(&intensity) {
-            return Err(VcpError::InvalidIntensity(intensity));
-        }
+        let value = value.into();
+        let extended = extended.into();
+        Self::validate(&value, intensity, Some(&extended))?;
         Ok(Self {
-            value: value.into(),
+            value,
             intensity,
-            extended: Some(extended.into()),
+            extended: Some(extended),
         })
     }
 
@@ -170,14 +208,38 @@ impl PersonalDimension {
             .parse()
             .map_err(|_| VcpError::ParseError(format!("invalid intensity: {}", parts[1])))?;
 
-        if !(1..=5).contains(&intensity) {
-            return Err(VcpError::InvalidIntensity(intensity));
-        }
-
+        Self::validate(&value, intensity, extended.as_deref())?;
         Ok(Self {
             value,
             intensity,
             extended,
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for PersonalDimension {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct WireDimension {
+            value: String,
+            #[serde(default)]
+            intensity: Option<u8>,
+            #[serde(default)]
+            extended: Option<String>,
+        }
+
+        let wire = WireDimension::deserialize(deserializer)?;
+        let intensity = wire.intensity.unwrap_or(3);
+        PersonalDimension::validate(&wire.value, intensity, wire.extended.as_deref())
+            .map_err(D::Error::custom)?;
+        Ok(PersonalDimension {
+            value: wire.value,
+            intensity,
+            extended: wire.extended,
         })
     }
 }
@@ -257,11 +319,17 @@ impl PersonalState {
         if wire.is_empty() {
             return Ok(state);
         }
+        if wire.chars().count() > MAX_PERSONAL_WIRE_CHARS {
+            return Err(VcpError::ParseError(format!(
+                "personal state exceeds {MAX_PERSONAL_WIRE_CHARS} characters"
+            )));
+        }
 
         for segment in wire.split('|') {
-            let segment = segment.trim();
             if segment.is_empty() {
-                continue;
+                return Err(VcpError::ParseError(
+                    "personal state contains an empty dimension segment".to_string(),
+                ));
             }
 
             // The segment starts with an emoji, then value:intensity.
@@ -274,13 +342,19 @@ impl PersonalState {
 
             let dim = PersonalDimension::from_wire(rest)?;
 
-            match kind {
-                PersonalDimensionKind::CognitiveState => state.cognitive = Some(dim),
-                PersonalDimensionKind::EmotionalTone => state.emotional = Some(dim),
-                PersonalDimensionKind::EnergyLevel => state.energy = Some(dim),
-                PersonalDimensionKind::PerceivedUrgency => state.urgency = Some(dim),
-                PersonalDimensionKind::BodySignals => state.body = Some(dim),
+            let slot = match kind {
+                PersonalDimensionKind::CognitiveState => &mut state.cognitive,
+                PersonalDimensionKind::EmotionalTone => &mut state.emotional,
+                PersonalDimensionKind::EnergyLevel => &mut state.energy,
+                PersonalDimensionKind::PerceivedUrgency => &mut state.urgency,
+                PersonalDimensionKind::BodySignals => &mut state.body,
+            };
+            if slot.is_some() {
+                return Err(VcpError::ParseError(format!(
+                    "duplicate personal dimension: {kind}"
+                )));
             }
+            *slot = Some(dim);
         }
 
         Ok(state)
@@ -345,6 +419,27 @@ mod tests {
     }
 
     #[test]
+    fn dimension_constructors_reject_invalid_or_wire_ambiguous_text() {
+        for invalid in ["", "Focused", "two words", "focused:calm", "focused|calm"] {
+            assert!(
+                PersonalDimension::new(invalid, 3).is_err(),
+                "accepted {invalid:?}"
+            );
+        }
+        assert!(PersonalDimension::new("x".repeat(65), 3).is_err());
+        for invalid_extended in [
+            "",
+            "nested[detail]",
+            "one|two",
+            "one\u{2016}two",
+            "one\0two",
+        ] {
+            assert!(PersonalDimension::with_extended("pain", 4, invalid_extended).is_err());
+        }
+        assert!(PersonalDimension::with_extended("pain", 4, "x".repeat(257)).is_err());
+    }
+
+    #[test]
     fn dimension_with_extended() {
         let d = PersonalDimension::with_extended("pain", 4, "migraine").unwrap();
         assert_eq!(d.extended.as_deref(), Some("migraine"));
@@ -369,6 +464,23 @@ mod tests {
     fn dimension_wire_error_bad_intensity() {
         assert!(PersonalDimension::from_wire("focused:0").is_err());
         assert!(PersonalDimension::from_wire("focused:9").is_err());
+    }
+
+    #[test]
+    fn personal_wire_rejects_empty_and_duplicate_segments() {
+        let duplicate = "\u{1F9E0}focused:4|\u{1F9E0}reflective:3";
+        for malformed in ["|", "\u{1F9E0}focused:4|", duplicate] {
+            assert!(
+                PersonalState::from_wire(malformed).is_err(),
+                "accepted {malformed:?}"
+            );
+        }
+        assert!(PersonalDimension::from_wire("pain:4[]").is_err());
+        let oversized = format!("🧠{}:3", "a".repeat(MAX_PERSONAL_WIRE_CHARS));
+        assert!(PersonalState::from_wire(&oversized)
+            .unwrap_err()
+            .to_string()
+            .contains("8192 characters"));
     }
 
     #[test]
@@ -456,5 +568,34 @@ mod tests {
         let json = serde_json::to_string(&ps).unwrap();
         let parsed: PersonalState = serde_json::from_str(&json).unwrap();
         assert_eq!(ps, parsed);
+    }
+
+    #[test]
+    fn serde_cannot_bypass_personal_dimension_invariants() {
+        for malformed in [
+            r#"{"value":"focused","intensity":0}"#,
+            r#"{"value":"focused","intensity":6}"#,
+            r#"{"value":"","intensity":3}"#,
+            r#"{"value":"focused|calm","intensity":3}"#,
+            r#"{"value":"focused","intensity":3,"extended":""}"#,
+            r#"{"value":"focused","intensity":3,"unknown":true}"#,
+        ] {
+            assert!(
+                serde_json::from_str::<PersonalDimension>(malformed).is_err(),
+                "accepted {malformed}"
+            );
+        }
+
+        for defaulted in [
+            r#"{"value":"focused"}"#,
+            r#"{"value":"focused","intensity":null}"#,
+        ] {
+            assert_eq!(
+                serde_json::from_str::<PersonalDimension>(defaulted)
+                    .unwrap()
+                    .intensity,
+                3
+            );
+        }
     }
 }
