@@ -24,7 +24,7 @@
     "webmcp/src/index.ts": "59ae9e55bbe70a1fa33c05ac849c4e60dff84c6e7cee74c916aaaf7591b1e0ea",
     "webmcp/src/polyfill.ts": "92e799e2b98cee416de30d923c46c6d65beaf7e20b0302cbb741043044c5b60d",
     "webmcp/src/registration.ts": "05fcb7ff1b8d04a55938097a1e0ee89c9e74bdac1b15873047e3900489d787ce",
-    "webmcp/src/tools.ts": "b95a9290e4597c4d167a56e081b87e3fbee7a6dfa9763983bde808b4229b0012",
+    "webmcp/src/tools.ts": "3425295e6f552300af9289c5efb71d52ac3e1c9b3d3e9ead16bfe2bd43d1e2b4",
     "webmcp/src/types.ts": "d1268773d312463d326239397986ed5458fd1ad68fe5d4499e87aaa54722ffe4"
   },
   "surfaces": {
