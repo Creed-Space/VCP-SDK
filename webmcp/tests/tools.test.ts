@@ -597,4 +597,21 @@ describe('createVCPTools — default personas', () => {
 		expect(output).toContain('Line one Line two');
 		expect(output).not.toContain('Mutated');
 	});
+
+	it('escapes a backslash before a table separator without re-exposing the separator', async () => {
+		const tools = createVCPTools({
+			personas: [
+				{
+					id: 'custom',
+					name: String.raw`Custom \| Name`,
+					description: 'Test',
+					use: 'Testing',
+				},
+			],
+		});
+		const personasTool = tools.find((tool) => tool.name === 'vcp_list_personas')!;
+		const output = (await personasTool.execute({})).content[0].text;
+
+		expect(output).toContain(String.raw`Custom \\\| Name`);
+	});
 });

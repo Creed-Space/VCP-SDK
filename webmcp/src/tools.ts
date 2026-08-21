@@ -330,7 +330,7 @@ function snapshotPersonas(value: unknown): PersonaInfo[] {
 }
 
 function markdownTableCell(value: string): string {
-	return value.replace(/\r?\n/g, ' ').replace(/\|/g, '\\|');
+	return value.replace(/\\/g, '\\\\').replace(/\r?\n/g, ' ').replace(/\|/g, '\\|');
 }
 
 function snapshotTransmissionSummary(value: unknown): TransmissionSummary {
