@@ -22,6 +22,7 @@ export type {
 	PersonaInfo,
 	TransmissionSummary,
 	WebMCPToolDefinition,
+	WebMCPToolExecuteOptions,
 	WebMCPToolResult,
 	WebMCPToolAnnotations,
 	WebMCPRegisterToolOptions,

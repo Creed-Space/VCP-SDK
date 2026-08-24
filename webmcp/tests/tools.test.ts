@@ -299,6 +299,35 @@ describe('createVCPTools — tool execution', () => {
 		expect(result.content[0].text).toContain('Error: Chat request failed:');
 	});
 
+	it('propagates WebMCP execution cancellation to the chat request', async () => {
+		let observedSignal: AbortSignal | undefined;
+		vi.stubGlobal(
+			'fetch',
+			vi.fn((_input: string | URL | Request, init?: RequestInit) => {
+				observedSignal = init?.signal ?? undefined;
+				return new Promise<Response>((_resolve, reject) => {
+					observedSignal?.addEventListener(
+						'abort',
+						() => reject(new DOMException('execution cancelled', 'AbortError')),
+						{ once: true },
+					);
+				});
+			}),
+		);
+
+		const execution = new AbortController();
+		const resultPromise = chatTool({ chatTimeoutMs: 1000 }).execute(
+			{ query: 'hello' },
+			{ signal: execution.signal },
+		);
+		expect(observedSignal?.aborted).toBe(false);
+		execution.abort();
+
+		const result = await resultPromise;
+		expect(observedSignal?.aborted).toBe(true);
+		expect(result.content[0].text).toContain('Error: Chat request failed:');
+	});
+
 	it('reassembles SSE lines and UTF-8 characters split across chunks', async () => {
 		const encoded = new TextEncoder().encode(
 			'data: {"delta":{"text":"hé"}}\n\ndata: {"delta":{"text":"llo"}}\n\ndata: [DONE]\n\n'

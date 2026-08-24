@@ -21,13 +21,25 @@ export interface WebMCPToolAnnotations {
 	untrustedContentHint?: boolean;
 }
 
+export interface WebMCPToolExecuteOptions {
+	/** Aborted when the caller cancels this execution or its document is destroyed. */
+	signal: AbortSignal;
+}
+
 export interface WebMCPToolDefinition {
 	name: string;
 	title?: string;
 	description: string;
 	inputSchema?: Record<string, unknown>;
 	annotations?: WebMCPToolAnnotations;
-	execute: (args: Record<string, unknown>) => Promise<WebMCPToolResult>;
+	/**
+	 * The browser supplies execution options. They remain optional here so tools
+	 * can still be invoked directly by applications and unit tests.
+	 */
+	execute: (
+		args: Record<string, unknown>,
+		options?: WebMCPToolExecuteOptions
+	) => Promise<WebMCPToolResult>;
 }
 
 export interface WebMCPRegisterToolOptions {

@@ -48,6 +48,8 @@ manifest before using it as release evidence.
 | `vcp_list_personas` | List available VCP personas | (always available) |
 
 Tools are only registered when their dependencies are provided. The chat and personas tools are always available.
+When the browser cancels a WebMCP execution, `vcp_chat` propagates the supplied
+execution signal to its network request.
 
 ## Configuration
 
@@ -110,7 +112,7 @@ remote scripts and does not log loader errors by default.
 | Other browsers | No native claim; an application-owned bundled polyfill may be used behind explicit opt-in |
 | SSR | Safe; returns `{ api: 'unavailable', registered: [], failed: [] }` |
 
-Last reviewed: 2026-08-17. WebMCP remains under active development, so version
+Last reviewed: 2026-08-24. WebMCP remains under active development, so version
 numbers alone never establish browser support.
 
 ### Upstream contract monitoring
