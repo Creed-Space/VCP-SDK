@@ -242,6 +242,12 @@ class TestTokenMethods:
         t = Token.parse("family.safe.guide")
         assert t.to_uri("Creed.Space") == "creed://creed.space/family.safe.guide"
 
+    def test_to_uri_rejects_domain_above_dns_wire_limit(self):
+        registry = ".".join(("a" * 63, "b" * 63, "c" * 63, "d" * 62))
+        assert len(registry) == 254
+        with pytest.raises(ValueError, match=r"^registry must be a valid domain name$"):
+            Token.parse("family.safe.guide").to_uri(registry)
+
     @pytest.mark.parametrize(
         "registry",
         [
@@ -259,7 +265,7 @@ class TestTokenMethods:
         ],
     )
     def test_to_uri_rejects_malformed_registry_domains(self, registry: object):
-        with pytest.raises(ValueError, match="valid domain"):
+        with pytest.raises(ValueError, match=r"^registry must be a valid domain name$"):
             Token.parse("family.safe.guide").to_uri(registry)  # type: ignore[arg-type]
 
     def test_str_returns_full(self):

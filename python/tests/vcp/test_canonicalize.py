@@ -12,8 +12,43 @@ from vcp.canonicalize import (
     canonicalize_content,
     canonicalize_manifest,
     compute_content_hash,
+    parse_json_strict,
     verify_content_hash,
 )
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"outer":{"answer":42},"items":[true,null]}',
+        b'{"outer":{"answer":42},"items":[true,null]}',
+        bytearray(b'{"outer":{"answer":42},"items":[true,null]}'),
+    ],
+)
+def test_strict_json_parser_preserves_supported_input_types(
+    payload: str | bytes | bytearray,
+) -> None:
+    assert parse_json_strict(payload) == {
+        "outer": {"answer": 42},
+        "items": [True, None],
+    }
+
+
+def test_strict_json_parser_rejects_duplicate_nested_keys() -> None:
+    with pytest.raises(
+        ValueError,
+        match=r"^Duplicate JSON object key: 'role'$",
+    ):
+        parse_json_strict('{"identity":{"role":"guide","role":"admin"}}')
+
+
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_strict_json_parser_rejects_non_finite_constants(constant: str) -> None:
+    with pytest.raises(
+        ValueError,
+        match=rf"^Non-finite JSON number is not permitted: {constant}$",
+    ):
+        parse_json_strict(f'{{"value":{constant}}}')
 
 
 @pytest.mark.parametrize(
