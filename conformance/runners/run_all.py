@@ -28,6 +28,7 @@ SCHEMA = ROOT / "schemas" / "vcp-conformance-aggregate-report.schema.json"
 COVERAGE = ROOT / "conformance" / "coverage-manifest.json"
 
 RUNNERS: tuple[tuple[str, str, bool], ...] = (
+    ("agent-runtime-profile", "agent_runtime_profile.py", False),
     ("csm1", "csm1_parity.py", True),
     ("identity", "identity_parity.py", True),
     ("transport", "transport_parity.py", True),

@@ -8,6 +8,7 @@ copies only where runtime packages or tests need them.
 These files must be byte-identical between the selected Spec and SDK commits:
 
 * `vcp-adaptation-context.schema.json`
+* `vcp-agent-runtime-profile-v0.1.schema.json`
 * `vcp-identity-token.schema.json`
 * `vcp-manifest-v1.schema.json`
 * `vcp-semantics-csm1.schema.json`

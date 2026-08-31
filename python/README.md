@@ -4,6 +4,20 @@ The Python project-maintained implementation for VCP parsing, signed bundles,
 orchestration, policy enforcement, privacy filtering, hooks, messaging, and
 protocol extensions.
 
+## Agent Runtime Profile candidate
+
+The observe-only `vcp.agent` facade provides a bounded `SituationView`, contextual `Affordance` discovery, explicit assurance axes, resource forecasts, typed expected states, lineage expansion, and runtime identity diagnostics. It opens no network connection in local mode and exposes no action or memory mutation interface.
+
+```python
+from vcp.agent import AgentRuntime
+
+async with AgentRuntime.connect() as runtime:
+    situation = (await runtime.bootstrap("Establish bundle integrity")).require_value()
+    options = await situation.find_affordances(evidence_for="bundle integrity")
+```
+
+Run `vcp doctor --json` before feature use to detect distribution collisions. See [`../docs/VCP_AGENT_RUNTIME_GUIDE.md`](../docs/VCP_AGENT_RUNTIME_GUIDE.md) for the exact candidate boundary and six executable examples.
+
 ## Install for development
 
 Python 3.10 or newer is required.

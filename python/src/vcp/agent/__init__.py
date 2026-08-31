@@ -1,0 +1,93 @@
+"""Agent-intuitive facade for the VCP Agent Runtime Profile candidate."""
+
+from .cache import CacheKey, ContentAddressedCache
+from .contracts import (
+    Affordance,
+    AffordanceQuery,
+    AffordanceState,
+    AgentResult,
+    AssuranceAxis,
+    AssuranceCheck,
+    AssuranceOverall,
+    AssuranceReport,
+    AssuranceStatus,
+    CapabilityDescriptor,
+    EffectClass,
+    EvidenceClaim,
+    ExpectedStateError,
+    FailureFrame,
+    Goal,
+    Omission,
+    Profile,
+    ProfileAcknowledgement,
+    ProfileOffer,
+    ResourceBudget,
+    ResourceMeasurement,
+    ResourceReport,
+    ResultMeta,
+    ResultStatus,
+    RetryDisposition,
+    SafeTransition,
+    SituationView,
+)
+from .handles import SituationHandle
+from .identity import RuntimeIdentity, runtime_identity
+from .local import LocalReferenceRuntime, canonical_digest, default_descriptors
+from .negotiation import negotiate_agent_runtime_profiles
+from .runtime import AgentRuntime
+from .schema import (
+    agent_runtime_schema,
+    agent_runtime_schema_bytes,
+    agent_runtime_schema_digest,
+)
+from .transports import (
+    DelegatingObserveTransport,
+    HTTPObserveTransportStub,
+    MCPObserveTransportStub,
+)
+
+__all__ = [
+    "Affordance",
+    "AffordanceQuery",
+    "AffordanceState",
+    "AgentResult",
+    "AgentRuntime",
+    "AssuranceAxis",
+    "AssuranceCheck",
+    "AssuranceOverall",
+    "AssuranceReport",
+    "AssuranceStatus",
+    "CacheKey",
+    "CapabilityDescriptor",
+    "ContentAddressedCache",
+    "DelegatingObserveTransport",
+    "EffectClass",
+    "EvidenceClaim",
+    "ExpectedStateError",
+    "FailureFrame",
+    "Goal",
+    "HTTPObserveTransportStub",
+    "LocalReferenceRuntime",
+    "MCPObserveTransportStub",
+    "Omission",
+    "Profile",
+    "ProfileAcknowledgement",
+    "ProfileOffer",
+    "ResourceBudget",
+    "ResourceMeasurement",
+    "ResourceReport",
+    "ResultMeta",
+    "ResultStatus",
+    "RetryDisposition",
+    "RuntimeIdentity",
+    "SafeTransition",
+    "SituationHandle",
+    "SituationView",
+    "agent_runtime_schema",
+    "agent_runtime_schema_bytes",
+    "agent_runtime_schema_digest",
+    "canonical_digest",
+    "default_descriptors",
+    "negotiate_agent_runtime_profiles",
+    "runtime_identity",
+]
