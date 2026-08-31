@@ -14,6 +14,7 @@ CONFORMANCE = ROOT / "conformance"
 OUTPUT = CONFORMANCE / "coverage-manifest.json"
 
 RUNNERS = {
+    "agent-runtime/observe_contracts": "conformance/runners/agent_runtime_profile.py",
     "identity/token_parsing": "conformance/runners/identity_parity.py",
     "identity/token_canonicalization": "conformance/runners/identity_parity.py",
     "transport/content_canonicalization": "conformance/runners/transport_parity.py",
@@ -44,6 +45,7 @@ RUNNERS = {
 }
 
 NORMATIVE_SOURCES = {
+    "agent-runtime": "VCP-Spec/veps/VEP-0006-agent-runtime-profile.md",
     "identity": "VCP-Spec/specs/VCP_IDENTITY_v2.0.md",
     "transport": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md",
     "security": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md#revocation",
@@ -98,6 +100,11 @@ def implementation_status(
     case_id = str(case["id"])
     if suite in {"extensions/welfare", "extensions/stateless_mcp"}:
         return "unsupported", "Draft profile has no claimed implementation"
+    if suite == "agent-runtime/observe_contracts" and implementation != "python":
+        return (
+            "unsupported",
+            "The first Agent Runtime candidate slice is Python observe-only",
+        )
     if implementation == "webmcp" and suite in {
         "extensions/capability_negotiation",
         "extensions/personal_state",

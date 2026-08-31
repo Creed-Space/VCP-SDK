@@ -7,6 +7,7 @@
     "rust/vcp-cli/src/main.rs": "defa2923fc1852bf37295f70583a5fa323cbd5918c9fd91935c72129ccff68b9",
     "rust/vcp-core/src/lib.rs": "c764413cf69001abecf7f82139da858188db861d3d8d49b8cf3b56b22cc40b7a",
     "schemas/vcp-adaptation-context.schema.json": "b5531c67869127d861575f4d41f4d769317c89c6d17fa4407d13b9ba2f853cc3",
+    "schemas/vcp-agent-runtime-profile-v0.1.schema.json": "b341c3619fffcbdc7b0ef981e49066bd09804611fcd7ac003a3d411726eb9c13",
     "schemas/vcp-conformance-aggregate-report.schema.json": "27a95d27b29124a40ccdd7c7ce4e6ddefca5ce691e4ae8e4d72e2e36e5289ad1",
     "schemas/vcp-identity-token.schema.json": "4aadb5d3029a43a491832c629f530e4b41696d462817c28d9d98ec7275002727",
     "schemas/vcp-manifest-v1.schema.json": "d8cb9cc364a9ff97fa6ce8e9af6db4560face440fe00ed82ee869e853464a253",
@@ -192,7 +193,8 @@
       "https://vcp.creed.space/schema/manifest/v2.json",
       "https://vcp.creed.space/schema/messaging/v2.0.json",
       "https://vcp.creed.space/schema/uvc-token/v1.json",
-      "https://vcp.creed.space/schema/vcp-context/v3.json"
+      "https://vcp.creed.space/schema/vcp-context/v3.json",
+      "https://vcp.creedspace.org/schemas/vcp-agent-runtime-profile-v0.1.schema.json"
     ],
     "typescript_declared_exports": [
       "AISelfModel",

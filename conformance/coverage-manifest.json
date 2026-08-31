@@ -1496,6 +1496,132 @@
       "version": "1.0.0"
     },
     {
+      "case_count": 6,
+      "cases": [
+        {
+          "applicability": "protocol_behavior",
+          "description": "bounded observe SituationView is accepted",
+          "id": "VCP-ARP-CONTRACT-001",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "undeclared authority-bearing field is rejected",
+          "id": "VCP-ARP-CONTRACT-002",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "required and optional exact profile offer is accepted",
+          "id": "VCP-ARP-NEG-001",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "profile acknowledgement binds bootstrap, catalog, principal, event mode, and expiry",
+          "id": "VCP-ARP-NEG-006",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "inexact or unknown candidate profile is rejected",
+          "id": "VCP-ARP-NEG-007",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "undeclared acknowledgement authority field is rejected",
+          "id": "VCP-ARP-NEG-008",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            },
+            "webmcp": {
+              "reason": "The first Agent Runtime candidate slice is Python observe-only",
+              "status": "unsupported"
+            }
+          }
+        }
+      ],
+      "fixture": "conformance/agent-runtime/observe_contracts.json",
+      "fixture_sha256": "87ba75a54bf15dfd93df8b5ed81023422e2299480e28ae4af9173ccd6dd0b2fe",
+      "maturity": "conformance-candidate",
+      "normative_source": "VCP-Spec/veps/VEP-0006-agent-runtime-profile.md",
+      "runner": "conformance/runners/agent_runtime_profile.py",
+      "suite": "agent-runtime/observe_contracts",
+      "version": "0.1.0"
+    },
+    {
       "case_count": 16,
       "cases": [
         {
@@ -6827,25 +6953,25 @@
     }
   ],
   "summary": {
-    "fixture_count": 27,
+    "fixture_count": 28,
     "implementation_status": {
       "python": {
-        "checked": 328,
+        "checked": 334,
         "not_applicable": 8,
         "unsupported": 6
       },
       "rust": {
         "checked": 268,
         "not_applicable": 8,
-        "unsupported": 66
+        "unsupported": 72
       },
       "webmcp": {
         "checked": 64,
         "not_applicable": 272,
-        "unsupported": 6
+        "unsupported": 12
       }
     },
-    "vector_count": 342,
+    "vector_count": 348,
     "webmcp_surface_checks": 2
   },
   "webmcp_surface": {

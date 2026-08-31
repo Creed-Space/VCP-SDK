@@ -20,6 +20,7 @@ This file is generated from `conformance/coverage-manifest.json`. Run
 | adaptation/context_encoding_extended | 3.2.0 | conformance-candidate | 12 | full | full | full |
 | adaptation/messaging | 2.0.0 | conformance-candidate | 41 | full | unsupported | not_applicable |
 | adaptation/state_machine | 1.0.0 | conformance-candidate | 14 | full | unsupported | not_applicable |
+| agent-runtime/observe_contracts | 0.1.0 | conformance-candidate | 6 | full | unsupported | unsupported |
 | extensions/capability_negotiation | 2.0.0 | conformance-candidate | 16 | full | full | full |
 | extensions/competence | 1.0.0 | conformance-candidate | 5 | full | unsupported | not_applicable |
 | extensions/consensus_voting | 1.0.0 | conformance-candidate | 8 | full | full | not_applicable |

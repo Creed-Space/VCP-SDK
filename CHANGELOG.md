@@ -38,6 +38,8 @@ README publication-state note).
 - `ContextEncoder.encode(..., strict=True)`; unknown situational values now
   raise `ValueError` instead of being dropped (pass `strict=False` for the old
   behaviour).
+- Draft VCP Agent Runtime Profile `observe@0.1.0` Python facade with bounded `SituationView` orientation, contextual `Affordance` discovery, typed handles, explicit assurance axes, resource forecasts, safe transitions, omissions, lineage expansion, and dependency-bound caching.
+- Strict candidate contract schema, required-versus-optional exact profile negotiation, `vcp doctor` runtime identity diagnostics, six executable examples, six language-neutral conformance cases, and the exact AX-01 through AX-06 evaluation harness. AX-06 remains explicitly unsupported pending host NormativeContext integration.
 - Rust live HTTPS transport for online status and CRL revocation checks, with
   rustls hostname verification, public address resolution and pinning, disabled
   redirects, proxies, retries, and decompression, plus bounded headers and bodies.

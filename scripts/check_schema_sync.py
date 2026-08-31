@@ -10,6 +10,7 @@ from pathlib import Path
 
 COMMON = (
     "vcp-adaptation-context.schema.json",
+    "vcp-agent-runtime-profile-v0.1.schema.json",
     "vcp-identity-token.schema.json",
     "vcp-manifest-v1.schema.json",
     "vcp-semantics-csm1.schema.json",
