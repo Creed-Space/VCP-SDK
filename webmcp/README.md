@@ -112,7 +112,7 @@ remote scripts and does not log loader errors by default.
 | Other browsers | No native claim; an application-owned bundled polyfill may be used behind explicit opt-in |
 | SSR | Safe; returns `{ api: 'unavailable', registered: [], failed: [] }` |
 
-Last reviewed: 2026-08-24. WebMCP remains under active development, so version
+Last reviewed: 2026-08-31. WebMCP remains under active development, so version
 numbers alone never establish browser support.
 
 ### Upstream contract monitoring
