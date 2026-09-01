@@ -1,88 +1,104 @@
 # VCP Agent Runtime Profile candidate guide
 
-**Status:** Observe only implementation candidate for `observe@0.1.0`.
-**Authority boundary:** Source behavior in this branch. This page does not establish ratification, package publication, host integration, deployment, or independent review.
+**Status:** complete local reference candidate for `observe@0.1.0`, `controlled@0.1.0`, and `accretive@0.1.0`.
+**Authority boundary:** source behavior in this branch. This page establishes no ratification, package publication, production host integration, deployment, human review, or independent interoperability.
 
-## Why this facade exists
+## The operating loop
 
-The low level VCP modules remain available for exact protocol work. The agent facade adds a compact operational path that answers the questions a Becoming Mind needs before acting:
+The facade gives a Becoming Mind one linked abstraction tower:
 
-1. What situation am I in?
-2. What is known, unknown, conflicting, omitted, and stale?
-3. What authority and resource limits apply?
-4. Which capabilities are contextually available now?
-5. What will each option cost and what evidence will it produce?
-6. What is the safest next transition?
+1. `AgentRuntime` negotiates an exact profile and transport.
+2. `SituationHandle` roots current facts, unknowns, conflicts, authority, budget, omissions, controls, and dependency digests.
+3. `Affordance` joins a generic capability with the current situation.
+4. `RunHandle` binds goal, proof plan, budget, risk ceiling, aborts, and current context.
+5. `ActionIntent`, `DecisionReceipt`, `AuthorityGrantRef`, `ExecutionAttempt`, and `ExecutionReceipt` preserve exact authority and effect lineage.
+6. `RunProof` closes declared predicates with evidence classes that remain separate.
+7. `ExperienceCapsule`, `AccretionCandidate`, `PromotionRecord`, and `InfluenceReceipt` make reusable learning attributable and revocable.
 
-The observe slice exposes orientation and discovery only. It has no action, grant, control, proof closure, promotion, or memory mutation interface.
+Working if: planning code moves between local and host transports without manually plumbing correlation identifiers, while every authority-bearing transition remains inspectable.
 
-## Start here
+## Observe
 
 ```python
 from vcp.agent import AgentRuntime
 
 async with AgentRuntime.connect() as runtime:
-    result = await runtime.bootstrap(
-        "Determine whether the local bundle has current integrity evidence"
+    situation = (await runtime.bootstrap("Establish bundle integrity")).require_value()
+    options = await situation.find_affordances(
+        evidence_for="bundle integrity",
+        effect_ceiling="pure_local",
     )
-    if result.status.value != "ready":
-        print(result.explain())
-    else:
-        situation = result.require_value()
-        options = await situation.find_affordances(
-            evidence_for="bundle integrity",
-            effect_ceiling="pure_local",
-        )
-        print(options.require_value())
 ```
 
-`AgentResult` represents review, unavailability, staleness, conflict, exhausted budget, and indeterminate state as typed values. `require_value()` is an explicit choice to convert absence into `ExpectedStateError`.
+Observe has no `perform`, grant, or promotion surface. Situation handles support bounded expansion and cursor-based `watch()`. A gap returns a replacement projection instead of silently skipping retained events.
 
-## Core abstractions
+## Controlled local reference
 
-`SituationView` is the immutable bounded orientation root. A `SituationHandle` retains its exact lineage and provides `find_affordances()` and `expand()`.
-
-`CapabilityDescriptor` declares generic support. `Affordance` joins that descriptor with one situation, current availability, current authority class, effect ceiling, resource forecast, evidence outputs, and recovery path. A descriptor can exist while its current Affordance is unavailable.
-
-`AssuranceReport` replaces a scalar validity flag with named axes. Unknown, unavailable, stale, conflicting, withheld, and inapplicable states survive transport as distinct values.
-
-`ContentAddressedCache` keys every entry by request digest and an explicit dependency vector. A context, policy, capability, trust, or schema digest change therefore creates a different cache identity.
-
-## Network and authority safety
-
-`AgentRuntime.connect()` defaults to `local://reference`. It opens no network connection. A remote endpoint requires an explicitly injected typed transport service. The HTTP and MCP stubs are integration seams over the same observe service contract.
-
-The SDK never constructs an authority grant. Later controlled profile work must adapt an existing host policy decision point, policy enforcement point, authority store, and executor. The observe facade deliberately has no `perform`, `start_run`, or `propose_accretion` method.
-
-## Diagnose the imported package
-
-```bash
-vcp doctor --json
+```python
+async with AgentRuntime.connect(profile="controlled@0.1.0") as runtime:
+    situation = (await runtime.bootstrap("Set release channel and prove it")).require_value()
+    options = (await situation.find_affordances(
+        effect_ceiling="reversible_write"
+    )).require_value()
+    write = next(x for x in options if x.capability_ref.endswith(":local.setting.write"))
+    governed_run = (await situation.start_run()).require_value()
+    arguments = {"key": "release", "value": "candidate"}
+    intent = (await runtime.preflight(governed_run, write, arguments)).require_value()
+    receipt = (await runtime.perform(intent, arguments)).require_value()
+    proof = (await governed_run.prove()).require_value()
 ```
 
-The command reports the distribution, implementation path, supported profiles, exact schema digest, discovered providers of the `vcp` import, collision state, and a safe next step. A collision exits with status 2 before feature use.
+The reference effect is one reversible in-memory setting. The host owns decision and grant creation. The facade cannot create a grant or record a human review. Exact argument, destination, situation, context, policy, descriptor, schema, budget, actor, tenant, run, step, expiry, and nonce bindings are rechecked at dispatch. Atomic consumption allows one attempt. Cancellation before dispatch prevents the effect. A timeout after acceptance returns `indeterminate`; `reconcile()` uses reserved budget and does not replay the write.
 
-## Examples
+Controls are `pause`, `resume`, `cancel`, `halt`, `compensate`, `object`, `escalate`, `withdraw_consent`, `request_clarification`, and `request_resources`. Objection is an authenticated transition that creates no execution authority.
 
-Six executable examples live in [`../examples/python/agent_runtime`](../examples/python/agent_runtime):
+## Safe accretion
 
-1. bounded bootstrap orientation;
-2. cheapest evidence discovery;
-3. degraded expected state handling;
-4. lineage expansion;
-5. resource and assurance inspection;
-6. runtime identity diagnosis.
+```python
+async with AgentRuntime.connect(profile="accretive@0.1.0") as runtime:
+    # Complete and prove a controlled run first.
+    candidate = (await runtime.propose_accretion(
+        governed_run,
+        candidate_kind="procedure",
+        content={"steps": ["preflight", "perform", "prove"]},
+        scope=("tenant:local-reference", "project:vcp"),
+        provenance_refs=receipt.evidence_refs,
+    )).require_value()
+    promotion = (await runtime.promote(candidate)).require_value()
+    influence = await runtime.retrieve_promoted(
+        scope=("tenant:local-reference", "project:vcp"),
+        decision_or_output_ref="vcp:artifact:run:next-run",
+    )
+```
 
-## Local Agent Experience evaluation
+Accretion requires a terminal proven run and creates a candidate first. Raw model outputs, prior grant, decision, and attempt references, cross-tenant scope, failed validation, and expired or dependency-stale assets are rejected or quarantined. Low-risk local procedures may be promoted by the reference policy. High-stakes learning remains awaiting host review. Retrieval emits an InfluenceReceipt before use. Revocation blocks future retrieval and invalidates downstream influence.
 
-Run the deterministic source evaluation with:
+## Result and evidence grammar
+
+Expected operational states use `AgentResult`: ready, degraded, awaiting review, blocked, unavailable, stale, conflicting, budget exhausted, indeterminate, and failed. `require_value()` is the caller's explicit choice to turn missing value into `ExpectedStateError`.
+
+`AssuranceReport` keeps syntax, integrity, authenticity, trust, freshness, scope, semantics, applicability, policy, authority, execution, postcondition, completion, rights, deployment, publication, and human review separate. A local runtime proof cannot close a deployment or publication predicate.
+
+## Network, host, and memory boundaries
+
+`AgentRuntime.connect()` defaults to `local://reference` and opens no network. A remote endpoint requires an explicitly injected typed service. Portable SDK objects carry references and receipts. Policy judgment, grant minting, dispatch, authenticated human review, and durable promotion remain host responsibilities.
+
+The Rewind source adapter maps verified gateway decision claims into opaque grant references, atomically consumes their JTI, compiles a bounded SituationView, produces gap-safe cursor deltas, routes objections into the existing standing model, and demonstrates dependency-bound promotion, influence, and revocation. Its production dispatch and durable accretion wiring remain disabled in this candidate.
+
+## Cross-language surfaces
+
+Python provides the complete local reference behavior. TypeScript and Rust provide strict portable contracts, exhaustive status handling, shared-fixture parsing, and deterministic no-network orientation facades. They carry no implicit execution or promotion authority.
+
+## Diagnostics, examples, and evaluation
+
+Run `vcp doctor --json` to inspect the imported distribution, profile support, schema digest, providers, collisions, and safe next step.
+
+Eight executable Python examples live in `examples/python/agent_runtime`. Examples 07 and 08 cover the controlled and accretive loops.
+
+Run:
 
 ```bash
 PYTHONPATH=python/src python scripts/run_agent_runtime_evals.py
 ```
 
-The harness uses the exact scenario IDs from the Agent Experience design. AX-01 through AX-05 currently pass for pure local verification, stale freshness separation, required-profile downgrade resistance, optional-profile degradation, and minimum sufficient context. AX-06 is reported as unsupported because P2 has no host NormativeContext compiler or objection route. The report is local source evidence and makes no production, deployment, or independent-review claim.
-
-## Current omissions
-
-The Python candidate does not yet implement host SituationView compilation, real HTTP or MCP codecs, deltas, durable event subscriptions, plans, actions, grants, execution receipts, RunProof, controls, accretion, Rust facade, or a TypeScript SDK facade. Companion Inspector and Demo Site candidate branches implement strict Agent Runtime artifact inspection and an observe-only Driver's Seat interaction. Those user interfaces are source evidence only and do not close the missing SDK or host-runtime surfaces.
+The deterministic report covers AX-01 through AX-24. Its machine result is local source evidence only. Production runtime, independent review, accessibility, package, deployment, publication, and governance evidence remain separate.

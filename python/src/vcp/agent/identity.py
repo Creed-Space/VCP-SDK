@@ -36,16 +36,20 @@ def runtime_identity() -> RuntimeIdentity:
         package_version = "4.2.0+source"
     collision = len(distributions) > 1
     safe_next = (
-        (
-            "Remove one VCP distribution in a clean environment, then rerun `vcp doctor`"
-        ),
-    ) if collision else ()
+        (("Remove one VCP distribution in a clean environment, then rerun `vcp doctor`"),)
+        if collision
+        else ()
+    )
     return RuntimeIdentity(
         distribution="value-context-protocol",
         version=package_version,
-        implementation="project-maintained VCP-SDK Python observe candidate",
+        implementation="project-maintained VCP-SDK Python agent runtime candidate",
         module_path=str(Path(__file__).resolve().parents[1]),
-        supported_profiles=("observe@0.1.0",),
+        supported_profiles=(
+            "observe@0.1.0",
+            "controlled@0.1.0",
+            "accretive@0.1.0",
+        ),
         schema_digest=agent_runtime_schema_digest(),
         discovered_distributions=distributions,
         collision=collision,

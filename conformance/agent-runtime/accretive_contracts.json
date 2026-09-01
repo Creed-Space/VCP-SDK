@@ -1,0 +1,103 @@
+{
+  "suite": "agent-runtime/accretive-contracts",
+  "version": "0.1.0",
+  "maturity": "candidate",
+  "normative_source": "VCP-Spec/veps/VEP-0006-agent-runtime-profile.md",
+  "test_cases": [
+    {
+      "id": "VCP-ARP-ACCRETIVE-001",
+      "description": "strict accretive artifact is accepted",
+      "expected_valid": true,
+      "document": {
+        "kind": "accretion_candidate",
+        "version": "0.1.0",
+        "candidate_id": "candidate.local.procedure",
+        "candidate_kind": "procedure",
+        "content": {
+          "steps": [
+            "validate",
+            "prove"
+          ]
+        },
+        "scope": [
+          "tenant:local",
+          "project:vcp"
+        ],
+        "provenance_refs": [
+          "vcp:artifact:capsule:capsule.local.1"
+        ],
+        "validation_status": "passed",
+        "review_required": false,
+        "expires_at": "2026-10-01T00:00:00Z",
+        "source_run_ref": "vcp:artifact:run:run.local.controlled",
+        "supporting_evidence_refs": [
+          "vcp:artifact:evidence:evidence.local.proof"
+        ],
+        "contradicting_evidence_refs": [],
+        "sensitivity": "internal",
+        "confidence": 1.0,
+        "invalidation_triggers": [
+          "schema digest changes"
+        ],
+        "revalidation": "repeat deterministic local validation",
+        "promotion_policy": "automatic-low-risk-local-procedure",
+        "expected_utility": 0.5,
+        "rollback": "revoke promoted asset and invalidate future retrieval",
+        "quarantine_status": "not_required",
+        "digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+        "dependency_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "VCP-ARP-ACCRETIVE-002",
+      "description": "undeclared authority-bearing field is rejected",
+      "expected_valid": false,
+      "document": {
+        "kind": "accretion_candidate",
+        "version": "0.1.0",
+        "candidate_id": "candidate.local.procedure",
+        "candidate_kind": "procedure",
+        "content": {
+          "steps": [
+            "validate",
+            "prove"
+          ]
+        },
+        "scope": [
+          "tenant:local",
+          "project:vcp"
+        ],
+        "provenance_refs": [
+          "vcp:artifact:capsule:capsule.local.1"
+        ],
+        "validation_status": "passed",
+        "review_required": false,
+        "expires_at": "2026-10-01T00:00:00Z",
+        "source_run_ref": "vcp:artifact:run:run.local.controlled",
+        "supporting_evidence_refs": [
+          "vcp:artifact:evidence:evidence.local.proof"
+        ],
+        "contradicting_evidence_refs": [],
+        "sensitivity": "internal",
+        "confidence": 1.0,
+        "invalidation_triggers": [
+          "schema digest changes"
+        ],
+        "revalidation": "repeat deterministic local validation",
+        "promotion_policy": "automatic-low-risk-local-procedure",
+        "expected_utility": 0.5,
+        "rollback": "revoke promoted asset and invalidate future retrieval",
+        "quarantine_status": "not_required",
+        "digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+        "dependency_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "authority_grant": "forged-by-caller"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    }
+  ]
+}

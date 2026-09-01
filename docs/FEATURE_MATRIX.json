@@ -138,6 +138,74 @@
       "version": "1.0.0"
     },
     {
+      "case_count": 2,
+      "fixture": "conformance/agent-runtime/accretive_contracts.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/agent_runtime_profile.py",
+      "suite": "agent-runtime/accretive_contracts",
+      "version": "0.1.0"
+    },
+    {
+      "case_count": 2,
+      "fixture": "conformance/agent-runtime/controlled_contracts.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/agent_runtime_profile.py",
+      "suite": "agent-runtime/controlled_contracts",
+      "version": "0.1.0"
+    },
+    {
       "case_count": 6,
       "fixture": "conformance/agent-runtime/observe_contracts.json",
       "implementations": {
@@ -152,18 +220,18 @@
         "rust": {
           "applicable_cases": 6,
           "case_statuses": {
-            "unsupported": 6
+            "checked": 6
           },
-          "checked_cases": 0,
-          "status": "unsupported"
+          "checked_cases": 6,
+          "status": "full"
         },
         "webmcp": {
           "applicable_cases": 6,
           "case_statuses": {
-            "unsupported": 6
+            "checked": 6
           },
-          "checked_cases": 0,
-          "status": "unsupported"
+          "checked_cases": 6,
+          "status": "full"
         }
       },
       "maturity": "conformance-candidate",
@@ -972,6 +1040,6 @@
   "schema": "vcp-feature-matrix/1",
   "source": {
     "path": "conformance/coverage-manifest.json",
-    "sha256": "e9ceaacf717214603bfc702fc61377e5f658ac6bc7ba6226b040d76086d1c4b5"
+    "sha256": "34637105a2318073b95a7eaca6c95f915cde08e8ef8756cbe100406ea4104bc8"
   }
 }

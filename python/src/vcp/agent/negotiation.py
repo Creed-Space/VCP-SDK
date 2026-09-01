@@ -40,9 +40,7 @@ def _digest(value: Any) -> str:
 def _timestamp(value: datetime) -> str:
     if value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("negotiation time must be timezone-aware")
-    return value.astimezone(timezone.utc).isoformat(timespec="seconds").replace(
-        "+00:00", "Z"
-    )
+    return value.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def _support_closure(supported: Iterable[str]) -> set[str]:
@@ -77,11 +75,7 @@ def negotiate_agent_runtime_profiles(
     unsupported_optional = tuple(item for item in offer.optional if item not in available)
     selected = tuple(
         sorted(
-            {
-                item
-                for item in offer.required + offer.optional
-                if item in available
-            },
+            {item for item in offer.required + offer.optional if item in available},
             key=_PROFILE_ORDER.__getitem__,
         )
     )

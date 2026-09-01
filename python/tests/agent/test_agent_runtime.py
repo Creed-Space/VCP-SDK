@@ -239,7 +239,11 @@ def test_doctor_emits_machine_readable_identity(capsys: pytest.CaptureFixture[st
     payload = json.loads(capsys.readouterr().out)
     assert exit_code in {0, 2}
     assert payload["distribution"] == "value-context-protocol"
-    assert payload["supported_profiles"] == ["observe@0.1.0"]
+    assert payload["supported_profiles"] == [
+        "observe@0.1.0",
+        "controlled@0.1.0",
+        "accretive@0.1.0",
+    ]
     assert payload["schema_digest"] == agent_runtime_schema_digest()
     assert exit_code == (2 if payload["collision"] else 0)
 
@@ -308,3 +312,15 @@ def test_ax_01_through_ax_06_report_exact_partial_coverage() -> None:
     assert report.cases[3].metrics["unsupported_optional"] == ["accretive@0.1.0"]
     assert report.cases[4].metrics["situation_bytes"] <= 16_384
     assert report.cases[5].status == "unsupported"
+
+
+def test_ax_01_through_ax_24_complete_reference_evaluation() -> None:
+    from vcp.agent.evals_complete import evaluate_local_complete
+
+    report = run(evaluate_local_complete())
+    assert report.complete
+    assert report.hard_failures == 0
+    assert report.unsupported == 0
+    assert [case.case_id for case in report.cases] == [
+        f"AX-{index:02d}" for index in range(1, 25)
+    ]

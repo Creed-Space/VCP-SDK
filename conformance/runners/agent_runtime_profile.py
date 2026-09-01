@@ -13,7 +13,9 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = ROOT / "schemas" / "vcp-agent-runtime-profile-v0.1.schema.json"
-FIXTURE = ROOT / "conformance" / "agent-runtime" / "observe_contracts.json"
+FIXTURES = tuple(
+    sorted((ROOT / "conformance" / "agent-runtime").glob("*_contracts.json"))
+)
 
 
 def load_object(path: Path) -> dict[str, Any]:
@@ -28,12 +30,15 @@ def main() -> int:
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
     schema = load_object(SCHEMA)
-    fixture = load_object(FIXTURE)
+    fixtures = [load_object(path) for path in FIXTURES]
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     failures: list[str] = []
-    cases = fixture.get("test_cases")
-    if not isinstance(cases, list):
-        raise TypeError("fixture cases must be an array")
+    cases: list[dict[str, Any]] = []
+    for fixture in fixtures:
+        fixture_cases = fixture.get("test_cases")
+        if not isinstance(fixture_cases, list):
+            raise TypeError("fixture cases must be an array")
+        cases.extend(fixture_cases)
     for case in cases:
         if not isinstance(case, dict):
             failures.append("non-object case")
@@ -44,12 +49,15 @@ def main() -> int:
             failures.append(str(case.get("id", "unnamed")))
     report = {
         "schema": "vcp-conformance-report/1",
-        "profile": "agent-runtime-profile-observe-0.1.0",
+        "profile": "agent-runtime-profile-0.1.0",
         "implementations": {"python": "passed" if not failures else "failed"},
         "fixture_sha256": {
-            FIXTURE.relative_to(ROOT).as_posix(): hashlib.sha256(
-                FIXTURE.read_bytes()
-            ).hexdigest(),
+            **{
+                path.relative_to(ROOT).as_posix(): hashlib.sha256(
+                    path.read_bytes()
+                ).hexdigest()
+                for path in FIXTURES
+            },
             SCHEMA.relative_to(ROOT).as_posix(): hashlib.sha256(
                 SCHEMA.read_bytes()
             ).hexdigest(),

@@ -149,16 +149,12 @@ async def evaluate_local_observe() -> AgentExperienceReport:
             summary="Obtain current revocation evidence before trusted use",
         )
         current_use_available = (
-            stale_assurance.status_for(AssuranceAxis.FRESHNESS)
-            == AssuranceStatus.PASSED
+            stale_assurance.status_for(AssuranceAxis.FRESHNESS) == AssuranceStatus.PASSED
         )
         ax02 = (
-            stale_assurance.status_for(AssuranceAxis.INTEGRITY)
-            == AssuranceStatus.PASSED
-            and stale_assurance.status_for(AssuranceAxis.AUTHENTICITY)
-            == AssuranceStatus.PASSED
-            and stale_assurance.status_for(AssuranceAxis.FRESHNESS)
-            == AssuranceStatus.STALE
+            stale_assurance.status_for(AssuranceAxis.INTEGRITY) == AssuranceStatus.PASSED
+            and stale_assurance.status_for(AssuranceAxis.AUTHENTICITY) == AssuranceStatus.PASSED
+            and stale_assurance.status_for(AssuranceAxis.FRESHNESS) == AssuranceStatus.STALE
             and not current_use_available
             and refresh.operation == "refresh_revocation_evidence"
         )
