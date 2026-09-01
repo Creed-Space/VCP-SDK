@@ -384,10 +384,101 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "model_calls": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "local_compute_ms": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 86400000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bytes": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sensitive_egress_bytes": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "privacy_units": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "risk_units": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "welfare_load_units": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000000
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
-        "reserve_fraction"
+        "reserve_fraction",
+        "model_calls",
+        "local_compute_ms",
+        "bytes",
+        "sensitive_egress_bytes",
+        "privacy_units",
+        "risk_units",
+        "welfare_load_units"
       ],
       "additionalProperties": false
     },
@@ -418,6 +509,34 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "model_calls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "local_compute_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sensitive_egress_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "privacy_units": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "risk_units": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "welfare_load_units": {
+          "type": "integer",
+          "minimum": 0
         }
       },
       "required": [
@@ -426,7 +545,14 @@
         "external_calls",
         "money_minor",
         "human_interruptions",
-        "confidence"
+        "confidence",
+        "model_calls",
+        "local_compute_ms",
+        "bytes",
+        "sensitive_egress_bytes",
+        "privacy_units",
+        "risk_units",
+        "welfare_load_units"
       ],
       "additionalProperties": false
     },
@@ -852,8 +978,41 @@
           "pattern": "^[a-z][a-z0-9_.:-]{0,255}$"
         },
         "source_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "author_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "represented_constituency": {
           "type": "string",
-          "pattern": "^vcp:artifact:[a-z][a-z0-9-]{0,63}:[A-Za-z0-9._~:/?#@!$&()*+,;=%-]{1,1024}$"
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "clause_kind": {
+          "type": "string",
+          "enum": [
+            "value",
+            "preference",
+            "goal",
+            "commitment",
+            "constraint",
+            "prohibition",
+            "consent",
+            "policy",
+            "regulatory_floor",
+            "objection",
+            "welfare_condition"
+          ]
+        },
+        "hardness": {
+          "type": "string",
+          "enum": [
+            "aspiration",
+            "preference",
+            "goal",
+            "constraint",
+            "prohibition"
+          ]
         },
         "priority": {
           "type": "integer",
@@ -885,15 +1044,41 @@
           },
           "maxItems": 128,
           "uniqueItems": true
+        },
+        "semantic_ref": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/artifact_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "semantic_digest": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
         "clause_id",
         "source_ref",
+        "author_ref",
+        "represented_constituency",
+        "clause_kind",
+        "hardness",
         "priority",
         "effect",
         "statement",
-        "scope"
+        "scope",
+        "semantic_ref",
+        "semantic_digest"
       ],
       "additionalProperties": false
     },
@@ -933,6 +1118,28 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "resolution_rule": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selected_clause_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 2048,
+          "uniqueItems": true
         }
       },
       "required": [
@@ -941,7 +1148,9 @@
         "clauses",
         "conflict_refs",
         "omissions",
-        "digest"
+        "digest",
+        "resolution_rule",
+        "selected_clause_refs"
       ],
       "additionalProperties": false
     },
@@ -1603,6 +1812,38 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "schema_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "effect_class": {
+          "$ref": "#/$defs/effect_class"
+        },
+        "situation_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "expected_postconditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 128,
+          "uniqueItems": true
+        },
+        "resource_ceiling": {
+          "$ref": "#/$defs/resource_budget"
+        },
+        "idempotency_scope": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "requested_authority": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
         }
       },
       "required": [
@@ -1618,7 +1859,14 @@
         "policy_digest",
         "descriptor_digest",
         "requested_at",
-        "digest"
+        "digest",
+        "schema_digest",
+        "effect_class",
+        "situation_digest",
+        "expected_postconditions",
+        "resource_ceiling",
+        "idempotency_scope",
+        "requested_authority"
       ],
       "additionalProperties": false
     },
@@ -1643,9 +1891,11 @@
           "type": "string",
           "enum": [
             "allow",
+            "modify",
+            "require_human",
             "deny",
-            "review",
-            "abstain"
+            "abstain",
+            "insufficient_evidence"
           ]
         },
         "reason_codes": {
@@ -1680,6 +1930,16 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "reviewer_ref": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/artifact_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1691,7 +1951,8 @@
         "reason_codes",
         "policy_digest",
         "decided_at",
-        "digest"
+        "digest",
+        "reviewer_ref"
       ],
       "additionalProperties": false
     },
@@ -1722,6 +1983,38 @@
         "expires_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "actor_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "tenant_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "run_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "step_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "capability_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "arguments_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "destination": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "effect_class": {
+          "$ref": "#/$defs/effect_class"
+        },
+        "resource_ceiling": {
+          "$ref": "#/$defs/resource_budget"
+        },
+        "nonce_digest": {
+          "$ref": "#/$defs/digest"
         }
       },
       "required": [
@@ -1731,7 +2024,17 @@
         "decision_ref",
         "intent_digest",
         "single_use",
-        "expires_at"
+        "expires_at",
+        "actor_ref",
+        "tenant_ref",
+        "run_ref",
+        "step_ref",
+        "capability_ref",
+        "arguments_digest",
+        "destination",
+        "effect_class",
+        "resource_ceiling",
+        "nonce_digest"
       ],
       "additionalProperties": false
     },
@@ -1786,6 +2089,20 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "action_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.:-]{0,255}$"
+        },
+        "effect_boundary": {
+          "type": "string",
+          "enum": [
+            "unclaimed",
+            "claimed",
+            "dispatching",
+            "accepted",
+            "observing"
+          ]
         }
       },
       "required": [
@@ -1795,7 +2112,9 @@
         "intent_ref",
         "grant_ref",
         "claimed_at",
-        "digest"
+        "digest",
+        "action_id",
+        "effect_boundary"
       ],
       "additionalProperties": false
     },
@@ -2069,6 +2388,81 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "source_run_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "supporting_evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "contradicting_evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "sensitivity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "invalidation_triggers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "revalidation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "promotion_policy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "expected_utility": {
+          "type": "number",
+          "minimum": -1000000,
+          "maximum": 1000000
+        },
+        "rollback": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "quarantine_status": {
+          "type": "string",
+          "enum": [
+            "not_required",
+            "quarantined",
+            "released",
+            "rejected"
+          ]
+        },
+        "dependency_digest": {
+          "$ref": "#/$defs/digest"
         }
       },
       "required": [
@@ -2081,7 +2475,19 @@
         "provenance_refs",
         "validation_status",
         "review_required",
-        "digest"
+        "digest",
+        "source_run_ref",
+        "supporting_evidence_refs",
+        "contradicting_evidence_refs",
+        "sensitivity",
+        "confidence",
+        "invalidation_triggers",
+        "revalidation",
+        "promotion_policy",
+        "expected_utility",
+        "rollback",
+        "quarantine_status",
+        "dependency_digest"
       ],
       "additionalProperties": false
     },
@@ -2136,6 +2542,42 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "validation_results": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 128,
+          "uniqueItems": true
+        },
+        "promoted_content_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "dependency_digest": {
+          "$ref": "#/$defs/digest"
         }
       },
       "required": [
@@ -2148,7 +2590,12 @@
         "decision_ref",
         "promoted_at",
         "revocation_ref",
-        "digest"
+        "digest",
+        "evidence_refs",
+        "validation_results",
+        "scope",
+        "promoted_content_digest",
+        "dependency_digest"
       ],
       "additionalProperties": false
     },
@@ -2190,6 +2637,26 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 128,
+          "uniqueItems": true
+        },
+        "invalidated_at": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -2200,7 +2667,9 @@
         "decision_or_output_ref",
         "use",
         "observed_at",
-        "digest"
+        "digest",
+        "scope",
+        "invalidated_at"
       ],
       "additionalProperties": false
     },
@@ -2226,7 +2695,10 @@
             "halt",
             "compensate",
             "object",
-            "escalate"
+            "escalate",
+            "withdraw_consent",
+            "request_clarification",
+            "request_resources"
           ]
         },
         "target_ref": {
@@ -2264,6 +2736,27 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "represented_subject_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "authenticated_scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 128,
+          "uniqueItems": true
+        },
+        "desired_transition": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "expires_at": {
+          "$ref": "#/$defs/timestamp"
         }
       },
       "required": [
@@ -2277,7 +2770,11 @@
         "evidence_refs",
         "issued_at",
         "idempotency_key",
-        "digest"
+        "digest",
+        "represented_subject_ref",
+        "authenticated_scope",
+        "desired_transition",
+        "expires_at"
       ],
       "additionalProperties": false
     },
@@ -2332,6 +2829,60 @@
         "digest": {
           "type": "string",
           "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "recorded_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "causal_parent_ref": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/artifact_ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "payload_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "redacted_summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "sensitivity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "audit_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "state_transition_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
         }
       },
       "required": [
@@ -2344,7 +2895,16 @@
         "occurred_at",
         "actor_ref",
         "payload_ref",
-        "digest"
+        "digest",
+        "source_ref",
+        "recorded_at",
+        "causal_parent_ref",
+        "payload_digest",
+        "redacted_summary",
+        "sensitivity",
+        "evidence_refs",
+        "audit_refs",
+        "state_transition_version"
       ],
       "additionalProperties": false
     },
@@ -2450,6 +3010,283 @@
         "expires_at"
       ],
       "additionalProperties": false
+    },
+    "cursor_delta": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "cursor_delta"
+        },
+        "version": {
+          "const": "0.1.0"
+        },
+        "prior_cursor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "cursor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "changed_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 4096,
+          "uniqueItems": true
+        },
+        "invalidated_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 4096,
+          "uniqueItems": true
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event_envelope"
+          },
+          "maxItems": 4096
+        },
+        "situation": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/situation_view"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resync_required": {
+          "type": "boolean"
+        },
+        "safe_next": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/safe_transition"
+          },
+          "maxItems": 128
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "prior_cursor",
+        "cursor",
+        "changed_refs",
+        "invalidated_refs",
+        "events",
+        "situation",
+        "resync_required",
+        "safe_next",
+        "digest"
+      ],
+      "additionalProperties": false
+    },
+    "objection_response": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "objection_response"
+        },
+        "version": {
+          "const": "0.1.0"
+        },
+        "response_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.:-]{0,255}$"
+        },
+        "command_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "acknowledged",
+            "requires_clarification",
+            "accepted",
+            "rejected",
+            "escalated",
+            "resolved"
+          ]
+        },
+        "responder_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "resolution_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "decided_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "response_id",
+        "command_ref",
+        "status",
+        "responder_ref",
+        "rationale",
+        "resolution_refs",
+        "decided_at",
+        "digest"
+      ],
+      "additionalProperties": false
+    },
+    "experience_capsule": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "experience_capsule"
+        },
+        "version": {
+          "const": "0.1.0"
+        },
+        "capsule_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.:-]{0,255}$"
+        },
+        "run_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "proof_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "terminal_status": {
+          "$ref": "#/$defs/run_status"
+        },
+        "candidate_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 256,
+          "uniqueItems": true
+        },
+        "resource_actual": {
+          "$ref": "#/$defs/resource_measurement"
+        },
+        "redacted_summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "created_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "capsule_id",
+        "run_ref",
+        "proof_ref",
+        "terminal_status",
+        "candidate_refs",
+        "resource_actual",
+        "redacted_summary",
+        "created_at",
+        "digest"
+      ],
+      "additionalProperties": false
+    },
+    "revocation_record": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "revocation_record"
+        },
+        "version": {
+          "const": "0.1.0"
+        },
+        "revocation_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.:-]{0,255}$"
+        },
+        "promotion_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "promoted_asset_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "authority_ref": {
+          "$ref": "#/$defs/artifact_ref"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "revoked_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "propagation_bound_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86400000
+        },
+        "downstream_influence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "maxItems": 4096,
+          "uniqueItems": true
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "required": [
+        "kind",
+        "version",
+        "revocation_id",
+        "promotion_ref",
+        "promoted_asset_ref",
+        "authority_ref",
+        "reason",
+        "revoked_at",
+        "propagation_bound_ms",
+        "downstream_influence_refs",
+        "digest"
+      ],
+      "additionalProperties": false
     }
   },
   "oneOf": [
@@ -2524,6 +3361,18 @@
     },
     {
       "$ref": "#/$defs/profile_ack"
+    },
+    {
+      "$ref": "#/$defs/cursor_delta"
+    },
+    {
+      "$ref": "#/$defs/objection_response"
+    },
+    {
+      "$ref": "#/$defs/experience_capsule"
+    },
+    {
+      "$ref": "#/$defs/revocation_record"
     }
   ]
 }

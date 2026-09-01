@@ -6,17 +6,16 @@ protocol extensions.
 
 ## Agent Runtime Profile candidate
 
-The observe-only `vcp.agent` facade provides a bounded `SituationView`, contextual `Affordance` discovery, explicit assurance axes, resource forecasts, typed expected states, lineage expansion, and runtime identity diagnostics. It opens no network connection in local mode and exposes no action or memory mutation interface.
+The `vcp.agent` facade provides complete local reference behavior for observe, controlled, and accretive profile levels. It preserves bounded orientation, explicit assurance, contextual Affordances, proof-first runs, exact single-use authority, interruption and reconciliation, evidence-based completion, candidate-first learning, attributable reuse, and revocation.
 
 ```python
 from vcp.agent import AgentRuntime
 
-async with AgentRuntime.connect() as runtime:
-    situation = (await runtime.bootstrap("Establish bundle integrity")).require_value()
-    options = await situation.find_affordances(evidence_for="bundle integrity")
+async with AgentRuntime.connect(profile="accretive@0.1.0") as runtime:
+    situation = (await runtime.bootstrap("Complete one governed task")).require_value()
 ```
 
-Run `vcp doctor --json` before feature use to detect distribution collisions. See [`../docs/VCP_AGENT_RUNTIME_GUIDE.md`](../docs/VCP_AGENT_RUNTIME_GUIDE.md) for the exact candidate boundary and six executable examples.
+Local mode opens no network and grants no production authority. Run `vcp doctor --json` before feature use to detect distribution collisions. See [the complete guide](../docs/VCP_AGENT_RUNTIME_GUIDE.md) and the eight executable examples.
 
 ## Install for development
 

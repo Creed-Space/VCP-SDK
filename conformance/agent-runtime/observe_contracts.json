@@ -31,7 +31,14 @@
           "external_calls": 0,
           "money_minor": 0,
           "human_interruptions": 0,
-          "reserve_fraction": 0.2
+          "reserve_fraction": 0.2,
+          "model_calls": 0,
+          "local_compute_ms": 0,
+          "bytes": 65536,
+          "sensitive_egress_bytes": 0,
+          "privacy_units": 0,
+          "risk_units": 0,
+          "welfare_load_units": 0
         },
         "active_work_refs": [],
         "control_operations": [],
@@ -75,7 +82,14 @@
           "external_calls": 0,
           "money_minor": 0,
           "human_interruptions": 0,
-          "reserve_fraction": 0.2
+          "reserve_fraction": 0.2,
+          "model_calls": 0,
+          "local_compute_ms": 0,
+          "bytes": 65536,
+          "sensitive_egress_bytes": 0,
+          "privacy_units": 0,
+          "risk_units": 0,
+          "welfare_load_units": 0
         },
         "active_work_refs": [],
         "control_operations": [],

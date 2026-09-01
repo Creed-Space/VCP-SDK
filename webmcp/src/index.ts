@@ -87,3 +87,28 @@ export type {
 	VCPError,
 	VCPNegotiationResult,
 } from './extensions/index.js';
+
+export {
+	LocalAgentRuntime,
+	matchAgentResult,
+	parseAgentArtifact,
+	parseAgentRuntimeDocument,
+} from './agent.js';
+
+export type {
+	AccretionCandidate,
+	ActionIntent,
+	AgentArtifact,
+	AgentRuntimeDocument,
+	AgentRuntimeProfileAcknowledgement,
+	AgentRuntimeProfileOffer,
+	AgentFailure,
+	AgentProfile,
+	AgentResult,
+	AgentResultStatus,
+	EffectClass as AgentEffectClass,
+	ExecutionReceipt,
+	PromotionRecord,
+	ResourceBudget as AgentResourceBudget,
+	SituationView as AgentSituationView,
+} from './agent.js';

@@ -7,6 +7,7 @@ A protocol for transporting constitutional values to Becoming Minds.
 # VCP/A (Adaptation Layer)
 # VCP v3.1 Extensions
 from . import (
+    agent,  # noqa: F401
     extensions,  # noqa: F401
     metrics,  # noqa: F401
 )
@@ -148,6 +149,8 @@ from .types import (  # noqa: F401
 
 __version__ = "4.2.0"  # VCP v3.2 / VEP-0004 adaptation layer
 __all__ = [
+    # Agent Runtime Profile
+    "agent",
     # Bundle
     "Bundle",
     "BundleBuilder",

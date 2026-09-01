@@ -22,10 +22,14 @@ from .contracts import (
     AssuranceStatus,
     CapabilityDescriptor,
     Contract,
+    CursorDelta,
     EffectClass,
+    EventEnvelope,
     EvidenceClaim,
     FailureFrame,
     Goal,
+    NormativeClause,
+    NormativeContext,
     ResourceBudget,
     ResourceMeasurement,
     ResourceReport,
@@ -93,7 +97,7 @@ def _descriptor(
         "reversible": False,
         "reconciliation": "none",
     }
-    return CapabilityDescriptor(**payload, digest=canonical_digest(payload))
+    return CapabilityDescriptor.model_validate({**payload, "digest": canonical_digest(payload)})
 
 
 def default_descriptors() -> tuple[CapabilityDescriptor, ...]:
@@ -151,16 +155,19 @@ class LocalReferenceRuntime:
         descriptors: Sequence[CapabilityDescriptor] | None = None,
         claims: Sequence[EvidenceClaim] | None = None,
         availability: Mapping[str, AffordanceState] | None = None,
+        normative_context: NormativeContext | None = None,
         clock: Callable[[], datetime] | None = None,
         cache_entries: int = 256,
+        event_retention: int = 128,
+        profile_id: str = "observe@0.1.0",
     ) -> None:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
+        self._profile_id = profile_id
         now = _timestamp(self._clock())
         self._descriptors = tuple(descriptors or default_descriptors())
         self._claims = tuple(claims or default_claims(now))
         self._availability = {
-            descriptor.capability_id: AffordanceState.AVAILABLE
-            for descriptor in self._descriptors
+            descriptor.capability_id: AffordanceState.AVAILABLE for descriptor in self._descriptors
         }
         if availability is not None:
             unknown = set(availability) - {
@@ -172,12 +179,96 @@ class LocalReferenceRuntime:
         self._artifacts: dict[str, Contract] = {
             descriptor.ref: descriptor for descriptor in self._descriptors
         }
-        self._cache: ContentAddressedCache[AgentResult[Any]] = ContentAddressedCache(
-            cache_entries
-        )
+        self._cursor_sequence = 0
+        self._event_retention = max(event_retention, 1)
+        self._events: list[EventEnvelope] = []
+        self._cache: ContentAddressedCache[AgentResult[Any]] = ContentAddressedCache(cache_entries)
         self._schema_digest = agent_runtime_schema_digest()
         self._catalog_digest = canonical_digest(
             [descriptor.model_dump(mode="json") for descriptor in self._descriptors]
+        )
+        self._normative_context = normative_context or self._default_normative_context()
+        self._artifacts[self._normative_context.ref] = self._normative_context
+
+    def _default_normative_context(self) -> NormativeContext:
+        clause = NormativeClause(
+            clause_id="clause.local.observe-only",
+            source_ref="vcp:artifact:source:local-reference-runtime",
+            author_ref="vcp:artifact:principal:local-observer",
+            represented_constituency="local reference runtime participants",
+            clause_kind="constraint",
+            hardness="constraint",
+            priority=100,
+            effect="require",
+            statement="Observe operations must not create execution or promotion authority",
+            scope=("local-reference",),
+        )
+        payload: dict[str, Any] = {
+            "kind": "normative_context",
+            "version": "0.1.0",
+            "clauses": [clause.model_dump(mode="json")],
+            "conflict_refs": [],
+            "omissions": [],
+            "resolution_rule": None,
+            "selected_clause_refs": [clause.clause_id],
+        }
+        return NormativeContext.model_validate({**payload, "digest": canonical_digest(payload)})
+
+    def _cursor(self) -> str:
+        return f"cursor.local.{self._cursor_sequence}"
+
+    def _emit_event(
+        self,
+        *,
+        event_type: str,
+        aggregate_ref: str,
+        payload_ref: str,
+        summary: str,
+        evidence_refs: tuple[str, ...] = (),
+    ) -> EventEnvelope:
+        self._cursor_sequence += 1
+        now = _timestamp(self._clock())
+        previous = self._events[-1].digest if self._events else None
+        payload = {
+            "kind": "event_envelope",
+            "version": "0.1.0",
+            "event_id": f"event.local.{self._cursor_sequence}",
+            "event_type": event_type,
+            "aggregate_ref": aggregate_ref,
+            "sequence": self._cursor_sequence,
+            "occurred_at": now,
+            "actor_ref": "vcp:artifact:principal:local-runtime",
+            "payload_ref": payload_ref,
+            "previous_digest": previous,
+            "source_ref": "vcp:artifact:source:local-reference-runtime",
+            "recorded_at": now,
+            "causal_parent_ref": None,
+            "payload_digest": canonical_digest({"payload_ref": payload_ref}),
+            "redacted_summary": summary,
+            "sensitivity": "internal",
+            "evidence_refs": list(evidence_refs),
+            "audit_refs": [],
+            "state_transition_version": "0.1.0",
+        }
+        event = EventEnvelope.model_validate({**payload, "digest": canonical_digest(payload)})
+        self._events.append(event)
+        self._events = self._events[-self._event_retention :]
+        self._artifacts[event.ref] = event
+        return event
+
+    def set_availability(self, capability_id: str, state: AffordanceState) -> EventEnvelope:
+        """Change reference-host availability and invalidate dependent projections."""
+
+        if capability_id not in self._availability:
+            raise ValueError(f"unknown capability: {capability_id}")
+        self._availability[capability_id] = state
+        self._cache.invalidate_dependency(self._catalog_digest)
+        descriptor = next(item for item in self._descriptors if item.capability_id == capability_id)
+        return self._emit_event(
+            event_type="capability.availability.changed",
+            aggregate_ref=descriptor.ref,
+            payload_ref=descriptor.ref,
+            summary=f"Capability availability changed to {state.value}",
         )
 
     @property
@@ -186,6 +277,7 @@ class LocalReferenceRuntime:
 
     def _meta(self, *, correlation: str, dependency: str, cursor: str | None) -> ResultMeta:
         return ResultMeta(
+            profile=self._profile_id,
             schema_digest=self._schema_digest,
             correlation_id=correlation,
             as_of=_timestamp(self._clock()),
@@ -269,6 +361,13 @@ class LocalReferenceRuntime:
             money_minor=0,
             human_interruptions=0,
             confidence=0.8,
+            local_compute_ms=2,
+            bytes=512,
+            risk_units=(
+                1
+                if descriptor.effect_class not in {EffectClass.PURE_LOCAL, EffectClass.STATE_READ}
+                else 0
+            ),
         )
         return Affordance(
             affordance_id=affordance_id,
@@ -297,6 +396,7 @@ class LocalReferenceRuntime:
                 "goal": goal.statement,
                 "principal_ref": "vcp:artifact:principal:local-observer",
                 "catalog_digest": self._catalog_digest,
+                "normative_context": self._normative_context.digest,
                 "claims": [claim.model_dump(mode="json") for claim in self._claims],
                 "availability": {
                     key: value.value for key, value in sorted(self._availability.items())
@@ -325,16 +425,14 @@ class LocalReferenceRuntime:
             "situation_id": situation_id,
             "goal": goal.statement,
             "principal_ref": "vcp:artifact:principal:local-observer",
-            "known_claim_refs": [
-                f"vcp:artifact:claim:{claim.claim_id}" for claim in self._claims
-            ],
+            "known_claim_refs": [f"vcp:artifact:claim:{claim.claim_id}" for claim in self._claims],
             "unknowns": [
                 "host policy state",
                 "external runtime state",
                 "deployment state",
             ],
-            "conflict_refs": [],
-            "normative_context_ref": "vcp:artifact:normative:local-observe",
+            "conflict_refs": list(self._normative_context.conflict_refs),
+            "normative_context_ref": self._normative_context.ref,
             "authority_refs": ["vcp:artifact:authority:local-read"],
             "budget": budget.model_dump(mode="json"),
             "active_work_refs": [],
@@ -348,10 +446,10 @@ class LocalReferenceRuntime:
                 }
             ],
             "as_of": now,
-            "cursor": f"cursor.local.{suffix}",
+            "cursor": self._cursor(),
             "dependency_digest": dependency,
         }
-        situation = SituationView(**payload, digest=canonical_digest(payload))
+        situation = SituationView.model_validate({**payload, "digest": canonical_digest(payload)})
         self._artifacts[situation.ref] = situation
         for claim in self._claims:
             self._artifacts[f"vcp:artifact:claim:{claim.claim_id}"] = claim
@@ -383,6 +481,102 @@ class LocalReferenceRuntime:
         )
         self._cache.put(cache_key, result)
         return result
+
+    async def watch(self, situation: SituationView) -> AgentResult[CursorDelta]:
+        """Return a bounded cursor delta or an explicit safe resynchronization state."""
+
+        try:
+            prefix, sequence_text = situation.cursor.rsplit(".", 1)
+            if prefix != "cursor.local":
+                raise ValueError
+            prior_sequence = int(sequence_text)
+        except ValueError:
+            prior_sequence = -1
+
+        oldest_sequence = self._events[0].sequence if self._events else self._cursor_sequence
+        gap = (
+            prior_sequence < 0
+            or prior_sequence > self._cursor_sequence
+            or (self._events and prior_sequence < oldest_sequence - 1)
+        )
+        current_cursor = self._cursor()
+        if gap:
+            transition = SafeTransition(
+                operation="bootstrap",
+                summary="Rebuild a bounded SituationView from current authorities",
+            )
+            payload = {
+                "kind": "cursor_delta",
+                "version": "0.1.0",
+                "prior_cursor": situation.cursor,
+                "cursor": current_cursor,
+                "changed_refs": [],
+                "invalidated_refs": list(situation.affordance_refs),
+                "events": [],
+                "situation": None,
+                "resync_required": True,
+                "safe_next": [transition.model_dump(mode="json")],
+            }
+            delta = CursorDelta.model_validate({**payload, "digest": canonical_digest(payload)})
+            return AgentResult(
+                meta=self._meta(
+                    correlation=f"watch.local.gap.{self._cursor_sequence}",
+                    dependency=situation.dependency_digest,
+                    cursor=current_cursor,
+                ),
+                status=ResultStatus.STALE,
+                value=delta,
+                assurance=AssuranceReport(
+                    overall=AssuranceOverall.BLOCKED,
+                    checks=(
+                        AssuranceCheck(
+                            axis=AssuranceAxis.FRESHNESS,
+                            status=AssuranceStatus.STALE,
+                            summary="The requested cursor is outside the retained event window",
+                        ),
+                    ),
+                ),
+                safe_next=(transition,),
+            )
+
+        refreshed = await self.bootstrap(
+            Goal(statement=situation.goal),
+            situation.budget,
+        )
+        fresh = refreshed.require_value()
+        events = tuple(event for event in self._events if event.sequence > prior_sequence)
+        changed_refs = tuple(event.aggregate_ref for event in events)
+        invalidated_refs = tuple(sorted(set(situation.affordance_refs)) if events else ())
+        delta_payload: dict[str, Any] = {
+            "kind": "cursor_delta",
+            "version": "0.1.0",
+            "prior_cursor": situation.cursor,
+            "cursor": current_cursor,
+            "changed_refs": list(changed_refs),
+            "invalidated_refs": list(invalidated_refs),
+            "events": [event.model_dump(mode="json") for event in events],
+            "situation": fresh.model_dump(mode="json"),
+            "resync_required": False,
+            "safe_next": [],
+        }
+        delta = CursorDelta.model_validate(
+            {**delta_payload, "digest": canonical_digest(delta_payload)}
+        )
+        return AgentResult(
+            meta=self._meta(
+                correlation=f"watch.local.{self._cursor_sequence}",
+                dependency=fresh.dependency_digest,
+                cursor=current_cursor,
+            ),
+            status=ResultStatus.READY,
+            value=delta,
+            assurance=self._ready_assurance(
+                AssuranceAxis.INTEGRITY,
+                AssuranceAxis.FRESHNESS,
+                AssuranceAxis.SCOPE,
+            ),
+            evidence_refs=tuple(event.ref for event in events),
+        )
 
     async def find_affordances(
         self,
@@ -446,9 +640,7 @@ class LocalReferenceRuntime:
         values = tuple(item[1] for item in candidates[: query.limit])
         status = ResultStatus.READY if values else ResultStatus.DEGRADED
         warnings = (
-            ()
-            if values
-            else ("No affordance matched the requested outcome and effect ceiling",)
+            () if values else ("No affordance matched the requested outcome and effect ceiling",)
         )
         result: AgentResult[tuple[Affordance, ...]] = AgentResult(
             meta=self._meta(
@@ -540,3 +732,6 @@ class LocalReferenceRuntime:
             ),
             evidence_refs=(ref,),
         )
+
+    (NormativeClause,)
+    (NormativeContext,)

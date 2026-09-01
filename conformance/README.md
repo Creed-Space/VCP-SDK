@@ -2,7 +2,7 @@
 
 This directory contains authored, language-neutral fixtures and checked runners
 for the Value-Context Protocol source candidate. The corpus currently contains
-28 JSON fixtures and 348 cases. Presence in the corpus is not a pass.
+30 JSON fixtures and 352 cases. Presence in the corpus is not a pass.
 [`coverage-manifest.json`](coverage-manifest.json) is the machine-readable
 authority for every vector's source, applicability, runner, fixture hash, and
 Python, Rust, and WebMCP status.

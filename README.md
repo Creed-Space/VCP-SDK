@@ -13,7 +13,7 @@ Protocol (VCP).
 
 | Candidate distribution | Version | Publication state | Scope |
 |:---|:---|:---|:---|
-| Python, `value-context-protocol` | 4.2.0 | Source-only | Full project-maintained implementation, observe-only Agent Runtime candidate, orchestration, hooks, privacy, messaging, and extensions |
+| Python, `value-context-protocol` | 4.2.0 | Source-only | Full project-maintained implementation, complete local Agent Runtime reference, orchestration, hooks, privacy, messaging, and extensions |
 | Rust workspace, including `vcp-core` | 4.2.0 | Source-only | Core parsing, transport, orchestration, CLI, and WASM bindings |
 | npm, `@creed-space/vcp-sdk` | 4.2.0 | Source-only | Browser and WebMCP integration library |
 
@@ -40,22 +40,21 @@ The maintained interactive demonstration lives in the separate
 normative protocol source lives in
 [VCP-Spec](https://github.com/Creed-Space/VCP-Spec).
 
-## Agent Runtime observe candidate
+## Agent Runtime Profile candidate
 
-The Python source candidate includes an agent-intuitive `vcp.agent` facade for `observe@0.1.0`. One bounded bootstrap returns a `SituationHandle`; contextual `Affordance` search then exposes available options, effect class, authority class, cost forecast, evidence outputs, omissions, recovery, and exact lineage. Expected states use `AgentResult` rather than exception text.
+The Python source candidate implements the complete local `observe@0.1.0`, `controlled@0.1.0`, and `accretive@0.1.0` loop. One bounded SituationView leads through contextual Affordances, proof planning, exact preflight, host-owned decision and single-use grant, controlled reversible execution, reconciliation, RunProof, candidate-first accretion, promotion, attributable influence, and revocation.
 
 ```python
 from vcp.agent import AgentRuntime
 
-async with AgentRuntime.connect() as runtime:
-    situation = (await runtime.bootstrap("Establish bundle integrity")).require_value()
-    options = await situation.find_affordances(
-        evidence_for="bundle integrity",
-        effect_ceiling="pure_local",
-    )
+async with AgentRuntime.connect(profile="controlled@0.1.0") as runtime:
+    situation = (await runtime.bootstrap("Set one local setting and prove it")).require_value()
+    options = (await situation.find_affordances(
+        effect_ceiling="reversible_write"
+    )).require_value()
 ```
 
-This slice opens no network connection in local mode and exposes no action, grant, control, proof closure, promotion, or memory mutation API. AX-01 through AX-05 pass the deterministic local harness; AX-06 remains explicitly unsupported until the host NormativeContext slice exists. Companion Inspector and Demo Site candidate branches expose the same contracts for inspection and an observe-only Driver's Seat walkthrough. The candidate is unratified, unpublished, undeployed, and not independently reviewed. See [`docs/VCP_AGENT_RUNTIME_GUIDE.md`](docs/VCP_AGENT_RUNTIME_GUIDE.md).
+Local mode opens no network and performs only deterministic in-memory reference effects. Policy, grants, review, dispatch, and durable memory remain host authorities. Rust and TypeScript provide strict portable contract facades and no-network orientation. The 24-case Agent Experience harness currently reports zero failures and zero unsupported cases in the local reference scope. The candidate remains unratified, unpublished, undeployed, and independently unreviewed. See [the Agent Runtime guide](docs/VCP_AGENT_RUNTIME_GUIDE.md).
 
 ## Python
 
@@ -136,7 +135,7 @@ await loadPolyfillIfRequested({
 
 ## Conformance and schemas
 
-The fixture corpus currently contains 28 JSON fixtures and 348 cases.
+The fixture corpus currently contains 30 JSON fixtures and 352 cases.
 Fixture presence alone does not establish a pass. The vector-level coverage
 manifest distinguishes checked, unsupported, and not-applicable behavior. Run
 the complete checked gate and repository validator:
