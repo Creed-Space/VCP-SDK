@@ -21,11 +21,11 @@
     "webmcp/src/extensions/relational.ts": "824ef07b3ba110041ebaea5f637059694186ec9fb67c64cfb8ccefdec4b5b5a6",
     "webmcp/src/extensions/torch.ts": "23013a3af47380661871a4c1ac32e0171f07ab44fd55885e7594a1a1716458ef",
     "webmcp/src/hooks.ts": "6e9bdb80f674ae5988173f3d3f953cc37ddcbb399afc9389491db5b913318f09",
-    "webmcp/src/index.ts": "59ae9e55bbe70a1fa33c05ac849c4e60dff84c6e7cee74c916aaaf7591b1e0ea",
+    "webmcp/src/index.ts": "40fceadc3f08425e369b899737d07feff3f292f976281a697b6f2e0f244c6770",
     "webmcp/src/polyfill.ts": "92e799e2b98cee416de30d923c46c6d65beaf7e20b0302cbb741043044c5b60d",
     "webmcp/src/registration.ts": "05fcb7ff1b8d04a55938097a1e0ee89c9e74bdac1b15873047e3900489d787ce",
-    "webmcp/src/tools.ts": "3425295e6f552300af9289c5efb71d52ac3e1c9b3d3e9ead16bfe2bd43d1e2b4",
-    "webmcp/src/types.ts": "d1268773d312463d326239397986ed5458fd1ad68fe5d4499e87aaa54722ffe4"
+    "webmcp/src/tools.ts": "63e8c71baa037493688282ed3078711de924d25da6d3ba19031c2e7819aa5ef0",
+    "webmcp/src/types.ts": "c59d9ee33ff937aadce43f73f961fbad218621351e3c0f4357aaa7336d73baaa"
   },
   "surfaces": {
     "cli_commands": [
@@ -278,6 +278,7 @@
       "WebMCPRegistrationFailure",
       "WebMCPToolAnnotations",
       "WebMCPToolDefinition",
+      "WebMCPToolExecuteOptions",
       "WebMCPToolResult",
       "appendToLineage",
       "buildContext",

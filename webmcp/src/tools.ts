@@ -10,6 +10,7 @@ import type {
 	PersonaInfo,
 	TransmissionSummary,
 	WebMCPToolDefinition,
+	WebMCPToolExecuteOptions,
 	WebMCPToolResult
 } from './types.js';
 
@@ -366,10 +367,16 @@ function snapshotTransmissionSummary(value: unknown): TransmissionSummary {
 
 function wrapExecute(
 	name: string,
-	fn: (args: Record<string, unknown>) => Promise<WebMCPToolResult>,
+	fn: (
+		args: Record<string, unknown>,
+		options?: WebMCPToolExecuteOptions
+	) => Promise<WebMCPToolResult>,
 	onToolCall?: (toolName: string) => void
-): (args: Record<string, unknown>) => Promise<WebMCPToolResult> {
-	return async (args) => {
+): (
+	args: Record<string, unknown>,
+	options?: WebMCPToolExecuteOptions
+) => Promise<WebMCPToolResult> {
+	return async (args, options) => {
 		try {
 			onToolCall?.(name);
 		} catch {
@@ -386,7 +393,7 @@ function wrapExecute(
 		} catch {
 			// Browser observability is best-effort, including partial DOM shims.
 		}
-		return fn(isRecord(args) ? args : {});
+		return fn(isRecord(args) ? args : {}, options);
 	};
 }
 
@@ -431,7 +438,7 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 		annotations: { readOnlyHint: false },
 		execute: wrapExecute(
 			'vcp_chat',
-			async (args) => {
+			async (args, options) => {
 				const query = typeof args.query === 'string' ? args.query.trim() : '';
 				if (!query) return errorResult('query is required and must be a non-empty string');
 				if (query.length > 4000) return errorResult('query exceeds 4000 character limit');
@@ -467,6 +474,10 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 						return errorResult('Chat request exceeds 1 MiB limit');
 					}
 					const controller = new AbortController();
+					const executionSignal = options?.signal;
+					const abortExecution = () => controller.abort(executionSignal?.reason);
+					if (executionSignal?.aborted) abortExecution();
+					else executionSignal?.addEventListener('abort', abortExecution, { once: true });
 					const timeout = setTimeout(() => controller.abort(), timeoutMs);
 					try {
 						const response = await fetch(endpoint, {
@@ -503,6 +514,7 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 						return textResult(text || 'No response received.');
 					} finally {
 						clearTimeout(timeout);
+						executionSignal?.removeEventListener('abort', abortExecution);
 					}
 				} catch (err) {
 					const msg = errorMessage(err);
