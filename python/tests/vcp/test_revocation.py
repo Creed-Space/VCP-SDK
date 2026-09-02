@@ -11,6 +11,7 @@ import json
 import socket
 import ssl
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -41,6 +42,28 @@ def _conformance_fixture(name: str) -> Path:
         if candidate.is_file():
             return candidate
     raise FileNotFoundError(f"Could not locate conformance/security/{name}")
+
+
+@pytest.fixture(autouse=True)
+def blocked_connection_factory() -> Iterator[MagicMock]:
+    """Default-deny the connection factory so no test can dial out.
+
+    ``_fetch_json`` only reaches the factory once its SSRF guards have passed,
+    so a test that gets there without patching the factory is about to open a
+    real socket. That does not fail -- it hangs for the full connect timeout
+    per resolved address, which is how a mutant that neuters the private-IP
+    guard was reported as a mutation-testing timeout rather than as killed.
+    Tests that exercise the transport patch this name themselves, which
+    overrides this fixture for the duration of their own patch.
+    """
+    with patch(
+        "vcp.revocation._PinnedHTTPSConnection",
+        side_effect=AssertionError(
+            "test attempted a real network connection; patch "
+            "vcp.revocation._PinnedHTTPSConnection to exercise the transport"
+        ),
+    ) as factory:
+        yield factory
 
 
 # ---------------------------------------------------------------------------
@@ -357,13 +380,17 @@ class TestPinnedHttpsTransport:
     )
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     def test_fetch_rejects_empty_or_mixed_safety_resolution(
-        self, mock_validate: MagicMock, addresses: list[tuple[Any, ...]]
+        self,
+        mock_validate: MagicMock,
+        addresses: list[tuple[Any, ...]],
+        blocked_connection_factory: MagicMock,
     ) -> None:
         with (
             patch("vcp.revocation.socket.getaddrinfo", return_value=addresses),
             pytest.raises(RevocationError, match="unsafe address"),
         ):
             _fetch_json("https://status.example/check")
+        blocked_connection_factory.assert_not_called()
 
     @patch("vcp.revocation.validate_uri", return_value=(True, "OK"))
     def test_fetch_uses_sorted_pinned_addresses_and_exact_request_contract(
