@@ -63,7 +63,7 @@ Example tokens:
             name="vcp_parse_csm1",
             description="""Parse a CSM1 constitutional code.
 
-CSM1 (Constitutional Semantics Mark 1) is a compact encoding for constitutional profiles:
+CSM1 (Constitutional Safety Minicode) is a compact encoding for constitutional profiles:
 - Persona: N(anny), Z(sentinel), G(odparent), A(mbassador), M(use), D(mediator), C(ustom)
 - Level: 0-5 adherence level
 - Scopes: F(amily), W(ork), E(ducation), H(ealth), etc.

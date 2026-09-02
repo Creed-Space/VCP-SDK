@@ -748,11 +748,16 @@ class ContextEncoder:
         energy_level: tuple[str, int] | str | None = None,
         perceived_urgency: tuple[str, int] | str | None = None,
         body_signals: tuple[str, int] | str | None = None,
+        *,
+        strict: bool = True,
     ) -> VCPContext:
         """Build a VCPContext from keyword inputs.
 
         Each personal-state kwarg may be either a bare string ("focused") or
         a (value, intensity) tuple ("focused", 4).
+
+        Unknown situational values raise ``ValueError`` when ``strict`` is
+        True (the default); with ``strict=False`` they are silently dropped.
         """
         vcp_context_encodes_total.inc()
         with track_duration(vcp_context_encode_duration_seconds):
@@ -784,11 +789,11 @@ class ContextEncoder:
                         situational[dim] = [value]
                     continue
                 if isinstance(value, str):
-                    emoji = self._lookup(dim, value)
+                    emoji = self._lookup(dim, value, strict=strict)
                     if emoji:
                         situational[dim] = [emoji]
                 elif isinstance(value, list):
-                    emojis = [self._lookup(dim, v) for v in value]
+                    emojis = [self._lookup(dim, v, strict=strict) for v in value]
                     filtered = [e for e in emojis if e]
                     if filtered:
                         situational[dim] = filtered
@@ -812,11 +817,11 @@ class ContextEncoder:
 
             return VCPContext(situational=situational, personal=personal)
 
-    def _lookup(self, dim: SituationalDimension, value: str) -> str | None:
+    def _lookup(self, dim: SituationalDimension, value: str, *, strict: bool = False) -> str | None:
         """Resolve a value to its emoji representation.
 
         Accepts either the emoji itself (pass-through) or the value name.
-        Returns the emoji or None if unknown.
+        Returns the emoji, or None if unknown (raises when ``strict``).
         """
         if not value:
             return None
@@ -828,4 +833,9 @@ class ContextEncoder:
         for emoji, name in dim.values.items():
             if name == value_lower:
                 return emoji
+        if strict:
+            raise ValueError(
+                f"Unknown {dim._name} value: {value!r}; "
+                f"expected one of {sorted(dim.values.values())}"
+            )
         return None

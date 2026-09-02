@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vcp.creed.space/schema/vcp-context/v3.json",
   "title": "VCP Context Schema v3.2",
-  "description": "JSON Schema for VCP/A Adaptation Layer context validation. 13 situational dimensions (VCP v3.2, incl. VEP-0004 positions 10-13) plus 5 personal-state dimensions (R-line, v3.1+) with optional 1-5 intensity. The ‖ (U+2016 DOUBLE VERTICAL LINE) separator divides the situational and personal bands in the wire format.",
+  "description": "JSON Schema for VCP/A Adaptation Layer context validation. 13 situational dimensions (VCP v3.2 candidate; positions 10-13 are Experimental per VEP-0004, not yet accepted, and are gated behind the vcp-a-ext-v1 capability token) plus 5 personal-state dimensions (R-line, v3.1+) with optional 1-5 intensity. The ‖ (U+2016 DOUBLE VERTICAL LINE) separator divides the situational and personal bands in the wire format.",
   "type": "object",
   "properties": {
     "context": {

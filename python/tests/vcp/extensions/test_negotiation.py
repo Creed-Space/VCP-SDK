@@ -101,9 +101,7 @@ class TestWireHandshake:
             ["invalid", "invalid"],
         ],
     )
-    def test_duplicate_raw_extension_requests_are_rejected(
-        self, extensions: list[str]
-    ) -> None:
+    def test_duplicate_raw_extension_requests_are_rejected(self, extensions: list[str]) -> None:
         with pytest.raises(ValueError, match="unique"):
             negotiate_handshake(_hello(extensions=extensions), _server())
 

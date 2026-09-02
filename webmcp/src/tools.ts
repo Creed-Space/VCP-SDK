@@ -297,6 +297,7 @@ const PERSONA_ID_PATTERN = /^[a-z0-9_-]{1,64}$/;
 function snapshotPersonas(value: unknown): PersonaInfo[] {
 	const source = value === undefined ? DEFAULT_PERSONAS : value;
 	if (!Array.isArray(source)) throw new TypeError('personas must be an array');
+	if (source.length === 0) throw new RangeError('personas must contain at least one entry');
 	if (source.length > MAX_PERSONAS) throw new RangeError('personas exceeds 100 entries');
 	const seen = new Set<string>();
 	return source.map((candidate, index) => {

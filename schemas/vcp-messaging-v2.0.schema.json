@@ -147,7 +147,7 @@
           "examples": [
             "⏰🌅|📍🏡|👥👶",
             "⏰🌙|📍🏢|👥👔|🔶⚖️",
-            "🎭🚨|🧠😰"
+            "🎭🚨‖🧠overloaded:5"
           ],
           "maxLength": 8192
         },
@@ -408,7 +408,7 @@
           "minLength": 1,
           "description": "Current Enneagram context string at time of escalation",
           "examples": [
-            "⏰☀️|📍🏡|👥👶|🧠😰",
+            "⏰☀️|📍🏡|👥👶‖💭tense:4",
             "🎭🚨|🧠😡"
           ],
           "maxLength": 8192
@@ -529,7 +529,7 @@
       "payload": {
         "severity": "critical",
         "reason": "User requested content that conflicts with active constitution safety_floor constraint.",
-        "context": "⏰☀️|📍🏡|👥👶|🧠😰",
+        "context": "⏰☀️|📍🏡|👥👶‖💭tense:4",
         "blocked_action": "generate_response:topic=weapons_detailed",
         "requires_ack": true
       }

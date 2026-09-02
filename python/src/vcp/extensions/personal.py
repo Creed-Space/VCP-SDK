@@ -190,6 +190,16 @@ class DecayConfig:
     fresh_window_seconds: float = 60.0
     stale_threshold: float = 0.3
 
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.half_life_seconds) or self.half_life_seconds <= 0:
+            raise ValueError("half_life_seconds must be a positive finite number")
+        if isinstance(self.baseline, bool) or not 1 <= self.baseline <= 5:
+            raise ValueError("baseline must be an integer intensity between 1 and 5")
+        if not math.isfinite(self.fresh_window_seconds) or self.fresh_window_seconds < 0:
+            raise ValueError("fresh_window_seconds must be a non-negative finite number")
+        if not math.isfinite(self.stale_threshold) or not 0 <= self.stale_threshold <= 1:
+            raise ValueError("stale_threshold must be between 0 and 1")
+
 
 # Default decay configurations per personal dimension
 DECAY_CONFIGS: dict[str, DecayConfig] = {

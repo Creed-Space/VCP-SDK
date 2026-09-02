@@ -115,7 +115,7 @@
     "compact": {
       "type": "string",
       "description": "COMPACT representation with a bounded canonical UVC token and one or more scopes.",
-      "pattern": "^CS1\\|(nanny|sentinel|godparent|ambassador|muse|mediator|custom)\\|[0-5]\\|[a-z][a-z0-9-]{0,31}(?:\\.[a-z][a-z0-9-]{0,31}){2,9}(?:@(?:[\\^~]?(?:0|[1-9][0-9]{0,4})\\.(?:0|[1-9][0-9]{0,4})\\.(?:0|[1-9][0-9]{0,4})|latest|canary))?(?::[A-Z][A-Z0-9]{0,31})?\\|[FWPETOVAHSR](?:,[FWPETOVAHSR])*$",
+      "pattern": "^CS1\\|(nanny|sentinel|godparent|ambassador|muse|mediator|custom)\\|[0-5]\\|[a-z][a-z0-9-]{0,31}(?:\\.[a-z][a-z0-9-]{0,31}){2,9}(?:@(?:[\\^~]?(?:0|[1-9][0-9]{0,4})\\.(?:0|[1-9][0-9]{0,4})\\.(?:0|[1-9][0-9]{0,4})|latest|canary))?(?::[A-Z][A-Z0-9]{0,31})?\\|(?!(?:[FWPETOVAHSR],)*([FWPETOVAHSR])(?:,[FWPETOVAHSR])*,\\2(?:,|$))(?!(?:[FWPETOVAHSR],)*(?:[FVH](?:,[FWPETOVAHSR])*,A|A(?:,[FWPETOVAHSR])*,[FVH])(?:,|$))[FWPETOVAHSR](?:,[FWPETOVAHSR])*$",
       "minLength": 18,
       "maxLength": 294
     }

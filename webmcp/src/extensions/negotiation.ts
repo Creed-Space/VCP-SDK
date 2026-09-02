@@ -38,6 +38,8 @@ export interface VCPCoreFeatures {
   readonly revocation: boolean;
   readonly audit_chain: boolean;
   readonly context_opacity: boolean;
+  /** Forward-compatible server flags are echoed verbatim (Python/Rust parity). */
+  readonly [extra: string]: boolean;
 }
 
 export interface VCPServerCapabilities {
@@ -62,9 +64,10 @@ export interface VCPAck {
 
 export interface VCPError {
   readonly type: 'vcp-error';
-  readonly code: 'VERSION_UNSUPPORTED';
+  readonly code: 'VERSION_UNSUPPORTED' | 'IDENTITY_INVALID';
   readonly message: string;
-  readonly supported_versions: readonly string[];
+  /** Present for VERSION_UNSUPPORTED; absent for IDENTITY_INVALID (native SDK parity). */
+  readonly supported_versions?: readonly string[];
   readonly retry_after: null;
 }
 
@@ -151,13 +154,14 @@ function validateCoreFeatures(value: unknown): VCPCoreFeatures {
       throw new TypeError(`server.core_features.${name} must be a boolean`);
     }
   }
-  return {
-    encryption: record.encryption as boolean,
-    injection_scanning: record.injection_scanning as boolean,
-    revocation: record.revocation as boolean,
-    audit_chain: record.audit_chain as boolean,
-    context_opacity: record.context_opacity as boolean,
-  };
+  const features: Record<string, boolean> = {};
+  for (const [name, flag] of Object.entries(record)) {
+    if (typeof flag !== 'boolean') {
+      throw new TypeError('additional core feature entries must map strings to booleans');
+    }
+    features[name] = flag;
+  }
+  return features as VCPCoreFeatures;
 }
 
 function copyOptionalIdentifier(
@@ -214,6 +218,25 @@ function assertHandshakeSize(value: unknown): void {
   if (new TextEncoder().encode(encoded).byteLength > MAX_HANDSHAKE_BYTES) {
     throw new RangeError('handshake exceeds 64 KiB');
   }
+}
+
+// VCP/I token grammar (schemas/vcp-identity-token.schema.json `token.pattern`,
+// matching Python `Token.parse` / Rust `VcpToken::parse` acceptance).
+const IDENTITY_TOKEN_PATTERN =
+  /^[a-z][a-z0-9-]{0,31}(?:\.[a-z][a-z0-9-]{0,31}){2,9}(?:@(?:[\^~]?[0-9]{1,5}\.[0-9]{1,5}\.[0-9]{1,5}(?:-[a-zA-Z0-9.-]+)?|latest|canary))?(?::[A-Z][A-Z0-9]{0,31})?$/;
+const MAX_IDENTITY_TOKEN_LENGTH = 256;
+
+function isValidIdentityToken(identity: string): boolean {
+  return identity.length <= MAX_IDENTITY_TOKEN_LENGTH && IDENTITY_TOKEN_PATTERN.test(identity);
+}
+
+function identityError(): VCPError {
+  return {
+    type: 'vcp-error',
+    code: 'IDENTITY_INVALID',
+    message: 'The supplied VCP/I identity token is invalid',
+    retry_after: null,
+  };
 }
 
 function versionError(serverVersions: readonly ParsedVersion[]): VCPError {
@@ -274,6 +297,13 @@ export function negotiate(
     return versionError(serverVersions);
   }
 
+  // Python and Rust validate the requested extensions and the identity token
+  // before selecting the mutual version; keep the same precedence.
+  const requested = validRequestedExtensions(hello.extensions);
+  if (typeof hello.identity === 'string' && !isValidIdentityToken(hello.identity)) {
+    return identityError();
+  }
+
   const negotiated = serverVersions
     .filter(
       (version) =>
@@ -282,8 +312,6 @@ export function negotiate(
     )
     .at(-1);
   if (!negotiated) return versionError(serverVersions);
-
-  const requested = validRequestedExtensions(hello.extensions);
   if (
     typeof server.extensions !== 'object' ||
     server.extensions === null ||

@@ -98,7 +98,11 @@ def implementation_status(
     case_id = str(case["id"])
     if suite in {"extensions/welfare", "extensions/stateless_mcp"}:
         return "unsupported", "Draft profile has no claimed implementation"
-    if implementation == "webmcp" and suite == "extensions/capability_negotiation":
+    if implementation == "webmcp" and suite in {
+        "extensions/capability_negotiation",
+        "adaptation/context_encoding",
+        "adaptation/context_encoding_extended",
+    }:
         return "checked", "Executed by the declared checked runner"
     if (
         implementation == "webmcp"

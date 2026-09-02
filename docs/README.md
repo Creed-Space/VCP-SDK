@@ -47,7 +47,9 @@ documents and synchronized schemas control conflicts.
 ## Archives
 
 - [`archives/host_integrations`](../archives/host_integrations/) contains former
-  host adapters, paths, rollout records, and test counts.
+  host adapters, paths, rollout records, test counts, and the retired
+  proprietary host OpenAPI description (`openapi/vcp_actions.yaml`), which is
+  not part of the MIT-licensed SDK.
 - [`archives/adjacent_projects`](../archives/adjacent_projects/) contains Torch,
   Interiora, MillOS, Rewind, and abbreviation-conflicting project records.
 - [`archives/vcp_specs_pre_v2.0_2026-03`](../archives/vcp_specs_pre_v2.0_2026-03/)

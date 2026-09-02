@@ -136,6 +136,13 @@ class RefusalBoundaryPlugin(PDPPlugin):
                     reason="No VCP bundle present — fail-closed",
                     plugin_id=self.plugin_id,
                 )
+            if self._mode == EnforcementMode.ESCALATE:
+                return PDPDecision(
+                    decision=DecisionType.ESCALATE,
+                    reason="No VCP bundle present — escalating",
+                    plugin_id=self.plugin_id,
+                )
+            logger.warning("RefusalBoundaryPlugin: no VCP bundle present (audit-only)")
             return None
 
         # A fail-closed boundary requires explicit, well-typed proof of
@@ -210,7 +217,7 @@ class AdherenceLevelPlugin(PDPPlugin):
         if adherence is None:
             manifest_meta = getattr(bundle, "manifest", None)
             if manifest_meta:
-                adherence = getattr(manifest_meta, "metadata", {}).get("adherence_level")
+                adherence = (getattr(manifest_meta, "metadata", None) or {}).get("adherence_level")
 
         if adherence is None:
             if self._require_declaration:
@@ -221,9 +228,9 @@ class AdherenceLevelPlugin(PDPPlugin):
                 )
             return None
 
-        try:
-            adherence = int(adherence)
-        except (ValueError, TypeError):
+        # CSM-1 adherence is an integer 0-5; reject loose coercions
+        # (floats, booleans, numeric strings) and out-of-range values.
+        if isinstance(adherence, bool) or not isinstance(adherence, int) or not 0 <= adherence <= 5:
             return PDPDecision(
                 decision=DecisionType.BLOCK,
                 reason=f"Invalid adherence level: {adherence!r}",

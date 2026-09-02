@@ -8,20 +8,14 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from .canonicalize import parse_json_strict
+from .canonicalize import parse_json_strict, parse_rfc3339_utc
 
 _ANCHOR_TYPES = frozenset({"issuer", "auditor"})
 _ANCHOR_STATES = frozenset({"active", "rotating", "retired", "compromised"})
 
 
 def _parse_utc_datetime(value: Any, field_name: str) -> datetime:
-    if not isinstance(value, str):
-        raise ValueError(f"{field_name} must be an RFC 3339 string")
-    normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
-    parsed = datetime.fromisoformat(normalized)
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
-        raise ValueError(f"{field_name} must include a timezone")
-    return parsed.astimezone(timezone.utc)
+    return parse_rfc3339_utc(value, field_name)
 
 
 def _format_utc_datetime(value: datetime, field_name: str) -> str:

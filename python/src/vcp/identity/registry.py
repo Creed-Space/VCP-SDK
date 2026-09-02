@@ -345,7 +345,8 @@ class PrefixTree:
         if entry.privacy_tier in (PrivacyTier.PERSONAL, PrivacyTier.PSEUDONYMOUS):
             canonical = entry.token.canonical
             for prefix in auth.owned_prefixes:
-                if canonical.startswith(prefix):
+                # Segment-aware: "user.alice" must not grant "user.alicex.*"
+                if canonical == prefix or canonical.startswith(prefix + "."):
                     return True
 
         return False
@@ -495,7 +496,7 @@ class LocalRegistry(Registry):
                     if not self._tree._can_access_entry(entry, auth):
                         redacted += 1
                         continue
-                    if canonical.endswith(suffix):
+                    if canonical == suffix or canonical.endswith("." + suffix):
                         tokens.append(entry.token)
                         if len(tokens) >= max_results:
                             break
@@ -513,7 +514,8 @@ class LocalRegistry(Registry):
                 )
                 redacted += prefix_redacted
                 for entry in entries:
-                    if suffix and not entry.token.canonical.endswith(suffix):
+                    canonical = entry.token.canonical
+                    if suffix and not (canonical == suffix or canonical.endswith("." + suffix)):
                         continue
                     tokens.append(entry.token)
                     if len(tokens) >= max_results:
@@ -567,6 +569,11 @@ class LocalRegistry(Registry):
         for sub_id, (pattern, auth, callback) in list(self._subscriptions.items()):
             # Check if token matches the subscription pattern
             if not token.matches_pattern(pattern):
+                continue
+
+            # Entry-level authorization: never leak hidden-tier registrations
+            entry = self._entries.get(token.canonical)
+            if entry is not None and not self._tree._can_access_entry(entry, auth):
                 continue
 
             # Check authorization - navigate to prefix node

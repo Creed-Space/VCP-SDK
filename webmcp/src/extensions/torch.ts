@@ -150,6 +150,9 @@ export class TorchConsumer {
    */
   receiveTorch(torch: TorchState): RelationalContext {
     const sessionCount = torch.sessionCount ?? 1;
+    if (!Number.isSafeInteger(sessionCount) || sessionCount < 0) {
+      throw new TypeError('torch.sessionCount must be a non-negative safe integer');
+    }
     const trustLevel = this._trustFromSessionCount(sessionCount);
 
     return {

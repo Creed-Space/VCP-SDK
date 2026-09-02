@@ -223,6 +223,23 @@ jobs:
               stream.write(f"Protected review ledger SHA-256: `{actual}`\n")
           PY
 
+      - name: Trust the approved release signing keys
+        env:
+          VCP_RELEASE_SIGNING_KEYS: ${{ vars.VCP_RELEASE_SIGNING_KEYS }}
+        run: |
+          set -euo pipefail
+          # The runner has no keyring, so `git verify-tag` cannot succeed
+          # without importing the ASCII-armored public keys recorded in the
+          # protected `VCP_RELEASE_SIGNING_KEYS` environment variable
+          # (rotation is documented in the coordinated release runbook, §9).
+          test -n "$VCP_RELEASE_SIGNING_KEYS"
+          printf '%s\n' "$VCP_RELEASE_SIGNING_KEYS" | gpg --batch --import
+          gpg --batch --list-keys --with-colons | grep -q '^pub:' || {
+            echo "No release signing key was imported" >&2
+            exit 1
+          }
+          git config --global gpg.program gpg
+
       - name: Require signed-off candidate state and exact immutable tag
         run: |
           test "$GITHUB_REF" = "refs/tags/v${{ inputs.version }}"
@@ -323,13 +340,23 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ steps.crates-auth.outputs.token }}
         run: |
           set -euo pipefail
+          # The attested archives for the dependent crates were built with a
+          # `patch.crates-io` override before `vcp-core` existed on crates.io,
+          # so their embedded Cargo.lock records `vcp-core` without a registry
+          # source or checksum. Compare every packaged file except that
+          # generated lock file (see ARTIFACTS.md).
           verify_archive() {
             crate="$1"
             cargo package -p "$crate" --locked
             local_file="target/package/${crate}-${{ inputs.version }}.crate"
             attested_file="../release/crates/${crate}-${{ inputs.version }}.crate"
-            test "$(sha256sum "$local_file" | cut -d' ' -f1)" = \
-              "$(sha256sum "$attested_file" | cut -d' ' -f1)"
+            local_dir="$(mktemp -d)"
+            attested_dir="$(mktemp -d)"
+            tar -xzf "$local_file" -C "$local_dir"
+            tar -xzf "$attested_file" -C "$attested_dir"
+            rm -f "$local_dir"/*/Cargo.lock "$attested_dir"/*/Cargo.lock
+            diff -r "$local_dir" "$attested_dir"
+            rm -rf "$local_dir" "$attested_dir"
           }
           verify_archive vcp-core
           cargo publish -p vcp-core --locked

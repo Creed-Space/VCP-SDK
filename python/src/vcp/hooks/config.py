@@ -22,7 +22,7 @@ YAML format::
 
       - name: my-custom-hook
         type: pre_inject
-        action: mypackage.hooks.my_action
+        action: vcp.hooks.contrib.my_action   # must match ALLOWED_IMPORT_PREFIXES
         priority: 50
         description: "Custom hook"
 
@@ -243,16 +243,25 @@ def _parse_hook_entry(entry: Any, idx: int) -> HookEntryConfig:
             f"Hook '{name}' cannot specify both 'builtin' and 'action'. Choose one."
         )
 
+    try:
+        priority = int(entry.get("priority", 50))
+        timeout_ms = int(entry.get("timeout_ms", 5000))
+        enabled = bool(entry.get("enabled", True))
+        description = str(entry.get("description", ""))
+        metadata = dict(entry.get("metadata", {}))
+    except (TypeError, ValueError) as exc:
+        raise HookConfigError(f"Hook '{name}' has an invalid field value: {exc}") from exc
+
     return HookEntryConfig(
         name=name,
         type=hook_type,
-        priority=int(entry.get("priority", 50)),
-        timeout_ms=int(entry.get("timeout_ms", 5000)),
-        enabled=bool(entry.get("enabled", True)),
-        description=str(entry.get("description", "")),
+        priority=priority,
+        timeout_ms=timeout_ms,
+        enabled=enabled,
+        description=description,
         builtin=builtin or None,
         action=action or None,
-        metadata=dict(entry.get("metadata", {})),
+        metadata=metadata,
     )
 
 

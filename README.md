@@ -111,18 +111,28 @@ await loadPolyfillIfRequested({
 });
 ```
 
+## Prerequisites
+
+- Python 3.10 or newer (the locked development environment uses 3.12)
+- Rust 1.87 or newer with `rustfmt` and `clippy`
+- Node.js 22.12 or newer (CI validates Node 24) and npm
+
 ## Conformance and schemas
 
-The fixture corpus currently contains 27 JSON fixtures and 337 cases.
+The fixture corpus currently contains 27 JSON fixtures and 340 cases.
 Fixture presence alone does not establish a pass. The vector-level coverage
 manifest distinguishes checked, unsupported, and not-applicable behavior. Run
 the complete checked gate and repository validator:
 
 ```bash
+npm ci --ignore-scripts && npm ci --ignore-scripts --prefix webmcp
 python3 scripts/validate_repo.py
 python3 scripts/generate_conformance_coverage.py --check
 python3 conformance/runners/run_all.py
 ```
+
+The aggregate runner builds the Rust CLI once and runs the packed WebMCP smoke
+test, so it needs the Rust and Node toolchains above in addition to Python.
 
 For an exact three-repository candidate set, run the integrated entry point from
 this repository. Its header records all three Git hashes before any checks run:

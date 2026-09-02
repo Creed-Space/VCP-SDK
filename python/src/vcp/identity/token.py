@@ -39,6 +39,24 @@ _NUMERIC_VERSION_PATTERN = re.compile(
 )
 
 
+def _glob_match(parts: tuple[str, ...], segments: tuple[str, ...]) -> bool:
+    """Match dotted glob ``parts`` against ``segments``.
+
+    ``*`` matches exactly one segment; ``**`` matches zero or more segments
+    and may appear more than once in a pattern.
+    """
+    if not parts:
+        return not segments
+    head, rest = parts[0], parts[1:]
+    if head == "**":
+        return any(_glob_match(rest, segments[i:]) for i in range(len(segments) + 1))
+    if not segments:
+        return False
+    if head != "*" and head != segments[0]:
+        return False
+    return _glob_match(rest, segments[1:])
+
+
 def _canonical_version(version: str) -> str:
     """Normalize numeric selectors while preserving alias selectors."""
     match = _NUMERIC_VERSION_PATTERN.fullmatch(version)
@@ -430,26 +448,9 @@ class Token:
         """
         parts = pattern.split(".")
 
-        # Handle ** (match any number of segments)
+        # Handle ** (match any number of segments, possibly several times)
         if "**" in parts:
-            idx = parts.index("**")
-            prefix = parts[:idx]
-            suffix = parts[idx + 1 :]
-
-            # Check prefix matches
-            if len(self.segments) < len(prefix) + len(suffix):
-                return False
-
-            for i, p in enumerate(prefix):
-                if p != "*" and p != self.segments[i]:
-                    return False
-
-            # Check suffix matches (from end)
-            for i, p in enumerate(suffix):
-                if p != "*" and p != self.segments[-(len(suffix) - i)]:
-                    return False
-
-            return True
+            return _glob_match(tuple(parts), self.segments)
 
         # Simple pattern: must match segment count
         if len(parts) != len(self.segments):

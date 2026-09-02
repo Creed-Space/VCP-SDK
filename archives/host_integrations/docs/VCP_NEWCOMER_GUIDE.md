@@ -1,5 +1,7 @@
 # VCP Newcomer's Guide
 
+> Archived host-integration document: internal relative links are intentionally left unresolved and may point at paths that were not carried into the archive.
+
 **For**: Researchers curious about the Value-Context Protocol
 **Date**: 2026-01-12
 **Version**: 1.0

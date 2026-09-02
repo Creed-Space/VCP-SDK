@@ -1,4 +1,4 @@
-//! CSM-1 (Constitutional Semantics Mark 1) parsing and encoding.
+//! CSM-1 (Constitutional Safety Minicode) parsing and encoding.
 //!
 //! CSM-1 has two forms:
 //!

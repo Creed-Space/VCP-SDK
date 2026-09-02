@@ -87,7 +87,7 @@ class AuditEntry:
             AuditLevel.FULL,
             AuditLevel.DIAGNOSTIC,
         ):
-            result["timestamp"] = self.timestamp.isoformat() + "Z"
+            result["timestamp"] = _format_utc_timestamp(self.timestamp)
             result["session_id_hash"] = self.session_id_hash
             result["manifest_signature"] = self.manifest_signature
             verification["checks_passed"] = self.checks_passed
@@ -115,14 +115,25 @@ class AuditEntry:
         return json.dumps(self.to_dict(), indent=indent)
 
 
-def _hash_for_privacy(value: str) -> str:
+def _format_utc_timestamp(value: datetime) -> str:
+    """Format a datetime as RFC 3339 UTC with a single trailing ``Z``.
+
+    Naive datetimes are treated as UTC; aware datetimes are converted.
+    """
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _hash_for_privacy(value: str, salt: bytes | None = None) -> str:
     """Hash a value for privacy-preserving logging.
 
-    Uses a per-process random salt so hashes are not reversible from
-    known inputs, but remain deterministic within the same process
-    (required for purge_by_session matching).
+    Uses a per-process random salt by default so hashes are not reversible
+    from known inputs, but remain deterministic within the same process
+    (required for purge_by_session matching). Pass a stable ``salt`` to make
+    hashes comparable across process restarts.
     """
-    salted = _PRIVACY_SALT + value.encode()
+    salted = (salt if salt is not None else _PRIVACY_SALT) + value.encode()
     return f"sha256:{hashlib.sha256(salted).hexdigest()[:32]}"
 
 
@@ -133,6 +144,7 @@ class AuditLogger:
         self,
         level: AuditLevel = AuditLevel.STANDARD,
         log_callback: Callable[[AuditEntry], None] | None = None,
+        privacy_salt: bytes | None = None,
     ):
         """
         Initialize audit logger.
@@ -141,13 +153,35 @@ class AuditLogger:
             level: Detail level for logging
             log_callback: Function to call with audit entries
                          (entry: AuditEntry) -> None
+            privacy_salt: Optional stable secret salt for privacy hashing.
+                         Defaults to a per-process random salt, in which case
+                         :meth:`purge_by_session` can only match entries and
+                         exported files produced by this process. Operators
+                         that need cross-restart purges must supply a stable
+                         secret salt and re-register exported paths with
+                         :meth:`track_exported_path`.
         """
         self.level = level
         self._log_callback = log_callback
+        self._privacy_salt = privacy_salt
         self._entries: list[AuditEntry] = []
         self._exported_paths: list[str] = []
         self._purge_handlers: list[Callable[[str, str], dict[str, Any]]] = []
         self._lock = threading.Lock()
+
+    def _hash(self, value: str) -> str:
+        """Privacy-hash ``value`` with this logger's salt."""
+        return _hash_for_privacy(value, self._privacy_salt)
+
+    def track_exported_path(self, path: str) -> None:
+        """Register a previously exported JSON file for future purges.
+
+        :meth:`export_json` tracks paths automatically for the lifetime of
+        the process; call this after a restart to re-attach earlier exports.
+        """
+        with self._lock:
+            if path not in self._exported_paths:
+                self._exported_paths.append(path)
 
     def log_verification(
         self,
@@ -295,16 +329,16 @@ class AuditLogger:
 
         entry = AuditEntry(
             timestamp=datetime.now(timezone.utc),
-            session_id_hash=_hash_for_privacy(session_id),
+            session_id_hash=self._hash(session_id),
             verification_result=result.name,
             checks_passed=checks,
-            bundle_id_hash=_hash_for_privacy(manifest.bundle.id),
+            bundle_id_hash=self._hash(manifest.bundle.id),
             content_hash=manifest.bundle.content_hash,
-            issuer_hash=_hash_for_privacy(manifest.issuer.id),
+            issuer_hash=self._hash(manifest.issuer.id),
             version=manifest.bundle.version,
             manifest_signature=sig_truncated,
             audit_level=self.level,
-            request_id=(_hash_for_privacy(request_id) if request_id else None),
+            request_id=(self._hash(request_id) if request_id else None),
             duration_ms=(
                 duration_ms if self.level in (AuditLevel.FULL, AuditLevel.DIAGNOSTIC) else None
             ),
@@ -316,7 +350,8 @@ class AuditLogger:
             content_preview=(bundle.content[:100] if self.level == AuditLevel.DIAGNOSTIC else None),
         )
 
-        self._entries.append(entry)
+        with self._lock:
+            self._entries.append(entry)
         vcp_audit_events_total.labels(event_type="verification").inc()
 
         if self._log_callback:
@@ -334,9 +369,10 @@ class AuditLogger:
         Returns:
             List of audit entries
         """
-        if since:
-            return [e for e in self._entries if e.timestamp > since]
-        return list(self._entries)
+        with self._lock:
+            if since:
+                return [e for e in self._entries if e.timestamp > since]
+            return list(self._entries)
 
     def log_privacy_filter(
         self,
@@ -368,7 +404,7 @@ class AuditLogger:
 
         entry = AuditEntry(
             timestamp=datetime.now(timezone.utc),
-            session_id_hash=(_hash_for_privacy(session_id) if include_session else "redacted"),
+            session_id_hash=(self._hash(session_id) if include_session else "redacted"),
             verification_result="PRIVACY_FILTER",
             checks_passed=[
                 f"shared:{fields_shared}",
@@ -376,7 +412,7 @@ class AuditLogger:
                 f"constraints:{constraint_flags_active}",
                 "private_fields_exposed:0",
             ],
-            bundle_id_hash=_hash_for_privacy(platform_id),
+            bundle_id_hash=self._hash(platform_id),
             content_hash="n/a",
             issuer_hash="n/a",
             version="n/a",
@@ -384,7 +420,8 @@ class AuditLogger:
             audit_level=self.level,
         )
 
-        self._entries.append(entry)
+        with self._lock:
+            self._entries.append(entry)
         vcp_audit_events_total.labels(event_type="privacy_filter").inc()
 
         if self._log_callback:
@@ -394,7 +431,8 @@ class AuditLogger:
 
     def clear(self) -> None:
         """Clear stored entries."""
-        self._entries.clear()
+        with self._lock:
+            self._entries.clear()
 
     def register_purge_handler(
         self,
@@ -434,7 +472,7 @@ class AuditLogger:
             Tombstone receipt dict with purge_id, timestamp, entries_removed,
             files_purged, external_sink_results, and scope description.
         """
-        target_hash = _hash_for_privacy(session_id)
+        target_hash = self._hash(session_id)
         purge_id = str(uuid.uuid4())
 
         with self._lock:
@@ -477,7 +515,7 @@ class AuditLogger:
 
         tombstone: dict[str, Any] = {
             "purge_id": purge_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": _format_utc_timestamp(datetime.now(timezone.utc)),
             "entries_removed": removed,
             "file_entries_removed": total_file_entries,
             "files_purged": files_purged,

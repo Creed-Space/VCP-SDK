@@ -179,13 +179,43 @@ describe('VCP capability negotiation', () => {
 				}),
 				server({ server_id: '🯿'.repeat(256), session_id: '🯿'.repeat(128) }),
 			),
-		).toMatchObject({ supported: [], unsupported: [] });
+		).toMatchObject({ type: 'vcp-error', code: 'IDENTITY_INVALID' });
+		expect(() =>
+			negotiate(hello({ identity: '🯿'.repeat(2049) }), server()),
+		).toThrow('hello.identity must be null or a string of at most 2048 characters');
 		expect(() =>
 			negotiate(hello({ extensions: ['🯿'.repeat(129)] }), server()),
 		).toThrow('hello.extensions entries must contain 1 to 128 characters');
 		expect(() =>
 			negotiate(hello({ client_id: '🯿'.repeat(257) }), server()),
 		).toThrow('hello.client_id must be a non-empty string of at most 256 characters');
+	});
+
+	it('returns IDENTITY_INVALID for a malformed identity token (Python/Rust parity)', () => {
+		expect(negotiate(hello({ identity: 'not a token!!' }), server())).toEqual({
+			type: 'vcp-error',
+			code: 'IDENTITY_INVALID',
+			message: 'The supplied VCP/I identity token is invalid',
+			retry_after: null,
+		});
+		expect(negotiate(hello({ identity: 'family.safe.guide@1.0.0' }), server())).toMatchObject({
+			type: 'vcp-ack',
+		});
+		expect(negotiate(hello({ identity: null }), server())).toMatchObject({ type: 'vcp-ack' });
+	});
+
+	it('echoes forward-compatible boolean core features and rejects non-boolean extras', () => {
+		const ack = negotiate(
+			hello(),
+			server({ core_features: { ...CORE, extra_flag: true } }),
+		);
+		expect(ack).toMatchObject({ core_features: { ...CORE, extra_flag: true } });
+		expect(() =>
+			negotiate(
+				hello(),
+				server({ core_features: { ...CORE, extra_flag: 'yes' } as never }),
+			),
+		).toThrow('additional core feature entries must map strings to booleans');
 	});
 
 	it('rejects duplicate extension strings before negotiation', () => {

@@ -48,9 +48,7 @@ def test_from_dict_does_not_mutate_caller_owned_key_records() -> None:
 
 def test_unknown_entity_type_is_rejected_instead_of_becoming_an_issuer() -> None:
     with pytest.raises(ValueError, match="Unknown trust anchor type"):
-        TrustConfig.from_dict(
-            {"trust_anchors": {"issuer": {"type": "mystery", "keys": []}}}
-        )
+        TrustConfig.from_dict({"trust_anchors": {"issuer": {"type": "mystery", "keys": []}}})
 
 
 def test_empty_requested_key_id_does_not_authorize_an_arbitrary_key() -> None:

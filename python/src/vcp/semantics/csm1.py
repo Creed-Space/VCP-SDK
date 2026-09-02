@@ -1,7 +1,7 @@
 """
 VCP/S CSM1 Grammar Parser.
 
-CSM1 (Constitutional Semantics Mark 1) is a compact encoding for constitutional profiles.
+CSM1 (Constitutional Safety Minicode) is a compact encoding for constitutional profiles.
 
 Format (ABNF):
     code = persona level *("+" scope) [":" namespace] ["@" version]
@@ -9,7 +9,8 @@ Format (ABNF):
     level = "0" / "1" / "2" / "3" / "4" / "5"
     scope = "F" / "W" / "P" / "E" / "T" / "O" / "V" / "A" / "H" / "S" / "R"
     namespace = 1*8UPALPHA
-    version = version-component "." version-component "." version-component
+    version = ( version-component "." version-component "." version-component )
+            / "latest" / "canary"
     version-component = "0" / (%x31-39 *2DIGIT)
 
 Examples:

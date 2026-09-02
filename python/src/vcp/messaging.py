@@ -175,11 +175,7 @@ def validate_message(msg: VcpMessage) -> list[str]:
             parsed_id = uuid.UUID(msg.message_id)
         except (ValueError, AttributeError):
             parsed_id = None
-        if (
-            parsed_id is None
-            or parsed_id.version != 7
-            or str(parsed_id) != msg.message_id
-        ):
+        if parsed_id is None or parsed_id.version != 7 or str(parsed_id) != msg.message_id:
             errors.append(f"message_id is not a valid UUIDv7: '{msg.message_id}'")
 
     # sender must be non-empty.
@@ -266,8 +262,7 @@ def _validate_personal_state(value: Any) -> list[str]:
         for dimension, state_value in nested.items():
             if dimension in nested_fields and not _bounded_state_value(state_value):
                 errors.append(
-                    f"payload.personal_state.{field_name}.{dimension} "
-                    "must be a number from 1 to 9"
+                    f"payload.personal_state.{field_name}.{dimension} must be a number from 1 to 9"
                 )
     return errors
 
@@ -294,12 +289,9 @@ def _validate_payload(message_type: str, payload: dict[str, Any]) -> list[str]:
         _unknown(payload, allowed, errors)
         if "constitution_ref" in payload and not _is_creed_uri(payload["constitution_ref"]):
             errors.append("payload.constitution_ref must be a valid creed:// URI")
-        if (
-            "manifest_hash" in payload
-            and (
-                not isinstance(payload["manifest_hash"], str)
-                or _CONTENT_HASH_PATTERN.fullmatch(payload["manifest_hash"]) is None
-            )
+        if "manifest_hash" in payload and (
+            not isinstance(payload["manifest_hash"], str)
+            or _CONTENT_HASH_PATTERN.fullmatch(payload["manifest_hash"]) is None
         ):
             errors.append("payload.manifest_hash must be a lowercase sha256 digest")
         if "scope" in payload:
@@ -322,9 +314,7 @@ def _validate_payload(message_type: str, payload: dict[str, Any]) -> list[str]:
                         )
                         continue
                     if any(
-                        not isinstance(item, str)
-                        or not item
-                        or len(item) > 256
+                        not isinstance(item, str) or not item or len(item) > 256
                         for item in field_value
                     ):
                         errors.append(
@@ -384,11 +374,7 @@ def _validate_payload(message_type: str, payload: dict[str, Any]) -> list[str]:
             if field_name not in payload:
                 continue
             value = payload[field_name]
-            if (
-                not isinstance(value, str)
-                or len(value) < minimum
-                or len(value) > maximum
-            ):
+            if not isinstance(value, str) or len(value) < minimum or len(value) > maximum:
                 errors.append(
                     f"payload.{field_name} must contain {minimum} to {maximum} characters"
                 )

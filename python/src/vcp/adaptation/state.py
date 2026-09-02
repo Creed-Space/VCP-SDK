@@ -14,7 +14,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from ..metrics import vcp_active_sessions, vcp_transitions_total
-from .context import Dimension, VCPContext
+from .context import Dimension, PersonalStateDimension, VCPContext
 
 if TYPE_CHECKING:
     from ..hooks.executor import HookExecutor
@@ -32,8 +32,9 @@ class TransitionSeverity(Enum):
 # Dimensions that trigger major transitions when changed
 MAJOR_DIMENSIONS = {Dimension.OCCASION, Dimension.AGENCY, Dimension.CONSTRAINTS}
 
-# Values that indicate emergency state
-EMERGENCY_VALUES = {"🚨", "⚠️", "🆘"}
+# Values that indicate emergency state (OCCASION=🚨 or EMBODIMENT=🛑 per the
+# adaptation-context schema; ⚠️/🆘 are accepted from free-form callers).
+EMERGENCY_VALUES = {"🚨", "🛑", "⚠️", "🆘"}
 
 
 @dataclass
@@ -41,7 +42,7 @@ class Transition:
     """Detected context transition."""
 
     severity: TransitionSeverity
-    changed_dimensions: list[Dimension]
+    changed_dimensions: list[Dimension | PersonalStateDimension]
     previous: VCPContext
     current: VCPContext
     timestamp: datetime
@@ -190,13 +191,18 @@ class StateTracker:
         Returns:
             Transition describing the change
         """
-        changed: list[Dimension] = []
+        changed: list[Dimension | PersonalStateDimension] = []
 
         for dim in Dimension:
             prev_vals = set(previous.get(dim))
             curr_vals = set(current.get(dim))
             if prev_vals != curr_vals:
                 changed.append(dim)
+
+        # Personal-state band changes count as transitions too
+        for pdim in PersonalStateDimension:
+            if previous.personal.get(pdim) != current.personal.get(pdim):
+                changed.append(pdim)
 
         # Check for emergency values in current context
         all_current_values: set[str] = set()

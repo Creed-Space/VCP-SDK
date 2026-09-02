@@ -234,6 +234,41 @@ describe('VCPContext JSON', () => {
 // Encoder (keyword-style builder)
 // ───────────────────────────────────────────────────────────────────────────
 
+describe('decodeContext vocabulary scanning', () => {
+  it('preserves VS16 and keeps ⏱️ in constraints', () => {
+    const ctx = decodeContext('🔶⚖️⏱️');
+    expect(ctx.situational.constraints).toEqual(['⚖️', '⏱️']);
+  });
+
+  it('preserves VS16 in environment values', () => {
+    expect(decodeContext('🌡️☀️').situational.environment).toEqual(['☀️']);
+  });
+
+  it('does not split ZWJ family sequences', () => {
+    expect(decodeContext('👥👨‍👩‍👧👶').situational.company).toEqual(['👨‍👩‍👧', '👶']);
+  });
+
+  it('accepts bare (VS16-less) dimension symbols per vep-011', () => {
+    expect(decodeContext('↔🌐').situational.proximity).toEqual(['🌐']);
+    expect(decodeContext('🌡☀').situational.environment).toEqual(['☀️']);
+  });
+
+  it('falls back to the raw part for unknown values', () => {
+    expect(decodeContext('⏰🦄').situational.time).toEqual(['🦄']);
+  });
+
+  it('round-trips every vocabulary value through encode/decode', () => {
+    for (const dim of SITUATIONAL_ORDER) {
+      const spec = SITUATIONAL_SPECS[dim];
+      if (spec.freeForm) continue;
+      for (const emoji of Object.keys(spec.values)) {
+        const ctx: VCPContext = { situational: { [dim]: [emoji] }, personal: {} };
+        expect(decodeContext(encodeContext(ctx))).toEqual(ctx);
+      }
+    }
+  });
+});
+
 describe('buildContext', () => {
   it('resolves situational names to emojis', () => {
     const ctx = buildContext({ time: 'morning', space: 'home' });

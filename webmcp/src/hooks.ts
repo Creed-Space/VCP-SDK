@@ -219,7 +219,7 @@ function validateHookDefinition(hook: HookDefinition): void {
 	if (!isRecord(hook)) {
 		throw new Error('Hook definition must be an object.');
 	}
-	if (!HOOK_NAME_PATTERN.test(hook.name)) {
+	if (typeof hook.name !== 'string' || !HOOK_NAME_PATTERN.test(hook.name)) {
 		throw new Error(
 			`Invalid hook name: '${hook.name}'. ` +
 				`Must match [a-z0-9_-]{1,64}.`

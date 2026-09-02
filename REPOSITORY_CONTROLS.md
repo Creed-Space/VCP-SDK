@@ -1,28 +1,27 @@
 # Repository security controls
 
-**Status:** repository security features applied; branch protection pending candidate integration
-**Observed:** 2026-08-15 through authenticated GitHub API changes and readback
+**Status:** repository security features and the desired `main` branch protection are applied
+**Observed:** 2026-09-02 through authenticated GitHub API readback (`gh api repos/Creed-Space/VCP-SDK/branches/main/protection`)
 
-The current `main` protection exists, but its required contexts are stale:
-`Python SDK (3.12)`, `Rust SDK`, `TypeScript / WebMCP SDK`, and
-`Validate JSON Schemas`. Conversation resolution, administrator enforcement,
-code-owner review, last-push approval, and signed commits are not required. No
-repository ruleset exists.
+The current `main` protection requires exactly the eleven contexts listed in
+`.github/repository-policy.json` `desired.required_checks` with strict
+up-to-date status checks, one approving review, stale-review dismissal,
+code-owner review, last-push approval, conversation resolution, and
+administrator enforcement; force pushes and deletions are blocked. No
+repository ruleset exists. CodeQL analyses for `actions`,
+`javascript-typescript`, `python`, and `rust` were uploaded on 2026-09-01.
 
 Private vulnerability reporting, Dependabot alerts and security updates, secret
 scanning, push protection, non-provider patterns, and validity checks are
 enabled. Default workflow permissions are read-only, Actions cannot approve
-pull requests, and repository metadata and topics are current. Code scanning
-reports no completed analysis before this candidate is integrated.
+pull requests, and repository metadata and topics are current.
 
-The candidate adds CodeQL and dependency-review workflows and records the
-intended final state in `.github/repository-policy.json`. Source files cannot
-safely replace branch protection. The stale protection is retained until the
-candidate is integrated so future context names cannot deadlock the present
-merge. An authorized repository administrator must apply the final policy after
-the candidate workflows produce their exact context names.
+`.github/repository-policy.json` records the desired state and the readback
+that matched it. Source files cannot replace branch protection, so the probe
+below remains the re-verification procedure whenever a workflow job is renamed
+or the policy changes.
 
-## Acceptance probe
+## Acceptance probe (re-verification)
 
 1. Read `.github/repository-policy.json` from the immutable candidate.
 2. Confirm every listed context has completed at least once on `main`.

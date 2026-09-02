@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check Python and Rust context encoding against core and extended fixtures."""
+"""Check Python, Rust, and WebMCP context encoding against core and extended fixtures."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 PYTHON_SRC = ROOT / "python" / "src"
 RUST_BINARY = ROOT / "rust" / "target" / "debug" / "vcp-cli"
+WEBMCP_RUNNER = ROOT / "webmcp" / "scripts" / "run-context.mjs"
 FIXTURES = (
     ROOT / "conformance" / "adaptation" / "context_encoding.json",
     ROOT / "conformance" / "adaptation" / "context_encoding_extended.json",
@@ -76,6 +77,28 @@ def rust_context(value: dict[str, Any]) -> dict[str, Any]:
     return json.loads(result.stdout)
 
 
+def webmcp_context(vector: dict[str, Any]) -> dict[str, Any]:
+    """Run one fixture vector through the packed WebMCP context module."""
+    payload = {key: vector[key] for key in ("input", "wire_input") if key in vector}
+    with tempfile.NamedTemporaryFile("w", suffix=".json", encoding="utf-8", delete=False) as handle:
+        path = Path(handle.name)
+        json.dump(payload, handle, ensure_ascii=False)
+    try:
+        result = subprocess.run(
+            ["node", str(WEBMCP_RUNNER), str(path)],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            timeout=10,
+            check=False,
+        )
+    finally:
+        path.unlink(missing_ok=True)
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip())
+    return json.loads(result.stdout)
+
+
 def assert_expected(case_id: str, actual: dict[str, Any], expected: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     checks = {
@@ -121,6 +144,12 @@ def main() -> int:
             cwd=ROOT,
             check=True,
         )
+        subprocess.run(
+            ["npm", "run", "build", "--silent"],
+            cwd=ROOT / "webmcp",
+            check=True,
+            timeout=120,
+        )
 
     failures: list[str] = []
     results: list[dict[str, Any]] = []
@@ -157,8 +186,17 @@ def main() -> int:
             else:
                 _, py = python_context(vector["input"])
                 rs = rust_context(vector["input"])
+            try:
+                web = webmcp_context(vector)
+            except RuntimeError as error:
+                failures.append(f"{case_id}: WebMCP rejected input: {error}")
+                web = {}
             failures.extend(f"Python {failure}" for failure in assert_expected(case_id, py, vector["expected"]))
             failures.extend(f"Rust {failure}" for failure in assert_expected(case_id, rs, vector["expected"]))
+            if web:
+                failures.extend(
+                    f"WebMCP {failure}" for failure in assert_expected(case_id, web, vector["expected"])
+                )
             for key in (
                 "wire",
                 "has_any",
@@ -169,12 +207,14 @@ def main() -> int:
             ):
                 if py.get(key) != rs.get(key):
                     failures.append(f"{case_id}: Python and Rust {key} differ")
-            results.append({"id": case_id, "python": py, "rust": rs})
+                if web and py.get(key) != web.get(key):
+                    failures.append(f"{case_id}: Python and WebMCP {key} differ")
+            results.append({"id": case_id, "python": py, "rust": rs, "webmcp": web})
 
     report = {
         "schema": "vcp-conformance-report/1",
         "profile": "context-parity",
-        "implementations": ["python", "rust"],
+        "implementations": ["python", "rust", "webmcp"],
         "fixture_sha256": {
             path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in FIXTURES
@@ -190,7 +230,7 @@ def main() -> int:
     if failures:
         print("\n".join(f"ERROR: {failure}" for failure in failures), file=sys.stderr)
         return 1
-    print(f"Context parity passed: {len(results)} cases across Python and Rust.")
+    print(f"Context parity passed: {len(results)} cases across Python, Rust, and WebMCP.")
     return 0
 
 

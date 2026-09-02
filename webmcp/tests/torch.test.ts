@@ -185,6 +185,15 @@ describe('TorchGenerator', () => {
 describe('TorchConsumer', () => {
 	const consumer = new TorchConsumer();
 
+	it('rejects a non-integer or negative sessionCount', () => {
+		const base = { qualityDescription: 'Good', primes: [], handedAt: '2026-04-01T00:00:00Z' };
+		expect(() => consumer.receiveTorch({ ...base, sessionCount: '500' as never })).toThrow(
+			TypeError,
+		);
+		expect(() => consumer.receiveTorch({ ...base, sessionCount: -3 })).toThrow(TypeError);
+		expect(() => consumer.receiveTorch({ ...base, sessionCount: 1.5 })).toThrow(TypeError);
+	});
+
 	it('sets standing to advisory on receive', () => {
 		const ctx = consumer.receiveTorch({
 			qualityDescription: 'Good',

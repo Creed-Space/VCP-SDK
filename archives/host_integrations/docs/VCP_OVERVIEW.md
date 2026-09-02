@@ -1,5 +1,7 @@
 # Value-Context Protocol (VCP) Specification
 
+> Archived host-integration document: internal relative links are intentionally left unresolved and may point at paths that were not carried into the archive.
+
 > Historical host-integration record: paths under `services/`, `api_routers/`, and feature-flag modules belong to the former host application and are not distributed by VCP-SDK.
 
 **Version**: 2.2.2
@@ -615,7 +617,7 @@ Emergency disable: `killswitch("vcp_full_stack_enabled")`
 | Export Integration | ✅ Integrated | `services/export_formatter.py` |
 | API Endpoints | ✅ Registered | `api_routers/vcp.py` via `router_registry.py` |
 | MCP Tools | ✅ Configured | `services/mcp/vcp_server.py` via `.mcp.json` |
-| OpenAPI Spec | ✅ Complete | `docs/openapi/vcp_actions.yaml` |
+| OpenAPI Spec | ✅ Complete | `archives/host_integrations/openapi/vcp_actions.yaml` |
 
 ---
 

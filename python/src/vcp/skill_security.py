@@ -12,6 +12,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import sys
 import tempfile
 import uuid
@@ -26,7 +27,12 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
-from .canonicalize import canonicalize_content, canonicalize_manifest, parse_json_strict
+from .canonicalize import (
+    canonicalize_content,
+    canonicalize_manifest,
+    parse_json_strict,
+    parse_rfc3339_utc,
+)
 from .trust import TrustConfig
 
 MAX_SKILL_MARKDOWN_FILES = 256
@@ -41,6 +47,16 @@ MAX_SKILL_VALIDITY = timedelta(days=90)
 # ---------------------------------------------------------------------------
 
 
+def _format_utc(value: datetime) -> str:
+    """Format an aware datetime as RFC 3339 UTC with a single trailing ``Z``."""
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+# Frontmatter ends at the first line consisting solely of ``---``; a ``---``
+# inside a YAML value does not terminate the block.
+_FRONTMATTER_RE = re.compile(r"\A---[ \t]*\r?\n(.*?)(?:\r?\n)?^---[ \t]*(?:\r?\n|\Z)", re.S | re.M)
+
+
 def _parse_frontmatter(content: str) -> dict[str, Any]:
     """Extract YAML frontmatter from markdown.
 
@@ -53,14 +69,13 @@ def _parse_frontmatter(content: str) -> dict[str, Any]:
     Returns:
         Parsed frontmatter as a dict, or empty dict if none found.
     """
-    if not content.startswith("---"):
+    match = _FRONTMATTER_RE.match(content)
+    if match is None:
         return {}
     try:
-        end = content.index("---", 3)
-    except ValueError:
-        return {}
-    raw = content[3:end]
-    parsed = yaml.safe_load(raw)
+        parsed = yaml.safe_load(match.group(1))
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid SKILL.md frontmatter: {exc}") from exc
     return parsed if isinstance(parsed, dict) else {}
 
 
@@ -284,9 +299,9 @@ def sign_skill(
             "key_id": key_id,
         },
         "timestamps": {
-            "iat": now.isoformat(),
-            "nbf": now.isoformat(),
-            "exp": (now + timedelta(days=expires_days)).isoformat(),
+            "iat": _format_utc(now),
+            "nbf": _format_utc(now),
+            "exp": _format_utc(now + timedelta(days=expires_days)),
             "jti": str(uuid.uuid4()),
         },
         "signature": {
@@ -425,14 +440,7 @@ def verify_skill(
         return False, "Invalid timestamps object"
 
     def parse_timestamp(field: str) -> datetime:
-        value = timestamps.get(field)
-        if not isinstance(value, str):
-            raise ValueError(f"{field} must be an RFC 3339 string")
-        normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
-        parsed = datetime.fromisoformat(normalized)
-        if parsed.tzinfo is None or parsed.utcoffset() is None:
-            raise ValueError(f"{field} must include a timezone")
-        return parsed.astimezone(timezone.utc)
+        return parse_rfc3339_utc(timestamps.get(field), field)
 
     try:
         iat = parse_timestamp("iat")

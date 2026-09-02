@@ -1,5 +1,7 @@
 # VCP Integration Documentation
 
+> Archived host-integration document: internal relative links are intentionally left unresolved and may point at paths that were not carried into the archive.
+
 > Historical host-integration record: paths under `services/`, `api_routers/`, and feature-flag modules belong to the former host application and are not distributed by VCP-SDK.
 
 **Version**: 2.0.0
@@ -188,7 +190,7 @@ mcp-cli call vcp/vcp_validate_token '{"token": "family.safe.guide"}'
 
 ### 5. GPT Actions (OpenAPI)
 
-**File**: `docs/openapi/vcp_actions.yaml`
+**File**: `archives/host_integrations/openapi/vcp_actions.yaml`
 
 Complete OpenAPI 3.1 spec for ChatGPT Actions integration.
 
@@ -327,7 +329,7 @@ pytest tests/ -k "vcp" -v
 | `services/export_formatter.py` | Export integration |
 | `api_routers/vcp.py` | API router |
 | `services/mcp/vcp_server.py` | MCP server |
-| `docs/openapi/vcp_actions.yaml` | OpenAPI spec |
+| `archives/host_integrations/openapi/vcp_actions.yaml` | OpenAPI spec |
 | `data/feature_flags.json` | Feature flags |
 | `services/prometheus_metrics.py` | Metrics |
 

@@ -222,10 +222,7 @@ class Hook:
         Raises:
             HookValidationError: If any validation check fails.
         """
-        if (
-            not isinstance(self.name, str)
-            or HOOK_NAME_PATTERN.fullmatch(self.name) is None
-        ):
+        if not isinstance(self.name, str) or HOOK_NAME_PATTERN.fullmatch(self.name) is None:
             raise HookValidationError(
                 f"Invalid hook name: '{self.name}'. Must match [a-z0-9_-]{{1,64}}"
             )

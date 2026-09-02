@@ -461,9 +461,7 @@ class TestPredicateEvaluation:
 class TestTimeoutHandling:
     """Test hook timeout enforcement."""
 
-    def test_slow_hook_aborts(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_slow_hook_aborts(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """A hook timeout must fail closed."""
 
         def slow_action(inp: HookInput) -> HookResult:
@@ -508,9 +506,7 @@ class TestTimeoutHandling:
 class TestExceptionHandling:
     """Test fail-closed hook exception handling."""
 
-    def test_exception_aborts_chain(
-        self, registry: HookRegistry, executor: HookExecutor
-    ) -> None:
+    def test_exception_aborts_chain(self, registry: HookRegistry, executor: HookExecutor) -> None:
         """Hook action exceptions must abort the chain."""
 
         def bad_action(inp: HookInput) -> HookResult:
@@ -585,12 +581,8 @@ class TestExceptionHandling:
             finished.set()
             return HookResult(status=ResultStatus.CONTINUE)
 
-        registry.register(
-            _make_hook(name="late", action=late_mutation, timeout_ms=5)
-        )
-        result = executor.execute(
-            HookType.PRE_INJECT, "s1", context, None, PreInjectEvent()
-        )
+        registry.register(_make_hook(name="late", action=late_mutation, timeout_ms=5))
+        result = executor.execute(HookType.PRE_INJECT, "s1", context, None, PreInjectEvent())
         assert result.status == "aborted"
         assert finished.wait(timeout=1)
         assert context == {"safe": True}
