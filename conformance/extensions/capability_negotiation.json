@@ -768,6 +768,145 @@
           }
         }
       }
+    },
+    {
+      "id": "invalid-identity-token",
+      "description": "A syntactically invalid VCP/I identity token yields a structured IDENTITY_INVALID error rather than an ack or a transport rejection.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
+          "extensions": [
+            "VCP-X-Personal"
+          ],
+          "identity": "not a token!!"
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-error",
+          "code": "IDENTITY_INVALID",
+          "message": "The supplied VCP/I identity token is invalid",
+          "retry_after": null
+        }
+      }
+    },
+    {
+      "id": "forward-compatible-core-feature-flags",
+      "description": "Additional boolean core-feature flags advertised by the server are echoed verbatim in the ack.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
+          "extensions": [
+            "VCP-X-Personal"
+          ]
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true,
+            "extra_flag": true
+          }
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-ack",
+          "version": "3.1",
+          "supported": [
+            "VCP-X-Personal"
+          ],
+          "unsupported": [],
+          "capabilities": {
+            "VCP-X-Personal": {
+              "decay": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true,
+            "extra_flag": true
+          }
+        }
+      }
+    },
+    {
+      "id": "non-boolean-core-feature-flag-rejected",
+      "description": "Additional core-feature entries must map strings to booleans; anything else is rejected before negotiation.",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "3.1",
+          "min_version": "1.0",
+          "extensions": [
+            "VCP-X-Personal"
+          ]
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true,
+            "extra_flag": "yes"
+          }
+        }
+      },
+      "expected": {
+        "rejected": true
+      }
     }
   ]
 }

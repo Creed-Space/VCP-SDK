@@ -26,7 +26,8 @@
         "refusal_boundary",
         "testimony",
         "creed_adoption",
-        "compliance_attestation"
+        "compliance_attestation",
+        "competence_attestation"
       ],
       "default": "constitution",
       "description": "Type of VCP token contained in this bundle"
@@ -263,7 +264,8 @@
                   "type": "string",
                   "format": "date-time"
                 }
-              }
+              },
+              "additionalProperties": false
             }
           ],
           "description": "Stapled non-revocation proof (nullable)"
@@ -381,6 +383,7 @@
             ]
           },
           "minItems": 6,
+          "uniqueItems": true,
           "description": "Fields included in signature"
         },
         "threshold": {
@@ -402,7 +405,8 @@
                 "type": "string",
                 "pattern": "^base64:[A-Za-z0-9+/=]+$"
               }
-            }
+            },
+            "additionalProperties": false
           },
           "description": "Individual signatures (for multisig)"
         }

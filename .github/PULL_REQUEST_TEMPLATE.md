@@ -16,7 +16,7 @@ Closes #
 
 - [ ] New feature
 - [ ] Bug fix
-- [ ] Specification change
+- [ ] Schema synchronization from VCP-Spec (link the VEP / Spec commit)
 - [ ] Documentation update
 - [ ] Refactor / cleanup
 - [ ] CI / tooling
@@ -29,9 +29,17 @@ Closes #
 - [ ] All existing tests pass
 - [ ] Linting passes (`ruff check` / `cargo clippy` / `npm run check`)
 - [ ] Documentation updated (if applicable)
-- [ ] JSON schemas updated (if specification change)
 
 <!-- Describe how the changes were tested -->
+
+## Evidence
+
+<!-- Required by CONTRIBUTING.md for candidate changes -->
+
+- Candidate commit:
+- Exact commands run:
+- Dependency-audit result:
+- Remaining human / publication gates:
 
 ## SDK Compatibility
 

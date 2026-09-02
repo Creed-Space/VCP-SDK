@@ -68,8 +68,13 @@ interface VCPWebMCPConfig {
   transmissionSummary?: (ctx: Record<string, unknown>) => TransmissionSummary;
   onToolCall?: (toolName: string) => void;
   onRegistrationError?: (failure: WebMCPRegistrationFailure) => void;
+  chatTimeoutMs?: number;          // Default: 30000 (1-300000)
+  registrationTimeoutMs?: number;  // Default: 5000 (1-30000)
 }
 ```
+
+Out-of-range timeout values throw a `RangeError`/`TypeError` at
+`createVCPTools()` / `registerVCPTools()` time.
 
 ## Agent Activity Indicator
 

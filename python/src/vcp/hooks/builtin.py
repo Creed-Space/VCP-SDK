@@ -53,7 +53,11 @@ def _persona_select_action(hook_input: HookInput) -> HookResult:
         pass
 
     if not is_vcp_context and isinstance(context, dict):
-        raw = context.get("company", [])
+        # Accept both the flat legacy shape and VCPContext.to_json()
+        # (which nests dimensions under "situational").
+        situational = context.get("situational")
+        source = situational if isinstance(situational, dict) else context
+        raw = source.get("company", [])
         if isinstance(raw, str):
             company_values = [raw]
         elif isinstance(raw, list):
@@ -91,12 +95,17 @@ def _adherence_escalate_action(hook_input: HookInput) -> HookResult:
 
     is_emergency = False
 
+    emergency_states = {"emergency", "crisis", "critical"}
     if isinstance(event, TransitionEvent):
-        emergency_states = {"emergency", "crisis", "critical"}
-        is_emergency = event.new_state.lower() in emergency_states
+        # StateTracker puts the severity in `trigger` and the encoded wire
+        # string in `new_state`; accept either signal.
+        is_emergency = (
+            event.trigger.lower() in emergency_states or event.new_state.lower() in emergency_states
+        )
     elif isinstance(event, dict):
-        new_state = event.get("new_state", "")
-        is_emergency = new_state.lower() in {"emergency", "crisis", "critical"}
+        new_state = str(event.get("new_state", ""))
+        trigger = str(event.get("trigger", ""))
+        is_emergency = new_state.lower() in emergency_states or trigger.lower() in emergency_states
 
     if is_emergency:
         hook_input.chain_state["adherence_escalated"] = True

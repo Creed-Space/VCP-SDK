@@ -98,3 +98,10 @@ claiming revocation must also provide a non-empty reason and a timezone-qualifie
 RFC 3339 `revoked_at`. Integrators should treat this as a behavior change and
 must complete the semver review in the coordinated release ledger before
 publishing packages.
+
+## CSM-1 encoding tiers
+
+The Python, Rust and WebMCP implementations support the NANO and MICRO CSM-1
+tiers. The COMPACT tier (`CS1|<persona>|<level>|<token>|<scopes>`, VCP/S §2.8)
+is not implemented in this repository: parsers reject COMPACT input. The
+standalone `vcp-sdk` package and VCP-Inspector parse COMPACT.

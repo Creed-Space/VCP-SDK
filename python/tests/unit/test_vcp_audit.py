@@ -9,7 +9,7 @@ Verifies:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from vcp.audit import AuditEntry, AuditLevel, AuditLogger, _hash_for_privacy
 
@@ -21,7 +21,7 @@ from vcp.audit import AuditEntry, AuditLevel, AuditLogger, _hash_for_privacy
 def _make_entry(level: AuditLevel = AuditLevel.STANDARD, **kwargs) -> AuditEntry:
     """Create a test audit entry with sensible defaults."""
     defaults = dict(
-        timestamp=datetime(2026, 1, 10, 12, 0, 0),
+        timestamp=datetime(2026, 1, 10, 12, 0, 0, tzinfo=timezone.utc),
         session_id_hash=_hash_for_privacy("sess-1"),
         verification_result="VALID",
         checks_passed=["size", "schema", "signature"],
@@ -92,6 +92,10 @@ class TestAuditTierBoundaries:
     def test_standard_includes_timestamp(self) -> None:
         d = _make_entry(AuditLevel.STANDARD).to_dict()
         assert "timestamp" in d
+        # RFC 3339 UTC with a single trailing Z that round-trips
+        assert d["timestamp"].endswith("Z") and "+00:00" not in d["timestamp"]
+        parsed = datetime.fromisoformat(d["timestamp"].replace("Z", "+00:00"))
+        assert parsed == datetime(2026, 1, 10, 12, 0, 0, tzinfo=timezone.utc)
 
     def test_standard_includes_session_and_issuer(self) -> None:
         d = _make_entry(AuditLevel.STANDARD).to_dict()

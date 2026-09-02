@@ -1,5 +1,7 @@
 # VCP/A Context Data Flow
 
+> Archived host-integration document: internal relative links are intentionally left unresolved and may point at paths that were not carried into the archive.
+
 **Version**: 1.3.0
 **Date**: 2026-01-12
 **Status**: ✅ Implementation Reference (Verified + Redis Persistence)

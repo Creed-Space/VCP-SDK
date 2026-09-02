@@ -29,6 +29,14 @@ function minutesAgo(minutes: number, from?: Date): Date {
 // ---------------------------------------------------------------------------
 
 describe('computeDecayedIntensity', () => {
+	it('throws on an unparseable declaredAt string', () => {
+		expect(() => computeDecayedIntensity(5, 'not-a-date', BASE_CONFIG)).toThrow(RangeError);
+		expect(() => computeLifecycleState(5, 'not-a-date', BASE_CONFIG)).toThrow(RangeError);
+		expect(() =>
+			computeDecayedIntensity(5, new Date().toISOString(), BASE_CONFIG, new Date('bad')),
+		).toThrow(RangeError);
+	});
+
 	it('returns declared intensity when pinned', () => {
 		const result = computeDecayedIntensity(
 			5,

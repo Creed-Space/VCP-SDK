@@ -35,6 +35,7 @@ schema-sync:
 
 python:
 	cd python && $(PYTHON) -m ruff check src tests
+	cd python && $(PYTHON) -m ruff format --check src tests
 	cd python && $(PYTHON) -m mypy src/vcp
 	cd python && $(PYTHON) -m pytest -q
 	cd python && $(PYTHON) -m build
@@ -87,7 +88,7 @@ packages:
 audits:
 	npm audit --audit-level=moderate
 	cd python && $(PYTHON) -m pip_audit --requirement requirements-dev.lock
-	cd rust && $(CARGO_AUDIT) --file Cargo.lock
+	cd rust && $(CARGO_AUDIT) --deny yanked --file Cargo.lock
 	cd webmcp && npm audit --audit-level=moderate
 
 all: validate python rust webmcp examples packages audits

@@ -16,11 +16,11 @@ This file is generated from `conformance/coverage-manifest.json`. Run
 
 | Feature suite | Version | Maturity | Cases | Python | Rust | WebMCP |
 |:---|:---|:---|---:|:---|:---|:---|
-| adaptation/context_encoding | 3.2.0 | conformance-candidate | 9 | full | full | not_applicable |
-| adaptation/context_encoding_extended | 3.2.0 | conformance-candidate | 12 | full | full | not_applicable |
+| adaptation/context_encoding | 3.2.0 | conformance-candidate | 9 | full | full | full |
+| adaptation/context_encoding_extended | 3.2.0 | conformance-candidate | 12 | full | full | full |
 | adaptation/messaging | 2.0.0 | conformance-candidate | 41 | full | unsupported | not_applicable |
 | adaptation/state_machine | 1.0.0 | conformance-candidate | 14 | full | unsupported | not_applicable |
-| extensions/capability_negotiation | 2.0.0 | conformance-candidate | 12 | full | full | full |
+| extensions/capability_negotiation | 2.0.0 | conformance-candidate | 15 | full | full | full |
 | extensions/competence | 1.0.0 | conformance-candidate | 5 | full | unsupported | not_applicable |
 | extensions/consensus_voting | 1.0.0 | conformance-candidate | 8 | full | full | not_applicable |
 | extensions/personal_state | 1.0.0 | conformance-candidate | 15 | full | full | not_applicable |

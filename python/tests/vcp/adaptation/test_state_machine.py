@@ -88,12 +88,13 @@ class TestTransitions:
         assert before_boundary["final_state"] == "TRANSITIONING"
 
     def test_signal_loss_requires_duration_strictly_above_threshold(self) -> None:
-        assert _evaluate(
-            "ACTIVE", {"type": "signal_loss", "silence_duration_seconds": 30}
-        )["final_state"] == "ACTIVE"
-        assert _evaluate(
-            "ACTIVE", {"type": "signal_loss", "silence_duration_seconds": 30.001}
-        ) == {
+        assert (
+            _evaluate("ACTIVE", {"type": "signal_loss", "silence_duration_seconds": 30})[
+                "final_state"
+            ]
+            == "ACTIVE"
+        )
+        assert _evaluate("ACTIVE", {"type": "signal_loss", "silence_duration_seconds": 30.001}) == {
             "final_state": "DEGRADED",
             "last_known_context_saved": True,
         }
@@ -102,22 +103,25 @@ class TestTransitions:
         assert _evaluate("DEGRADED", {"type": "tick"}, {"last_known_context": None}) == {
             "final_state": "IDLE"
         }
-        assert _evaluate(
-            "DEGRADED", {"type": "tick"}, {"last_known_context": "context"}
-        )["final_state"] == "DEGRADED"
+        assert (
+            _evaluate("DEGRADED", {"type": "tick"}, {"last_known_context": "context"})[
+                "final_state"
+            ]
+            == "DEGRADED"
+        )
 
     def test_signal_stability_boundary_and_idle_activation(self) -> None:
-        assert _evaluate(
-            "IDLE", {"type": "context_signal", "stable_for_seconds": 2.999}
-        ) == {"final_state": "IDLE", "transition_occurred": False}
-        assert _evaluate(
-            "IDLE", {"type": "context_signal", "stable_for_seconds": 3}
-        ) == {"final_state": "ACTIVE", "constitutions_selected": True}
+        assert _evaluate("IDLE", {"type": "context_signal", "stable_for_seconds": 2.999}) == {
+            "final_state": "IDLE",
+            "transition_occurred": False,
+        }
+        assert _evaluate("IDLE", {"type": "context_signal", "stable_for_seconds": 3}) == {
+            "final_state": "ACTIVE",
+            "constitutions_selected": True,
+        }
 
     def test_restored_stable_signal_transitions_degraded_via_transitioning(self) -> None:
-        assert _evaluate(
-            "DEGRADED", {"type": "context_signal", "stable_for_seconds": 3}
-        ) == {
+        assert _evaluate("DEGRADED", {"type": "context_signal", "stable_for_seconds": 3}) == {
             "intermediate_state": "TRANSITIONING",
             "final_state": "ACTIVE",
             "transition_path": ["DEGRADED", "TRANSITIONING", "ACTIVE"],
@@ -167,9 +171,7 @@ class TestTransitions:
             {"type": "context_signal", "stable_for_seconds": 3},
         ],
     )
-    def test_irrelevant_valid_event_is_a_deterministic_noop(
-        self, event: dict[str, object]
-    ) -> None:
+    def test_irrelevant_valid_event_is_a_deterministic_noop(self, event: dict[str, object]) -> None:
         assert _evaluate("CONFLICT", event) == {
             "final_state": "CONFLICT",
             "transition_occurred": False,
@@ -226,7 +228,9 @@ class TestMalformedInputs:
     def test_preconditions_must_be_an_object(self, preconditions: object) -> None:
         with pytest.raises(TypeError, match="preconditions"):
             VCPStateMachine().evaluate(
-                "ACTIVE", {"type": "tick"}, preconditions  # type: ignore[arg-type]
+                "ACTIVE",
+                {"type": "tick"},
+                preconditions,  # type: ignore[arg-type]
             )
 
     @pytest.mark.parametrize(

@@ -1,7 +1,8 @@
 """VCP 3.1 capability negotiation.
 
 Implements the canonical ``vcp-hello`` / ``vcp-ack`` handshake defined by
-``specs/core/capability-negotiation.md``.
+the VCP-Spec capability-negotiation document and exercised by
+``conformance/extensions/capability_negotiation.json``.
 """
 
 from __future__ import annotations
@@ -79,11 +80,7 @@ def _requested_extensions(value: Any) -> list[str]:
     requested: list[str] = []
     seen: set[str] = set()
     for extension in value:
-        if (
-            not isinstance(extension, str)
-            or not extension
-            or len(extension) > MAX_EXTENSION_LENGTH
-        ):
+        if not isinstance(extension, str) or not extension or len(extension) > MAX_EXTENSION_LENGTH:
             raise ValueError("extension requests must be strings of 1 to 128 characters")
         if extension in seen:
             raise ValueError("extension requests must be unique")
@@ -117,9 +114,7 @@ class VCPHello:
         ):
             raise ValueError("identity must be a string of at most 2048 characters or null")
         if self.client_id is not None and (
-            not isinstance(self.client_id, str)
-            or not self.client_id
-            or len(self.client_id) > 256
+            not isinstance(self.client_id, str) or not self.client_id or len(self.client_id) > 256
         ):
             raise ValueError("client_id must be a string of 1 to 256 characters")
 
@@ -247,11 +242,7 @@ class VCPError:
 
 def _server_versions(server: dict[str, Any]) -> list[str]:
     values = server.get("supported_versions")
-    if (
-        not isinstance(values, list)
-        or not values
-        or len(values) > MAX_SUPPORTED_VERSIONS
-    ):
+    if not isinstance(values, list) or not values or len(values) > MAX_SUPPORTED_VERSIONS:
         raise ValueError(
             "server.supported_versions must be a non-empty array of at most 64 entries"
         )
@@ -377,15 +368,11 @@ def negotiate(
             raise ValueError("server capabilities must be booleans or capability objects")
     server = {
         "supported_versions": (
-            ["1.0", "2.0", "3.0", "3.1"]
-            if supported_versions is None
-            else supported_versions
+            ["1.0", "2.0", "3.0", "3.1"] if supported_versions is None else supported_versions
         ),
         "extensions": extensions,
         "core_features": (
-            {name: False for name in CORE_FEATURE_NAMES}
-            if core_features is None
-            else core_features
+            {name: False for name in CORE_FEATURE_NAMES} if core_features is None else core_features
         ),
     }
     result = negotiate_handshake(hello.to_dict(), server)

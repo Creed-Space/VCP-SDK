@@ -151,7 +151,7 @@ standalone Python candidate require separate, candidate-bound evidence.
 make property PYTHON=/path/to/locked/python
 make performance-smoke PYTHON=/path/to/locked/python
 make performance-full PYTHON=/path/to/locked/python
-cargo check --manifest-path rust/fuzz/Cargo.toml
+cargo check --locked --manifest-path rust/fuzz/Cargo.toml
 ```
 
 CI additionally runs bounded fuzz targets on pull requests and longer scheduled
@@ -319,7 +319,11 @@ attested digest. A mismatch stops the release and requires a new version.
 The release authority chooses an approved signing mechanism. At minimum,
 retain:
 
-1. Signed Git tag verification for every released repository commit.
+1. Signed Git tag verification for every released repository commit. The
+   publish workflow imports the ASCII-armored public keys held in the
+   protected `VCP_RELEASE_SIGNING_KEYS` repository/environment variable before
+   running `git verify-tag`; rotate a key by replacing that variable and
+   recording the new fingerprint in the review ledger.
 2. SHA-256 inventories for source archives, wheels, sdists, crates, npm
    tarballs, canonical documents, and deployment bundles.
 3. Registry receipts and registry-reported checksums where available.

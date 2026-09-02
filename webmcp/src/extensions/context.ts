@@ -365,26 +365,47 @@ export function encodeContext(ctx: VCPContext): string {
 
 // ── Wire decode ──────────────────────────────────────────────────────────
 
-// Regex copied from the Python decoder. Handles most emoji + ZWJ sequences.
-const EMOJI_REGEX = new RegExp(
-  '[\\u{1F300}-\\u{1F9FF}]' +
-    '|[\\u{1F600}-\\u{1F64F}]' +
-    '|[\\u{1F680}-\\u{1F6FF}]' +
-    '|[\\u{1F1E0}-\\u{1F1FF}]' +
-    '|[\\u{2600}-\\u{26FF}]' +
-    '|[\\u{2700}-\\u{27BF}]' +
-    '|[\\u{25A0}-\\u{25FF}]' +
-    '|\\u{2B50}' +
-    '|\\u{274C}' +
-    '|\\u{2139}' +
-    '|\\u{25CB}' +
-    '|(?:[\\u{1F468}-\\u{1F469}][\\u{200D}]?)+[\\u{1F466}-\\u{1F469}]?',
-  'gu',
-);
+const VS16 = '\uFE0F';
 
-function extractEmojis(s: string): string[] {
-  const matches = s.match(EMOJI_REGEX);
-  return matches ? [...matches] : [];
+/**
+ * Return the content after a dimension symbol, accepting both the canonical
+ * VS16-qualified symbol and its bare form (fixture vep-011: parsers MUST
+ * accept both). Mirrors the Python `_after_dimension_symbol`.
+ */
+function afterDimensionSymbol(part: string, symbol: string): string | null {
+  const candidates = [...new Set([symbol, symbol.replaceAll(VS16, '')])].sort(
+    (a, b) => b.length - a.length,
+  );
+  for (const candidate of candidates) {
+    if (part.startsWith(candidate)) return part.slice(candidate.length);
+  }
+  return null;
+}
+
+/**
+ * Decode a finite vocabulary without splitting ZWJ sequences or dropping
+ * VS16-qualified symbols. Mirrors the Python `_extract_known_values`: the
+ * scanner takes the longest alias at each position and returns [] as soon as
+ * an unknown value is encountered so the caller can fall back to the raw part.
+ */
+function extractKnownValues(raw: string, spec: SituationalDimensionSpec): string[] {
+  const aliases: Array<[alias: string, canonical: string]> = [];
+  for (const canonical of Object.keys(spec.values)) {
+    aliases.push([canonical, canonical]);
+    const bare = canonical.replaceAll(VS16, '');
+    if (bare !== canonical) aliases.push([bare, canonical]);
+  }
+  aliases.sort((a, b) => b[0].length - a[0].length);
+
+  const values: string[] = [];
+  let cursor = 0;
+  while (cursor < raw.length) {
+    const match = aliases.find(([alias]) => raw.startsWith(alias, cursor));
+    if (!match) return [];
+    values.push(match[1]);
+    cursor += match[0].length;
+  }
+  return values;
 }
 
 export function decodeContext(encoded: string): VCPContext {
@@ -403,13 +424,13 @@ export function decodeContext(encoded: string): VCPContext {
     if (!part) continue;
     for (const dim of SITUATIONAL_ORDER) {
       const spec = SITUATIONAL_SPECS[dim];
-      if (part.startsWith(spec.symbol)) {
-        const raw = part.slice(spec.symbol.length);
+      const raw = afterDimensionSymbol(part, spec.symbol);
+      if (raw !== null) {
         if (!raw) break;
         if (spec.freeForm) {
           situational[dim] = [raw];
         } else {
-          const values = extractEmojis(raw);
+          const values = extractKnownValues(raw, spec);
           situational[dim] = values.length > 0 ? values : [raw];
         }
         break;
@@ -435,7 +456,11 @@ export function decodeContext(encoded: string): VCPContext {
   return { situational, personal };
 }
 
-// ── JSON shape (matches schemas/vcp-adaptation-context.schema.json v3) ───
+// ── JSON shape ───────────────────────────────────────────────────────────
+// VCPContextJSON is the cross-SDK serialization shape shared with the Python
+// `VCPContext.to_json()` output and the conformance fixtures' `input` objects.
+// It is NOT the `parsed` object of schemas/vcp-adaptation-context.schema.json
+// (that document wraps the wire string as `context` and omits empty arrays).
 
 export interface VCPContextJSON {
   situational: Record<string, string[]>;

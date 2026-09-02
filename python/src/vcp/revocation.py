@@ -22,6 +22,8 @@ from enum import Enum
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
+from .canonicalize import parse_rfc3339_utc
+
 logger = logging.getLogger(__name__)
 
 # Maximum response size: 320KB
@@ -95,14 +97,10 @@ def _parse_rfc3339(value: Any, field: str) -> datetime:
     """Parse a required, timezone-qualified RFC 3339 timestamp."""
     if not isinstance(value, str) or not _RFC3339_RE.fullmatch(value):
         raise RevocationError(f"CRL '{field}' must be an RFC 3339 string with timezone")
-    normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
     try:
-        parsed = datetime.fromisoformat(normalized)
+        return parse_rfc3339_utc(value, field)
     except ValueError as exc:
         raise RevocationError(f"CRL '{field}' must be an RFC 3339 string with timezone") from exc
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
-        raise RevocationError(f"CRL '{field}' must include a timezone")
-    return parsed.astimezone(timezone.utc)
 
 
 def _is_private_ip(ip_str: str) -> bool:

@@ -6,7 +6,7 @@ Runnable examples demonstrating the VCP SDK across Python and Rust.
 
 ```bash
 # Install the SDK and the optional MCP runtime in editable mode
-cd python && uv pip install -e ".[mcp]"
+cd python && python -m pip install -e ".[mcp]"
 
 # Run individual examples
 python ../examples/python/01_parse_token.py
@@ -22,7 +22,7 @@ python ../examples/python/06_async_mcp.py
 | `01_parse_token.py` | VCP/I token parsing, properties, pattern matching |
 | `02_verify_bundle.py` | Bundle creation, trust config, orchestrator verification |
 | `03_compose.py` | Composing multiple constitutions with conflict detection |
-| `04_context_encoding.py` | VCP/A Enneagram context encoding and decoding |
+| `04_context_encoding.py` | VCP/A situational and personal-state context encoding and decoding |
 | `05_full_pipeline.py` | End-to-end: parse, verify, and inject into model context |
 | `06_async_mcp.py` | Async MCP tool discovery and a deadline-bounded tool call |
 

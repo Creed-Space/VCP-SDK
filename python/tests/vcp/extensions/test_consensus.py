@@ -46,9 +46,7 @@ class TestBallot:
             ("v1", [[""]]),
         ],
     )
-    def test_malformed_ballot_shape_is_rejected(
-        self, voter_id: object, rankings: object
-    ) -> None:
+    def test_malformed_ballot_shape_is_rejected(self, voter_id: object, rankings: object) -> None:
         with pytest.raises(ValueError):
             Ballot(voter_id=voter_id, rankings=rankings)  # type: ignore[arg-type]
 

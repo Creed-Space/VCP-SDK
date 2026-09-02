@@ -6,7 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Version headings in this file describe repository metadata for source-only
+candidates; no registry release or `vX.Y.Z` tag has been published yet (see the
+README publication-state note).
+
 ### Added
+- `vcp-mcp-server` console script and `python/src/vcp/mcp_server.py`, exposing
+  the SDK through the `[mcp]` extra with JSON-schema-validated tool inputs.
+- Rust `vcp_core::strict_json` and hardened Python `parse_json_strict`
+  (duplicate keys, non-finite constants, and overflowing numeric literals such
+  as `1e400` are rejected before signatures are considered).
+- Shared `parse_rfc3339_utc` helper used by bundle, trust, revocation, and skill
+  manifest parsing so nanosecond fractions parse identically on Python 3.10+.
+  Timestamps must now match the RFC 3339 grammar (`YYYY-MM-DDTHH:MM:SS[.frac]`
+  plus `Z` or `±HH:MM`); looser `fromisoformat` inputs such as date-only values
+  or colon-less offsets are rejected.
+- WebMCP `registration.ts` cleanup contract and polyfill loader changes;
+  `conformance/runners/context_parity.py` now also executes the WebMCP context
+  encoder/decoder (`webmcp/scripts/run-context.mjs`), and the coverage manifest
+  records those vectors as checked for WebMCP.
+- Capability-negotiation fixtures for an invalid identity token
+  (`IDENTITY_INVALID`), forward-compatible boolean core-feature flags, and the
+  rejection of non-boolean core-feature entries.
+- `schemas/vcp-conformance-aggregate-report.schema.json`; updates to the
+  manifest v1, messaging v2.0, and CSM-1 schema copies.
+- Mutation, fuzz, performance, property, CodeQL, dependency-review, and
+  reproducible release/attestation workflows.
+- `AuditLogger(privacy_salt=...)` and `AuditLogger.track_exported_path()` so
+  operators can make GDPR purges match across process restarts; the default
+  per-process salt only covers exports made by the same process.
+- `ContextEncoder.encode(..., strict=True)`; unknown situational values now
+  raise `ValueError` instead of being dropped (pass `strict=False` for the old
+  behaviour).
 - Rust live HTTPS transport for online status and CRL revocation checks, with
   rustls hostname verification, public address resolution and pinning, disabled
   redirects, proxies, retries, and decompression, plus bounded headers and bodies.
@@ -16,6 +47,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   fail-closed while no longer representing an unconfirmed result as revoked.
 
 ### Changed
+- `Manifest.from_dict` validates the manifest shape (`vcp_version == "2.0"`,
+  UUID `jti`, positive integer `token_count`, supported tokenizer, string
+  fields) and `BundleBuilder.with_expires_days` accepts 1 to 90 days only.
+- `TokenType.COMPETENCE_ATTESTATION` wire value is now `competence_attestation`
+  (Python and TypeScript) and the manifest v2 schema lists it; the schema also
+  requires unique `signed_fields` and closed `signers[]` / `stapled_proof`
+  objects.
+- `ContextEncodeRequest` rejects unknown fields and `DecisionType` is aligned
+  across the PDP and enforcement modules.
+- `StateTracker` treats EMBODIMENT `🛑` (`emergency_stop`) as an emergency and
+  reports personal-state band changes as transitions; the built-in
+  `adherence_escalate` and `persona_select` hooks now fire on the events
+  `StateTracker` actually emits.
+- `RefusalBoundaryPlugin` in `ESCALATE` mode escalates (rather than abstains)
+  when no bundle is present; `AdherenceLevelPlugin` requires an integer
+  adherence level in 0-5.
+- WebMCP `decodeContext` uses vocabulary-based scanning (VS16 preserved, ZWJ
+  sequences intact, bare dimension symbols accepted per fixture vep-011);
+  `negotiate()` returns `IDENTITY_INVALID` for malformed identity tokens and
+  echoes extra boolean core features like the native SDKs; `HookRegistry`,
+  `TorchConsumer.receiveTorch`, `computeDecayedIntensity`, and
+  `createVCPTools({personas})` validate their inputs.
+- WebMCP package renamed from `@vcp/webmcp` to `@creed-space/vcp-sdk` (applied
+  in 4.2.0; recorded here because the 4.2.0 entry omitted it).
 - Online status responses must echo the requested JTI and issuer. Confirmed
   revocations must include a non-empty reason and a strict RFC 3339 timestamp.
 - The Python HTTPS transport now enforces JSON content types, identity encoding,
@@ -38,6 +93,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **JSON Schema v3.2** — `schemas/vcp-adaptation-context.schema.json` upgraded from v2 to v3.2 with nested `parsed.situational` / `parsed.personal` shape, `conformance_level` enum field, and per-dimension value definitions.
 
 ### Changed
+- WebMCP package renamed from `@vcp/webmcp` to `@creed-space/vcp-sdk`; imports
+  and the `/polyfill` subpath must be updated.
 - **CULTURE values** are now communication styles per CSM-1 (high_context, low_context, formal, casual, mixed), not nationalities. The nationality vocabulary was never in spec and is rejected by the v3.2 encoders.
 - Python `VCPContext` refactored from a plain `@dataclass` to a class with `__slots__` and backwards-compatible `dimensions=` constructor kwarg (aliases `situational=`).
 - Python exports `SituationalDimension` and `PersonalStateDimension` from `vcp.adaptation`; `Dimension` remains as a backwards-compat alias for `SituationalDimension`.
@@ -103,7 +160,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 - **VCP Specification v1.1** -- R-line (Line 8) for real-time personal state in CSM-1 tokens
 - **Rust SDK** (`vcp-core`, `vcp-wasm`, `vcp-cli`) -- High-performance parsing with `no_std` support and WASM bindings
-- **TypeScript/WebMCP SDK** (`@creed-space/vcp-sdk`) -- Browser-side VCP tool registration via `navigator.modelContext` (Chrome 145+)
+- **TypeScript/WebMCP SDK** (`@vcp/webmcp`, renamed to `@creed-space/vcp-sdk` in 4.2.0) -- Browser-side VCP tool registration via `navigator.modelContext` (Chrome 145+)
 - MCP-B polyfill for non-Chrome browsers
 - Five WebMCP tools: `vcp_chat`, `vcp_build_token`, `vcp_parse_token`, `vcp_transmission_summary`, `vcp_list_personas`
 - JSON Schema definitions for all protocol layers
@@ -131,10 +188,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Dependabot configuration for all package ecosystems
 - Comprehensive README with architecture diagrams, quick-start guides, and full documentation index
 
-[4.2.0]: https://github.com/Creed-Space/VCP-SDK/compare/v4.1.0...v4.2.0
-[4.1.0]: https://github.com/Creed-Space/VCP-SDK/compare/v4.0.0...v4.1.0
-[4.0.0]: https://github.com/Creed-Space/VCP-SDK/compare/v3.1.0...v4.0.0
-[Unreleased]: https://github.com/Creed-Space/VCP-SDK/compare/v4.2.0...HEAD
-[3.1.0]: https://github.com/Creed-Space/VCP-SDK/compare/v1.1.0...v3.1.0
-[1.1.0]: https://github.com/Creed-Space/VCP-SDK/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/Creed-Space/VCP-SDK/releases/tag/v1.0.0
+<!-- No vX.Y.Z tags exist yet; links use the commits that set each version. -->
+[Unreleased]: https://github.com/Creed-Space/VCP-SDK/compare/4367ca4...HEAD
+[4.2.0]: https://github.com/Creed-Space/VCP-SDK/commit/4367ca4
+[4.1.0]: https://github.com/Creed-Space/VCP-SDK/commits/4367ca4/CHANGELOG.md
+[4.0.0]: https://github.com/Creed-Space/VCP-SDK/commits/4367ca4/CHANGELOG.md
+[3.1.0]: https://github.com/Creed-Space/VCP-SDK/commits/4367ca4/CHANGELOG.md
+[1.1.0]: https://github.com/Creed-Space/VCP-SDK/commit/589db58
+[1.0.0]: https://github.com/Creed-Space/VCP-SDK/commits/589db58/CHANGELOG.md

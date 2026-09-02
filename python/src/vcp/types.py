@@ -85,7 +85,7 @@ class TokenType(Enum):
     TESTIMONY = "testimony"
     CREED_ADOPTION = "creed_adoption"
     COMPLIANCE_ATTESTATION = "compliance_attestation"
-    COMPETENCE_ATTESTATION = "COMPETENCE_ATTESTATION"
+    COMPETENCE_ATTESTATION = "competence_attestation"
 
 
 class EnforcementMode(Enum):

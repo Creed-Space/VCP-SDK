@@ -14,7 +14,12 @@ from typing import Any
 
 import rfc8785
 
-from .canonicalize import canonicalize_manifest, compute_content_hash, parse_json_strict
+from .canonicalize import (
+    canonicalize_manifest,
+    compute_content_hash,
+    parse_json_strict,
+    parse_rfc3339_utc,
+)
 from .types import (
     AttestationType,
     Budget,
@@ -55,16 +60,51 @@ def _format_utc_datetime(value: datetime, field_name: str) -> str:
 
 def _parse_utc_datetime(value: Any, field_name: str) -> datetime:
     """Parse an RFC 3339 datetime and normalize it to aware UTC."""
-    if not isinstance(value, str):
-        raise ValueError(f"{field_name} must be an RFC 3339 string")
-    normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
+    return parse_rfc3339_utc(value, field_name)
+
+
+_MANIFEST_TOKENIZERS = frozenset({"cl100k_base", "p50k_base", "r50k_base", "gpt2"})
+
+
+def _validate_manifest_shape(data: dict[str, Any]) -> None:
+    """Enforce the schema constraints that dataclass construction cannot.
+
+    Mirrors the type/const rules of ``schemas/vcp-manifest-v2.schema.json``
+    so that a malformed manifest fails as a schema error instead of surfacing
+    later as an unrelated verification result.
+    """
+    if not isinstance(data, dict):
+        raise ValueError("manifest must be an object")
+    if data.get("vcp_version") != "2.0":
+        raise ValueError("manifest.vcp_version must be '2.0'")
+    sections = {
+        "bundle": ("id", "version", "content_hash"),
+        "issuer": ("id", "public_key", "key_id"),
+        "timestamps": ("iat", "nbf", "exp", "jti"),
+        "safety_attestation": ("auditor", "auditor_key_id", "reviewed_at", "signature"),
+        "signature": ("algorithm", "value"),
+    }
+    for section, fields in sections.items():
+        block = data.get(section)
+        if not isinstance(block, dict):
+            raise ValueError(f"manifest.{section} must be an object")
+        for name in fields:
+            if not isinstance(block.get(name), str) or not block[name]:
+                raise ValueError(f"manifest.{section}.{name} must be a non-empty string")
     try:
-        parsed = datetime.fromisoformat(normalized)
+        uuid.UUID(data["timestamps"]["jti"])
     except ValueError as exc:
-        raise ValueError(f"{field_name} must be a valid RFC 3339 datetime") from exc
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
-        raise ValueError(f"{field_name} must include a timezone")
-    return parsed.astimezone(timezone.utc)
+        raise ValueError("manifest.timestamps.jti must be a UUID") from exc
+    budget = data.get("budget")
+    if not isinstance(budget, dict):
+        raise ValueError("manifest.budget must be an object")
+    token_count = budget.get("token_count")
+    if not isinstance(token_count, int) or isinstance(token_count, bool) or token_count < 1:
+        raise ValueError("manifest.budget.token_count must be a positive integer")
+    if budget.get("tokenizer") not in _MANIFEST_TOKENIZERS:
+        raise ValueError("manifest.budget.tokenizer must be a supported tokenizer")
+    if not isinstance(data["signature"].get("signed_fields"), list):
+        raise ValueError("manifest.signature.signed_fields must be an array")
 
 
 @dataclass
@@ -166,6 +206,7 @@ class Manifest:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Manifest":
         """Parse manifest from dictionary."""
+        _validate_manifest_shape(data)
         bundle = BundleInfo(
             id=data["bundle"]["id"],
             version=data["bundle"]["version"],
@@ -360,7 +401,9 @@ class BundleBuilder:
         return self
 
     def with_expires_days(self, days: int) -> "BundleBuilder":
-        """Set expiration in days from now."""
+        """Set expiration in days from now (1 to 90; the verifier rejects longer)."""
+        if not isinstance(days, int) or isinstance(days, bool) or not 1 <= days <= 90:
+            raise ValueError("expires_days must be an integer between 1 and 90")
         self.expires_days = days
         return self
 

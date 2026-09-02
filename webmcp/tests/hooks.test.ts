@@ -52,6 +52,20 @@ describe('HookRegistry — registration', () => {
 		expect(chain[0].name).toBe('valid-hook');
 	});
 
+	it('rejects a hook with no name', () => {
+		const registry = new HookRegistry();
+		const hook = makeHook({ name: undefined as never });
+
+		expect(() => registry.register(hook)).toThrow(/Invalid hook name/);
+	});
+
+	it('rejects a numeric hook name', () => {
+		const registry = new HookRegistry();
+		const hook = makeHook({ name: 123 as never });
+
+		expect(() => registry.register(hook)).toThrow(/Invalid hook name/);
+	});
+
 	it('rejects invalid hook name with spaces', () => {
 		const registry = new HookRegistry();
 		const hook = makeHook({ name: 'invalid hook' });

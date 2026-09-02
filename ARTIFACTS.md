@@ -36,7 +36,11 @@ exact `vcp-core` version exists on crates.io, the package command uses a
 command-line `patch.crates-io` entry to resolve `vcp-core` from the local
 workspace. Cargo still creates and compiles each publishable archive. After
 publishing `vcp-core`, the release owner must run ordinary verified `cargo
-package` for both dependent crates before publishing either one.
+package` for both dependent crates before publishing either one. Because the
+patch-built archives embed a `Cargo.lock` that records `vcp-core` without a
+registry source or checksum, the publish workflow compares the re-packaged
+dependent crates with the attested archives file by file, excluding only that
+generated `Cargo.lock`; every other byte must be identical.
 
 ## Generated paths
 

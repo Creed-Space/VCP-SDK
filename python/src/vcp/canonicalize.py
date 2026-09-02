@@ -6,10 +6,40 @@ Implements RFC 8785 (JCS) for manifest and content canonicalization.
 
 import hashlib
 import json
+import math
+import re
 import unicodedata
+from datetime import datetime, timezone
 from typing import Any
 
 import rfc8785
+
+_RFC3339_PATTERN = re.compile(
+    r"\d{4}-\d{2}-\d{2}[Tt ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})"
+)
+
+
+def parse_rfc3339_utc(value: Any, field_name: str) -> datetime:
+    """Parse a timezone-qualified RFC 3339 timestamp and normalize it to aware UTC.
+
+    Fractions longer than six digits are truncated before parsing so that
+    Python 3.10 (which rejects them) agrees with 3.11+ on otherwise valid
+    nanosecond timestamps emitted by other runtimes.
+    """
+    if not isinstance(value, str) or _RFC3339_PATTERN.fullmatch(value) is None:
+        raise ValueError(f"{field_name} must be an RFC 3339 string with timezone")
+    normalized = f"{value[:-1]}+00:00" if value[-1] in "Zz" else value
+    body, offset = normalized[:-6], normalized[-6:]
+    if "." in body:
+        seconds, fraction = body.split(".", 1)
+        body = f"{seconds}.{fraction[:6].ljust(6, '0')}"
+    try:
+        parsed = datetime.fromisoformat(body + offset)
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be a valid RFC 3339 datetime") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{field_name} must include a timezone")
+    return parsed.astimezone(timezone.utc)
 
 
 def parse_json_strict(value: str | bytes | bytearray) -> Any:
@@ -33,10 +63,18 @@ def parse_json_strict(value: str | bytes | bytearray) -> Any:
     def _reject_constant(constant: str) -> Any:
         raise ValueError(f"Non-finite JSON number is not permitted: {constant}")
 
+    def _finite_float(text: str) -> float:
+        # Overflowing literals such as ``1e400`` bypass parse_constant.
+        number = float(text)
+        if not math.isfinite(number):
+            raise ValueError(f"Non-finite JSON number is not permitted: {text}")
+        return number
+
     return json.loads(
         value,
         object_pairs_hook=_object_without_duplicates,
         parse_constant=_reject_constant,
+        parse_float=_finite_float,
     )
 
 

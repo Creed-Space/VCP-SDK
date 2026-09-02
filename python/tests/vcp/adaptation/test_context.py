@@ -514,7 +514,11 @@ class TestContextEncoder:
         assert ctx.has(SituationalDimension.OCCASION)
 
     def test_encode_invalid_value(self, encoder):
-        ctx = encoder.encode(time="invalid_time")
+        with pytest.raises(ValueError, match="Unknown time value"):
+            encoder.encode(time="invalid_time")
+
+    def test_encode_invalid_value_non_strict_drops(self, encoder):
+        ctx = encoder.encode(time="invalid_time", strict=False)
         assert not ctx.has(SituationalDimension.TIME)
 
     def test_encode_empty(self, encoder):
@@ -559,7 +563,9 @@ class TestContextEncoder:
 
     def test_encode_culture_legacy_nationality_is_rejected(self, encoder):
         """Legacy nationality values must no longer resolve (regression guard)."""
-        ctx = encoder.encode(culture="american")
+        with pytest.raises(ValueError, match="Unknown culture value"):
+            encoder.encode(culture="american")
+        ctx = encoder.encode(culture="american", strict=False)
         assert not ctx.has(SituationalDimension.CULTURE)
 
     # ── Personal state ──────────────────────────────────────────────────

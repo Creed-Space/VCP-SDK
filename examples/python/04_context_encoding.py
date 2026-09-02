@@ -1,4 +1,4 @@
-"""Encode and decode Enneagram context using VCP/A."""
+"""Encode and decode situational and personal-state context using VCP/A."""
 from __future__ import annotations
 
 from vcp.adaptation.context import ContextEncoder, Dimension, VCPContext

@@ -160,6 +160,16 @@ export const DEFAULT_DECAY_CONFIGS: Readonly<Record<string, DecayConfig>> = {
  *
  * Matches the Python SDK's `compute_decayed_intensity` function.
  */
+function elapsedSecondsBetween(declaredTime: Date, currentTime: Date): number {
+  if (Number.isNaN(declaredTime.getTime())) {
+    throw new RangeError('declaredAt must be a valid ISO 8601 timestamp');
+  }
+  if (Number.isNaN(currentTime.getTime())) {
+    throw new RangeError('now must be a valid Date');
+  }
+  return (currentTime.getTime() - declaredTime.getTime()) / 1000;
+}
+
 export function computeDecayedIntensity(
   declaredIntensity: number,
   declaredAt: string | Date,
@@ -172,7 +182,7 @@ export function computeDecayedIntensity(
 
   const currentTime = now ?? new Date();
   const declaredTime = typeof declaredAt === 'string' ? new Date(declaredAt) : declaredAt;
-  const elapsedSeconds = (currentTime.getTime() - declaredTime.getTime()) / 1000;
+  const elapsedSeconds = elapsedSecondsBetween(declaredTime, currentTime);
 
   if (elapsedSeconds <= 0) {
     return declaredIntensity;
@@ -204,7 +214,7 @@ export function computeLifecycleState(
 
   const currentTime = now ?? new Date();
   const declaredTime = typeof declaredAt === 'string' ? new Date(declaredAt) : declaredAt;
-  const elapsedSeconds = (currentTime.getTime() - declaredTime.getTime()) / 1000;
+  const elapsedSeconds = elapsedSecondsBetween(declaredTime, currentTime);
 
   if (elapsedSeconds <= 0) {
     return LifecycleState.SET;

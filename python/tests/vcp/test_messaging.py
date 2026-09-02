@@ -165,9 +165,10 @@ class TestEnvelope:
         replacements = {"A": "B", "Q": "R", "g": "h", "w": "x"}
         noncanonical = canonical[:-3] + replacements[canonical[-3]] + "=="
         assert base64.b64decode(noncanonical, validate=True) == b"x" * 64
-        assert any("canonical standard base64" in error for error in _errors(
-            signature=f"base64:{noncanonical}"
-        ))
+        assert any(
+            "canonical standard base64" in error
+            for error in _errors(signature=f"base64:{noncanonical}")
+        )
 
 
 class TestContextShare:
@@ -289,9 +290,7 @@ class TestConstraintPropagation:
             {"constraints": [], "propagation_mode": "merge"},
             {"constraints": [7], "propagation_mode": "merge"},
             {
-                "constraints": [
-                    {"type": "", "value": None, "source_constitution_ref": VALID_REF}
-                ],
+                "constraints": [{"type": "", "value": None, "source_constitution_ref": VALID_REF}],
                 "propagation_mode": "merge",
             },
             {

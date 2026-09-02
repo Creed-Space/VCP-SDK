@@ -91,7 +91,7 @@ FORBIDDEN_PERSONAL_FIELDS = {"cognitive", "emotional", "energy", "urgency", "bod
 MAX_JSON_BYTES = 16 * 1024 * 1024
 EXPECTED_CONFORMANCE_FILES = 27
 EXPECTED_VECTOR_CASES = 226
-EXPECTED_TEST_CASES = 111
+EXPECTED_TEST_CASES = 114
 
 
 class DuplicateJsonKeyError(ValueError):
@@ -443,8 +443,18 @@ def validate_repository_invariants(problems: Problems) -> None:
             problems.add("repository policy has an unknown schema")
         if policy.get("repository") != "Creed-Space/VCP-SDK":
             problems.add("repository policy names the wrong repository")
-        if policy.get("external_state_applied") is not False:
-            problems.add("repository policy must not claim unverified external state")
+        applied = policy.get("external_state_applied")
+        evidence = policy.get("observed", {}).get("readback_evidence")
+        if applied is not False and not (
+            applied is True
+            and isinstance(evidence, list)
+            and evidence
+            and all(isinstance(item, str) and item.strip() for item in evidence)
+        ):
+            problems.add(
+                "repository policy must not claim unverified external state "
+                "(external_state_applied requires observed.readback_evidence)"
+            )
         required = policy.get("desired", {}).get("required_checks", [])
         if not isinstance(required, list) or len(required) != len(set(required)):
             problems.add("repository policy required checks must be a unique list")

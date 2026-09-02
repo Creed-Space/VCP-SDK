@@ -16,7 +16,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from .context import Dimension, VCPContext
+from .context import Dimension, PersonalStateDimension, VCPContext
 from .state import EMERGENCY_VALUES, MAJOR_DIMENSIONS, StateTracker, Transition, TransitionSeverity
 
 if TYPE_CHECKING:
@@ -167,9 +167,7 @@ class RedisStateTracker:
 
         raise RuntimeError("VCP Redis history update exceeded transaction retry limit")
 
-    def _record_without_transactions(
-        self, context: VCPContext, now_iso: str
-    ) -> Transition | None:
+    def _record_without_transactions(self, context: VCPContext, now_iso: str) -> Transition | None:
         """Compatibility path for clients that do not implement WATCH/MULTI."""
         history = self._get_history()
         transition = self._transition_from_history(history, context)
@@ -256,13 +254,18 @@ class RedisStateTracker:
         Returns:
             Transition describing the change
         """
-        changed: list[Dimension] = []
+        changed: list[Dimension | PersonalStateDimension] = []
 
         for dim in Dimension:
             prev_vals = set(previous.get(dim))
             curr_vals = set(current.get(dim))
             if prev_vals != curr_vals:
                 changed.append(dim)
+
+        # Personal-state band changes count as transitions too
+        for pdim in PersonalStateDimension:
+            if previous.personal.get(pdim) != current.personal.get(pdim):
+                changed.append(pdim)
 
         # Check for emergency values
         all_current_values: set[str] = set()

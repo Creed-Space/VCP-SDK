@@ -14,7 +14,8 @@ The VCP specification suite v2.0 lives in the **VCP-Spec** repository.
 
 ## SDK Version
 
-This SDK (v4.0.0) implements VCP v2.0.
+This SDK (v4.2.0) implements the VCP v2.0 bundle baseline plus the v3.1
+capability-negotiation and v3.2 adaptation (VEP-0004) layers.
 
 ## Archived
 

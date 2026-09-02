@@ -61,7 +61,7 @@ make validate PYTHON="$(command -v python)"
 make schema-sync SPEC=/path/to/VCP-Spec PYTHON="$(command -v python)"
 make property PYTHON="$(command -v python)"
 make performance-smoke PYTHON="$(command -v python)"
-cargo check --manifest-path rust/fuzz/Cargo.toml
+cargo check --locked --manifest-path rust/fuzz/Cargo.toml
 ```
 
 Property suites use deterministic seeds and committed settings. When a fuzz

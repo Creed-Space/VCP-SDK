@@ -93,6 +93,9 @@ describe('createVCPTools — tool selection', () => {
 	});
 
 	it('rejects malformed or resource-exhausting persona configuration predictably', () => {
+		expect(() => createVCPTools({ personas: [] })).toThrow(
+			'personas must contain at least one entry',
+		);
 		expect(() => createVCPTools({ personas: null as never })).toThrow(
 			'personas must be an array',
 		);

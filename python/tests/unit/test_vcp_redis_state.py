@@ -75,6 +75,7 @@ class _CASPipeline:
     def reset(self) -> None:
         return None
 
+
 # ====================================================================================
 # GET SYNC REDIS CLIENT TESTS
 # ====================================================================================
@@ -451,10 +452,7 @@ class TestRedisStateTracker:
             )
 
         history = json.loads(backend.data or "[]")
-        values = {
-            entry["context"]["situational"]["time"][0]
-            for entry in history
-        }
+        values = {entry["context"]["situational"]["time"][0] for entry in history}
         assert len(history) == 2
         assert values == {"morning", "evening"}
         assert sum(transition is None for transition in transitions) == 1
