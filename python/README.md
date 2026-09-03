@@ -21,8 +21,9 @@ Local mode opens no network and grants no production authority. Run `vcp doctor 
 
 Python 3.10 or newer is required.
 
-**Publication state:** source-only candidate. No PyPI release is currently
-claimed. Commands below operate on this checkout.
+**Publication state:** published, version 4.2.0 on PyPI as
+`value-context-protocol` (`python -m pip install value-context-protocol==4.2.0`).
+Commands below operate on this checkout.
 
 ```bash
 python3 -m venv .venv

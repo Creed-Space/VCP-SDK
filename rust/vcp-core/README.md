@@ -4,9 +4,9 @@
 CSM-1, context, transport, trust, revocation, orchestration, and selected
 extension behavior.
 
-**Publication state:** source-only candidate, version 4.2.0. This crate is not
-claimed to be available from crates.io until the canonical publication record
-contains a registry receipt.
+**Publication state:** published, version 4.2.0 on crates.io
+(`cargo add vcp-core@4.2.0`). The canonical publication record carries the
+registry receipt.
 
 ## Use from this workspace
 

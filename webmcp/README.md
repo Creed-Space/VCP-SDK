@@ -4,9 +4,9 @@ Register VCP capabilities as discoverable tools through the experimental
 [WebMCP imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
 (`document.modelContext`).
 
-**Publication state:** source-only candidate, version 4.2.0. No npm release is
-currently claimed. Browser behavior remains experimental and must be checked
-against the compatibility table below.
+**Publication state:** published, version 4.2.0 on npm as `@creedspace/vcp-sdk`.
+Browser behavior remains experimental and must be checked against the
+compatibility table below.
 
 ## Quick Start
 
@@ -23,7 +23,7 @@ const { registered, failed, api, cleanup } = await registerVCPTools({
 // cleanup() aborts all accepted registrations and is safe to call repeatedly.
 ```
 
-To consume the source-only candidate from another local project:
+To build the published version from source in another local project:
 
 ```bash
 git clone https://github.com/Creed-Space/VCP-SDK.git

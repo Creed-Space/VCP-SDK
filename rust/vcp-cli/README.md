@@ -4,8 +4,8 @@
 for parsing, canonicalization, hashing, verification, conformance fixtures,
 and selected extension operations.
 
-**Publication state:** source-only candidate, version 4.2.0. No crates.io
-availability is claimed.
+**Publication state:** published, version 4.2.0 on crates.io
+(`cargo install vcp-cli@4.2.0`).
 
 ## Build and inspect
 

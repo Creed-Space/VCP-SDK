@@ -18,6 +18,10 @@ EXPECTED_RUST_PACKAGE = "vcp-core"
 # States that may hold before any registry receipt exists. `candidate` means
 # names are ratified and publication is authorised; nothing is claimed as live.
 PREPUBLICATION_STATES = {"source-only", "candidate"}
+# `published` means every artifact carries a registry receipt and a pinned
+# source commit; registry install commands are then allowed in public copy.
+ALLOWED_STATES = PREPUBLICATION_STATES | {"published"}
+COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 EXPECTED_WEB_PACKAGE = "@creedspace/vcp-sdk"
 
 RETIRED_PUBLIC_TERMS = (
@@ -257,17 +261,17 @@ def validate_publication_state(
         "vcp-publication-state/1",
     )
     overall_state = state.get("overall_state")
-    if overall_state not in PREPUBLICATION_STATES:
+    if overall_state not in ALLOWED_STATES:
         problems.append(
             "ecosystem publication state must be one of "
-            f"{sorted(PREPUBLICATION_STATES)} before registry receipts exist, "
-            f"found {overall_state!r}"
+            f"{sorted(ALLOWED_STATES)}, found {overall_state!r}"
         )
+    published = overall_state == "published"
     require_equal(
         problems,
         "candidate-name ratification",
         state.get("candidate_names_ratified"),
-        overall_state == "candidate",
+        overall_state in {"candidate", "published"},
     )
     conformance = state.get("conformance")
     if not isinstance(conformance, dict):
@@ -327,7 +331,7 @@ def validate_publication_state(
             problems,
             "registry command policy",
             policy.get("registry_install_commands_allowed"),
-            False,
+            published,
         )
 
     artifacts = state.get("artifacts")
@@ -367,18 +371,26 @@ def validate_publication_state(
         require_equal(
             problems, f"{artifact_id} state", artifact.get("state"), overall_state
         )
-        require_equal(
-            problems,
-            f"{artifact_id} source commit",
-            artifact.get("source_commit"),
-            None,
-        )
-        require_equal(
-            problems,
-            f"{artifact_id} registry receipt",
-            artifact.get("registry_receipt"),
-            None,
-        )
+        source_commit = artifact.get("source_commit")
+        registry_receipt = artifact.get("registry_receipt")
+        if published:
+            if not isinstance(source_commit, str) or not COMMIT_PATTERN.match(
+                source_commit
+            ):
+                problems.append(
+                    f"{artifact_id} source commit must be a full commit SHA once published"
+                )
+            if not isinstance(registry_receipt, str) or not registry_receipt.startswith(
+                "https://"
+            ):
+                problems.append(
+                    f"{artifact_id} registry receipt must be an https URL once published"
+                )
+        else:
+            require_equal(problems, f"{artifact_id} source commit", source_commit, None)
+            require_equal(
+                problems, f"{artifact_id} registry receipt", registry_receipt, None
+            )
 
     public_files = [
         *sorted((demo / "src" / "routes").rglob("*.svelte")),
@@ -391,7 +403,7 @@ def validate_publication_state(
         sdk / "webmcp/README.md",
         sdk / "examples/README.md",
     ]
-    for path in public_files:
+    for path in public_files if not published else []:
         text = path.read_text(encoding="utf-8")
         for pattern in REGISTRY_INSTALL_PATTERNS:
             if pattern.search(text):
@@ -402,7 +414,7 @@ def validate_publication_state(
 
 
 def validate_compatibility_docs(
-    problems: list[str], demo: Path, spec: Path, sdk: Path
+    problems: list[str], demo: Path, spec: Path, sdk: Path, publication_state: dict
 ) -> None:
     spec_compatibility = (spec / "COMPATIBILITY.md").read_text(encoding="utf-8")
     sdk_compatibility = (sdk / "COMPATIBILITY.md").read_text(encoding="utf-8")
@@ -423,12 +435,23 @@ def validate_compatibility_docs(
     developer_panel = (
         demo / "src" / "lib" / "components" / "shared" / "BuiltForDevelopers.svelte"
     ).read_text(encoding="utf-8")
+    published = publication_state.get("overall_state") == "published"
+    status_fragments = (
+        (
+            "Published 4.2.0.",
+            "pip install value-context-protocol==4.2.0",
+            "npm install @creedspace/vcp-sdk@4.2.0",
+            "cargo add vcp-core@4.2.0",
+        )
+        if published
+        else ("Source-only candidate.",)
+    )
     require_fragments(
         problems,
         "Demo getting-started guide",
         getting_started,
         (
-            "Source-only candidate.",
+            *status_fragments,
             "python -m pip install ./python",
             "npm install ./webmcp",
             "cargo build --manifest-path ./rust/Cargo.toml -p vcp-core",
@@ -489,7 +512,7 @@ def main() -> int:
         versions = validate_metadata(problems, demo, sdk)
         validate_exports(problems, sdk)
         publication_state = validate_publication_state(problems, demo, spec, sdk)
-        validate_compatibility_docs(problems, demo, spec, sdk)
+        validate_compatibility_docs(problems, demo, spec, sdk, publication_state)
         validate_demo_copy(problems, demo)
         standalone_identity = None
         if args.standalone_python_sdk is not None:

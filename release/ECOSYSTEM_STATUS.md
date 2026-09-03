@@ -1,7 +1,7 @@
 # VCP Ecosystem Status
 
 <!-- vcp-document-control
-status: Generated candidate status
+status: Generated published status
 normative-authority: Publication-state record
 protocol-version: VCP 3.1 source baseline
 last-reviewed: 2026-09-03 generated from canonical state
@@ -15,7 +15,7 @@ evidence-boundary: Generated status, not publication receipt
 
 | Field | Value |
 |:---|:---|
-| Status | Candidate |
+| Status | Published |
 | Source baseline | VCP 3.1 |
 | Candidate protocol | VCP 3.2, experimental |
 | Conformance cases | 352 |
@@ -23,17 +23,17 @@ evidence-boundary: Generated status, not publication receipt
 | Protocol layers | 6 |
 | Extension suites | 8 |
 | Implementation scope | 2 full project-controlled implementations, 1 browser integration, 0 independent implementations |
-| python | 4.2.0, candidate |
-| webmcp | 4.2.0, candidate |
-| rust-core | 4.2.0, candidate |
-| rust-cli | 4.2.0, candidate |
-| rust-wasm | 4.2.0, candidate |
-| Registry commands | Disallowed until publication receipts exist |
+| python | 4.2.0, published |
+| webmcp | 4.2.0, published |
+| rust-core | 4.2.0, published |
+| rust-cli | 4.2.0, published |
+| rust-wasm | 4.2.0, published |
+| Registry commands | Allowed |
 | Generated | 2026-09-03 |
 
 ## Claim boundary
 
-Source-only candidate. No registry release is currently claimed.
+Published 4.2.0. Registry releases exist for every artifact; conformance claims remain same-programme evidence.
 
 Same-programme candidate coverage. This is not independent interoperability or certification evidence.
 
