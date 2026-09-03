@@ -1,10 +1,10 @@
 # VCP Ecosystem Status
 
 <!-- vcp-document-control
-status: Generated source-only status
+status: Generated candidate status
 normative-authority: Publication-state record
 protocol-version: VCP 3.1 source baseline
-last-reviewed: 2026-08-15 generated from canonical state
+last-reviewed: 2026-09-03 generated from canonical state
 owner: VCP release maintainers
 evidence-boundary: Generated status, not publication receipt
 -->
@@ -15,21 +15,21 @@ evidence-boundary: Generated status, not publication receipt
 
 | Field | Value |
 |:---|:---|
-| Status | Source Only |
+| Status | Candidate |
 | Source baseline | VCP 3.1 |
 | Candidate protocol | VCP 3.2, experimental |
-| Conformance cases | 337 |
-| Conformance fixtures | 27 |
+| Conformance cases | 352 |
+| Conformance fixtures | 30 |
 | Protocol layers | 6 |
 | Extension suites | 8 |
 | Implementation scope | 2 full project-controlled implementations, 1 browser integration, 0 independent implementations |
-| python | 4.2.0, source-only |
-| webmcp | 4.2.0, source-only |
-| rust-core | 4.2.0, source-only |
-| rust-cli | 4.2.0, source-only |
-| rust-wasm | 4.2.0, source-only |
+| python | 4.2.0, candidate |
+| webmcp | 4.2.0, candidate |
+| rust-core | 4.2.0, candidate |
+| rust-cli | 4.2.0, candidate |
+| rust-wasm | 4.2.0, candidate |
 | Registry commands | Disallowed until publication receipts exist |
-| Generated | 2026-08-15 |
+| Generated | 2026-09-03 |
 
 ## Claim boundary
 

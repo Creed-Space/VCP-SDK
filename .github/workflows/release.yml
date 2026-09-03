@@ -291,7 +291,6 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
-          registry-url: https://registry.npmjs.org
 
       - name: Install a trusted-publishing capable npm CLI
         run: npm install --global 'npm@11.19.0'
@@ -303,7 +302,23 @@ jobs:
           path: release
 
       - name: Publish the exact tarball with provenance
-        run: npm publish release/npm/*.tgz --access public --provenance
+        env:
+          # npm trusted publishing can only be configured on a package that
+          # already exists. For the first publication of a package the
+          # `vcp-npm` environment may carry a short-lived granular token in
+          # `NPM_BOOTSTRAP_TOKEN`; delete it after the run and configure the
+          # trusted publisher for the next version (runbook §8).
+          NPM_BOOTSTRAP_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${NPM_BOOTSTRAP_TOKEN:-}" ]; then
+            echo "Using the first-publication bootstrap token from the vcp-npm environment"
+            npm config set --location=user \
+              '//registry.npmjs.org/:_authToken' "$NPM_BOOTSTRAP_TOKEN"
+          else
+            echo "Using npm trusted publishing (OIDC)"
+          fi
+          npm publish release/npm/*.tgz --access public --provenance
 
   publish-crates:
     name: Publish crates in dependency order
@@ -317,6 +332,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      CRATES_BOOTSTRAP_TOKEN: ${{ secrets.CRATES_BOOTSTRAP_TOKEN }}
     steps:
       - name: Checkout the exact tagged candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -331,13 +348,19 @@ jobs:
           path: release
 
       - name: Obtain a short-lived crates.io token
+        # crates.io trusted publishing is configured per existing crate, so
+        # the first publication of a crate needs an API token instead. The
+        # `vcp-crates` environment may carry one in `CRATES_BOOTSTRAP_TOKEN`
+        # for that single run; delete it afterwards and configure trusted
+        # publishing on each crate for the next version (runbook §8).
+        if: ${{ env.CRATES_BOOTSTRAP_TOKEN == '' }}
         id: crates-auth
         uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
 
       - name: Verify and publish dependency-ordered crate archives
         working-directory: rust
         env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.crates-auth.outputs.token }}
+          CARGO_REGISTRY_TOKEN: ${{ env.CRATES_BOOTSTRAP_TOKEN || steps.crates-auth.outputs.token }}
         run: |
           set -euo pipefail
           # The attested archives for the dependent crates were built with a

@@ -331,6 +331,18 @@ state deliberately causes publication preflight to fail.
 Do not publish a replacement artifact under an existing immutable version. If
 a package differs, stop and choose a new version through K046.
 
+First publication of a package name has one credential exception. PyPI
+accepts a pending trusted publisher before the project exists, so `publish-pypi`
+always uses OIDC. npm and crates.io configure trusted publishing on a package
+that already exists, so the very first `4.x.0` publication of
+`@creed-space/vcp-sdk` and of each crate may use a short-lived token placed in
+the `vcp-npm` environment secret `NPM_BOOTSTRAP_TOKEN` and the `vcp-crates`
+environment secret `CRATES_BOOTSTRAP_TOKEN`. The workflow prefers those secrets
+when present and falls back to OIDC otherwise. Delete both secrets immediately
+after the run, revoke the tokens at the registry, configure trusted publishing
+on the now-existing packages, and record the bootstrap in the ledger's K044
+record.
+
 Cargo has one explicit tool-boundary exception. `cargo publish` creates the
 `.crate` archive as part of the upload operation and has no supported option to
 upload a previously staged archive. The workflow therefore packages each crate

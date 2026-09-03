@@ -15,6 +15,9 @@ EXPECTED_SDK_VERSION = "4.2.0"
 EXPECTED_DEMO_VERSION = "0.1.0"
 EXPECTED_PYTHON_PACKAGE = "value-context-protocol"
 EXPECTED_RUST_PACKAGE = "vcp-core"
+# States that may hold before any registry receipt exists. `candidate` means
+# names are ratified and publication is authorised; nothing is claimed as live.
+PREPUBLICATION_STATES = {"source-only", "candidate"}
 EXPECTED_WEB_PACKAGE = "@creed-space/vcp-sdk"
 
 RETIRED_PUBLIC_TERMS = (
@@ -252,17 +255,18 @@ def validate_publication_state(
         state.get("schema"),
         "vcp-publication-state/1",
     )
-    require_equal(
-        problems,
-        "ecosystem publication state",
-        state.get("overall_state"),
-        "source-only",
-    )
+    overall_state = state.get("overall_state")
+    if overall_state not in PREPUBLICATION_STATES:
+        problems.append(
+            "ecosystem publication state must be one of "
+            f"{sorted(PREPUBLICATION_STATES)} before registry receipts exist, "
+            f"found {overall_state!r}"
+        )
     require_equal(
         problems,
         "candidate-name ratification",
         state.get("candidate_names_ratified"),
-        False,
+        overall_state == "candidate",
     )
     conformance = state.get("conformance")
     if not isinstance(conformance, dict):
@@ -360,7 +364,7 @@ def validate_publication_state(
             command,
         )
         require_equal(
-            problems, f"{artifact_id} state", artifact.get("state"), "source-only"
+            problems, f"{artifact_id} state", artifact.get("state"), overall_state
         )
         require_equal(
             problems,

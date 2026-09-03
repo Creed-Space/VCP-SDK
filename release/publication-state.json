@@ -1,17 +1,17 @@
 {
   "schema": "vcp-publication-state/1",
-  "as_of": "2026-08-15",
+  "as_of": "2026-09-03",
   "authority": "VCP-SDK coordinated release process",
-  "overall_state": "source-only",
-  "candidate_names_ratified": false,
+  "overall_state": "candidate",
+  "candidate_names_ratified": true,
   "protocol": {
     "source_baseline": "3.1",
     "candidate": "3.2",
     "candidate_maturity": "experimental"
   },
   "conformance": {
-    "fixture_count": 27,
-    "case_count": 337,
+    "fixture_count": 30,
+    "case_count": 352,
     "protocol_layer_count": 6,
     "extension_suite_count": 8,
     "full_project_controlled_implementations": 2,
@@ -26,7 +26,7 @@
       "import_name": "vcp",
       "candidate_version": "4.2.0",
       "registry": "PyPI",
-      "state": "source-only",
+      "state": "candidate",
       "source_command": "python -m pip install ./python",
       "source_commit": null,
       "registry_receipt": null
@@ -37,7 +37,7 @@
       "import_name": "@creed-space/vcp-sdk",
       "candidate_version": "4.2.0",
       "registry": "npm",
-      "state": "source-only",
+      "state": "candidate",
       "source_command": "npm install ./webmcp",
       "source_commit": null,
       "registry_receipt": null
@@ -48,7 +48,7 @@
       "import_name": "vcp_core",
       "candidate_version": "4.2.0",
       "registry": "crates.io",
-      "state": "source-only",
+      "state": "candidate",
       "source_command": "cargo build --manifest-path ./rust/Cargo.toml -p vcp-core",
       "source_commit": null,
       "registry_receipt": null
@@ -59,7 +59,7 @@
       "import_name": "vcp-cli",
       "candidate_version": "4.2.0",
       "registry": "crates.io",
-      "state": "source-only",
+      "state": "candidate",
       "source_command": "cargo build --manifest-path ./rust/Cargo.toml -p vcp-cli",
       "source_commit": null,
       "registry_receipt": null
@@ -70,7 +70,7 @@
       "import_name": "vcp_wasm",
       "candidate_version": "4.2.0",
       "registry": "crates.io",
-      "state": "source-only",
+      "state": "candidate",
       "source_command": "cargo build --manifest-path ./rust/Cargo.toml -p vcp-wasm --target wasm32-unknown-unknown",
       "source_commit": null,
       "registry_receipt": null

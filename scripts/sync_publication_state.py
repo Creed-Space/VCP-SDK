@@ -72,7 +72,7 @@ def render_status(document: dict[str, object]) -> bytes:
     rendered = f"""# VCP Ecosystem Status
 
 <!-- vcp-document-control
-status: Generated source-only status
+status: Generated {document["overall_state"]} status
 normative-authority: Publication-state record
 protocol-version: VCP {protocol["source_baseline"]} source baseline
 last-reviewed: {document["as_of"]} generated from canonical state
