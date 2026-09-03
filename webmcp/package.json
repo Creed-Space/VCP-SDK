@@ -1,5 +1,5 @@
 {
-  "name": "@creed-space/vcp-sdk",
+  "name": "@creedspace/vcp-sdk",
   "version": "4.2.0",
   "description": "Register VCP capabilities as discoverable tools through the experimental WebMCP document.modelContext API",
   "homepage": "https://github.com/Creed-Space/VCP-SDK/tree/main/webmcp#readme",

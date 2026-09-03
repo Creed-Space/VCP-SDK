@@ -198,7 +198,7 @@ not close it.
 | Rust | `vcp-core` | | crate | | | |
 | Rust | `vcp-cli` | | crate | | | |
 | Rust | `vcp-wasm` | | crate | | | |
-| npm | `@creed-space/vcp-sdk` | | tarball | | | |
+| npm | `@creedspace/vcp-sdk` | | tarball | | | |
 
 Publish `vcp-core` before verifying and publishing dependent Rust crates. Verify
 every registry result from a new environment with exact versions and no local

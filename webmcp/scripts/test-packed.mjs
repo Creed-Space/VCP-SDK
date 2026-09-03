@@ -22,7 +22,7 @@ try {
       stdio: ['ignore', 'pipe', 'pipe']
     })
   )[0];
-  assert.equal(packed.name, '@creed-space/vcp-sdk');
+  assert.equal(packed.name, '@creedspace/vcp-sdk');
   assert.ok(packed.integrity.startsWith('sha512-'));
   const tarball = join(temp, packed.filename);
   execFileSync('tar', ['-xzf', tarball, '-C', temp]);

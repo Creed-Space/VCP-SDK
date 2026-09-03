@@ -10,6 +10,10 @@ Version headings in this file describe repository metadata for source-only
 candidates; no registry release or `vX.Y.Z` tag has been published yet (see the
 README publication-state note).
 
+### Changed
+- WebMCP package published under the `@creedspace` npm scope as `@creedspace/vcp-sdk`; the
+  `@creed-space` scope was never registered and is now a retired public term.
+
 ### Added
 - `vcp-mcp-server` console script and `python/src/vcp/mcp_server.py`, exposing
   the SDK through the `[mcp]` extra with JSON-schema-validated tool inputs.
@@ -93,7 +97,7 @@ README publication-state note).
   echoes extra boolean core features like the native SDKs; `HookRegistry`,
   `TorchConsumer.receiveTorch`, `computeDecayedIntensity`, and
   `createVCPTools({personas})` validate their inputs.
-- WebMCP package renamed from `@vcp/webmcp` to `@creed-space/vcp-sdk` (applied
+- WebMCP package renamed from `@vcp/webmcp` to `@creedspace/vcp-sdk` (applied
   in 4.2.0; recorded here because the 4.2.0 entry omitted it).
 - Online status responses must echo the requested JTI and issuer. Confirmed
   revocations must include a non-empty reason and a strict RFC 3339 timestamp.
@@ -117,7 +121,7 @@ README publication-state note).
 - **JSON Schema v3.2** — `schemas/vcp-adaptation-context.schema.json` upgraded from v2 to v3.2 with nested `parsed.situational` / `parsed.personal` shape, `conformance_level` enum field, and per-dimension value definitions.
 
 ### Changed
-- WebMCP package renamed from `@vcp/webmcp` to `@creed-space/vcp-sdk`; imports
+- WebMCP package renamed from `@vcp/webmcp` to `@creedspace/vcp-sdk`; imports
   and the `/polyfill` subpath must be updated.
 - **CULTURE values** are now communication styles per CSM-1 (high_context, low_context, formal, casual, mixed), not nationalities. The nationality vocabulary was never in spec and is rejected by the v3.2 encoders.
 - Python `VCPContext` refactored from a plain `@dataclass` to a class with `__slots__` and backwards-compatible `dimensions=` constructor kwarg (aliases `situational=`).
@@ -184,7 +188,7 @@ README publication-state note).
 ### Added
 - **VCP Specification v1.1** -- R-line (Line 8) for real-time personal state in CSM-1 tokens
 - **Rust SDK** (`vcp-core`, `vcp-wasm`, `vcp-cli`) -- High-performance parsing with `no_std` support and WASM bindings
-- **TypeScript/WebMCP SDK** (`@vcp/webmcp`, renamed to `@creed-space/vcp-sdk` in 4.2.0) -- Browser-side VCP tool registration via `navigator.modelContext` (Chrome 145+)
+- **TypeScript/WebMCP SDK** (`@vcp/webmcp`, renamed to `@creedspace/vcp-sdk` in 4.2.0) -- Browser-side VCP tool registration via `navigator.modelContext` (Chrome 145+)
 - MCP-B polyfill for non-Chrome browsers
 - Five WebMCP tools: `vcp_chat`, `vcp_build_token`, `vcp_parse_token`, `vcp_transmission_summary`, `vcp_list_personas`
 - JSON Schema definitions for all protocol layers

@@ -1,5 +1,5 @@
 /**
- * @creed-space/vcp-sdk — MCP-B Polyfill Loader
+ * @creedspace/vcp-sdk — MCP-B Polyfill Loader
  *
  * Conditionally invokes a caller-supplied polyfill loader to populate the
  * current `document.modelContext` contract. The legacy Navigator location is

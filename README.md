@@ -15,7 +15,7 @@ Protocol (VCP).
 |:---|:---|:---|:---|
 | Python, `value-context-protocol` | 4.2.0 | Source-only | Full project-maintained implementation, complete local Agent Runtime reference, orchestration, hooks, privacy, messaging, and extensions |
 | Rust workspace, including `vcp-core` | 4.2.0 | Source-only | Core parsing, transport, orchestration, CLI, and WASM bindings |
-| npm, `@creed-space/vcp-sdk` | 4.2.0 | Source-only | Browser and WebMCP integration library |
+| npm, `@creedspace/vcp-sdk` | 4.2.0 | Source-only | Browser and WebMCP integration library |
 
 Package versions use SDK semantic versioning. The published protocol baseline is
 VCP v3.1. The repository also implements selected v3.2 candidate amendments and
@@ -120,7 +120,7 @@ The polyfill entry point accepts an application-owned loader only. It never
 injects a remote CDN script.
 
 ```ts
-import { loadPolyfillIfRequested } from '@creed-space/vcp-sdk/polyfill';
+import { loadPolyfillIfRequested } from '@creedspace/vcp-sdk/polyfill';
 
 await loadPolyfillIfRequested({
   loader: async () => { await import('@mcp-b/global'); },

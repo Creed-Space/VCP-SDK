@@ -1,5 +1,5 @@
 /**
- * @creed-space/vcp-sdk — Tool Factory
+ * @creedspace/vcp-sdk — Tool Factory
  *
  * Creates VCP tool definitions from a config object.
  * Framework-agnostic — no SvelteKit or framework-specific imports.
