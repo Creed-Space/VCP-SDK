@@ -64,7 +64,14 @@ REQUIRED_EVIDENCE: dict[str, set[str]] = {
 
 INDEPENDENT_GATES = {"X017", "S033", "K045"}
 POST_PUBLICATION_GATES = {"K044", "X018"}
-FINAL_STATUSES = {"approved", "not_applicable"}
+# Only the independent-review gates may be waived, and only by the release
+# authority with a written rationale (runbook §7). A waiver is a visible,
+# auditable substitute for a report that does not exist. It never asserts
+# that the review happened.
+WAIVABLE_GATES = INDEPENDENT_GATES
+WAIVER_EVIDENCE = {"waiver-record"}
+MIN_WAIVER_RATIONALE_LENGTH = 100
+FINAL_STATUSES = {"approved", "not_applicable", "waived"}
 
 
 class Problems:
@@ -154,9 +161,22 @@ def validate_review_shape(ledger: dict[str, Any], problems: Problems) -> None:
                     problems.add(f"{gate_id} pending review must leave {field} empty")
             continue
 
+        waived = status == "waived"
+        if waived and gate_id not in WAIVABLE_GATES:
+            problems.add(f"{gate_id} cannot be waived; only independent gates may be")
+
         reviewer = review.get("reviewer")
         if not isinstance(reviewer, dict):
             problems.add(f"{gate_id} completed review needs a named reviewer")
+        elif waived:
+            # The waiving authority is, by construction, not an independent
+            # reviewer. The statement must still disclose that relationship.
+            statement = reviewer.get("independence_statement", "").strip().lower()
+            if len(statement) < 20 or statement in {"n/a", "none"}:
+                problems.add(
+                    f"{gate_id} waiver needs the waiving authority's disclosure of "
+                    "its relationship to the candidate"
+                )
         elif gate_id in INDEPENDENT_GATES:
             statement = reviewer.get("independence_statement", "").strip().lower()
             if len(statement) < 20 or statement in {"n/a", "none", "not independent"}:
@@ -170,6 +190,11 @@ def validate_review_shape(ledger: dict[str, Any], problems: Problems) -> None:
             problems.add(
                 f"{gate_id} completed review needs a substantive decision summary"
             )
+        elif waived and len(summary.strip()) < MIN_WAIVER_RATIONALE_LENGTH:
+            problems.add(
+                f"{gate_id} waiver needs a written rationale of at least "
+                f"{MIN_WAIVER_RATIONALE_LENGTH} characters in decision_summary"
+            )
         if status == "approved_with_conditions" and not review.get("conditions"):
             problems.add(f"{gate_id} approved_with_conditions needs conditions")
         if not isinstance(review.get("attestation"), dict):
@@ -179,7 +204,8 @@ def validate_review_shape(ledger: dict[str, Any], problems: Problems) -> None:
         evidence_kinds = {
             item.get("kind") for item in evidence if isinstance(item, dict)
         }
-        missing = REQUIRED_EVIDENCE[gate_id] - evidence_kinds
+        required_kinds = WAIVER_EVIDENCE if waived else REQUIRED_EVIDENCE[gate_id]
+        missing = required_kinds - evidence_kinds
         if missing:
             problems.add(f"{gate_id} is missing evidence kinds {sorted(missing)}")
 

@@ -100,3 +100,75 @@ def test_prepublication_rejects_unresolved_conditional_approval() -> None:
     review["conditions"] = ["Publish only after the named condition closes."]
     problems = semantic_problems(ledger, prepublication=True, complete=False)
     assert any("X015=approved_with_conditions" in problem for problem in problems)
+
+
+def waived_review(gate_id: str) -> dict[str, object]:
+    return {
+        "status": "waived",
+        "reviewer": {
+            "name": "Release authority",
+            "role": "interim administrator",
+            "organization": "Example project",
+            "independence_statement": (
+                "Author and interim administrator of the candidate; not independent."
+            ),
+        },
+        "reviewed_at": "2026-08-15T00:00:00Z",
+        "decision_summary": (
+            f"Gate {gate_id} is waived for first publication because no independent "
+            "reviewer has been engaged. Residual risk is recorded in the status "
+            "registry and the gate reopens for the next candidate."
+        ),
+        "conditions": [],
+        "findings": [],
+        "evidence": [
+            {
+                "kind": "waiver-record",
+                "uri": f"evidence/{gate_id}/waiver.md",
+                "sha256": "d" * 64,
+            }
+        ],
+        "attestation": {
+            "method": "chat-approval",
+            "identity": "release-authority",
+            "signed_at": "2026-08-15T00:00:00Z",
+            "value": f"waiver-{gate_id}",
+        },
+    }
+
+
+def _with_waiver(gate_id: str) -> dict[str, object]:
+    ledger = copy.deepcopy(prepublication_ledger())
+    review = next(item for item in ledger["reviews"] if item["id"] == gate_id)
+    review.update(waived_review(gate_id))
+    return ledger
+
+
+def test_waived_independent_gate_is_final_with_waiver_record() -> None:
+    for gate_id in sorted(ledger_validator.WAIVABLE_GATES):
+        assert not semantic_problems(_with_waiver(gate_id), prepublication=True, complete=False), (
+            gate_id
+        )
+
+
+def test_waiver_is_rejected_outside_independent_gates() -> None:
+    problems = semantic_problems(_with_waiver("X015"), prepublication=True, complete=False)
+    assert "X015 cannot be waived; only independent gates may be" in problems
+
+
+def test_waiver_requires_waiver_record_and_rationale() -> None:
+    ledger = _with_waiver("K045")
+    review = next(item for item in ledger["reviews"] if item["id"] == "K045")
+    review["evidence"] = [{"kind": "independent-security-report", "uri": "x", "sha256": "e" * 64}]
+    review["decision_summary"] = "Waived because we said so."
+    problems = semantic_problems(ledger, prepublication=True, complete=False)
+    assert "K045 is missing evidence kinds ['waiver-record']" in problems
+    assert any("written rationale" in problem for problem in problems)
+
+
+def test_waiver_requires_relationship_disclosure() -> None:
+    ledger = _with_waiver("S033")
+    review = next(item for item in ledger["reviews"] if item["id"] == "S033")
+    review["reviewer"]["independence_statement"] = "n/a"
+    problems = semantic_problems(ledger, prepublication=True, complete=False)
+    assert any("disclosure of its relationship" in problem for problem in problems)

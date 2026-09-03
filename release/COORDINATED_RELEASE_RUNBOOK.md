@@ -265,6 +265,29 @@ objective closure evidence and the decision is updated. `not_applicable`
 requires the same authority and evidence as any other decision. It is not a
 shortcut around a required gate.
 
+### 7.1 Waiving an independent gate
+
+X017, S033, and K045 require a reviewer who is independent from the candidate's
+authors. When no such review exists, the release authority may record the gate
+as `waived` instead of fabricating independence. A waiver is a visible,
+auditable statement that the review did not happen; it is never a claim that it
+did. The validator accepts `waived` only for those three gates and only when
+the record carries:
+
+1. The waiving authority as `reviewer`, with an `independence_statement` that
+   discloses that authority's relationship to the candidate (for example,
+   "author and interim administrator; not independent").
+2. A `decision_summary` of at least 100 characters stating why publication is
+   proceeding without the review, what the residual risk is, and when the
+   review is expected.
+3. Evidence of kind `waiver-record`: the hashed written rationale, stored in
+   the controlled evidence directory.
+4. The usual `reviewed_at` and `attestation`.
+
+Public copy for a release with waived gates must not claim independent review.
+Record the waiver in the status registry's residual-risk register and reopen
+the gate as `pending` in the next candidate's ledger.
+
 ## 8. Coordinated publication sequence
 
 Only X015 authorizes the exact sequence. The default dependency-safe sequence
