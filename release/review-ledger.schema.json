@@ -236,7 +236,8 @@
             "approved",
             "approved_with_conditions",
             "rejected",
-            "not_applicable"
+            "not_applicable",
+            "waived"
           ]
         },
         "reviewer": {
