@@ -548,6 +548,50 @@ mod tests {
         assert!(m_pos < z_pos);
     }
 
+    /// Regression for a fuzzer-found canonicalization defect.
+    ///
+    /// `serde_json`'s default float parser is lossy by up to 1 ULP, so a
+    /// high-precision number could canonicalize to bytes that no longer parsed
+    /// back to the same `f64`. Canonicalization is the input to signing, so it
+    /// has to be a fixed point.
+    ///
+    /// Crash input: `rust/fuzz/corpus/manifest_canonicalization/big_integer_precision`.
+    #[test]
+    fn manifest_canonicalization_is_idempotent_for_high_precision_numbers() {
+        let raw =
+            br#"{"array":[999999999999999999999999999999999999999999999],"ted":{"Ab":2,"a":1}}"#;
+        let manifest: serde_json::Value = serde_json::from_slice(raw).unwrap();
+
+        let first = String::from_utf8(canonicalize_manifest(&manifest).unwrap()).unwrap();
+        let reparsed: serde_json::Value = serde_json::from_str(&first).unwrap();
+        let second = String::from_utf8(canonicalize_manifest(&reparsed).unwrap()).unwrap();
+
+        assert_eq!(
+            first, second,
+            "canonical form must survive a JSON round trip"
+        );
+        assert_eq!(first, r#"{"array":[1e+45],"ted":{"Ab":2,"a":1}}"#);
+    }
+
+    /// The practical consequence of the defect above: a signature computed
+    /// before the manifest went over the wire had to still verify after the
+    /// receiver reparsed it.
+    #[test]
+    fn signature_survives_json_round_trip_for_high_precision_numbers() {
+        let raw = br#"{"bundle":{"id":"test"},"weights":[999999999999999999999999999999999999999999999,0.1]}"#;
+        let manifest: serde_json::Value = serde_json::from_slice(raw).unwrap();
+
+        let signing_key = SigningKey::from_bytes(&[7u8; 32]);
+        let public_key = signing_key.verifying_key().to_bytes();
+        let signature = sign_manifest(&manifest, &signing_key.to_bytes()).unwrap();
+
+        // Serialize as it would go over the wire, then reparse as a receiver would.
+        let wire = serde_json::to_vec(&manifest).unwrap();
+        let received: serde_json::Value = serde_json::from_slice(&wire).unwrap();
+
+        assert!(verify_manifest_signature(&received, &public_key, &signature).unwrap());
+    }
+
     #[test]
     fn manifest_canonicalization_uses_utf16_key_order() {
         // RFC 8785 sorts property names by UTF-16 code units. U+10000 starts

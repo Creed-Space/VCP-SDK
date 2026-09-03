@@ -9,7 +9,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "=0.4.13"
-serde_json = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }
 vcp-core = { path = "../vcp-core" }
 
 [[bin]]
