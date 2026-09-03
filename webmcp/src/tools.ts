@@ -272,24 +272,21 @@ const DEFAULT_PERSONAS: PersonaInfo[] = [
 		use: 'Security, privacy, boundary enforcement'
 	},
 	{
-		id: 'anchor',
-		name: 'Anchor',
-		description: 'Grounding and present-focused. Reduces overwhelm.',
-		use: 'Stress, overwhelm, stability needs'
+		id: 'mediator',
+		name: 'Mediator',
+		description: 'Fair and balanced. Resolves competing needs.',
+		use: 'Disagreements, shared decisions, negotiation'
 	},
 	{
 		id: 'nanny',
 		name: 'Nanny',
 		description: 'Gentle and patient. Handles immediate practical needs.',
 		use: 'Daily routines, immediate care, patience-heavy tasks'
-	},
-	{
-		id: 'steward',
-		name: 'Steward',
-		description: 'Responsible and sustainable. Balances obligation with capacity.',
-		use: 'Decisions, obligations, long-term planning'
 	}
 ];
+
+/** Persona used by `vcp_chat` when the caller omits one (must be a configured id). */
+const DEFAULT_PERSONA_ID = 'ambassador';
 
 const MAX_PERSONAS = 100;
 const PERSONA_ID_PATTERN = /^[a-z0-9_-]{1,64}$/;
@@ -409,6 +406,9 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 	}
 	const personas = snapshotPersonas(config.personas);
 	const personaIds = personas.map((p) => p.id);
+	const defaultPersona = personaIds.includes(DEFAULT_PERSONA_ID)
+		? DEFAULT_PERSONA_ID
+		: personaIds[0];
 
 	return {
 		name: 'vcp_chat',
@@ -431,7 +431,7 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 				persona: {
 					type: 'string',
 					enum: personaIds,
-					description: 'AI persona to use. Defaults to steward.'
+					description: `AI persona to use. Defaults to ${defaultPersona}.`
 				}
 			},
 			required: ['query']
@@ -466,7 +466,7 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 					vcp_context: isRecord(args.vcp_context) ? args.vcp_context : undefined,
 					constitution_id:
 						typeof args.constitution_id === 'string' ? args.constitution_id : 'general',
-					persona: typeof args.persona === 'string' ? args.persona : undefined
+					persona: typeof args.persona === 'string' ? args.persona : defaultPersona
 				};
 
 				try {

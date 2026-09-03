@@ -170,4 +170,38 @@ describe('DEFAULT_DECAY_CONFIGS', () => {
 	it('cognitive_state resets on engagement', () => {
 		expect(DEFAULT_DECAY_CONFIGS.cognitive_state.resetOnEngagement).toBe(true);
 	});
+
+	it.each([
+		['cognitive_state', 0.3, 60],
+		['emotional_tone', 0.25, 60],
+		['energy_level', 0.2, 300],
+		['perceived_urgency', 0.35, 60],
+		['body_signals', 0.15, 600],
+	])('%s uses the VCP-X-Personal §3.3 stale threshold and fresh window', (dimension, stale, fresh) => {
+		expect(DEFAULT_DECAY_CONFIGS[dimension].staleThreshold).toBe(stale);
+		expect(DEFAULT_DECAY_CONFIGS[dimension].freshWindowSeconds).toBe(fresh);
+	});
+});
+
+describe('computeLifecycleState — per-config fresh window and stale threshold', () => {
+	it('honours a non-default fresh window', () => {
+		const now = new Date();
+		const declared = new Date(now.getTime() - 120_000); // 2 minutes ago
+		expect(
+			computeLifecycleState(5, declared, DEFAULT_DECAY_CONFIGS.energy_level, now),
+		).toBe(LifecycleState.ACTIVE);
+		expect(computeLifecycleState(5, declared, BASE_CONFIG, now)).toBe(LifecycleState.DECAYING);
+	});
+
+	it('honours a non-default stale threshold', () => {
+		const now = new Date();
+		// Two half-lives: effective = floor(1 + 4 * 0.25) = 2.
+		const declared = new Date(now.getTime() - 2 * 900_000);
+		// stale_level = 1 + 4 * 0.3 = 2.2 -> STALE under the default threshold.
+		expect(computeLifecycleState(5, declared, BASE_CONFIG, now)).toBe(LifecycleState.STALE);
+		// stale_level = 1 + 4 * 0.1 = 1.4 -> still DECAYING with a lower threshold.
+		expect(
+			computeLifecycleState(5, declared, { ...BASE_CONFIG, staleThreshold: 0.1 }, now),
+		).toBe(LifecycleState.DECAYING);
+	});
 });

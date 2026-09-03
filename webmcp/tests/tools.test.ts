@@ -227,7 +227,7 @@ describe('createVCPTools — tool execution', () => {
 		const text = result.content[0].text;
 		expect(text).toContain('VCP Personas');
 		expect(text).toContain('muse');
-		expect(text).toContain('steward');
+		expect(text).toContain('mediator');
 		expect(text).toContain('sentinel');
 	});
 
@@ -591,18 +591,46 @@ describe('createVCPTools — onToolCall', () => {
 // ---------------------------------------------------------------------------
 
 describe('createVCPTools — default personas', () => {
-	it('includes 7 default personas', () => {
+	it('includes the 6 named CSM-1 registry personas', () => {
 		const tools = createVCPTools();
 		const chatTool = tools.find(t => t.name === 'vcp_chat')!;
 		const personaEnum = chatTool.inputSchema.properties.persona?.enum;
-		expect(personaEnum).toHaveLength(7);
+		expect(personaEnum).toHaveLength(6);
 		expect(personaEnum).toContain('muse');
 		expect(personaEnum).toContain('ambassador');
 		expect(personaEnum).toContain('godparent');
 		expect(personaEnum).toContain('sentinel');
-		expect(personaEnum).toContain('anchor');
+		expect(personaEnum).toContain('mediator');
 		expect(personaEnum).toContain('nanny');
-		expect(personaEnum).toContain('steward');
+		expect(personaEnum).not.toContain('anchor');
+		expect(personaEnum).not.toContain('steward');
+	});
+
+	it('documents and applies the ambassador default persona', async () => {
+		const fetchMock = vi.fn(async () => new Response(JSON.stringify({ response: 'ok' })));
+		vi.stubGlobal('fetch', fetchMock);
+		try {
+			const tools = createVCPTools();
+			const chatTool = tools.find(t => t.name === 'vcp_chat')!;
+			expect(chatTool.inputSchema.properties.persona?.description).toBe(
+				'AI persona to use. Defaults to ambassador.',
+			);
+			await chatTool.execute({ query: 'hello' });
+			const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+			expect(JSON.parse(init.body as string).persona).toBe('ambassador');
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
+	it('falls back to the first configured persona when ambassador is not configured', () => {
+		const tools = createVCPTools({
+			personas: [{ id: 'custom', name: 'Custom', description: 'Test', use: 'Testing' }],
+		});
+		const chatTool = tools.find(t => t.name === 'vcp_chat')!;
+		expect(chatTool.inputSchema.properties.persona?.description).toBe(
+			'AI persona to use. Defaults to custom.',
+		);
 	});
 
 	it('allows custom personas to override defaults', () => {

@@ -91,7 +91,7 @@ FORBIDDEN_PERSONAL_FIELDS = {"cognitive", "emotional", "energy", "urgency", "bod
 MAX_JSON_BYTES = 16 * 1024 * 1024
 EXPECTED_CONFORMANCE_FILES = 27
 EXPECTED_VECTOR_CASES = 226
-EXPECTED_TEST_CASES = 114
+EXPECTED_TEST_CASES = 116
 
 
 class DuplicateJsonKeyError(ValueError):

@@ -25,8 +25,8 @@
 
     "canonical": {
       "type": "string",
-      "description": "Canonical form of the token (lowercase, normalized)",
-      "pattern": "^[a-z0-9.-]+(?:@[a-z0-9.^~-]+)?$"
+      "description": "Canonical form: lowercase path and prerelease; version constraint and namespace suffix preserved",
+      "pattern": "^[a-z0-9.-]+(?:@[a-z0-9.^~-]+)?(?::[A-Z][A-Z0-9]{0,31})?$"
     },
 
     "segments": {
@@ -118,6 +118,7 @@
   },
 
   "required": ["token"],
+  "additionalProperties": false,
 
   "definitions": {
     "core_namespace": {
@@ -140,7 +141,7 @@
 
     "segment": {
       "type": "string",
-      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$|^[a-z]$",
+      "pattern": "^[a-z][a-z0-9-]{0,31}$",
       "minLength": 1,
       "maxLength": 32,
       "description": "Valid path segment"

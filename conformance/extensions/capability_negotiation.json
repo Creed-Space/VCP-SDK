@@ -704,6 +704,62 @@
       }
     },
     {
+      "id": "malformed-client-version",
+      "description": "A client version that is not a semver major.minor string yields the canonical VERSION_UNSUPPORTED error rather than a transport fault (Python, Rust, and WebMCP parity).",
+      "input": {
+        "client_hello": {
+          "type": "vcp-hello",
+          "version": "3.x",
+          "min_version": "1.0",
+          "extensions": []
+        },
+        "server_capabilities": {
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "extensions": {
+            "VCP-X-Personal": {
+              "decay": true,
+              "intensity_range": [
+                1,
+                5
+              ]
+            },
+            "VCP-X-Consensus": {
+              "voting_method": "schulze"
+            },
+            "VCP-X-Torch": {
+              "lineage": true
+            }
+          },
+          "core_features": {
+            "encryption": true,
+            "injection_scanning": true,
+            "revocation": true,
+            "audit_chain": true,
+            "context_opacity": true
+          }
+        }
+      },
+      "expected": {
+        "server_ack": {
+          "type": "vcp-error",
+          "code": "VERSION_UNSUPPORTED",
+          "message": "No mutually supported VCP version",
+          "supported_versions": [
+            "1.0",
+            "2.0",
+            "3.0",
+            "3.1"
+          ],
+          "retry_after": null
+        }
+      }
+    },
+    {
       "id": "forward-compatible-unknown-fields",
       "description": "Unknown hello, server, and capability fields do not disturb a compatible negotiation.",
       "input": {

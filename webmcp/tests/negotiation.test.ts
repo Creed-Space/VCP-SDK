@@ -143,6 +143,10 @@ describe('VCP capability negotiation', () => {
 		['patch version', { version: '3.1.0' }],
 		['leading-zero version', { version: '03.1' }],
 		['reversed range', { version: '2.0', min_version: '3.0' }],
+		['non-semver version', { version: '3.x' }],
+		['non-string version', { version: 3.1 as unknown as string }],
+		['null min_version', { min_version: null as unknown as string }],
+		['non-semver min_version', { min_version: 'one' }],
 	])('fails closed on %s', (_name, overrides) => {
 		expect(negotiate(hello(overrides), server())).toMatchObject({
 			type: 'vcp-error',

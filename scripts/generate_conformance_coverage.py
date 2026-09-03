@@ -100,6 +100,7 @@ def implementation_status(
         return "unsupported", "Draft profile has no claimed implementation"
     if implementation == "webmcp" and suite in {
         "extensions/capability_negotiation",
+        "extensions/personal_state",
         "adaptation/context_encoding",
         "adaptation/context_encoding_extended",
     }:

@@ -1496,7 +1496,7 @@
       "version": "1.0.0"
     },
     {
-      "case_count": 15,
+      "case_count": 16,
       "cases": [
         {
           "applicability": "protocol_behavior",
@@ -1709,6 +1709,25 @@
         },
         {
           "applicability": "protocol_behavior",
+          "description": "A client version that is not a semver major.minor string yields the canonical VERSION_UNSUPPORTED error rather than a transport fault (Python, Rust, and WebMCP parity).",
+          "id": "malformed-client-version",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
           "description": "Unknown hello, server, and capability fields do not disturb a compatible negotiation.",
           "id": "forward-compatible-unknown-fields",
           "implementations": {
@@ -1785,7 +1804,7 @@
         }
       ],
       "fixture": "conformance/extensions/capability_negotiation.json",
-      "fixture_sha256": "d761c1f87aa153c19f7bd9fd927fe6be481105a3e36932647d0ed45d70a3c3c9",
+      "fixture_sha256": "c5e172b25a88ca05d9fdd8901d7a27af336b240287d88dfa4ba5e18373d55426",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md#capability-negotiation",
       "runner": "conformance/runners/negotiation_parity.py",
@@ -2064,7 +2083,7 @@
       "version": "1.0.0"
     },
     {
-      "case_count": 15,
+      "case_count": 16,
       "cases": [
         {
           "applicability": "protocol_behavior",
@@ -2080,8 +2099,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2099,8 +2118,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2118,8 +2137,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2137,8 +2156,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2156,8 +2175,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2175,8 +2194,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2194,8 +2213,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2213,14 +2232,14 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Reference table of all DECAY_CONFIGS values for validation",
+          "description": "Reference table of all DECAY_CONFIGS values (VCP-X-Personal §3.3) for validation",
           "id": "decay-configs-reference",
           "implementations": {
             "python": {
@@ -2232,8 +2251,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2251,8 +2270,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2270,8 +2289,27 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A non-default fresh window is honoured: energy_level config (300s window, 0.2 stale threshold) at 120s is ACTIVE, where the 60s default would already be DECAYING",
+          "id": "lifecycle-active-custom-fresh-window",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2289,8 +2327,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2308,8 +2346,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2327,8 +2365,8 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         },
@@ -2346,14 +2384,14 @@
               "status": "checked"
             },
             "webmcp": {
-              "reason": "Fixture does not exercise the WebMCP package surface",
-              "status": "not_applicable"
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
             }
           }
         }
       ],
       "fixture": "conformance/extensions/personal_state.json",
-      "fixture_sha256": "834cf40203bd179c7d251f03f01bc33c4b3d1b82a252c88132ebcd125e7e80a2",
+      "fixture_sha256": "e5ee97b1b6be2698f7336c7107e6ecbbc9ed86d9bd43608ed635b2245405bed0",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/specs/extensions/VCP-X-Personal/spec.md",
       "runner": "conformance/runners/personal_parity.py",
@@ -6792,22 +6830,22 @@
     "fixture_count": 27,
     "implementation_status": {
       "python": {
-        "checked": 326,
+        "checked": 328,
         "not_applicable": 8,
         "unsupported": 6
       },
       "rust": {
-        "checked": 266,
+        "checked": 268,
         "not_applicable": 8,
         "unsupported": 66
       },
       "webmcp": {
-        "checked": 47,
-        "not_applicable": 287,
+        "checked": 64,
+        "not_applicable": 272,
         "unsupported": 6
       }
     },
-    "vector_count": 340,
+    "vector_count": 342,
     "webmcp_surface_checks": 2
   },
   "webmcp_surface": {

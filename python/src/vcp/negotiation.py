@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TypeGuard
 
 from .identity.token import Token
 
@@ -45,6 +45,10 @@ def _version_parts(value: Any, field_name: str) -> tuple[str, str]:
         raise ValueError(f"{field_name} must be a semver major.minor string")
     major, minor = value.split(".", 1)
     return major, minor
+
+
+def _is_minor_version(value: Any) -> TypeGuard[str]:
+    return isinstance(value, str) and SEMVER_MINOR_PATTERN.fullmatch(value) is not None
 
 
 def _numeric_text_key(component: str) -> tuple[int, str]:
@@ -262,14 +266,16 @@ def negotiate_handshake(client_hello: dict[str, Any], server: dict[str, Any]) ->
     if not isinstance(server_data, dict):
         raise ValueError("server capability configuration must be an object")
 
+    server_versions = _server_versions(server_data)
     client_version = hello_data.get("version")
     min_version = hello_data.get("min_version", "1.0")
-    if not isinstance(client_version, str) or not isinstance(min_version, str):
-        raise ValueError("version and min_version must be semver major.minor strings")
-    _version_parts(client_version, "version")
-    _version_parts(min_version, "min_version")
-    server_versions = _server_versions(server_data)
-    if _version_key(min_version) > _version_key(client_version):
+    # A malformed client version range is a version mismatch, not a transport
+    # fault: answer with the canonical VERSION_UNSUPPORTED error (Rust/WebMCP parity).
+    if (
+        not _is_minor_version(client_version)
+        or not _is_minor_version(min_version)
+        or _version_key(min_version) > _version_key(client_version)
+    ):
         return VCPError(
             code="VERSION_UNSUPPORTED",
             message="No mutually supported VCP version",

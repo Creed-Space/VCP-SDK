@@ -114,9 +114,17 @@ export interface DecayConfig {
   readonly baseline: number;
   readonly pinned: boolean;
   readonly resetOnEngagement: boolean;
+  /** Fraction of the declared range above baseline below which the signal is STALE (default 0.3). */
+  readonly staleThreshold?: number;
+  /** Seconds after declaration during which the signal stays ACTIVE (default 60). */
+  readonly freshWindowSeconds?: number;
 }
 
-// === Default Decay Configs ===
+/** Fallbacks when a DecayConfig omits the lifecycle fields (VCP-X-Personal §3.2). */
+export const DEFAULT_STALE_THRESHOLD = 0.3;
+export const DEFAULT_FRESH_WINDOW_SECONDS = 60;
+
+// === Default Decay Configs (VCP-X-Personal §3.3) ===
 
 export const DEFAULT_DECAY_CONFIGS: Readonly<Record<string, DecayConfig>> = {
   perceived_urgency: {
@@ -124,30 +132,40 @@ export const DEFAULT_DECAY_CONFIGS: Readonly<Record<string, DecayConfig>> = {
     baseline: 1,
     pinned: false,
     resetOnEngagement: false,
+    staleThreshold: 0.35,
+    freshWindowSeconds: 60,
   },
   body_signals: {
     halfLifeSeconds: 14400, // 4 hours
     baseline: 1,
     pinned: false,
     resetOnEngagement: false,
+    staleThreshold: 0.15,
+    freshWindowSeconds: 600, // 10 min
   },
   cognitive_state: {
     halfLifeSeconds: 720, // 12 min
     baseline: 1,
     pinned: false,
     resetOnEngagement: true,
+    staleThreshold: 0.3,
+    freshWindowSeconds: 60,
   },
   emotional_tone: {
     halfLifeSeconds: 1800, // 30 min
     baseline: 1,
     pinned: false,
     resetOnEngagement: false,
+    staleThreshold: 0.25,
+    freshWindowSeconds: 60,
   },
   energy_level: {
     halfLifeSeconds: 7200, // 2 hours
     baseline: 1,
     pinned: false,
     resetOnEngagement: false,
+    staleThreshold: 0.2,
+    freshWindowSeconds: 300, // 5 min
   },
 } as const;
 
@@ -200,7 +218,8 @@ export function computeDecayedIntensity(
  * Compute lifecycle state for a personal dimension signal.
  *
  * Matches the Python SDK's `compute_lifecycle_state` function.
- * Uses a 60-second fresh window (ACTIVE before DECAYING).
+ * Uses the config's fresh window (ACTIVE before DECAYING) and stale
+ * threshold, falling back to 60s / 0.3 when the config omits them.
  */
 export function computeLifecycleState(
   declaredIntensity: number,
@@ -220,9 +239,8 @@ export function computeLifecycleState(
     return LifecycleState.SET;
   }
 
-  // Fresh window: 60 seconds
-  const FRESH_WINDOW_SECONDS = 60.0;
-  if (elapsedSeconds < FRESH_WINDOW_SECONDS) {
+  const freshWindowSeconds = config.freshWindowSeconds ?? DEFAULT_FRESH_WINDOW_SECONDS;
+  if (elapsedSeconds < freshWindowSeconds) {
     return LifecycleState.ACTIVE;
   }
 
@@ -232,10 +250,9 @@ export function computeLifecycleState(
     return LifecycleState.EXPIRED;
   }
 
-  // Stale threshold: 30% of declared range above baseline
-  const STALE_THRESHOLD = 0.3;
-  const staleLevel =
-    config.baseline + (declaredIntensity - config.baseline) * STALE_THRESHOLD;
+  // Stale threshold: fraction of the declared range above baseline
+  const staleThreshold = config.staleThreshold ?? DEFAULT_STALE_THRESHOLD;
+  const staleLevel = config.baseline + (declaredIntensity - config.baseline) * staleThreshold;
 
   if (effective <= staleLevel) {
     return LifecycleState.STALE;

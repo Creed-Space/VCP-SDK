@@ -47,6 +47,28 @@ README publication-state note).
   fail-closed while no longer representing an unconfirmed result as revoked.
 
 ### Changed
+- Personal-state decay defaults now carry the per-dimension `stale_threshold`
+  and `fresh_window_seconds` from VCP-X-Personal §3.3 (cognitive 0.3/60s,
+  emotional 0.25/60s, energy 0.2/300s, urgency 0.35/60s, body 0.15/600s) in
+  Python, Rust, and WebMCP; WebMCP `DecayConfig` gained optional
+  `staleThreshold`/`freshWindowSeconds`, and `personal_parity.py` now executes
+  the WebMCP module (`webmcp/scripts/run-personal.mjs`) alongside Python and
+  Rust, with a fixture vector exercising a non-default fresh window.
+- `schemas/vcp-manifest-v2.schema.json` `metadata.persona` now uses the CSM-1
+  persona registry (`nanny`, `sentinel`, `godparent`, `ambassador`, `muse`,
+  `mediator`, `custom`); the non-registry `anchor` and `hotrod` values are
+  gone. WebMCP default personas replace `anchor`/`steward` with `mediator`
+  and `vcp_chat` defaults to `ambassador`; a repository test guards every
+  persona enum against the registry.
+- Python `negotiate_handshake` now answers a malformed client `version` or
+  `min_version` with the canonical `VERSION_UNSUPPORTED` `vcp-error` instead
+  of raising `ValueError`, matching Rust and WebMCP; WebMCP no longer treats
+  an explicit `min_version: null` as the `1.0` default. A
+  `malformed-client-version` negotiation fixture pins the shared behaviour.
+- `schemas/vcp-identity-token.schema.json` re-synced byte-for-byte from
+  VCP-Spec (canonical form keeps the namespace suffix, segments are bounded to
+  32 characters, and the token object rejects unknown properties), so
+  `make schema-sync` passes against the current specification.
 - `Manifest.from_dict` validates the manifest shape (`vcp_version == "2.0"`,
   UUID `jti`, positive integer `token_count`, supported tokenizer, string
   fields) and `BundleBuilder.with_expires_days` accepts 1 to 90 days only.
