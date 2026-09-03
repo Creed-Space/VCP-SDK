@@ -682,6 +682,8 @@ fn cmd_personal_configs() -> Result<(), String> {
                 "half_life_seconds": config.half_life_seconds,
                 "baseline": config.baseline,
                 "reset_on_engagement": config.reset_on_engagement,
+                "stale_threshold": config.stale_threshold,
+                "fresh_window_seconds": config.fresh_window_seconds,
             }),
         );
     }

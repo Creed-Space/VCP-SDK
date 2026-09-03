@@ -201,29 +201,39 @@ class DecayConfig:
             raise ValueError("stale_threshold must be between 0 and 1")
 
 
-# Default decay configurations per personal dimension
+# Default decay configurations per personal dimension (VCP-X-Personal §3.3)
 DECAY_CONFIGS: dict[str, DecayConfig] = {
     "perceived_urgency": DecayConfig(
         half_life_seconds=900.0,  # 15 min
         baseline=1,
         reset_on_engagement=False,
+        fresh_window_seconds=60.0,
+        stale_threshold=0.35,
     ),
     "body_signals": DecayConfig(
         half_life_seconds=14400.0,  # 4 hours
         baseline=1,
+        fresh_window_seconds=600.0,  # 10 min
+        stale_threshold=0.15,
     ),
     "cognitive_state": DecayConfig(
         half_life_seconds=720.0,  # 12 min
         baseline=1,
         reset_on_engagement=True,
+        fresh_window_seconds=60.0,
+        stale_threshold=0.3,
     ),
     "emotional_tone": DecayConfig(
         half_life_seconds=1800.0,  # 30 min
         baseline=1,
+        fresh_window_seconds=60.0,
+        stale_threshold=0.25,
     ),
     "energy_level": DecayConfig(
         half_life_seconds=7200.0,  # 2 hours
         baseline=1,
+        fresh_window_seconds=300.0,  # 5 min
+        stale_threshold=0.2,
     ),
 }
 

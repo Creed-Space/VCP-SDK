@@ -56,7 +56,7 @@ execution signal to its network request.
 ```typescript
 interface VCPWebMCPConfig {
   chatEndpoint?: string;           // Default: '/api/chat'
-  personas?: PersonaInfo[];        // Default: 7 standard VCP personas
+  personas?: PersonaInfo[];        // Default: the 6 named CSM-1 registry personas
   enableChat?: boolean;            // Default: true
   enableTokenBuilder?: boolean;    // Default: true
   enableTokenParser?: boolean;     // Default: true

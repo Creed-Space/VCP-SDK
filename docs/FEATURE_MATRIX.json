@@ -138,31 +138,31 @@
       "version": "1.0.0"
     },
     {
-      "case_count": 15,
+      "case_count": 16,
       "fixture": "conformance/extensions/capability_negotiation.json",
       "implementations": {
         "python": {
-          "applicable_cases": 15,
+          "applicable_cases": 16,
           "case_statuses": {
-            "checked": 15
+            "checked": 16
           },
-          "checked_cases": 15,
+          "checked_cases": 16,
           "status": "full"
         },
         "rust": {
-          "applicable_cases": 15,
+          "applicable_cases": 16,
           "case_statuses": {
-            "checked": 15
+            "checked": 16
           },
-          "checked_cases": 15,
+          "checked_cases": 16,
           "status": "full"
         },
         "webmcp": {
-          "applicable_cases": 15,
+          "applicable_cases": 16,
           "case_statuses": {
-            "checked": 15
+            "checked": 16
           },
-          "checked_cases": 15,
+          "checked_cases": 16,
           "status": "full"
         }
       },
@@ -242,32 +242,32 @@
       "version": "1.0.0"
     },
     {
-      "case_count": 15,
+      "case_count": 16,
       "fixture": "conformance/extensions/personal_state.json",
       "implementations": {
         "python": {
-          "applicable_cases": 15,
+          "applicable_cases": 16,
           "case_statuses": {
-            "checked": 15
+            "checked": 16
           },
-          "checked_cases": 15,
+          "checked_cases": 16,
           "status": "full"
         },
         "rust": {
-          "applicable_cases": 15,
+          "applicable_cases": 16,
           "case_statuses": {
-            "checked": 15
+            "checked": 16
           },
-          "checked_cases": 15,
+          "checked_cases": 16,
           "status": "full"
         },
         "webmcp": {
-          "applicable_cases": 0,
+          "applicable_cases": 16,
           "case_statuses": {
-            "not_applicable": 15
+            "checked": 16
           },
-          "checked_cases": 0,
-          "status": "not_applicable"
+          "checked_cases": 16,
+          "status": "full"
         }
       },
       "maturity": "conformance-candidate",
@@ -938,6 +938,6 @@
   "schema": "vcp-feature-matrix/1",
   "source": {
     "path": "conformance/coverage-manifest.json",
-    "sha256": "46106933c5df863f67bc95b98153f1cb3a44b752846e00a3784a405fdbd480d7"
+    "sha256": "f8e7a43d3f52271d6f1ceec44ec8732867c898ae4e09da12f5588874ebc5b112"
   }
 }

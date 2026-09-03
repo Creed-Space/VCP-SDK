@@ -142,8 +142,10 @@ python scripts/validate_ecosystem.py \
 ```
 
 This integrated helper covers exactly Demo, Spec, and the maintained SDK. It
-runs maintained-SDK and Demo coverage in `full` mode. Inspector and the legacy
-standalone Python candidate require separate, candidate-bound evidence.
+runs maintained-SDK and Demo coverage in `full` mode. The VCP Inspector
+(https://github.com/Creed-Space/VCP-Inspector) and the legacy standalone
+`vcp-sdk` PyPI package (https://github.com/Creed-Space/vcp-sdk-python) are
+validated separately with their own candidate-bound evidence.
 
 ### 5.2 New regression programmes
 

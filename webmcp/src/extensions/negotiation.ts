@@ -292,7 +292,8 @@ export function negotiate(
     throw new RangeError('server.supported_versions must be non-empty');
   }
   const clientMax = parseVersion(hello.version);
-  const clientMin = parseVersion(hello.min_version ?? '1.0');
+  // Only an absent min_version defaults; an explicit null is malformed (Python/Rust parity).
+  const clientMin = parseVersion(hello.min_version === undefined ? '1.0' : hello.min_version);
   if (!clientMax || !clientMin || compareVersions(clientMin, clientMax) > 0) {
     return versionError(serverVersions);
   }

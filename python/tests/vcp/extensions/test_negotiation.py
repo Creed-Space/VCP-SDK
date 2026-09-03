@@ -114,10 +114,50 @@ class TestWireHandshake:
 
     def test_versions_with_huge_components_are_rejected_before_integer_conversion(self) -> None:
         huge = "9" * 4_000
-        with pytest.raises(ValueError, match="semver"):
+        result = negotiate_handshake(
+            _hello(version=f"{huge}.1", min_version="1.0", extensions=[]),
+            _server(supported_versions=["3.1"]),
+        )
+        assert result == {
+            "type": "vcp-error",
+            "code": "VERSION_UNSUPPORTED",
+            "message": "No mutually supported VCP version",
+            "supported_versions": ["3.1"],
+            "retry_after": None,
+        }
+
+    @pytest.mark.parametrize(
+        "overrides",
+        [
+            {"version": "3.x"},
+            {"version": "3.1.0"},
+            {"version": 3.1},
+            {"version": None},
+            {"version": True},
+            {"min_version": None},
+            {"min_version": "one"},
+        ],
+    )
+    def test_malformed_client_version_returns_version_unsupported(
+        self, overrides: dict[str, object]
+    ) -> None:
+        hello = _hello(extensions=[])
+        hello.update(overrides)
+        result = negotiate_handshake(hello, _server(supported_versions=["3.0", "3.1"]))
+        assert result["type"] == "vcp-error"
+        assert result["code"] == "VERSION_UNSUPPORTED"
+        assert result["supported_versions"] == ["3.0", "3.1"]
+
+    def test_missing_client_version_returns_version_unsupported(self) -> None:
+        result = negotiate_handshake({"type": "vcp-hello"}, _server(supported_versions=["3.1"]))
+        assert result["type"] == "vcp-error"
+        assert result["code"] == "VERSION_UNSUPPORTED"
+
+    def test_malformed_server_versions_still_raise_before_client_version_check(self) -> None:
+        with pytest.raises(ValueError, match="server supported version"):
             negotiate_handshake(
-                _hello(version=f"{huge}.1", min_version="1.0", extensions=[]),
-                _server(supported_versions=["3.1"]),
+                _hello(version="3.x", extensions=[]),
+                _server(supported_versions=["3.x"]),
             )
 
     def test_negotiated_version_before_3_1_rejects_all_extensions(self) -> None:
@@ -175,9 +215,6 @@ class TestWireHandshake:
             [],
             {},
             {"type": "VCP-Hello", "version": "3.1"},
-            {"type": "vcp-hello"},
-            _hello(version="3.1.0"),
-            _hello(version=True),
             _hello(extensions=None),
             _hello(extensions="VCP-X-Personal"),
             _hello(extensions=[7]),

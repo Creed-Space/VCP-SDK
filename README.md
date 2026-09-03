@@ -148,8 +148,10 @@ python3 scripts/validate_ecosystem.py \
 The default `full` mode builds every distribution and runs dependency and secret
 audits plus maintained-SDK and Demo coverage. `--mode core` is the shorter
 integrated behavior gate without coverage. This helper covers exactly Demo,
-Spec, and the maintained SDK; validate Inspector and the legacy standalone
-Python candidate separately.
+Spec, and the maintained SDK. The VCP Inspector
+(https://github.com/Creed-Space/VCP-Inspector) and the legacy standalone
+`vcp-sdk` PyPI package (https://github.com/Creed-Space/vcp-sdk-python) are
+validated separately with their own candidate-bound evidence.
 
 For a coordinated local checkout, compare the SDK schema copies with the exact
 Spec candidate:

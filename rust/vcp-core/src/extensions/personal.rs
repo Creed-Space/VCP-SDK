@@ -219,20 +219,44 @@ impl DecayConfig {
         self.pinned = pinned;
         self
     }
+
+    /// Set the stale threshold (fraction of the declared range above baseline).
+    #[must_use]
+    pub fn with_stale_threshold(mut self, stale_threshold: f64) -> Self {
+        self.stale_threshold = stale_threshold;
+        self
+    }
+
+    /// Set the fresh window (seconds in ACTIVE before DECAYING).
+    #[must_use]
+    pub fn with_fresh_window_seconds(mut self, fresh_window_seconds: f64) -> Self {
+        self.fresh_window_seconds = fresh_window_seconds;
+        self
+    }
 }
 
 // ── Default decay configs per dimension ────────────────────────────────────
 
-/// Returns the default decay configuration for a given personal dimension.
+/// Returns the default decay configuration for a given personal dimension
+/// (VCP-X-Personal §3.3).
 pub fn default_decay_config(dim: PersonalDimension) -> DecayConfig {
     match dim {
-        PersonalDimension::PerceivedUrgency => DecayConfig::exponential(900.0), // 15 min
-        PersonalDimension::BodySignals => DecayConfig::exponential(14400.0),    // 4 hours
-        PersonalDimension::CognitiveState => {
-            DecayConfig::exponential(720.0).with_reset_on_engagement(true) // 12 min
-        }
-        PersonalDimension::EmotionalTone => DecayConfig::exponential(1800.0), // 30 min
-        PersonalDimension::EnergyLevel => DecayConfig::exponential(7200.0),   // 2 hours
+        PersonalDimension::PerceivedUrgency => DecayConfig::exponential(900.0) // 15 min
+            .with_stale_threshold(0.35)
+            .with_fresh_window_seconds(60.0),
+        PersonalDimension::BodySignals => DecayConfig::exponential(14400.0) // 4 hours
+            .with_stale_threshold(0.15)
+            .with_fresh_window_seconds(600.0),
+        PersonalDimension::CognitiveState => DecayConfig::exponential(720.0) // 12 min
+            .with_reset_on_engagement(true)
+            .with_stale_threshold(0.3)
+            .with_fresh_window_seconds(60.0),
+        PersonalDimension::EmotionalTone => DecayConfig::exponential(1800.0) // 30 min
+            .with_stale_threshold(0.25)
+            .with_fresh_window_seconds(60.0),
+        PersonalDimension::EnergyLevel => DecayConfig::exponential(7200.0) // 2 hours
+            .with_stale_threshold(0.2)
+            .with_fresh_window_seconds(300.0),
     }
 }
 
@@ -564,16 +588,33 @@ mod tests {
 
     #[test]
     fn test_default_decay_configs() {
+        // Values per VCP-X-Personal §3.3.
         let urg = default_decay_config(PersonalDimension::PerceivedUrgency);
         assert!((urg.half_life_seconds - 900.0).abs() < f64::EPSILON);
         assert!(!urg.reset_on_engagement);
+        assert!((urg.stale_threshold - 0.35).abs() < f64::EPSILON);
+        assert!((urg.fresh_window_seconds - 60.0).abs() < f64::EPSILON);
 
         let cog = default_decay_config(PersonalDimension::CognitiveState);
         assert!((cog.half_life_seconds - 720.0).abs() < f64::EPSILON);
         assert!(cog.reset_on_engagement);
+        assert!((cog.stale_threshold - 0.3).abs() < f64::EPSILON);
+        assert!((cog.fresh_window_seconds - 60.0).abs() < f64::EPSILON);
+
+        let emo = default_decay_config(PersonalDimension::EmotionalTone);
+        assert!((emo.half_life_seconds - 1800.0).abs() < f64::EPSILON);
+        assert!((emo.stale_threshold - 0.25).abs() < f64::EPSILON);
+        assert!((emo.fresh_window_seconds - 60.0).abs() < f64::EPSILON);
+
+        let energy = default_decay_config(PersonalDimension::EnergyLevel);
+        assert!((energy.half_life_seconds - 7200.0).abs() < f64::EPSILON);
+        assert!((energy.stale_threshold - 0.2).abs() < f64::EPSILON);
+        assert!((energy.fresh_window_seconds - 300.0).abs() < f64::EPSILON);
 
         let body = default_decay_config(PersonalDimension::BodySignals);
         assert!((body.half_life_seconds - 14400.0).abs() < f64::EPSILON);
+        assert!((body.stale_threshold - 0.15).abs() < f64::EPSILON);
+        assert!((body.fresh_window_seconds - 600.0).abs() < f64::EPSILON);
     }
 
     #[test]
