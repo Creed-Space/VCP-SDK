@@ -18,12 +18,13 @@ EXPECTED_RUST_PACKAGE = "vcp-core"
 # States that may hold before any registry receipt exists. `candidate` means
 # names are ratified and publication is authorised; nothing is claimed as live.
 PREPUBLICATION_STATES = {"source-only", "candidate"}
-EXPECTED_WEB_PACKAGE = "@creed-space/vcp-sdk"
+EXPECTED_WEB_PACKAGE = "@creedspace/vcp-sdk"
 
 RETIRED_PUBLIC_TERMS = (
     "creed-sdk",
     "creed_sdk",
     "@creed-space/sdk",
+    "@creed-space/vcp-sdk",
     "@creedspace/sdk",
     "@vcp/webmcp",
     "vcp-python-sdk",
@@ -46,7 +47,7 @@ REGISTRY_INSTALL_PATTERNS = (
         r"(?:python(?:3)?\s+-m\s+)?pip\s+install\s+['\"]?vcp(?:\b|\[)",
         re.IGNORECASE,
     ),
-    re.compile(r"npm\s+(?:install|i)\s+@creed-space/vcp-sdk", re.IGNORECASE),
+    re.compile(r"npm\s+(?:install|i)\s+@creedspace/vcp-sdk", re.IGNORECASE),
     re.compile(r"npm\s+(?:install|i)\s+@valuecontextprotocol/sdk", re.IGNORECASE),
     re.compile(r"cargo\s+add\s+(?:vcp-core|rvcp)", re.IGNORECASE),
 )
@@ -442,7 +443,7 @@ def validate_compatibility_docs(
         developer_panel,
         (
             "from vcp import CSM1Code, Token",
-            'from "@creed-space/vcp-sdk"',
+            'from "@creedspace/vcp-sdk"',
             "use vcp_core::{Csm1Code, VcpToken};",
         ),
     )

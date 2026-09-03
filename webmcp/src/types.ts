@@ -1,5 +1,5 @@
 /**
- * @creed-space/vcp-sdk WebMCP type definitions.
+ * @creedspace/vcp-sdk WebMCP type definitions.
  *
  * These structural types follow the current `document.modelContext` imperative
  * API. WebMCP remains experimental, so the separately checked upstream contract

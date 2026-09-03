@@ -318,7 +318,7 @@ state deliberately causes publication preflight to fail.
 6. Rerun package verification for `vcp-cli` and `vcp-wasm` against the published
    exact `vcp-core` dependency, then publish those crates if authorized.
 7. Publish `value-context-protocol` to the authorized Python registry and
-   `@creed-space/vcp-sdk` to the authorized npm registry.
+   `@creedspace/vcp-sdk` to the authorized npm registry.
 8. Verify each registry from a fresh environment, with no local path overrides
    and no warm package cache.
 9. Deploy the approved Demo commit through the production service's authorized
@@ -335,7 +335,7 @@ First publication of a package name has one credential exception. PyPI
 accepts a pending trusted publisher before the project exists, so `publish-pypi`
 always uses OIDC. npm and crates.io configure trusted publishing on a package
 that already exists, so the very first `4.x.0` publication of
-`@creed-space/vcp-sdk` and of each crate may use a short-lived token placed in
+`@creedspace/vcp-sdk` and of each crate may use a short-lived token placed in
 the `vcp-npm` environment secret `NPM_BOOTSTRAP_TOKEN` and the `vcp-crates`
 environment secret `CRATES_BOOTSTRAP_TOKEN`. The workflow prefers those secrets
 when present and falls back to OIDC otherwise. Delete both secrets immediately

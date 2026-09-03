@@ -10,7 +10,7 @@ protocol release.
 | VEP-0004 | Experimental | Extended adaptation dimensions requiring negotiation |
 | Python SDK | 4.2.0, `value-context-protocol` | Project-maintained implementation with selected v3.2 candidate support |
 | Rust SDK | 4.2.0 workspace, `vcp-core` | Core, CLI, and WASM implementation with selected v3.2 candidate support |
-| WebMCP SDK | 4.2.0, `@creed-space/vcp-sdk` | Browser integration subset, not a full protocol implementation |
+| WebMCP SDK | 4.2.0, `@creedspace/vcp-sdk` | Browser integration subset, not a full protocol implementation |
 | Demo | 0.1.0 application | Demonstration release, not conformance evidence |
 
 ## Candidate runtime matrix

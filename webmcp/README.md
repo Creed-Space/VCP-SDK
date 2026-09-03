@@ -1,4 +1,4 @@
-# @creed-space/vcp-sdk
+# @creedspace/vcp-sdk
 
 Register VCP capabilities as discoverable tools through the experimental
 [WebMCP imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
@@ -12,7 +12,7 @@ against the compatibility table below.
 
 ```typescript
 // From a local VCP-SDK source checkout after `npm --prefix webmcp run build`.
-import { registerVCPTools } from '@creed-space/vcp-sdk';
+import { registerVCPTools } from '@creedspace/vcp-sdk';
 
 const { registered, failed, api, cleanup } = await registerVCPTools({
   chatEndpoint: '/api/chat',
@@ -94,7 +94,7 @@ For browsers without native WebMCP support, provide an application-owned,
 bundled polyfill loader. The SDK deliberately does not inject remote scripts:
 
 ```typescript
-import { loadPolyfillIfRequested } from '@creed-space/vcp-sdk/polyfill';
+import { loadPolyfillIfRequested } from '@creedspace/vcp-sdk/polyfill';
 
 // Your build owns and pins this dependency.
 await loadPolyfillIfRequested({

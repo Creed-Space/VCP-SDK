@@ -43,7 +43,7 @@ governance approval.
 
 * Python distribution: `value-context-protocol`, imported as `vcp`.
 * Rust distributions: `vcp-core`, `vcp-cli`, and `vcp-wasm`.
-* npm distribution: `@creed-space/vcp-sdk`, a WebMCP subset rather than a full
+* npm distribution: `@creedspace/vcp-sdk`, a WebMCP subset rather than a full
   general TypeScript implementation.
 
 No public registry publication is currently claimed. Source metadata and local

@@ -8,7 +8,7 @@ the maintained interactive demonstration.
 
 * `python/`: the `value-context-protocol` distribution, imported as `vcp`
 * `rust/`: the `vcp-core`, `vcp-cli`, and `vcp-wasm` workspace
-* `webmcp/`: the `@creed-space/vcp-sdk` browser package
+* `webmcp/`: the `@creedspace/vcp-sdk` browser package
 * `schemas/`: synchronized and SDK-owned schema copies
 * `conformance/`: authored language-neutral fixtures and checked runners
 * `examples/`: runnable integration examples

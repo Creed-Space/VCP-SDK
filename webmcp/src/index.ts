@@ -1,11 +1,11 @@
 /**
- * @creed-space/vcp-sdk
+ * @creedspace/vcp-sdk
  *
  * Register VCP capabilities as discoverable tools for AI agents through the
  * experimental WebMCP `document.modelContext` imperative API.
  *
  * Usage:
- *   import { registerVCPTools } from '@creed-space/vcp-sdk';
+ *   import { registerVCPTools } from '@creedspace/vcp-sdk';
  *   const { registered, cleanup } = await registerVCPTools({
  *     chatEndpoint: '/api/chat',
  *     tokenEncoder: encodeContextToCSM1,

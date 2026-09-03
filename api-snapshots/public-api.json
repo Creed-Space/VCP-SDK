@@ -22,12 +22,12 @@
     "webmcp/src/extensions/personal.ts": "5d132c67e4540d8c90b1db14a74fffdb8cf7b5d0a8fb593f704e8ab942eb974c",
     "webmcp/src/extensions/relational.ts": "824ef07b3ba110041ebaea5f637059694186ec9fb67c64cfb8ccefdec4b5b5a6",
     "webmcp/src/extensions/torch.ts": "07fd89e838837e8993ae08fecb27501698410f10086ffbecb59aad4574d98e10",
-    "webmcp/src/hooks.ts": "af69f20f533b03c14653a2f7d1fe8f1faa2e16224a7e2e34019028ba262d754b",
-    "webmcp/src/index.ts": "5ff183187fc97ccb27f70ceb686da3fc3afbe2837d889c23e470ec1b730d4c0a",
-    "webmcp/src/polyfill.ts": "92e799e2b98cee416de30d923c46c6d65beaf7e20b0302cbb741043044c5b60d",
+    "webmcp/src/hooks.ts": "75df684a70f89f714819195c5a2f3a5bad4652648e46669524cd719b69408b1f",
+    "webmcp/src/index.ts": "2889e01a29cefe4119cdf51c3d5bdf424fe30959c76f47cc3b97ff7318bb76f1",
+    "webmcp/src/polyfill.ts": "8ce5b911247b1e34a0eb1d0a2449aa4620a8735b86110943b3e6c79b11099359",
     "webmcp/src/registration.ts": "05fcb7ff1b8d04a55938097a1e0ee89c9e74bdac1b15873047e3900489d787ce",
-    "webmcp/src/tools.ts": "ecd9680bd24c6ebdffca40f5889b5c813b11371b92e8605f53602bf9f18b6c8d",
-    "webmcp/src/types.ts": "0bb2ee4a583be85f52206b202198e0dd5c19f892f63434bc65071ff1a23d3b7a"
+    "webmcp/src/tools.ts": "bf1f43bdad25355c9c6a9a5955018c4a5f5df97373dd4080497ad09ec5b196f4",
+    "webmcp/src/types.ts": "314f96847f3025417a7b9cc783cc7bd45d2f05d5d2e240b356c3f138646198d6"
   },
   "surfaces": {
     "cli_commands": [
