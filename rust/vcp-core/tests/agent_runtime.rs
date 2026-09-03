@@ -1,17 +1,20 @@
-use std::fs;
-use std::path::PathBuf;
-
 use serde_json::Value;
 use vcp_core::agent::{
     parse_agent_artifact, parse_agent_runtime_document, AgentResultStatus, AgentRuntimeDocument,
     LocalAgentRuntime,
 };
 
+/// Crate-local mirrors of `conformance/agent-runtime/*.json`, kept
+/// byte-identical by `scripts/validate_repo.py`, so the packaged crate's
+/// tests run without the repository checkout.
 fn fixture(name: &str) -> Value {
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let text = fs::read_to_string(root.join("conformance").join("agent-runtime").join(name))
-        .expect("fixture readable");
-    serde_json::from_str(&text).expect("fixture JSON")
+    let text = match name {
+        "observe_contracts.json" => include_str!("../testdata/observe_contracts.json"),
+        "controlled_contracts.json" => include_str!("../testdata/controlled_contracts.json"),
+        "accretive_contracts.json" => include_str!("../testdata/accretive_contracts.json"),
+        other => panic!("unknown shared fixture {other}"),
+    };
+    serde_json::from_str(text).expect("fixture JSON")
 }
 
 #[test]

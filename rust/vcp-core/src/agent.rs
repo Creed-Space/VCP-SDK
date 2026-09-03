@@ -339,12 +339,12 @@ pub fn parse_agent_runtime_document(input: &str) -> VcpResult<AgentRuntimeDocume
                 ));
             }
         }
-        AgentRuntimeDocument::ProfileAcknowledgement(acknowledgement) => {
-            if acknowledgement.selected.is_empty() || acknowledgement.selected.len() > 3 {
-                return Err(VcpError::JsonError(
-                    "selected profiles must contain one to three entries".into(),
-                ));
-            }
+        AgentRuntimeDocument::ProfileAcknowledgement(acknowledgement)
+            if acknowledgement.selected.is_empty() || acknowledgement.selected.len() > 3 =>
+        {
+            return Err(VcpError::JsonError(
+                "selected profiles must contain one to three entries".into(),
+            ));
         }
         _ => {}
     }
