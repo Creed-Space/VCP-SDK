@@ -5,9 +5,9 @@ Protocol (VCP).
 
 [![CI](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/Creed-Space/VCP-SDK/actions/workflows/ci.yml)
 
-> **Publication state:** source-only candidate. No PyPI, npm, or crates.io
-> release is currently claimed. Candidate names and versions below describe
-> repository metadata. See
+> **Publication state:** published. Version 4.2.0 of every artifact is on
+> PyPI, npm and crates.io, released from signed tag `v4.2.0` by the
+> ledger-bound release workflow. See
 > [`release/publication-state.json`](release/publication-state.json) for the
 > machine-readable gate.
 

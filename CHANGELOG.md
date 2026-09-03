@@ -6,9 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-Version headings in this file describe repository metadata for source-only
-candidates; no registry release or `vX.Y.Z` tag has been published yet (see the
-README publication-state note).
+Version 4.2.0 was published to PyPI, npm and crates.io on 2026-09-03 from
+signed tag `v4.2.0` (see `release/publication-state.json`). Changes listed
+under Unreleased are in the published 4.2.0 artifacts when they predate that
+tag; the next registry release will carry a new version.
 
 ### Changed
 - WebMCP package published under the `@creedspace` npm scope as `@creedspace/vcp-sdk`; the

@@ -34,8 +34,8 @@ schema into the protocol baseline.
 | WASM | [`rust/vcp-wasm`](../rust/vcp-wasm/) | Browser-targeted Rust bindings |
 | WebMCP | [`webmcp/README.md`](../webmcp/README.md) | Experimental browser tool-registration subset |
 
-All artifacts are source-only candidates until the machine publication-state
-record and an authorized registry receipt say otherwise.
+All artifacts are published at 4.2.0; the machine publication-state record
+carries the registry receipts and the pinned source commit.
 
 ## Protocol companions
 

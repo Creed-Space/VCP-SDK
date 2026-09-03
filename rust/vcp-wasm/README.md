@@ -3,8 +3,8 @@
 `vcp-wasm` provides browser-targeted WebAssembly bindings for selected
 `vcp-core` parsing and encoding operations used by the VCP Demo.
 
-**Publication state:** source-only candidate, version 4.2.0. The crate and
-generated WebAssembly package are not claimed to be available from a registry.
+**Publication state:** published, version 4.2.0 on crates.io as `vcp-wasm`.
+The generated WebAssembly package is not published to npm.
 
 ## Build from source
 
