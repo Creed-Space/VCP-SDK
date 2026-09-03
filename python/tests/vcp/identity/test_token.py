@@ -40,13 +40,22 @@ class TestTokenCanonicalization:
         with pytest.raises(ValueError):
             canonicalize_token(raw)
 
-    def test_rejects_non_string_input(self) -> None:
-        with pytest.raises(ValueError, match="cannot be empty"):
-            canonicalize_token(None)  # type: ignore[arg-type]
+    @pytest.mark.parametrize("raw", [None, 5, b"family.safe.guide", ""])
+    def test_rejects_non_string_or_empty_input(self, raw: object) -> None:
+        with pytest.raises(ValueError, match=r"^Token cannot be empty$"):
+            canonicalize_token(raw)  # type: ignore[arg-type]
 
     def test_raw_canonicalization_input_is_bounded_before_normalization(self) -> None:
-        with pytest.raises(ValueError, match="Raw token exceeds"):
+        with pytest.raises(ValueError, match=r"^Raw token exceeds max length 4096$"):
             canonicalize_token(" " * 4097 + "family.safe.guide")
+
+    def test_raw_canonicalization_bound_is_inclusive(self) -> None:
+        raw = " " * (4096 - len("family.safe.guide")) + "family.safe.guide"
+        assert len(raw) == 4096
+        assert canonicalize_token(raw) == "family.safe.guide"
+
+    def test_only_dots_are_stripped_from_path_ends(self) -> None:
+        assert canonicalize_token("..xfamily.safe.guidex..") == "xfamily.safe.guidex"
 
 
 class TestTokenParsing:
