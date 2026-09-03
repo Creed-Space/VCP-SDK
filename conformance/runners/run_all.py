@@ -237,6 +237,32 @@ def main() -> int:
                     "report": None,
                 }
             )
+    if not profiles and not args.skip_build and not args.skip_webmcp:
+        # The context, personal, negotiation and relational profiles execute the
+        # built WebMCP modules under webmcp/dist; build once here because every
+        # profile runner is invoked with --skip-build.
+        build = subprocess.run(
+            ["npm", "run", "build", "--silent"],
+            cwd=ROOT / "webmcp",
+            text=True,
+            capture_output=True,
+            timeout=600,
+            check=False,
+            env=env,
+        )
+        if build.returncode:
+            output = build.stdout + build.stderr
+            profiles.append(
+                {
+                    "name": "webmcp-build",
+                    "status": "failed",
+                    "command": ["npm", "run", "build", "--silent"],
+                    "duration_seconds": 0.0,
+                    "output_sha256": hashlib.sha256(output.encode()).hexdigest(),
+                    "output_tail": output[-4000:],
+                    "report": None,
+                }
+            )
     if not profiles:
         for name, script, skip_build in RUNNERS:
             record = run_profile(name, script, skip_build, env)
