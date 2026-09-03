@@ -4,6 +4,19 @@ The Python project-maintained implementation for VCP parsing, signed bundles,
 orchestration, policy enforcement, privacy filtering, hooks, messaging, and
 protocol extensions.
 
+## Agent Runtime Profile candidate
+
+The `vcp.agent` facade provides complete local reference behavior for observe, controlled, and accretive profile levels. It preserves bounded orientation, explicit assurance, contextual Affordances, proof-first runs, exact single-use authority, interruption and reconciliation, evidence-based completion, candidate-first learning, attributable reuse, and revocation.
+
+```python
+from vcp.agent import AgentRuntime
+
+async with AgentRuntime.connect(profile="accretive@0.1.0") as runtime:
+    situation = (await runtime.bootstrap("Complete one governed task")).require_value()
+```
+
+Local mode opens no network and grants no production authority. Run `vcp doctor --json` before feature use to detect distribution collisions. See [the complete guide](../docs/VCP_AGENT_RUNTIME_GUIDE.md) and the eight executable examples.
+
 ## Install for development
 
 Python 3.10 or newer is required.

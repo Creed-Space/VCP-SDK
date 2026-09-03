@@ -1,0 +1,191 @@
+{
+  "suite": "agent-runtime/observe-contracts",
+  "version": "0.1.0",
+  "maturity": "candidate",
+  "normative_source": "VCP-Spec/veps/VEP-0006-agent-runtime-profile.md",
+  "test_cases": [
+    {
+      "id": "VCP-ARP-CONTRACT-001",
+      "description": "bounded observe SituationView is accepted",
+      "expected_valid": true,
+      "document": {
+        "kind": "situation_view",
+        "version": "0.1.0",
+        "situation_id": "situation.local.release",
+        "goal": "Determine whether the release candidate has current integrity evidence",
+        "principal_ref": "vcp:artifact:principal:local-observer",
+        "known_claim_refs": [
+          "vcp:artifact:claim:bundle-integrity"
+        ],
+        "unknowns": [
+          "deployment status"
+        ],
+        "conflict_refs": [],
+        "normative_context_ref": "vcp:artifact:normative:local-observe",
+        "authority_refs": [
+          "vcp:artifact:authority:local-read"
+        ],
+        "budget": {
+          "wall_time_ms": 1000,
+          "tokens": 2000,
+          "external_calls": 0,
+          "money_minor": 0,
+          "human_interruptions": 0,
+          "reserve_fraction": 0.2,
+          "model_calls": 0,
+          "local_compute_ms": 0,
+          "bytes": 65536,
+          "sensitive_egress_bytes": 0,
+          "privacy_units": 0,
+          "risk_units": 0,
+          "welfare_load_units": 0
+        },
+        "active_work_refs": [],
+        "control_operations": [],
+        "affordance_refs": [
+          "vcp:artifact:affordance:verify-bundle"
+        ],
+        "omissions": [],
+        "as_of": "2026-08-31T12:00:00Z",
+        "cursor": "cursor.local.1",
+        "dependency_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "VCP-ARP-CONTRACT-002",
+      "description": "undeclared authority-bearing field is rejected",
+      "expected_valid": false,
+      "document": {
+        "kind": "situation_view",
+        "version": "0.1.0",
+        "situation_id": "situation.local.release",
+        "goal": "Determine whether the release candidate has current integrity evidence",
+        "principal_ref": "vcp:artifact:principal:local-observer",
+        "known_claim_refs": [
+          "vcp:artifact:claim:bundle-integrity"
+        ],
+        "unknowns": [
+          "deployment status"
+        ],
+        "conflict_refs": [],
+        "normative_context_ref": "vcp:artifact:normative:local-observe",
+        "authority_refs": [
+          "vcp:artifact:authority:local-read"
+        ],
+        "budget": {
+          "wall_time_ms": 1000,
+          "tokens": 2000,
+          "external_calls": 0,
+          "money_minor": 0,
+          "human_interruptions": 0,
+          "reserve_fraction": 0.2,
+          "model_calls": 0,
+          "local_compute_ms": 0,
+          "bytes": 65536,
+          "sensitive_egress_bytes": 0,
+          "privacy_units": 0,
+          "risk_units": 0,
+          "welfare_load_units": 0
+        },
+        "active_work_refs": [],
+        "control_operations": [],
+        "affordance_refs": [
+          "vcp:artifact:affordance:verify-bundle"
+        ],
+        "omissions": [],
+        "as_of": "2026-08-31T12:00:00Z",
+        "cursor": "cursor.local.1",
+        "dependency_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "authority_grant": "forged-by-caller"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "VCP-ARP-NEG-001",
+      "description": "required and optional exact profile offer is accepted",
+      "expected_valid": true,
+      "document": {
+        "kind": "agent_runtime_profile_offer",
+        "version": "0.1.0",
+        "required": [
+          "observe@0.1.0"
+        ],
+        "optional": [
+          "controlled@0.1.0",
+          "accretive@0.1.0"
+        ]
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "VCP-ARP-NEG-006",
+      "description": "profile acknowledgement binds bootstrap, catalog, principal, event mode, and expiry",
+      "expected_valid": true,
+      "document": {
+        "kind": "agent_runtime_profile_ack",
+        "version": "0.1.0",
+        "selected": [
+          "observe@0.1.0"
+        ],
+        "unsupported_optional": [
+          "controlled@0.1.0"
+        ],
+        "bootstrap_ref": "https://runtime.example/vcp/agent/bootstrap",
+        "capability_catalog_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "principal_session_ref": "vcp:artifact:principal:session-1",
+        "event_binding": "cursor",
+        "expires_at": "2026-08-31T12:15:00Z"
+      },
+      "expected": {
+        "schema_valid": true
+      }
+    },
+    {
+      "id": "VCP-ARP-NEG-007",
+      "description": "inexact or unknown candidate profile is rejected",
+      "expected_valid": false,
+      "document": {
+        "kind": "agent_runtime_profile_offer",
+        "version": "0.1.0",
+        "required": [
+          "observe@0.2.0"
+        ],
+        "optional": []
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    },
+    {
+      "id": "VCP-ARP-NEG-008",
+      "description": "undeclared acknowledgement authority field is rejected",
+      "expected_valid": false,
+      "document": {
+        "kind": "agent_runtime_profile_ack",
+        "version": "0.1.0",
+        "selected": [
+          "observe@0.1.0"
+        ],
+        "unsupported_optional": [],
+        "bootstrap_ref": "https://runtime.example/vcp/agent/bootstrap",
+        "capability_catalog_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "principal_session_ref": "vcp:artifact:principal:session-1",
+        "event_binding": "cursor",
+        "expires_at": "2026-08-31T12:15:00Z",
+        "grant": "caller-forged"
+      },
+      "expected": {
+        "schema_valid": false
+      }
+    }
+  ]
+}

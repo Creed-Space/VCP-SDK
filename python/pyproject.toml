@@ -64,6 +64,7 @@ dev = [
     "pytest-asyncio>=0.21.0",
     "pytest-cov==7.1.0",
     "httpx>=0.24.0",
+    "jsonschema>=4.20.0",
     "hypothesis==6.167.1",
     "redis>=4.5.0",
     "mypy>=1.0.0",
@@ -75,6 +76,7 @@ dev = [
 ]
 
 [project.scripts]
+vcp = "vcp.cli:main"
 vcp-mcp-server = "vcp.mcp_server:run"
 
 [project.urls]
@@ -92,7 +94,7 @@ where = ["src"]
 include = ["vcp*"]
 
 [tool.setuptools.package-data]
-vcp = ["py.typed"]
+vcp = ["py.typed", "agent/schemas/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

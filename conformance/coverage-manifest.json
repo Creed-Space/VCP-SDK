@@ -1496,6 +1496,232 @@
       "version": "1.0.0"
     },
     {
+      "case_count": 2,
+      "cases": [
+        {
+          "applicability": "protocol_behavior",
+          "description": "strict accretive artifact is accepted",
+          "id": "VCP-ARP-ACCRETIVE-001",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "undeclared authority-bearing field is rejected",
+          "id": "VCP-ARP-ACCRETIVE-002",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            }
+          }
+        }
+      ],
+      "fixture": "conformance/agent-runtime/accretive_contracts.json",
+      "fixture_sha256": "b1f2218ab54be8a76cc99778e0a934f76d8742ca6ad9f08a3743ed791987fdbb",
+      "maturity": "conformance-candidate",
+      "normative_source": "VCP-Spec/veps/VEP-0006-agent-runtime-profile.md",
+      "runner": "conformance/runners/agent_runtime_profile.py",
+      "suite": "agent-runtime/accretive_contracts",
+      "version": "0.1.0"
+    },
+    {
+      "case_count": 2,
+      "cases": [
+        {
+          "applicability": "protocol_behavior",
+          "description": "strict controlled artifact is accepted",
+          "id": "VCP-ARP-CONTROLLED-001",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "undeclared authority-bearing field is rejected",
+          "id": "VCP-ARP-CONTROLLED-002",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            }
+          }
+        }
+      ],
+      "fixture": "conformance/agent-runtime/controlled_contracts.json",
+      "fixture_sha256": "d20ebec3ba716d87e66939a6dea1a61d09770f74f3e6ede66ce068203e38ea2f",
+      "maturity": "conformance-candidate",
+      "normative_source": "VCP-Spec/veps/VEP-0006-agent-runtime-profile.md",
+      "runner": "conformance/runners/agent_runtime_profile.py",
+      "suite": "agent-runtime/controlled_contracts",
+      "version": "0.1.0"
+    },
+    {
+      "case_count": 6,
+      "cases": [
+        {
+          "applicability": "protocol_behavior",
+          "description": "bounded observe SituationView is accepted",
+          "id": "VCP-ARP-CONTRACT-001",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "undeclared authority-bearing field is rejected",
+          "id": "VCP-ARP-CONTRACT-002",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "required and optional exact profile offer is accepted",
+          "id": "VCP-ARP-NEG-001",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "profile acknowledgement binds bootstrap, catalog, principal, event mode, and expiry",
+          "id": "VCP-ARP-NEG-006",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "inexact or unknown candidate profile is rejected",
+          "id": "VCP-ARP-NEG-007",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "undeclared acknowledgement authority field is rejected",
+          "id": "VCP-ARP-NEG-008",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the profile schema runner and language package contract tests",
+              "status": "checked"
+            }
+          }
+        }
+      ],
+      "fixture": "conformance/agent-runtime/observe_contracts.json",
+      "fixture_sha256": "6e4d93c6f2972dba94819ac78ffb1bb3911ecd8af373109315631179014ee69e",
+      "maturity": "conformance-candidate",
+      "normative_source": "VCP-Spec/veps/VEP-0006-agent-runtime-profile.md",
+      "runner": "conformance/runners/agent_runtime_profile.py",
+      "suite": "agent-runtime/observe_contracts",
+      "version": "0.1.0"
+    },
+    {
       "case_count": 16,
       "cases": [
         {
@@ -6827,25 +7053,25 @@
     }
   ],
   "summary": {
-    "fixture_count": 27,
+    "fixture_count": 30,
     "implementation_status": {
       "python": {
-        "checked": 328,
+        "checked": 338,
         "not_applicable": 8,
         "unsupported": 6
       },
       "rust": {
-        "checked": 268,
+        "checked": 278,
         "not_applicable": 8,
         "unsupported": 66
       },
       "webmcp": {
-        "checked": 64,
+        "checked": 74,
         "not_applicable": 272,
         "unsupported": 6
       }
     },
-    "vector_count": 342,
+    "vector_count": 352,
     "webmcp_surface_checks": 2
   },
   "webmcp_surface": {

@@ -138,6 +138,108 @@
       "version": "1.0.0"
     },
     {
+      "case_count": 2,
+      "fixture": "conformance/agent-runtime/accretive_contracts.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/agent_runtime_profile.py",
+      "suite": "agent-runtime/accretive_contracts",
+      "version": "0.1.0"
+    },
+    {
+      "case_count": 2,
+      "fixture": "conformance/agent-runtime/controlled_contracts.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 2,
+          "case_statuses": {
+            "checked": 2
+          },
+          "checked_cases": 2,
+          "status": "full"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/agent_runtime_profile.py",
+      "suite": "agent-runtime/controlled_contracts",
+      "version": "0.1.0"
+    },
+    {
+      "case_count": 6,
+      "fixture": "conformance/agent-runtime/observe_contracts.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 6,
+          "case_statuses": {
+            "checked": 6
+          },
+          "checked_cases": 6,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 6,
+          "case_statuses": {
+            "checked": 6
+          },
+          "checked_cases": 6,
+          "status": "full"
+        },
+        "webmcp": {
+          "applicable_cases": 6,
+          "case_statuses": {
+            "checked": 6
+          },
+          "checked_cases": 6,
+          "status": "full"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/agent_runtime_profile.py",
+      "suite": "agent-runtime/observe_contracts",
+      "version": "0.1.0"
+    },
+    {
       "case_count": 16,
       "fixture": "conformance/extensions/capability_negotiation.json",
       "implementations": {
@@ -938,6 +1040,6 @@
   "schema": "vcp-feature-matrix/1",
   "source": {
     "path": "conformance/coverage-manifest.json",
-    "sha256": "f8e7a43d3f52271d6f1ceec44ec8732867c898ae4e09da12f5588874ebc5b112"
+    "sha256": "94c607f0f64275e11a60da4453537d229225970abcb423005c71e0ebd1206dd5"
   }
 }

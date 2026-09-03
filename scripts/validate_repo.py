@@ -63,6 +63,9 @@ REQUIRED_FILES = (
     "rust/vcp-core/testdata/revocation-crl-responses.json",
     "rust/vcp-core/testdata/relational_context.json",
     "rust/vcp-core/testdata/torch_handoff.json",
+    "rust/vcp-core/testdata/observe_contracts.json",
+    "rust/vcp-core/testdata/controlled_contracts.json",
+    "rust/vcp-core/testdata/accretive_contracts.json",
     "webmcp/upstream-contract.json",
     "schemas/vcp-conformance-aggregate-report.schema.json",
     "release/ECOSYSTEM_STATUS.md",
@@ -76,6 +79,7 @@ REQUIRED_FILES = (
 )
 COMMON_SCHEMAS = (
     "vcp-adaptation-context.schema.json",
+    "vcp-agent-runtime-profile-v0.1.schema.json",
     "vcp-identity-token.schema.json",
     "vcp-manifest-v1.schema.json",
     "vcp-semantics-csm1.schema.json",
@@ -89,9 +93,9 @@ PERSONAL_FIELDS = {
 }
 FORBIDDEN_PERSONAL_FIELDS = {"cognitive", "emotional", "energy", "urgency", "body"}
 MAX_JSON_BYTES = 16 * 1024 * 1024
-EXPECTED_CONFORMANCE_FILES = 27
+EXPECTED_CONFORMANCE_FILES = 30
 EXPECTED_VECTOR_CASES = 226
-EXPECTED_TEST_CASES = 116
+EXPECTED_TEST_CASES = 126
 
 
 class DuplicateJsonKeyError(ValueError):
@@ -544,6 +548,9 @@ def validate_packaged_fixture_mirrors(problems: Problems) -> None:
         ("security", "revocation-crl-responses.json"),
         ("extensions", "relational_context.json"),
         ("extensions", "torch_handoff.json"),
+        ("agent-runtime", "observe_contracts.json"),
+        ("agent-runtime", "controlled_contracts.json"),
+        ("agent-runtime", "accretive_contracts.json"),
     )
     for family, name in fixture_mirrors:
         canonical = ROOT / "conformance" / family / name
