@@ -1,9 +1,9 @@
 {
   "schema": "vcp-webmcp-upstream-contract/1",
-  "reviewed_at": "2026-08-31",
-  "upstream_commit": "41d12f057167ccf5954dbcf49d99502cb6c84491",
+  "reviewed_at": "2026-09-07",
+  "upstream_commit": "50c4b7fd6c4402731271649bc544b662b061ed44",
   "source_url": "https://raw.githubusercontent.com/webmachinelearning/webmcp/main/index.bs",
-  "sha256": "48b076e033e510017fb9609bd38a8ed4161b71aeb456889adea45d32c0069cad",
+  "sha256": "f5421348772cb38b854ddad7a2114db3a6ed8c7827f3a1d267c01c45a7868e56",
   "maximum_bytes": 2097152,
   "required_fragments": [
     "partial interface Document {",
@@ -15,7 +15,8 @@
     "Promise<DOMString> executeTool(RegisteredTool tool, optional object inputObject = {}, optional ModelContextExecuteToolOptions options = {});",
     "dictionary ToolExecuteCallbackOptions {",
     "required AbortSignal signal;",
-    "callback ToolExecuteCallback = Promise<any> (object inputObject, ToolExecuteCallbackOptions options);"
+    "callback ToolExecuteCallback = Promise<any> (object inputObject, ToolExecuteCallbackOptions options);",
+    "boolean consequentialHint = false;"
   ],
   "forbidden_fragments": []
 }

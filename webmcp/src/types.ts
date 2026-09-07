@@ -19,6 +19,8 @@ export interface WebMCPToolResult {
 export interface WebMCPToolAnnotations {
 	readOnlyHint?: boolean;
 	untrustedContentHint?: boolean;
+	/** The tool can cause a significant, real-world, or non-reversible action. */
+	consequentialHint?: boolean;
 }
 
 export interface WebMCPToolExecuteOptions {
