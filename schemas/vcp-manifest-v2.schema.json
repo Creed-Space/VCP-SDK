@@ -337,14 +337,14 @@
         },
         "adherence_level": {
           "type": "integer",
-          "minimum": 1,
-          "maximum": 9,
-          "description": "Adherence level (1-9, expanded range in v2.0)"
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Adherence level (0-5, VCP/S §2.7)"
         },
         "csm1": {
           "type": "string",
-          "pattern": "^(?![^:@]*(?:\\+F[^:@]*\\+A|\\+A[^:@]*\\+F|\\+V[^:@]*\\+A|\\+A[^:@]*\\+V|\\+H[^:@]*\\+A|\\+A[^:@]*\\+H))(?![^:@]*\\+([FWPETOVAHSR])(?:\\+[FWPETOVAHSR])*\\+\\1(?=\\+|[:@]|$))(?:C[0-5](?:\\+[FWPETOVAHSR])*:[A-Z]{1,8}|[NZGAMD][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?)(?:@(?:[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}|latest|canary))?$",
-          "description": "CSM1 compact code",
+          "pattern": "^(?![^:@]*(?:\\+F[^:@]*\\+A|\\+A[^:@]*\\+F|\\+V[^:@]*\\+A|\\+A[^:@]*\\+V|\\+H[^:@]*\\+A|\\+A[^:@]*\\+H))(?![^:@]*\\+([FWPETOVAHSR])(?:\\+[FWPETOVAHSR])*\\+\\1(?=\\+|[:@]|$))(?:C[0-5](?:\\+[FWPETOVAHSR])*:[A-Z]{1,8}|[NZGAMD][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?)(?:@(?:(?:0|[1-9][0-9]{0,2})\\.(?:0|[1-9][0-9]{0,2})\\.(?:0|[1-9][0-9]{0,2})|latest|canary))?$",
+          "description": "CSM-1 code (NANO or MICRO tier)",
           "examples": ["N5+F:ELEM@1.2.0"]
         }
       },
