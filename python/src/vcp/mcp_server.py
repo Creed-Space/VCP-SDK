@@ -61,9 +61,9 @@ Example tokens:
         ),
         Tool(
             name="vcp_parse_csm1",
-            description="""Parse a CSM1 constitutional code.
+            description="""Parse a CSM-1 constitutional code (NANO, MICRO or COMPACT tier).
 
-CSM1 (Constitutional Safety Minicode) is a compact encoding for constitutional profiles:
+A CSM-1 (Constitutional Safety Minicode) code is a one-line encoding for constitutional profiles:
 - Persona: N(anny), Z(sentinel), G(odparent), A(mbassador), M(use), D(mediator), C(ustom)
 - Level: 0-5 adherence level
 - Scopes: F(amily), W(ork), E(ducation), H(ealth), etc.
@@ -71,7 +71,9 @@ CSM1 (Constitutional Safety Minicode) is a compact encoding for constitutional p
 Example codes:
 - N5+F+E: Nanny persona, level 5, Family+Education scopes
 - Z3+P: Sentinel persona, level 3, Privacy scope
-- G4:ELEM: Godparent persona, level 4, ELEM namespace""",
+- G4:ELEM: Godparent persona, level 4, ELEM namespace
+- CS1|nanny|5|family.safe.guide|E,F: COMPACT tier, Nanny persona, level 5,
+  constitution family.safe.guide, Education+Family scopes""",
             input_schema={
                 "type": "object",
                 "properties": {
@@ -238,7 +240,7 @@ Returns the current state of all VCP feature flags:
 - vcp_identity_enabled: VCP/I layer active
 - vcp_semantics_enabled: VCP/S layer active
 - vcp_adaptation_enabled: VCP/A layer active
-- vcp_full_stack_enabled: All layers active
+- vcp_full_stack_enabled: VCP/I, VCP/S and VCP/A all enabled
 - vcp_strict_mode: Strict validation mode""",
             input_schema={
                 "type": "object",
@@ -312,7 +314,10 @@ async def _handle_parse_csm1(arguments: dict[str, Any]) -> list[TextContent]:
             "scopes": [s.name for s in code.scopes],
             "namespace": code.namespace,
             "version": code.version,
-            "encoded": code.encode(),
+            "uvc_token": code.uvc_token,
+            # MICRO when the code has a MICRO form; otherwise COMPACT (a custom
+            # persona identified by its constitution token alone).
+            "encoded": str(code),
         }
     except ValueError as e:
         result = {"valid": False, "error": str(e)}
@@ -394,7 +399,7 @@ async def _handle_status(_arguments: dict[str, Any]) -> list[TextContent]:
 
 
 async def _list_tools_adapter(_context: Any, _params: Any) -> ListToolsResult:
-    """Adapt the local tool catalogue to the MCP 2 low-level server API."""
+    """Adapt the local tool catalog to the MCP 2 low-level server API."""
     return ListToolsResult(tools=await list_tools())
 
 
