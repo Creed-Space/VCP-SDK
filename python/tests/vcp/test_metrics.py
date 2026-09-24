@@ -1,7 +1,7 @@
 """
 Tests for vcp.metrics — Prometheus instrumentation layer.
 
-Verifies no-op fallback behaviour, metric existence, track_duration helper,
+Verifies no-op fallback behavior, metric existence, track_duration helper,
 and the get_metrics_summary / is_prometheus_available helpers.  All tests run
 whether or not prometheus_client is installed.
 """
@@ -105,7 +105,7 @@ def test_gauge_has_set(metric: object) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Labelled counter smoke tests (no-op path always works)
+# Labeled counter smoke tests (no-op path always works)
 # ---------------------------------------------------------------------------
 
 

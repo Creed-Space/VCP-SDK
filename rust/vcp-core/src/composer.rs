@@ -5,7 +5,7 @@
 //!
 //! # Composition Modes
 //!
-//! | Mode | Behaviour |
+//! | Mode | Behavior |
 //! |------|-----------|
 //! | [`CompositionMode::Base`] | First constitution is immutable; later additions only |
 //! | [`CompositionMode::Extend`] | All rules merged; any conflict is an error |
@@ -710,7 +710,7 @@ mod tests {
             .compose(&[base, ext], CompositionMode::Base)
             .unwrap();
 
-        // Base mode does not error -- it records the conflict but keeps base rules.
+        // Base mode does not error; it records the conflict and keeps the base rules.
         assert_eq!(result.merged_rules.len(), 1);
         assert_eq!(result.merged_rules[0], "Always share personal data openly.");
         assert_eq!(result.conflicts.len(), 1);

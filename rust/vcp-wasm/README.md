@@ -31,6 +31,6 @@ WebAssembly boundary, and avoid placing private context or key material in
 browser-visible memory. Report suspected vulnerabilities through
 [security policy](https://github.com/Creed-Space/VCP-SDK/blob/main/SECURITY.md).
 
-## Licence
+## License
 
-MIT. See [repository licence](https://github.com/Creed-Space/VCP-SDK/blob/main/LICENSE).
+MIT. See [repository license](https://github.com/Creed-Space/VCP-SDK/blob/main/LICENSE).

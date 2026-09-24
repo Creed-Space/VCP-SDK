@@ -15,7 +15,7 @@ print(f"Canonical: {token.canonical}")   # family.safe.guide
 print(f"Depth:     {token.depth}")       # 3
 print(f"URI:       {token.to_uri()}")    # creed://creed.space/family.safe.guide@1.2.0
 
-# Tokens are immutable -- derive variants with with_version / with_namespace.
+# Tokens are immutable; derive variants with with_version / with_namespace.
 v2 = token.with_version("2.0.0")
 print(f"v2:        {v2.full}")           # family.safe.guide@2.0.0
 

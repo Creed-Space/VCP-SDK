@@ -181,12 +181,12 @@ class AdherenceLevelPlugin(PDPPlugin):
     """Enforces minimum adherence level from CSM1-encoded constitutions.
 
     Adherence levels (0-5):
-        0: Advisory — no enforcement
-        1: Soft — gentle reminders
-        2: Moderate — some enforcement
-        3: Active — standard enforcement
+        0: Minimal — advisory only
+        1: Relaxed — light guardrails
+        2: Moderate — balanced protection
+        3: Standard — default protection
         4: Strict — strong enforcement
-        5: Absolute — no overrides
+        5: Maximum — no overrides
     """
 
     @property

@@ -322,7 +322,7 @@ class Composer:
                 ),
             )
             if hook_result.status == "completed" and hook_result.constitution is not None:
-                # Hook resolved the conflict -- use the modified result
+                # The hook resolved the conflict, so use the modified result
                 resolved_rules = hook_result.constitution
                 if isinstance(resolved_rules, list):
                     return CompositionResult(

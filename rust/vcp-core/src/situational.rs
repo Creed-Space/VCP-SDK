@@ -1,4 +1,4 @@
-//! Situational context dimensions (VCP v3.2 Layer 2).
+//! Situational context dimensions (VCP v3.2 situational context tier).
 //!
 //! Thirteen categorical dimensions describe the user's current situation
 //! using emoji-keyed tag arrays in a compact wire format.
@@ -296,7 +296,7 @@ impl SituationalContext {
     /// # Errors
     ///
     /// Returns [`VcpError::ParseError`] if a segment contains an
-    /// unrecognised dimension symbol.
+    /// unrecognized dimension symbol.
     pub fn from_wire(wire: &str) -> VcpResult<Self> {
         let mut ctx = SituationalContext::default();
 
@@ -451,7 +451,7 @@ fn split_situational_symbol(s: &str) -> VcpResult<(SituationalDimension, &str)> 
     }
 
     Err(VcpError::ParseError(format!(
-        "unrecognised situational dimension symbol in: {s}"
+        "unrecognized situational dimension symbol in: {s}"
     )))
 }
 

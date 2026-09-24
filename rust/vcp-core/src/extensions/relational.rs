@@ -1,8 +1,8 @@
 //! Relational context models for VCP v3.1.
 //!
-//! Partnership-level relational context layer. Distinct from user state and
-//! AI state — this is about the relationship itself: trust, standing, norms,
-//! self-model, and session continuity.
+//! Partnership-level relational context (VCP-X-Relational). Distinct from
+//! user state and AI state — this is about the relationship itself: trust,
+//! standing, norms, self-model, and session continuity.
 
 use std::collections::HashMap;
 use std::fmt;
