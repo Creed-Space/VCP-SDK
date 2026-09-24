@@ -14,6 +14,7 @@ from vcp.extensions.personal import (
     PersonalContext,
     PersonalDimension,
     PersonalSignal,
+    SignalSource,
     compute_decayed_intensity,
 )
 
@@ -87,6 +88,44 @@ class TestPersonalSignal:
         assert signal.category == "rested"
         assert signal.intensity == 5
         assert signal.source == "preset"
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "declared",
+            "inferred",
+            "inferred_local",
+            "measured",
+            "elicitation",
+            "preset",
+            "decayed",
+        ],
+    )
+    def test_accepts_every_spec_source(self, source: str) -> None:
+        """VCP-X-Personal §2.3 lists seven sources; all must round-trip."""
+        signal = PersonalSignal.from_dict({"category": "calm", "source": source})
+        assert signal.source == source
+        assert signal.to_dict()["source"] == source
+
+    def test_signal_source_enum_matches_spec(self) -> None:
+        assert {s.value for s in SignalSource} == {
+            "declared",
+            "inferred",
+            "inferred_local",
+            "measured",
+            "elicitation",
+            "preset",
+            "decayed",
+        }
+
+    def test_enum_source_is_stored_as_wire_value(self) -> None:
+        signal = PersonalSignal(category="calm", source=SignalSource.MEASURED)
+        assert signal.to_dict()["source"] == "measured"
+        assert type(signal.to_dict()["source"]) is str
+
+    def test_invalid_source(self) -> None:
+        with pytest.raises(ValueError, match="Invalid source"):
+            PersonalSignal(category="calm", source="guessed")
 
     def test_from_dict_defaults(self) -> None:
         signal = PersonalSignal.from_dict({"category": "neutral"})

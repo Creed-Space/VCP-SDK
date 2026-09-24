@@ -11,6 +11,7 @@ use std::time::SystemTime;
 
 /// The 5 personal state dimensions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum PersonalDimension {
     CognitiveState,
     EmotionalTone,
@@ -31,18 +32,30 @@ impl fmt::Display for PersonalDimension {
     }
 }
 
-/// Source of a personal signal.
+/// Source of a personal signal (VCP-X-Personal §2.3).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum SignalSource {
+    /// The user stated or selected the value.
     Declared,
+    /// The system inferred it from user behavior (LLM-based).
     Inferred,
+    /// Inferred from local device signals (regex, heuristic).
     InferredLocal,
+    /// Read from a physical instrument such as a sensor, wearable or
+    /// biometric device.
+    Measured,
+    /// Self-reported through an MCP elicitation dialog mid-task.
+    Elicitation,
+    /// Loaded from a saved preset profile.
     Preset,
+    /// Was active; decay has been applied to its intensity.
     Decayed,
 }
 
 /// Lifecycle state for a personal dimension signal.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum LifecycleState {
     /// Just declared (t=0).
     Set,
@@ -58,6 +71,7 @@ pub enum LifecycleState {
 
 /// Decay curve shapes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum DecayCurve {
     Exponential,
     Linear,
@@ -390,6 +404,54 @@ mod tests {
 
     fn time_plus_secs(base: SystemTime, secs: f64) -> SystemTime {
         base + Duration::from_secs_f64(secs)
+    }
+
+    #[test]
+    fn enums_use_spec_wire_values() {
+        let sources = [
+            (SignalSource::Declared, "declared"),
+            (SignalSource::Inferred, "inferred"),
+            (SignalSource::InferredLocal, "inferred_local"),
+            (SignalSource::Measured, "measured"),
+            (SignalSource::Elicitation, "elicitation"),
+            (SignalSource::Preset, "preset"),
+            (SignalSource::Decayed, "decayed"),
+        ];
+        for (source, wire) in sources {
+            let json = serde_json::to_value(source).unwrap();
+            assert_eq!(json, serde_json::json!(wire));
+            assert_eq!(
+                serde_json::from_value::<SignalSource>(json).unwrap(),
+                source
+            );
+        }
+        assert!(serde_json::from_value::<SignalSource>(serde_json::json!("Declared")).is_err());
+
+        assert_eq!(
+            serde_json::to_value(PersonalDimension::CognitiveState).unwrap(),
+            serde_json::json!("cognitive_state")
+        );
+        assert_eq!(
+            serde_json::to_value(LifecycleState::Decaying).unwrap(),
+            serde_json::json!("decaying")
+        );
+        assert_eq!(
+            serde_json::to_value(DecayCurve::Exponential).unwrap(),
+            serde_json::json!("exponential")
+        );
+    }
+
+    #[test]
+    fn personal_signal_json_roundtrip() {
+        let signal = PersonalSignal::new("calm", 3)
+            .with_source(SignalSource::Measured)
+            .with_confidence(0.8);
+        let json = serde_json::to_value(&signal).unwrap();
+        assert_eq!(json["source"], serde_json::json!("measured"));
+        assert_eq!(
+            serde_json::from_value::<PersonalSignal>(json).unwrap(),
+            signal
+        );
     }
 
     #[test]

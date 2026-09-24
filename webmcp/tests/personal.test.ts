@@ -184,7 +184,7 @@ describe('DEFAULT_DECAY_CONFIGS', () => {
 });
 
 describe('computeLifecycleState — per-config fresh window and stale threshold', () => {
-	it('honours a non-default fresh window', () => {
+	it('honors a non-default fresh window', () => {
 		const now = new Date();
 		const declared = new Date(now.getTime() - 120_000); // 2 minutes ago
 		expect(
@@ -193,7 +193,7 @@ describe('computeLifecycleState — per-config fresh window and stale threshold'
 		expect(computeLifecycleState(5, declared, BASE_CONFIG, now)).toBe(LifecycleState.DECAYING);
 	});
 
-	it('honours a non-default stale threshold', () => {
+	it('honors a non-default stale threshold', () => {
 		const now = new Date();
 		// Two half-lives: effective = floor(1 + 4 * 0.25) = 2.
 		const declared = new Date(now.getTime() - 2 * 900_000);
