@@ -1,13 +1,13 @@
 /**
  * VCP 3.1 Relational Context Extensions
  *
- * Partnership-level relational context layer. Distinct from both user state
+ * Partnership-level relational context (VCP-X-Relational). Distinct from both user state
  * and AI state — this is about the relationship itself.
  *
  * Design principles:
  * 1. Uncertainty markers are REQUIRED on AI self-reports (the ? is load-bearing)
  * 2. Negative states must be representable (no positivity-only schemas)
- * 3. Privacy layers: private (partner-only) -> attestable (verifiable) -> public
+ * 3. Privacy levels: private (partner-only) -> attestable (verifiable) -> public
  */
 
 // === Enums ===

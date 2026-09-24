@@ -623,6 +623,33 @@ describe('createVCPTools — default personas', () => {
 		}
 	});
 
+	it('defaults to a three-segment constitution ID and passes an explicit one through', async () => {
+		const fetchMock = vi.fn(async () => new Response(JSON.stringify({ response: 'ok' })));
+		vi.stubGlobal('fetch', fetchMock);
+		try {
+			const tool = chatTool();
+			expect(tool.inputSchema.properties.constitution_id?.description).not.toContain("'general'");
+			await tool.execute({ query: 'hello' });
+			await tool.execute({ query: 'hello', constitution_id: 'org.procurement.approval-policy' });
+			const bodies = fetchMock.mock.calls.map(
+				(call) => JSON.parse((call as unknown as [string, RequestInit])[1].body as string),
+			);
+			expect(bodies[0].constitution_id).toBe('personal.growth.creative');
+			expect(bodies[0].constitution_id.split('.').length).toBeGreaterThanOrEqual(3);
+			expect(bodies[1].constitution_id).toBe('org.procurement.approval-policy');
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
+	it('gives the protective role to Nanny and ethical guidance to Godparent', async () => {
+		const personasTool = createVCPTools().find((t) => t.name === 'vcp_list_personas')!;
+		const listing = (await personasTool.execute({})).content[0].text;
+		expect(listing).toContain('Ethical guidance and moral reasoning');
+		expect(listing).toContain('Child safety and family-appropriate content');
+		expect(listing).not.toContain('nurturing');
+	});
+
 	it('falls back to the first configured persona when ambassador is not configured', () => {
 		const tools = createVCPTools({
 			personas: [{ id: 'custom', name: 'Custom', description: 'Test', use: 'Testing' }],
