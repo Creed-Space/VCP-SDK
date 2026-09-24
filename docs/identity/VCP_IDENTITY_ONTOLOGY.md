@@ -1,11 +1,11 @@
-# VCP-Identity: Value Ontology Specification
+# VCP/I (Identity): Value Ontology Specification
 
 **Version**: 1.0.0
 **Date**: 2026-01-11
 **Layer**: VCP/I (Identity)
 **Status**: Complete (Specification) | Optional (Data)
 
-> *Part of the Value-Context Protocol (VCP) - Layer 1*
+> *Part of the Value-Context Protocol (VCP), Layer 1*
 
 ---
 
@@ -22,10 +22,10 @@
 
 - **VCP/I (Identity)**: Tokens are names that resolve to bundles. No semantic backing required.
 - **VCP/T (Transport)**: Bundles are signed containers. Content-agnostic.
-- **VCP/S (Semantics)**: CSM1 codes and constitutions are self-contained.
+- **VCP/S (Semantics)**: CSM-1 codes and constitutions are self-contained.
 - **VCP/A (Adaptation)**: Context encoding is orthogonal to value semantics.
 - **VCP/M (Messaging)**: Inter-agent messages are self-describing.
-- **VCP/E (Economic)**: Authorization governs by capability, not ontology.
+- **VCP/E (Economic Governance)**: Authorization governs by capability, not ontology.
 
 **The ontology enables optional enhancements:**
 - Semantic search ("find constitutions about fairness")
@@ -41,7 +41,7 @@
 
 ## Abstract
 
-This specification defines the Value Ontology - a structured corpus of value statements that form the semantic foundation for UVC tokens. The ontology categorizes values, defines relationships (hierarchy, tension, complement), and provides composition rules.
+This specification defines the Value Ontology, a structured corpus of value statements that form the semantic foundation for UVC tokens. The ontology categorizes values, defines relationships (hierarchy, tension, complement), and provides composition rules.
 
 ---
 
@@ -576,7 +576,10 @@ class CompositionResult:
 
 ### 7.2 Example Data File
 
-See `data/uvc_ontology.json` for the complete ontology data.
+No `data/uvc_ontology.json` artifact is shipped in this repository. The JSON
+above is illustrative. A future ontology data file requires an owned source,
+versioned schema, provenance, and an explicit authority and maturity decision
+before active guidance may call it complete.
 
 ---
 

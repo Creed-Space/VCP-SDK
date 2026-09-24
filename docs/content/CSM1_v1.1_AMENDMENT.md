@@ -3,7 +3,7 @@
 **Status**: Draft
 **Version**: 1.1.0
 **Date**: 2026-02-13
-**Layer**: 3 (VCP Content)
+**Layer**: VCP/S (Semantics)
 **Amends**: CSM1 Grammar Specification v1.0.0
 
 ---
@@ -25,13 +25,13 @@ The R-line is appended as the 8th line of the CSM-1 token, after the S-line (pri
 ### Complete CSM-1 v1.1 Token Format
 
 ```
-Line 1: VCP:<version>:<profile-id>          Header
+Line 1: VCP:<version>:<profile-id>          Header (token header version, currently 1.0)
 Line 2: C:<constitution>@<version>          Constitution reference
 Line 3: P:<persona>:<adherence>             Persona and adherence level
 Line 4: G:<goal>:<experience>:<style>       Goal context
 Line 5: X:<constraints>                     Constraint flags (emoji-encoded)
 Line 6: F:<flags>                           Public behavioral flags
-Line 7: S:<private-markers>                 Private markers (stripped before transmission)
+Line 7: S:<private-markers>                 Private markers (presence only when transmitted)
 Line 8: R:<personal-state>                  Personal state dimensions (NEW)
 ```
 
@@ -97,11 +97,11 @@ Extended sub-signals are informational. Parsers MAY use them for richer adaptati
 
 ### Privacy Classification
 
-The R-line is classified as **Layer 3 (Personal State)** data:
+The R-line is classified as **personal-tier (personal state)** data:
 
 - **Within the user's VCP agent**: Full R-line is available for local decision-making
 - **Platform transmission**: R-line is included only if the user has explicitly consented to personal state sharing
-- **Default**: R-line is STRIPPED before transmission (same privacy model as S-line private markers)
+- **Default**: R-line is STRIPPED before transmission (the S-line stays, reduced to presence-only markers such as `S:🔒present`)
 - **Constraint flags**: If R-line is stripped, derived constraint flags (e.g., `⚡var` for variable energy) MAY appear in the X-line instead
 
 ### Examples
@@ -132,9 +132,9 @@ VCP:1.0:user-alice-daily
 C:family.safe.guide@1.2.0
 P:G:3
 G:learn_guitar:beginner:visual
-X:🔇:💰low:⚡var
-F:time_limited|noise_restricted
-S:🔒housing|🔒health
+X:🔇,💰low,⚡var
+F:time_limited,noise_restricted
+S:🔒present
 R:🧠focused:4|💭calm:3|🔋low_energy:2|⚡time_aware:3
 ```
 
@@ -168,7 +168,7 @@ Parsers MUST accept 7-line tokens (no R-line = no personal state declared).
 
 ## Relationship to VCP Context Specification v3.1
 
-The R-line is the CSM-1 wire encoding of VCP Context Layer 3 (Personal State). The mapping is:
+The R-line is the CSM-1 wire encoding of the personal context tier (personal state). The mapping is:
 
 | VCP Context Dimension | R-line Emoji | R-line Field |
 |----------------------|-------------|--------------|
@@ -184,11 +184,11 @@ The categorical values and intensity scale are identical between the context spe
 
 ## Signal Decay
 
-Personal state dimensions are subject to signal decay as defined in VCP Context Specification v3.1 §2.5. When a dimension's signal has decayed below threshold:
+Personal state dimensions follow the per-dimension decay defined in VCP-X-Personal §3-4, as VCP/S §2.4.1 requires:
 
-- The dimension SHOULD be omitted from the R-line
-- If retained, the intensity SHOULD be reduced to reflect decay
-- Stale signals (>30 minutes without refresh) MUST NOT be transmitted at original intensity
+- Unpinned signals MUST be transmitted at their effective (decayed) intensity, not their declared intensity
+- Dimensions in the EXPIRED lifecycle state SHOULD be omitted from the R-line
+- Pinned signals are transmitted at their declared intensity
 
 ---
 
@@ -196,4 +196,5 @@ Personal state dimensions are subject to signal decay as defined in VCP Context 
 
 | Version | Date | Changes |
 |---------|------|---------|
+| — | 2026-09-24 | Editorial, no format change: token example mirrors VCP/S §2.8.4 (comma-separated X-, F- and S-line lists; presence-only S-line marker); header version noted; personal state described as the personal context tier; signal decay aligned with VCP-X-Personal §3-4 and VCP/S §2.4.1; layer header reads VCP/S (Semantics). |
 | 1.1.0 | 2026-02-13 | Initial R-line amendment |

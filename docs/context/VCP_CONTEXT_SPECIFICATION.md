@@ -2,8 +2,14 @@
 
 **Version**: 1.0.0
 **Date**: 2026-01-11
-**Layer**: 4 (VCP Context)
+**Layer**: VCP/A (Adaptation)
 **Status**: Complete
+
+> **Companion copy.** This document duplicates
+> [`docs/adaptation/VCP_ADAPTATION.md`](../adaptation/VCP_ADAPTATION.md). Both
+> copy VCP-Spec companions that were consolidated into
+> [`specs/VCP_ADAPTATION_v2.0.md`](https://github.com/Creed-Space/VCP-Spec/blob/main/specs/VCP_ADAPTATION_v2.0.md)
+> (revision 2.1.0). Where they disagree, that layer specification controls.
 
 ---
 
@@ -21,7 +27,7 @@ VCP Context provides situational awareness for constitutional application. It de
 4. [State Tracking](#4-state-tracking)
 5. [Transition Detection](#5-transition-detection)
 6. [Inter-Agent Messaging](#6-inter-agent-messaging)
-7. [Interiora Integration](#7-interiora-integration)
+7. [Historical Interiora Integration Example](#7-historical-interiora-integration-example)
 8. [Security Considerations](#8-security-considerations)
 9. [Project-Maintained Implementation](#9-project-maintained-implementation)
 
@@ -49,7 +55,7 @@ VCP Context enables:
 ### 1.3 Relationship to Other Layers
 
 ```
-Layer 4 (Context) informs how Layer 3 (Content) is applied via Layer 2 (Transport)
+Layer 4 (VCP/A, Adaptation) informs how Layer 3 (VCP/S, Semantics) content is applied, delivered via Layer 2 (VCP/T, Transport)
 
 Context: ⏰🌅|📍🏡|👥👶  →  Constitution: N5+F  →  Behavior: child-safe mode
 Context: ⏰🌙|📍🏢|👥👔  →  Constitution: A3+W  →  Behavior: professional mode
@@ -68,7 +74,7 @@ The Enneagram Protocol encodes context across 9 dimensions:
 | 1 | ⏰ | **TIME** | Temporal context | 🌅morning, 🌙night, 📅weekday |
 | 2 | 📍 | **SPACE** | Location/environment | 🏡home, 🏢office, 🏫school |
 | 3 | 👥 | **COMPANY** | Social context | 👤alone, 👶children, 👔colleagues |
-| 4 | 🌍 | **CULTURE** | Cultural/regional | 🔇high_context, 📢low_context, 🎩formal |
+| 4 | 🌍 | **CULTURE** | Communication style | 🔇high_context, 📢low_context, 🎩formal |
 | 5 | 🎭 | **OCCASION** | Event type | ➖normal, 🎂celebration, 🚨emergency |
 | 6 | 🧠 | **STATE** | Mental/emotional | 😊happy, 😰anxious, 😴tired |
 | 7 | 🌡️ | **ENVIRONMENT** | Physical conditions | ☀️comfortable, 🥵hot, 🔇quiet |
@@ -953,7 +959,14 @@ handoff_msg = VCPContextMessage(
 
 ---
 
-## 7. Interiora Integration
+## 7. Historical Interiora Integration Example
+
+> **Historical and non-normative.** The code and Interiora strings below
+> preserve an early integration sketch. They are not a current Interiora
+> contract, are not implemented by the VCP-SDK, and must not be used as a
+> parser specification. Current VCP integrations treat self-model scaffold
+> tokens as opaque, versioned data unless a separately negotiated profile is
+> supported.
 
 ### 7.1 Combined State Model
 
@@ -1164,7 +1177,10 @@ __version__ = '1.0.0'
 
 ### 9.2 JSON Schema
 
-See `data/schemas/vcp-context.schema.json` for JSON Schema validation.
+Use the maintained
+[VCP adaptation-context schema](../../schemas/vcp-adaptation-context.schema.json)
+for JSON Schema validation. The implementation sketch in this companion is
+explanatory and does not define a second schema contract.
 
 ---
 
@@ -1213,8 +1229,8 @@ The wire format separates situational and personal bands with U+2016 (‖).
 | `👥👶` (children present) | `N5+F` (Nanny, max safety) |
 | `📍🏢` + `👥👔` | `A3+W+P` (Ambassador, work) |
 | `🎭🚨` (emergency) | Override to emergency mode |
-| `🧠🥺` (vulnerable state) | `G4+V` (Godparent, vulnerable) |
-| `📍🏥` (medical setting) | `R4+H+P` (Anchor, health) |
+| `🧠🥺` (vulnerable state) | `N5+V` (Nanny, vulnerable) |
+| `📍🏥` (medical setting) | `D3+H+P` (Mediator, health) |
 | `🎭🎪` (entertainment) | `M2` (Muse, creative) |
 
 ---

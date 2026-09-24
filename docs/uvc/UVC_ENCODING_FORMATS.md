@@ -2,7 +2,7 @@
 
 **Version**: 1.0.0
 **Date**: 2026-01-11
-**Layer**: 1 (UVC - Universal Value Coding)
+**Layer**: VCP/I (Identity)
 **Status**: Complete
 
 ---
