@@ -3,7 +3,7 @@
 <!-- wiki:type = system -->
 <!-- wiki:scope = vcp-sdk -->
 <!-- wiki:created = 2026-05-23 -->
-<!-- wiki:updated = 2026-08-14 -->
+<!-- wiki:updated = 2026-09-24 -->
 <!-- wiki:status = active -->
 
 ## Summary
@@ -36,18 +36,18 @@ history is preserved under `archives/`; production code must not import it.
 
 ## Distribution boundaries
 
-The three candidate distribution families all use SDK version 4.2.0, while the
-published protocol baseline remains VCP v3.1. Selected v3.2 amendments and
-experimental VEP behavior are labelled separately and require negotiation or
-governance approval.
+The three distribution families were published on PyPI, npm and crates.io at
+SDK version 4.2.0 on 3 September 2026. The protocol source baseline remains
+VCP v3.1. Selected v3.2 amendments and experimental VEP behavior are
+labeled separately and require negotiation or governance approval.
 
 * Python distribution: `value-context-protocol`, imported as `vcp`.
 * Rust distributions: `vcp-core`, `vcp-cli`, and `vcp-wasm`.
 * npm distribution: `@creedspace/vcp-sdk`, a WebMCP subset rather than a full
   general TypeScript implementation.
 
-No public registry publication is currently claimed. Source metadata and local
-package builds are candidate evidence only.
+`release/publication-state.json` records the registry receipt for each of the
+five artifacts.
 
 ## Trust boundaries
 
@@ -83,7 +83,8 @@ decisions without pretending that source authorship confers registry authority.
 Sources verified on 2026-08-14: `README.md`; `ARTIFACTS.md`;
 `COMPATIBILITY.md`; `SCHEMA_OWNERSHIP.md`; `RELEASE_CHECKLIST.md`; root directory
 inventory; `python/src/vcp/`; `rust/Cargo.toml`; `webmcp/package.json`;
-`conformance/coverage-manifest.json`.
+`conformance/coverage-manifest.json`. Publication status verified on 2026-09-24
+against `release/publication-state.json`.
 
 ## See Also
 
