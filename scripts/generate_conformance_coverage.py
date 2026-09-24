@@ -31,7 +31,7 @@ RUNNERS = {
     "adaptation/context_encoding": "conformance/runners/context_parity.py",
     "adaptation/context_encoding_extended": "conformance/runners/context_parity.py",
     "adaptation/state_machine": "conformance/runners/state_machine_conformance.py",
-    "adaptation/messaging": "conformance/runners/messaging_conformance.py",
+    "messaging/messaging": "conformance/runners/messaging_conformance.py",
     "interop/complete_bundle": "conformance/runners/interop_parity.py",
     "interop/cross_impl_roundtrip": "conformance/runners/interop_parity.py",
     "extensions/capability_negotiation": "conformance/runners/negotiation_parity.py",
@@ -50,21 +50,21 @@ NORMATIVE_SOURCES = {
     "agent-runtime": "VCP-Spec/veps/VEP-0006-agent-runtime-profile.md",
     "identity": "VCP-Spec/specs/VCP_IDENTITY_v2.0.md",
     "transport": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md",
-    "security": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md#revocation",
+    "security": "VCP-Spec/specs/core/security.md",
     "semantics/csm1": "VCP-Spec/docs/content/CSM1_GRAMMAR_SPECIFICATION.md",
     "semantics/persona": "VCP-Spec/docs/semantics/VCP_PERSONA_PROFILES.md",
     "semantics/composition": "VCP-Spec/docs/semantics/VCP_SEMANTICS_COMPOSITION.md",
     "adaptation/context": "VCP-Spec/docs/context/VCP_CONTEXT_SPECIFICATION.md",
     "adaptation/state": "VCP-Spec/docs/adaptation/VCP_STATE_MACHINE.md",
-    "adaptation/messaging": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md#messaging",
+    "messaging": "VCP-Spec/specs/VCP_MESSAGING_v2.0.md",
     "interop": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md",
-    "extensions/capability": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md#capability-negotiation",
-    "extensions/consensus": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md#consensus",
+    "extensions/capability": "VCP-Spec/specs/core/capability-negotiation.md",
+    "extensions/consensus": "VCP-Spec/specs/extensions/VCP-X-Consensus/spec.md",
     "extensions/personal": "VCP-Spec/specs/extensions/VCP-X-Personal/spec.md",
-    "extensions/competence": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md#competence",
-    "extensions/relational": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md#relational-context",
-    "extensions/torch": "VCP-Spec/archives/docs/VCP_TORCH_ARCHITECTURE.md",
-    "extensions/welfare": "VCP-Spec/veps/VEP-welfare-signals-draft.md",
+    "extensions/competence": "VCP-Spec/specs/VCP_COMPETENCE_v2.0.md",
+    "extensions/relational": "VCP-Spec/specs/extensions/VCP-X-Relational/spec.md",
+    "extensions/torch": "VCP-Spec/specs/extensions/VCP-X-Torch/spec.md",
+    "extensions/welfare": "VCP-Spec/specs/extensions/VCP-X-Welfare/spec.md",
     "extensions/stateless": "VCP-Spec/veps/VEP-0005-stateless-mcp.md",
 }
 
@@ -122,7 +122,7 @@ def implementation_status(
         return "checked", "Executed by the declared checked runner"
     if implementation == "webmcp":
         return "not_applicable", "Fixture does not exercise the WebMCP package surface"
-    if suite == "adaptation/messaging" and implementation == "rust":
+    if suite == "messaging/messaging" and implementation == "rust":
         return "unsupported", "Rust does not claim VCP messaging v2.0"
     if (
         suite in {"adaptation/state_machine", "extensions/competence"}

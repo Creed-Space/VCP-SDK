@@ -1,8 +1,9 @@
 # VCP conformance corpus
 
 This directory contains authored, language-neutral fixtures and checked runners
-for the Value-Context Protocol source candidate. The corpus currently contains
-30 JSON fixtures and 352 cases. Presence in the corpus is not a pass.
+for the VCP 3.1 source baseline and the labeled 3.2 candidates that SDK 4.2.0
+implements. The corpus currently contains 30 JSON fixtures and 352 cases.
+Presence in the corpus is not a pass.
 [`coverage-manifest.json`](coverage-manifest.json) is the machine-readable
 authority for every vector's source, applicability, runner, fixture hash, and
 Python, Rust, and WebMCP status.
@@ -24,15 +25,19 @@ attestation.
 
 | Directory | Coverage | Checked runner |
 |:---|:---|:---|
-| `agent-runtime/` | Observe profile contracts, strict authority fields, and exact profile negotiation | `agent_runtime_profile.py` |
+| `agent-runtime/` | Observe, controlled, and accretive profile contracts, strict authority fields, and exact profile negotiation | `agent_runtime_profile.py` |
 | `identity/` | Token parsing, canonicalization, hierarchy, and patterns | `identity_parity.py` |
 | `transport/` | Content, hashes, JCS manifests, signatures, bundles, temporal and content policy | `transport_parity.py` |
 | `semantics/` | CSM-1, personas, and layered composition | `csm1_parity.py`, `persona_parity.py`, `composition_parity.py` |
-| `adaptation/` | Context encoding, lifecycle, and messaging | `context_parity.py`, `state_machine_conformance.py`, `messaging_conformance.py` |
+| `adaptation/` | Context encoding and lifecycle (VCP/A) | `context_parity.py`, `state_machine_conformance.py` |
+| `messaging/` | Inter-Agent Messaging v2.0 envelopes (VCP/M) | `messaging_conformance.py` |
 | `interop/` | Complete signed bundles and cross-implementation roundtrips | `interop_parity.py` |
 | `security/` | Revocation responses and fail-closed scope decisions | `security_parity.py` |
 | `extensions/` | Negotiation, consensus, personal, competence, relational, torch, and drafts | Profile-specific runners |
 | `runners/` | Executable checks and aggregate reporting | `run_all.py` |
+
+Capability negotiation is a Core feature (v3.1 §1.2), not an extension, even
+though its suite lives under `extensions/`.
 
 Welfare and stateless MCP fixtures are draft profiles without claimed SDK
 implementations. They remain visibly `unsupported`, rather than being counted
@@ -65,10 +70,10 @@ conformance/reports/badge.json
 conformance/reports/profiles/*.json
 ```
 
-The generated badge is labelled `VCP local suite`, remains non-publishable, and
+The generated badge is labeled `VCP local suite`, remains non-publishable, and
 contains source identity, issue time, 30-day expiry, supersession, and
 revocation fields. `scripts/validate_conformance_claim.py` rejects an expired,
-revoked, superseded, or publicly enabled source-only claim. The publication
+revoked, superseded, or publicly enabled local-source claim. The publication
 state currently prohibits public conformance badges.
 
 The aggregate report is validated by
@@ -109,8 +114,9 @@ names `cognitive_state`, `emotional_tone`, `energy_level`,
 7. Record immutable Spec and SDK commits before making any conformance claim.
 8. Run installed-artifact verification for release candidates; source checks do not prove shipped artifacts.
 
-## Licence
+## License
 
 The fixture corpus is distributed under CC BY 4.0. SDK package code remains
-under the root MIT licence. The final file-class licensing matrix remains an
-authorized legal-review gate and must be confirmed before publication.
+under the root MIT license. SDK 4.2.0 was published under the MIT license
+declared in each package; the full file-class rights matrix review remains
+open.

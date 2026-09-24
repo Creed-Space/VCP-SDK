@@ -80,7 +80,7 @@ def build() -> tuple[dict[str, object], str]:
             "sha256": hashlib.sha256(coverage_bytes).hexdigest(),
         },
         "claim_boundary": (
-            "Statuses summarize same-programme candidate runners. They do not "
+            "Statuses summarize same-program candidate runners. They do not "
             "establish independent interoperability, certification, publication, "
             "or deployment support."
         ),
@@ -100,7 +100,7 @@ def build() -> tuple[dict[str, object], str]:
         "protocol-version: VCP 3.1 baseline with candidate extensions identified per row",
         "last-reviewed: 2026-08-15",
         "owner: VCP-SDK maintainers",
-        "evidence-boundary: Same-programme runner coverage, not independent interoperability or certification",
+        "evidence-boundary: Same-program runner coverage, not independent interoperability or certification",
         "-->",
         "",
         "This file is generated from `conformance/coverage-manifest.json`. Run",

@@ -297,9 +297,9 @@ def main() -> int:
     claim = {
         "status": "local-source-evidence",
         "publishable": False,
-        "protocol": "VCP 3.1 source baseline with labelled candidates",
+        "protocol": "VCP 3.1 source baseline with labeled candidates",
         "profile": "project-controlled aggregate runner",
-        "implementation_version": "4.2.0 source candidate",
+        "implementation_version": "4.2.0 source tree",
         "source_sha256": source_sha256,
         "issued_at": generated_at.isoformat().replace("+00:00", "Z"),
         "expires_at": (generated_at + timedelta(days=30))
