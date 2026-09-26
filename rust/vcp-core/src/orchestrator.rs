@@ -1,4 +1,4 @@
-//! VCP Orchestrator -- 12-step bundle verification pipeline.
+//! VCP Orchestrator: the 12-step bundle verification pipeline.
 //!
 //! Ports the Python SDK's `vcp.orchestrator.Orchestrator` to Rust,
 //! providing the same verification steps:
@@ -270,7 +270,7 @@ fn canonicalize_attestation(attestation: &Value, content_hash: &str) -> Option<V
 
 // ── Orchestrator ─────────────────────────────────────────────
 
-/// VCP Orchestrator -- verifies constitutional bundles through a 12-step pipeline.
+/// VCP Orchestrator. Verifies constitutional bundles through a 12-step pipeline.
 ///
 /// The orchestrator checks size limits, schema, content hash, issuer trust,
 /// signature, auditor trust, temporal claims, replay, budget, scope, and
@@ -379,8 +379,9 @@ impl Orchestrator {
             return code;
         }
 
-        // Step 6b: Revocation is enforced by default. Any configured source
-        // that cannot establish a clean status fails closed as revoked.
+        // Step 6b: Revocation is enforced by default. A configured source that
+        // cannot establish a clean status fails closed as RevocationUnavailable;
+        // only a confirmed revocation returns Revoked.
         if let Some(code) = self.verify_revocation(&manifest) {
             return code;
         }
@@ -830,7 +831,7 @@ impl Orchestrator {
 
 /// Simple glob pattern matching supporting `*` as wildcard.
 ///
-/// Matches the Python `fnmatch.fnmatch` behaviour used in the Python SDK's
+/// Matches the Python `fnmatch.fnmatch` behavior used in the Python SDK's
 /// scope verification for model family matching.
 fn glob_match(pattern: &str, text: &str) -> bool {
     let pat_chars: Vec<char> = pattern.chars().collect();

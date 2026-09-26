@@ -35,6 +35,6 @@ custody, trust-anchor provisioning, or durable replay storage. See
 [security policy](https://github.com/Creed-Space/VCP-SDK/blob/main/SECURITY.md) and
 [compatibility policy](https://github.com/Creed-Space/VCP-SDK/blob/main/COMPATIBILITY.md).
 
-## Licence
+## License
 
-MIT. See [repository licence](https://github.com/Creed-Space/VCP-SDK/blob/main/LICENSE).
+MIT. See [repository license](https://github.com/Creed-Space/VCP-SDK/blob/main/LICENSE).

@@ -24,14 +24,14 @@ use vcp_core::csm1::{Csm1Code, Csm1Token};
 use vcp_core::identity::VcpToken;
 use vcp_core::transport;
 
-/// Parse a CSM-1 compact code (e.g. `"N5+F+E"`) and return it as a JS object.
+/// Parse a one-line CSM-1 code (e.g. `"N5+F+E"`) and return it as a JS object.
 #[wasm_bindgen]
 pub fn parse_csm1(code: &str) -> Result<JsValue, JsValue> {
     let parsed = Csm1Code::parse(code).map_err(|e| JsValue::from_str(&e.to_string()))?;
     serde_wasm_bindgen::to_value(&parsed).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-/// Encode a CSM-1 compact code from a JS object back to a string.
+/// Encode a one-line CSM-1 code from a JS object back to a string.
 ///
 /// Accepts the same shape returned by `parse_csm1`.
 #[wasm_bindgen]
@@ -41,14 +41,19 @@ pub fn encode_csm1(obj: JsValue) -> Result<String, JsValue> {
     Ok(code.encode())
 }
 
-/// Parse a CSM-1 8-line token string and return it as a JS object.
+/// Parse a CSM-1 token and return it as a JS object.
+///
+/// The token has 7 required lines, then an optional R-line and optional
+/// extension lines, which are returned in `extension_lines`.
 #[wasm_bindgen]
 pub fn parse_csm1_token(token: &str) -> Result<JsValue, JsValue> {
     let parsed = Csm1Token::parse(token).map_err(|e| JsValue::from_str(&e.to_string()))?;
     serde_wasm_bindgen::to_value(&parsed).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-/// Encode a CSM-1 8-line token from a JS object back to a string.
+/// Encode a CSM-1 token from a JS object back to a string.
+///
+/// Accepts the same shape returned by `parse_csm1_token`.
 #[wasm_bindgen]
 pub fn encode_csm1_token(obj: JsValue) -> Result<String, JsValue> {
     let token: Csm1Token =

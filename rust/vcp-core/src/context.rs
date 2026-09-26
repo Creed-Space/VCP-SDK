@@ -178,7 +178,7 @@ impl FullContext {
                 personal,
             })
         } else {
-            // No separator -- treat the entire string as situational only.
+            // With no separator, the entire string is situational context.
             let situational = SituationalContext::from_wire(wire)?;
             Ok(Self {
                 situational,

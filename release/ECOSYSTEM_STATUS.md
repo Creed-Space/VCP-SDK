@@ -37,9 +37,10 @@ Published 4.2.0. Registry releases exist for every artifact; conformance claims 
 
 Same-programme candidate coverage. This is not independent interoperability or certification evidence.
 
-This page establishes source-repository state only. It does not establish
-registry publication, independent conformance, deployment identity, legal
-approval, governance ratification, or production behavior.
+This page summarizes the publication-state record. The registry receipts
+recorded there, not this page, are the publication evidence. It does not
+establish independent conformance, deployment identity, legal approval,
+governance ratification, or production behavior.
 
 ## Publication requirements
 

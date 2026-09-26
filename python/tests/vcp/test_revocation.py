@@ -50,7 +50,7 @@ def blocked_connection_factory() -> Iterator[MagicMock]:
 
     ``_fetch_json`` only reaches the factory once its SSRF guards have passed,
     so a test that gets there without patching the factory is about to open a
-    real socket. That does not fail -- it hangs for the full connect timeout
+    real socket. That does not fail; it hangs for the full connect timeout
     per resolved address, which is how a mutant that neuters the private-IP
     guard was reported as a mutation-testing timeout rather than as killed.
     Tests that exercise the transport patch this name themselves, which
@@ -860,7 +860,7 @@ class TestCRLCheck:
 
 
 # ---------------------------------------------------------------------------
-# Fallback behaviour
+# Fallback behavior
 # ---------------------------------------------------------------------------
 
 

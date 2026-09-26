@@ -28,7 +28,7 @@ assert_eq!(profile.encode(), "N5+E+F");
 ## Compatibility and features
 
 The minimum supported Rust version is 1.87. The crate has no optional feature
-flags in this candidate. Native builds include the bounded HTTPS revocation
+flags in 4.2.0. Native builds include the bounded HTTPS revocation
 transport. `wasm32-unknown-unknown` consumers should use the sibling
 `vcp-wasm` crate for the supported browser-facing surface.
 
@@ -45,6 +45,6 @@ monitoring remain application responsibilities. Report suspected
 vulnerabilities using the private route in
 [security policy](https://github.com/Creed-Space/VCP-SDK/blob/main/SECURITY.md).
 
-## Licence
+## License
 
-MIT. See [repository licence](https://github.com/Creed-Space/VCP-SDK/blob/main/LICENSE).
+MIT. See [repository license](https://github.com/Creed-Space/VCP-SDK/blob/main/LICENSE).

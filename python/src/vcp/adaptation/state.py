@@ -154,7 +154,7 @@ class StateTracker:
                     ),
                 )
                 if hook_result.status == "aborted":
-                    # Hook aborted the transition -- remove the recorded entry
+                    # The hook aborted the transition: remove the recorded entry
                     # and return None to indicate the transition was blocked
                     self._history.pop()
                     return None

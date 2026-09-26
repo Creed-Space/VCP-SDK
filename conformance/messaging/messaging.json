@@ -1,5 +1,5 @@
 {
-  "suite": "adaptation/messaging",
+  "suite": "messaging/messaging",
   "version": "2.0.0",
   "schema_version": "2.0.0",
   "vcp_version": "2.0",
@@ -206,7 +206,7 @@
     },
     {
       "id": "msg-valid-escalation-info",
-      "description": "Informational escalation may explicitly decline acknowledgement.",
+      "description": "Informational escalation may explicitly decline acknowledgment.",
       "input": {
         "vcp_message": "2.0",
         "type": "escalation",
@@ -228,7 +228,7 @@
     },
     {
       "id": "msg-valid-escalation-emergency",
-      "description": "Emergency escalation requires acknowledgement and permits a bounded blocked action.",
+      "description": "Emergency escalation requires acknowledgment and permits a bounded blocked action.",
       "input": {
         "vcp_message": "2.0",
         "type": "escalation",
@@ -1453,7 +1453,7 @@
     },
     {
       "id": "msg-invalid-critical-ack",
-      "description": "Critical escalation fails closed unless acknowledgement is required.",
+      "description": "Critical escalation fails closed unless acknowledgment is required.",
       "input": {
         "vcp_message": "2.0",
         "type": "escalation",

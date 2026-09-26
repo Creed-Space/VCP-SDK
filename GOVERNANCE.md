@@ -22,7 +22,7 @@ and its machine-readable
 | Behavior that changes the protocol or schema | VCP-Spec amendment issue before SDK implementation is promoted |
 | Cross-language conformance interpretation | VCP-Spec normative source plus VCP-SDK conformance evidence |
 | Package name, semver, or registry publication | Coordinated release ledger and protected SDK release workflow |
-| Licence, patent, trademark, or certification | Authorized rights review and VCP-Spec governance record |
+| License, patent, trademark, or certification | Authorized rights review and VCP-Spec governance record |
 | Demo behavior | VCP-Demo-Site, unless it exposes a protocol ambiguity |
 
 The SDK issue chooser links protocol proposals to VCP-Spec and intentionally

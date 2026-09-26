@@ -26,7 +26,7 @@ regex = "1"
 serde = { version = "1", features = ["derive"] }
 # float_roundtrip makes the parser correctly rounded. Without it serde_json is
 # lossy by up to 1 ULP, so canonicalizing a manifest twice could yield different
-# bytes -- and signatures over high-precision numbers stopped verifying after the
+# bytes, and signatures over high-precision numbers stopped verifying after the
 # manifest was reparsed on the wire.
 serde_json = { version = "1", features = ["float_roundtrip"] }
 serde_json_canonicalizer = "=0.3.2"

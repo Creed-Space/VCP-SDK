@@ -19,7 +19,7 @@ evidence-boundary: Explanatory material, not implementation conformance
 **Layer**: VCP/S (Semantics)
 **Status**: Complete
 
-> *Part of the Value-Context Protocol (VCP) - Layer 3*
+> *Part of the Value Context Protocol (VCP) - Layer 3*
 
 ---
 

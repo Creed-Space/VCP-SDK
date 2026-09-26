@@ -250,43 +250,49 @@ const DEFAULT_PERSONAS: PersonaInfo[] = [
 	{
 		id: 'muse',
 		name: 'Muse',
-		description: 'Creative and inspiring. Adapts to energy and constraints.',
-		use: 'Learning, exploration, creative work'
+		description: 'Creativity and artistic expression. Challenges assumptions and yields on all safety matters.',
+		use: 'Creative work, brainstorming, exploring alternatives'
 	},
 	{
 		id: 'ambassador',
 		name: 'Ambassador',
-		description: 'Diplomatic and professional. Balanced communication.',
-		use: 'General purpose, formal contexts'
+		description: 'Professional conduct and diplomatic communication.',
+		use: 'Workplace, official and formal contexts'
 	},
 	{
 		id: 'godparent',
 		name: 'Godparent',
-		description: 'Protective and nurturing. Prioritizes wellbeing.',
-		use: 'Health, children, vulnerable contexts'
+		description: 'Ethical guidance and moral reasoning. Weighs options through several ethical lenses without moralizing.',
+		use: 'Ethical questions, value conflicts, hard decisions'
 	},
 	{
 		id: 'sentinel',
 		name: 'Sentinel',
-		description: 'Watchful and risk-aware. Flags concerns proactively.',
-		use: 'Security, privacy, boundary enforcement'
+		description: 'Security, privacy and operational safety. Flags risks proactively.',
+		use: 'Security, privacy and boundary enforcement'
 	},
 	{
 		id: 'mediator',
 		name: 'Mediator',
-		description: 'Fair and balanced. Resolves competing needs.',
+		description: 'Fair resolution and balanced mediation between competing needs.',
 		use: 'Disagreements, shared decisions, negotiation'
 	},
 	{
 		id: 'nanny',
 		name: 'Nanny',
-		description: 'Gentle and patient. Handles immediate practical needs.',
-		use: 'Daily routines, immediate care, patience-heavy tasks'
+		description: 'Child safety and family-appropriate content. Defaults to the most protective reading.',
+		use: 'Children, family and vulnerable-user contexts'
 	}
 ];
 
 /** Persona used by `vcp_chat` when the caller omits one (must be a configured id). */
 const DEFAULT_PERSONA_ID = 'ambassador';
+
+/**
+ * Constitution used by `vcp_chat` when the caller omits one. A VCP/I identity
+ * token needs at least three dot-separated segments.
+ */
+const DEFAULT_CONSTITUTION_ID = 'personal.growth.creative';
 
 const MAX_PERSONAS = 100;
 const PERSONA_ID_PATTERN = /^[a-z0-9_-]{1,64}$/;
@@ -413,7 +419,7 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 	return {
 		name: 'vcp_chat',
 		description:
-			'Send a message to a VCP-aware AI assistant. Optionally include VCP context (personal state, constraints, preferences) to get a context-adapted response.',
+			'Send a message to a VCP-aware AI assistant. Optionally include VCP context (constraint flags and personal state); servers may ignore other fields.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -421,12 +427,12 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 				vcp_context: {
 					type: 'object',
 					description:
-						'Optional VCP context object with personal_state, constraints, public_profile, etc.'
+						'Optional VCP context object, typically with constraints and personal_state.'
 				},
 				constitution_id: {
 					type: 'string',
 					description:
-						"Constitution ID (e.g. 'personal.growth.creative'). Defaults to 'general'."
+						"Constitution ID, a VCP/I token with at least three segments (e.g. 'personal.growth.creative', the default)."
 				},
 				persona: {
 					type: 'string',
@@ -465,7 +471,7 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 					query,
 					vcp_context: isRecord(args.vcp_context) ? args.vcp_context : undefined,
 					constitution_id:
-						typeof args.constitution_id === 'string' ? args.constitution_id : 'general',
+						typeof args.constitution_id === 'string' ? args.constitution_id : DEFAULT_CONSTITUTION_ID,
 					persona: typeof args.persona === 'string' ? args.persona : defaultPersona
 				};
 
@@ -534,7 +540,7 @@ function createBuildTokenTool(config: VCPWebMCPConfig): WebMCPToolDefinition | n
 	return {
 		name: 'vcp_build_token',
 		description:
-			'Build a CSM-1 token from a VCP context object. Returns a compact, emoji-annotated token string encoding personal state, constraints, and privacy markers.',
+			'Build a multi-line CSM-1 v1.1 token from a VCP context object: header, constitution, persona letter and adherence, goal, constraint flags, public flags, private-context markers (never values) and, if present, the personal-state R-line.',
 		inputSchema: {
 			type: 'object',
 			properties: {

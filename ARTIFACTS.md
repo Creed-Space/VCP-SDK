@@ -10,9 +10,9 @@ archives and compiled output are disposable build products.
 
 | Distribution | Build command | Required contents | Excluded contents |
 |:---|:---|:---|:---|
-| Python wheel and sdist | `python -m build`, deterministic sdist normalization, then `python -m twine check dist/*` | `vcp` package, reproducible archive metadata, validated package metadata, README, MIT licence | tests, caches, credentials, local environments |
-| Rust crates | `make packages` from the repository root | crate sources, manifest, MIT licence | workspace target output and local configuration |
-| WebMCP npm package | `npm pack --dry-run` in `webmcp/` | `dist/`, README, MIT licence, package metadata | `src/`, tests, source maps, dependencies |
+| Python wheel and sdist | `python -m build`, deterministic sdist normalization, then `python -m twine check dist/*` | `vcp` package, reproducible archive metadata, validated package metadata, README, MIT license | tests, caches, credentials, local environments |
+| Rust crates | `make packages` from the repository root | crate sources, manifest, MIT license | workspace target output and local configuration |
+| WebMCP npm package | `npm pack --dry-run` in `webmcp/` | `dist/`, README, MIT license, package metadata | `src/`, tests, source maps, dependencies |
 
 The checked package manifest is evidence for the exact source tree used to build
 it. Publication requires a fresh manifest, checksum, and authorized release
@@ -53,8 +53,8 @@ The following paths are generated and must remain untracked:
 The conformance JSON files are authored fixtures. They are versioned sources,
 not generated test output.
 
-## Licence copies
+## License copies
 
-Every independently published package must contain the MIT licence. The root
-licence is copied into `python/`, each Rust crate, and `webmcp/`. A release
+Every independently published package must contain the MIT license. The root
+license is copied into `python/`, each Rust crate, and `webmcp/`. A release
 review confirms that copied texts remain byte-identical.

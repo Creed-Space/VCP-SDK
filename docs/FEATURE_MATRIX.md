@@ -6,19 +6,18 @@ normative-authority: Implementation evidence only
 protocol-version: VCP 3.1 baseline with candidate extensions identified per row
 last-reviewed: 2026-08-15
 owner: VCP-SDK maintainers
-evidence-boundary: Same-programme runner coverage, not independent interoperability or certification
+evidence-boundary: Same-program runner coverage, not independent interoperability or certification
 -->
 
 This file is generated from `conformance/coverage-manifest.json`. Run
 `python3 scripts/generate_feature_matrix.py` to update it.
 
-**Claim boundary:** Statuses summarize same-programme candidate runners. They do not establish independent interoperability, certification, publication, or deployment support.
+**Claim boundary:** Statuses summarize same-program candidate runners. They do not establish independent interoperability, certification, publication, or deployment support.
 
 | Feature suite | Version | Maturity | Cases | Python | Rust | WebMCP |
 |:---|:---|:---|---:|:---|:---|:---|
 | adaptation/context_encoding | 3.2.0 | conformance-candidate | 9 | full | full | full |
 | adaptation/context_encoding_extended | 3.2.0 | conformance-candidate | 12 | full | full | full |
-| adaptation/messaging | 2.0.0 | conformance-candidate | 41 | full | unsupported | not_applicable |
 | adaptation/state_machine | 1.0.0 | conformance-candidate | 14 | full | unsupported | not_applicable |
 | agent-runtime/accretive_contracts | 0.1.0 | conformance-candidate | 2 | full | full | full |
 | agent-runtime/controlled_contracts | 0.1.0 | conformance-candidate | 2 | full | full | full |
@@ -35,6 +34,7 @@ This file is generated from `conformance/coverage-manifest.json`. Run
 | identity/token_parsing | 1.0.0 | conformance-candidate | 33 | full | full | not_applicable |
 | interop/complete_bundle | 1.0.0 | conformance-candidate | 2 | full | full | not_applicable |
 | interop/cross_impl_roundtrip | 1.0.0 | conformance-candidate | 5 | full | full | not_applicable |
+| messaging/messaging | 2.0.0 | conformance-candidate | 41 | full | unsupported | not_applicable |
 | security/revocation-crl-responses | 1.0.0 | conformance-candidate | 10 | full | full | not_applicable |
 | security/revocation-responses | 1.0.0 | conformance-candidate | 8 | full | full | not_applicable |
 | semantics/composition | 1.0.0 | conformance-candidate | 10 | full | full | not_applicable |

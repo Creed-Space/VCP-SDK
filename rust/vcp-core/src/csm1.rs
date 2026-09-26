@@ -2,7 +2,9 @@
 //!
 //! CSM-1 has two forms:
 //!
-//! ## Compact code (inline)
+//! ## CSM-1 code (one line; NANO, MICRO and COMPACT tiers)
+//!
+//! [`Csm1Code`] handles the NANO and MICRO tiers:
 //!
 //! ```text
 //! persona level *("+" scope) [":" namespace] ["@" version]
@@ -10,10 +12,20 @@
 //!
 //! Examples: `N5+F+E`, `Z3+P:SEC`, `M2@1.0.0`
 //!
-//! ## 8-line token (full profile)
+//! [`Csm1CompactCode`] handles the COMPACT tier (VCP/S §2.8.3), which pairs
+//! the lowercase persona name with a canonical VCP/I identity token and one
+//! or more scopes:
 //!
 //! ```text
-//! Line 1: VCP:<version>:<profile-id>
+//! "CS1|" persona-name "|" adherence "|" identity-token "|" scope *("," scope)
+//! ```
+//!
+//! Example: `CS1|nanny|5|family.safe.guide|E,F`
+//!
+//! ## CSM-1 token (7 lines plus an optional R-line)
+//!
+//! ```text
+//! Line 1: VCP:<header-version>:<profile-id>
 //! Line 2: C:<constitution>@<version>
 //! Line 3: P:<persona>:<adherence>
 //! Line 4: G:<goal>:<experience>:<style>
@@ -22,9 +34,15 @@
 //! Line 7: S:<private-markers>
 //! Line 8: R:<personal-state>     (optional, v1.1)
 //! ```
+//!
+//! Optional extension lines (`LC:`, `WC:`, `AS:`, `Q:` and the other
+//! prefixes in [`Csm1Token::EXTENSION_PREFIXES`]) may follow line 7, or the
+//! R-line when present, in any order.
 
 use std::fmt;
+use std::sync::LazyLock;
 
+use regex::Regex;
 use serde::de::Error as _;
 use serde::{Deserialize, Deserializer, Serialize};
 
@@ -36,19 +54,19 @@ use crate::personal::PersonalState;
 /// The 6+1 archetypal personas for constitutional profiles (NZGAMDC).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Persona {
-    /// N -- Child safety specialist.
+    /// `N`: child safety specialist.
     Nanny,
-    /// Z -- Security and privacy guardian.
+    /// `Z`: security and privacy guardian.
     Sentinel,
-    /// G -- Ethical guidance counselor.
+    /// `G`: ethical guidance counselor.
     Godparent,
-    /// A -- Professional conduct advisor.
+    /// `A`: professional conduct advisor.
     Ambassador,
-    /// M -- Creativity enabler.
+    /// `M`: creative challenge and provocation.
     Muse,
-    /// D -- Fair resolution and balanced mediation.
+    /// `D`: fair resolution and balanced mediation.
     Mediator,
-    /// C -- User-defined persona.
+    /// `C`: user-defined persona.
     Custom,
 }
 
@@ -128,10 +146,37 @@ impl Persona {
             Self::Sentinel => "Security and privacy guardian",
             Self::Godparent => "Ethical guidance counselor",
             Self::Ambassador => "Professional conduct advisor",
-            Self::Muse => "Creativity enabler",
+            Self::Muse => "Creative challenge and provocation",
             Self::Mediator => "Fair resolution and balanced mediation",
             Self::Custom => "User-defined persona",
         }
+    }
+
+    /// Lowercase persona name used by the COMPACT tier (e.g. `"nanny"`).
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Nanny => "nanny",
+            Self::Sentinel => "sentinel",
+            Self::Godparent => "godparent",
+            Self::Ambassador => "ambassador",
+            Self::Muse => "muse",
+            Self::Mediator => "mediator",
+            Self::Custom => "custom",
+        }
+    }
+
+    /// Parse the case-sensitive lowercase persona name used by the COMPACT tier.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] unless `name` is one of the seven
+    /// lowercase persona names.
+    pub fn from_name(name: &str) -> VcpResult<Self> {
+        Self::all()
+            .iter()
+            .copied()
+            .find(|persona| persona.name() == name)
+            .ok_or_else(|| VcpError::ParseError(format!("unknown persona name: {name}")))
     }
 
     /// All persona variants.
@@ -237,13 +282,14 @@ impl fmt::Display for Scope {
     }
 }
 
-// ── CSM-1 Compact Code ─────────────────────────────────────
+// ── CSM-1 Code (NANO and MICRO tiers) ──────────────────────
 
-/// Parsed CSM-1 compact code: `<persona><level>[+scopes][:namespace][@version]`.
+/// Parsed one-line CSM-1 code in the NANO or MICRO tier:
+/// `<persona><level>[+scopes][:namespace][@version]`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Csm1Code {
     pub persona: Persona,
-    /// Adherence level 0-5 (0 = disabled, 5 = maximum).
+    /// Adherence level 0-5 (0 = minimal, advisory only; 5 = maximum).
     pub adherence_level: u8,
     pub scopes: Vec<Scope>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -349,7 +395,7 @@ impl Csm1Code {
         Ok(())
     }
 
-    /// Parse a compact CSM-1 code string.
+    /// Parse a one-line CSM-1 code string (NANO or MICRO tier).
     ///
     /// # Errors
     ///
@@ -434,7 +480,7 @@ impl Csm1Code {
         })
     }
 
-    /// Encode back to a compact CSM-1 string.
+    /// Encode back to a one-line CSM-1 code string.
     pub fn encode(&self) -> String {
         let mut s = format!("{}{}", self.persona.code(), self.adherence_level);
 
@@ -501,7 +547,7 @@ impl Csm1Code {
         })
     }
 
-    /// Check if this code is active (level > 0).
+    /// Check if this code enforces more than advisory guidance (level > 0).
     pub fn is_active(&self) -> bool {
         self.adherence_level > 0
     }
@@ -546,7 +592,220 @@ impl fmt::Display for Csm1Code {
     }
 }
 
-// ── CSM-1 8-line Token ──────────────────────────────────────
+// ── CSM-1 Code (COMPACT tier) ──────────────────────────────
+
+/// Structural grammar of the COMPACT tier, from the `compact` pattern in the
+/// CSM-1 schema. Scope uniqueness and scope conflicts are checked in code
+/// because the `regex` crate has no lookahead.
+static COMPACT_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(concat!(
+        r"^CS1\|(nanny|sentinel|godparent|ambassador|muse|mediator|custom)",
+        r"\|([0-5])",
+        r"\|([a-z][a-z0-9-]{0,31}(?:\.[a-z][a-z0-9-]{0,31}){2,9}",
+        r"(?:@(?:[\^~]?(?:0|[1-9][0-9]{0,4})\.(?:0|[1-9][0-9]{0,4})\.(?:0|[1-9][0-9]{0,4})|latest|canary))?",
+        r"(?::[A-Z][A-Z0-9]{0,31})?)",
+        r"\|([FWPETOVAHSR](?:,[FWPETOVAHSR])*)$",
+    ))
+    .expect("COMPACT regex is valid")
+});
+
+/// Parsed one-line CSM-1 code in the COMPACT tier (VCP/S §2.8.3):
+/// `CS1|<persona name>|<adherence>|<identity token>|<scope>[,<scope>...]`.
+///
+/// COMPACT carries a canonical VCP/I identity token where MICRO carries a
+/// namespace and version, and it requires at least one scope. A custom
+/// persona needs no namespace in this tier.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Csm1CompactCode {
+    pub persona: Persona,
+    /// Adherence level 0-5 (0 = minimal, advisory only; 5 = maximum).
+    pub adherence_level: u8,
+    /// Canonical VCP/I identity token (e.g. `family.safe.guide@1.2.0`).
+    pub uvc_token: String,
+    /// One or more unique, mutually compatible scopes.
+    pub scopes: Vec<Scope>,
+}
+
+impl Csm1CompactCode {
+    /// Minimum encoded length from the canonical CSM-1 schema.
+    pub const MIN_CODE_BYTES: usize = 18;
+    /// Maximum encoded length from the canonical CSM-1 schema.
+    pub const MAX_CODE_BYTES: usize = 294;
+
+    /// Parse a COMPACT-tier CSM-1 code string.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] if the code is outside the schema's
+    /// length bounds, does not match the COMPACT grammar (including a
+    /// non-canonical identity token or an empty scope list), or repeats or
+    /// combines conflicting scopes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use vcp_core::csm1::{Csm1CompactCode, Persona, Scope};
+    ///
+    /// let code = Csm1CompactCode::parse("CS1|nanny|5|family.safe.guide|E,F").unwrap();
+    /// assert_eq!(code.persona, Persona::Nanny);
+    /// assert_eq!(code.adherence_level, 5);
+    /// assert_eq!(code.uvc_token, "family.safe.guide");
+    /// assert_eq!(code.scopes, vec![Scope::Education, Scope::Family]);
+    /// ```
+    pub fn parse(raw: &str) -> VcpResult<Self> {
+        if !(Self::MIN_CODE_BYTES..=Self::MAX_CODE_BYTES).contains(&raw.len()) {
+            return Err(VcpError::ParseError(format!(
+                "COMPACT CSM1 code must be {} to {} bytes",
+                Self::MIN_CODE_BYTES,
+                Self::MAX_CODE_BYTES
+            )));
+        }
+        let captures = COMPACT_PATTERN
+            .captures(raw)
+            .ok_or_else(|| VcpError::ParseError(format!("invalid COMPACT CSM1 code: {raw}")))?;
+        let persona = Persona::from_name(&captures[1])?;
+        let adherence_level = captures[2].as_bytes()[0] - b'0';
+        let mut scopes = Vec::new();
+        for scope_code in captures[4].split(',') {
+            let scope = Scope::from_char(char::from(scope_code.as_bytes()[0]))?;
+            if scopes.contains(&scope) {
+                return Err(VcpError::ParseError("CSM1 scopes must be unique".into()));
+            }
+            scopes.push(scope);
+        }
+        Csm1Code::validate_scope_compatibility(&scopes)?;
+
+        Ok(Csm1CompactCode {
+            persona,
+            adherence_level,
+            uvc_token: captures[3].to_string(),
+            scopes,
+        })
+    }
+
+    /// Encode to a COMPACT-tier string, with scopes sorted.
+    pub fn encode(&self) -> String {
+        let mut scope_codes: Vec<char> = self.scopes.iter().map(|scope| scope.code()).collect();
+        scope_codes.sort_unstable();
+        let scopes = scope_codes
+            .iter()
+            .map(|scope| String::from(*scope))
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            "CS1|{}|{}|{}|{}",
+            self.persona.name(),
+            self.adherence_level,
+            self.uvc_token,
+            scopes
+        )
+    }
+
+    /// Build a COMPACT code from a NANO or MICRO code and an identity token.
+    ///
+    /// The namespace and version of `code` are not carried into COMPACT.
+    /// Leading zeroes in the token's numeric version are removed first, as
+    /// VCP/S §2.8.3 asks of serializers.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] if `code` has no scopes or
+    /// `uvc_token` is not a canonical identity token.
+    pub fn from_code(code: &Csm1Code, uvc_token: &str) -> VcpResult<Self> {
+        let candidate = Csm1CompactCode {
+            persona: code.persona,
+            adherence_level: code.adherence_level,
+            uvc_token: Self::normalize_token_version(uvc_token),
+            scopes: code.scopes.clone(),
+        };
+        Self::parse(&candidate.encode())
+    }
+
+    /// Strip leading zeroes from the numeric `@version` of an identity token.
+    fn normalize_token_version(token: &str) -> String {
+        let Some((path, rest)) = token.split_once('@') else {
+            return token.to_string();
+        };
+        let (version, namespace) = match rest.find(':') {
+            Some(index) => rest.split_at(index),
+            None => (rest, ""),
+        };
+        let (selector, numeric) = match version.as_bytes().first() {
+            Some(b'^' | b'~') => version.split_at(1),
+            _ => ("", version),
+        };
+        let components: Vec<&str> = numeric.split('.').collect();
+        if components.len() != 3
+            || components
+                .iter()
+                .any(|part| part.is_empty() || !part.bytes().all(|byte| byte.is_ascii_digit()))
+        {
+            return token.to_string();
+        }
+        let normalized: Vec<&str> = components
+            .iter()
+            .map(|part| match part.trim_start_matches('0') {
+                "" => "0",
+                trimmed => trimmed,
+            })
+            .collect();
+        format!("{path}@{selector}{}{namespace}", normalized.join("."))
+    }
+
+    /// Drop the identity token and return the NANO-tier code with the same
+    /// persona, adherence and scopes.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] for the custom persona, which needs
+    /// a namespace outside the COMPACT tier.
+    pub fn to_code(&self) -> VcpResult<Csm1Code> {
+        Csm1Code::parse(
+            &Csm1Code {
+                persona: self.persona,
+                adherence_level: self.adherence_level,
+                scopes: self.scopes.clone(),
+                namespace: None,
+                version: None,
+            }
+            .encode(),
+        )
+    }
+}
+
+impl<'de> Deserialize<'de> for Csm1CompactCode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct WireCompactCode {
+            persona: Persona,
+            adherence_level: u8,
+            uvc_token: String,
+            scopes: Vec<Scope>,
+        }
+
+        let wire = WireCompactCode::deserialize(deserializer)?;
+        let code = Csm1CompactCode {
+            persona: wire.persona,
+            adherence_level: wire.adherence_level,
+            uvc_token: wire.uvc_token,
+            scopes: wire.scopes,
+        };
+        Csm1CompactCode::parse(&code.encode()).map_err(D::Error::custom)?;
+        Ok(code)
+    }
+}
+
+impl fmt::Display for Csm1CompactCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.encode())
+    }
+}
+
+// ── CSM-1 Token ─────────────────────────────────────────────
 
 /// Reference to a constitution with version.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -556,7 +815,7 @@ pub struct ConstitutionRef {
     pub version: String,
 }
 
-/// Goal context for line 4 of the 8-line token.
+/// Goal context for line 4 of a CSM-1 token.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct GoalContext {
@@ -565,11 +824,12 @@ pub struct GoalContext {
     pub style: String,
 }
 
-/// Constraint flag for line 5 of the 8-line token.
+/// Constraint flag for line 5 of a CSM-1 token.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ConstraintFlag(pub String);
 
-/// A full CSM-1 8-line token.
+/// A CSM-1 token: seven required lines, an optional R-line, then optional
+/// extension lines.
 ///
 /// ```text
 /// VCP:1.0:profile-123
@@ -579,11 +839,14 @@ pub struct ConstraintFlag(pub String);
 /// X:no-profanity,no-violence
 /// F:coppa,gdpr
 /// S:internal-marker
-/// R:focused:4|calm:3
+/// R:🧠focused:4|💭calm:3
+/// LC:🧠A:42s|💭D:180s
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Csm1Token {
-    /// Protocol version (e.g. "1.0").
+    /// Token header version (currently `"1.0"`); not the VCP protocol
+    /// release or the CSM-1 format version. Parsed as an opaque non-empty
+    /// string.
     pub version: String,
     /// Profile identifier.
     pub profile_id: String,
@@ -591,7 +854,7 @@ pub struct Csm1Token {
     pub constitution: ConstitutionRef,
     /// Persona type.
     pub persona: Persona,
-    /// Adherence level 1-5.
+    /// Adherence level 0-5 (0 = minimal, advisory only; 5 = maximum).
     pub adherence: u8,
     /// Goal context (line 4).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -602,23 +865,37 @@ pub struct Csm1Token {
     pub flags: Vec<String>,
     /// Private markers (line 7).
     pub private_markers: Vec<String>,
-    /// Personal state (line 8, optional v1.1).
+    /// Personal state (line 8, optional v1.1). `None` means not declared;
+    /// an empty state encodes as `R:none`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub personal_state: Option<PersonalState>,
+    /// Extension lines after line 7 and any R-line (`LC:`, `WC:`, `AS:`,
+    /// `Q:` and so on), kept verbatim in their original order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension_lines: Vec<String>,
 }
 
 impl Csm1Token {
     /// Maximum accepted encoded token size.
     pub const MAX_TOKEN_BYTES: usize = 65_536;
 
-    /// Parse an 8-line CSM-1 token string.
+    /// Line prefixes accepted after line 7 and any R-line, in any order
+    /// (VCP/S §2.4.3 and §2.4.7, the VCP/E Q-line, VCP-X-Welfare). Lines are
+    /// kept verbatim; their contents are not parsed.
+    pub const EXTENSION_PREFIXES: &[&str] = &[
+        "LC:", "WC:", "AS:", "Q:", "CS:", "DD:", "DN:", "AT:", "WT:", "WK:", "WA:",
+    ];
+
+    /// Parse a CSM-1 token string (7 lines plus an optional R-line and
+    /// optional extension lines).
     ///
     /// # Errors
     ///
-    /// Returns [`VcpError::ParseError`] if the token does not have 7 or 8 lines,
-    /// if any line is missing its required prefix, or if the persona,
-    /// adherence, goal, constraint, flag, or personal-state fields are
-    /// malformed.
+    /// Returns [`VcpError::ParseError`] if the token has fewer than 7 lines,
+    /// if any required line is missing its prefix, if a line after line 7
+    /// is neither the R-line (directly after line 7) nor an extension line,
+    /// or if the persona, adherence, goal, constraint, flag, or
+    /// personal-state fields are malformed.
     #[allow(clippy::too_many_lines)]
     pub fn parse(raw: &str) -> VcpResult<Self> {
         if raw.len() > Self::MAX_TOKEN_BYTES {
@@ -640,9 +917,9 @@ impl Csm1Token {
         }
         let token_lines: Vec<&str> = raw.lines().collect();
 
-        if !(7..=8).contains(&token_lines.len()) {
+        if token_lines.len() < 7 {
             return Err(VcpError::ParseError(format!(
-                "CSM1 token requires 7 or 8 lines, got {}",
+                "CSM1 token requires at least 7 lines, got {}",
                 token_lines.len()
             )));
         }
@@ -655,7 +932,7 @@ impl Csm1Token {
                 token_lines[0]
             ))
         })?;
-        Self::validate_required_field(version, "protocol version")?;
+        Self::validate_required_field(version, "header version")?;
         Self::validate_required_field(profile_id, "profile id")?;
 
         // Line 2: C:<constitution>@<version>
@@ -695,7 +972,7 @@ impl Csm1Token {
         let adherence: u8 = adherence_str
             .parse()
             .map_err(|_| VcpError::ParseError(format!("invalid adherence: {adherence_str}")))?;
-        if !(1..=5).contains(&adherence) {
+        if adherence > 5 {
             return Err(VcpError::InvalidAdherence(adherence));
         }
 
@@ -712,7 +989,7 @@ impl Csm1Token {
                     style: parts[2].to_string(),
                 })
             } else {
-                // Partial goal -- still valid.
+                // A partial goal is still valid.
                 Some(GoalContext {
                     goal: parts.first().unwrap_or(&"").to_string(),
                     experience: parts.get(1).unwrap_or(&"").to_string(),
@@ -736,17 +1013,35 @@ impl Csm1Token {
         let markers_line = Self::strip_and_validate(token_lines[6], "S:")?;
         let private_markers = Self::parse_unique_list(markers_line, "private marker")?;
 
-        // Line 8 (optional): R:<personal-state>
-        let personal_state = if token_lines.len() > 7 {
-            let state_line = Self::strip_and_validate(token_lines[7], "R:")?;
-            if state_line.is_empty() {
-                None
-            } else {
-                Some(PersonalState::from_wire(state_line)?)
+        // Line 8 (optional): R:<personal-state>. `R:none` declares an empty
+        // state. A bare `R:` (emitted by SDK 4.2.0 for empty state) is read
+        // the same way.
+        let mut extension_start = 7;
+        let personal_state = match token_lines.get(7).and_then(|line| line.strip_prefix("R:")) {
+            Some(state_line) => {
+                extension_start = 8;
+                if state_line.is_empty() || state_line == "none" {
+                    Some(PersonalState::default())
+                } else {
+                    Some(PersonalState::from_wire(state_line)?)
+                }
             }
-        } else {
-            None
+            None => None,
         };
+
+        // Remaining lines: extension lines, matched by prefix.
+        let mut extension_lines = Vec::new();
+        for line in &token_lines[extension_start..] {
+            if !Self::EXTENSION_PREFIXES
+                .iter()
+                .any(|prefix| line.starts_with(prefix))
+            {
+                return Err(VcpError::ParseError(format!(
+                    "unexpected CSM1 token line after line 7: {line}"
+                )));
+            }
+            extension_lines.push((*line).to_string());
+        }
 
         Ok(Csm1Token {
             version: version.to_string(),
@@ -762,12 +1057,14 @@ impl Csm1Token {
             flags,
             private_markers,
             personal_state,
+            extension_lines,
         })
     }
 
-    /// Encode to 8-line (or 7-line) string.
+    /// Encode to a CSM-1 token string: 7 lines, then the R-line when
+    /// personal state is declared, then any extension lines.
     pub fn encode(&self) -> String {
-        let mut lines = Vec::with_capacity(8);
+        let mut lines = Vec::with_capacity(8 + self.extension_lines.len());
 
         // Line 1
         lines.push(format!("VCP:{}:{}", self.version, self.profile_id));
@@ -798,10 +1095,16 @@ impl Csm1Token {
         // Line 7
         lines.push(format!("S:{}", self.private_markers.join(",")));
 
-        // Line 8 (only if personal state is present)
+        // Line 8 (only if personal state is declared)
         if let Some(ref ps) = self.personal_state {
-            lines.push(format!("R:{}", ps.to_wire()));
+            if ps.has_any() {
+                lines.push(format!("R:{}", ps.to_wire()));
+            } else {
+                lines.push("R:none".to_string());
+            }
         }
+
+        lines.extend(self.extension_lines.iter().cloned());
 
         lines.join("\n")
     }
@@ -865,6 +1168,8 @@ impl<'de> Deserialize<'de> for Csm1Token {
             flags: Vec<String>,
             private_markers: Vec<String>,
             personal_state: Option<PersonalState>,
+            #[serde(default)]
+            extension_lines: Vec<String>,
         }
 
         let wire = WireToken::deserialize(deserializer)?;
@@ -879,6 +1184,7 @@ impl<'de> Deserialize<'de> for Csm1Token {
             flags: wire.flags,
             private_markers: wire.private_markers,
             personal_state: wire.personal_state,
+            extension_lines: wire.extension_lines,
         };
         let reparsed = Csm1Token::parse(&token.encode()).map_err(D::Error::custom)?;
         if reparsed != token {
@@ -967,7 +1273,7 @@ mod tests {
         }
     }
 
-    // ── Compact Code Parsing ────────────────────────────
+    // ── Code Parsing (NANO and MICRO) ───────────────────
 
     #[test]
     fn parse_simple() {
@@ -1042,7 +1348,7 @@ mod tests {
         }
     }
 
-    // ── Compact Code Validation ─────────────────────────
+    // ── Code Validation ─────────────────────────────────
 
     #[test]
     fn parse_empty() {
@@ -1146,7 +1452,7 @@ mod tests {
     }
 
     #[test]
-    fn compact_code_deserialization_cannot_bypass_wire_invariants() {
+    fn code_deserialization_cannot_bypass_wire_invariants() {
         let valid = serde_json::to_value(Csm1Code::parse("Z4+P:SEC@1.2.3").unwrap()).unwrap();
         assert!(serde_json::from_value::<Csm1Code>(valid).is_ok());
 
@@ -1172,7 +1478,7 @@ mod tests {
         }
     }
 
-    // ── Compact Code Encoding ───────────────────────────
+    // ── Code Encoding ───────────────────────────────────
 
     #[test]
     fn encode_simple() {
@@ -1203,7 +1509,7 @@ mod tests {
         );
     }
 
-    // ── Compact Code Methods ────────────────────────────
+    // ── Code Methods ────────────────────────────────────
 
     #[test]
     fn applies_to_empty_scopes() {
@@ -1255,7 +1561,164 @@ mod tests {
         assert!(Csm1Code::parse("N5").unwrap().is_maximum());
     }
 
-    // ── 8-line Token ────────────────────────────────────
+    // ── COMPACT Tier ────────────────────────────────────
+
+    #[test]
+    fn persona_names_roundtrip() {
+        for persona in Persona::all() {
+            assert_eq!(Persona::from_name(persona.name()).unwrap(), *persona);
+        }
+        assert!(Persona::from_name("Nanny").is_err());
+        assert!(Persona::from_name("mentor").is_err());
+    }
+
+    #[test]
+    fn compact_parses_spec_examples() {
+        let cases = [
+            (
+                "CS1|nanny|5|family.safe.guide|E,F",
+                Persona::Nanny,
+                5,
+                "family.safe.guide",
+                vec![Scope::Education, Scope::Family],
+            ),
+            (
+                "CS1|sentinel|4|secure.privacy.guardian|P,W",
+                Persona::Sentinel,
+                4,
+                "secure.privacy.guardian",
+                vec![Scope::Privacy, Scope::Work],
+            ),
+            (
+                "CS1|custom|3|company.acme.legal|O,W",
+                Persona::Custom,
+                3,
+                "company.acme.legal",
+                vec![Scope::Official, Scope::Work],
+            ),
+        ];
+        for (raw, persona, level, token, scopes) in cases {
+            let code = Csm1CompactCode::parse(raw).unwrap();
+            assert_eq!(code.persona, persona);
+            assert_eq!(code.adherence_level, level);
+            assert_eq!(code.uvc_token, token);
+            assert_eq!(code.scopes, scopes);
+            assert_eq!(code.encode(), raw);
+            assert_eq!(code.to_string(), raw);
+        }
+    }
+
+    #[test]
+    fn compact_accepts_versioned_and_namespaced_identity_tokens() {
+        for raw in [
+            "CS1|muse|0|a.b.c|F",
+            "CS1|godparent|4|family.safe.guide@1.2.0|E",
+            "CS1|mediator|3|family.safe.guide@^10.0.99999|S",
+            "CS1|ambassador|3|work.corp.policy.guide@latest:ACME1|W",
+        ] {
+            let code = Csm1CompactCode::parse(raw).unwrap();
+            assert_eq!(code.encode(), raw);
+        }
+        assert_eq!(
+            Csm1CompactCode::parse("CS1|muse|0|a.b.c|F")
+                .unwrap()
+                .adherence_level,
+            0
+        );
+    }
+
+    #[test]
+    fn compact_encodes_scopes_sorted() {
+        let code = Csm1CompactCode::parse("CS1|nanny|5|family.safe.guide|F,E").unwrap();
+        assert_eq!(code.scopes, vec![Scope::Family, Scope::Education]);
+        assert_eq!(code.encode(), "CS1|nanny|5|family.safe.guide|E,F");
+    }
+
+    #[test]
+    fn compact_rejects_malformed_codes() {
+        for raw in [
+            "CS1|nanny|5|family.safe.guide|",
+            "CS1|nanny|5|family.safe.guide",
+            "CS1|nanny|6|family.safe.guide|E",
+            "CS1|Nanny|5|family.safe.guide|E",
+            "CS1|mentor|5|family.safe.guide|E",
+            "CS1|nanny|5|family.safe|E",
+            "CS1|nanny|5|Family.safe.guide|E",
+            "CS1|nanny|5|family.safe.guide@01.2.0|E",
+            "CS1|nanny|5|family.safe.guide@1.2|E",
+            "CS1|nanny|5|family.safe.guide:acme|E",
+            "CS1|nanny|5|family.safe.guide|E,E",
+            "CS1|nanny|5|family.safe.guide|F,A",
+            "CS1|nanny|5|family.safe.guide|A,H",
+            "CS1|nanny|5|family.safe.guide|X",
+            "CS1|nanny|5|family.safe.guide|e",
+            "CS1|nanny|5|family.safe.guide|E+F",
+            " CS1|nanny|5|family.safe.guide|E",
+            "CS1|nanny|5|family.safe.guide|E\n",
+            "CS2|nanny|5|family.safe.guide|E",
+            "N5+E+F",
+        ] {
+            assert!(Csm1CompactCode::parse(raw).is_err(), "accepted {raw:?}");
+        }
+        let oversized = format!("CS1|nanny|5|a.b.{}|E", "c".repeat(300));
+        assert!(Csm1CompactCode::parse(&oversized).is_err());
+    }
+
+    #[test]
+    fn compact_is_not_accepted_by_the_micro_parser() {
+        assert!(Csm1Code::parse("CS1|nanny|5|family.safe.guide|E,F").is_err());
+    }
+
+    #[test]
+    fn compact_converts_to_and_from_micro() {
+        let micro = Csm1Code::parse("N5+F+E:ELEM@1.2.0").unwrap();
+        let compact = Csm1CompactCode::from_code(&micro, "family.safe.guide@1.2.0").unwrap();
+        assert_eq!(compact.encode(), "CS1|nanny|5|family.safe.guide@1.2.0|E,F");
+        assert_eq!(compact.to_code().unwrap().encode(), "N5+E+F");
+
+        // Serializers normalize leading zeroes; the parser does not.
+        let padded =
+            Csm1CompactCode::from_code(&micro, "family.safe.guide@~01.002.0:ACME").unwrap();
+        assert_eq!(padded.uvc_token, "family.safe.guide@~1.2.0:ACME");
+        assert!(Csm1CompactCode::parse("CS1|nanny|5|family.safe.guide@01.2.0|E").is_err());
+
+        // COMPACT requires a scope and a canonical identity token.
+        let unscoped = Csm1Code::parse("N5").unwrap();
+        assert!(Csm1CompactCode::from_code(&unscoped, "family.safe.guide").is_err());
+        assert!(Csm1CompactCode::from_code(&micro, "family.safe").is_err());
+
+        // Custom needs a namespace outside COMPACT.
+        let custom = Csm1CompactCode::parse("CS1|custom|3|company.acme.legal|O,W").unwrap();
+        assert!(custom.to_code().is_err());
+    }
+
+    #[test]
+    fn compact_deserialization_cannot_bypass_wire_invariants() {
+        let code = Csm1CompactCode::parse("CS1|nanny|5|family.safe.guide|E,F").unwrap();
+        let valid = serde_json::to_value(&code).unwrap();
+        assert_eq!(
+            serde_json::from_value::<Csm1CompactCode>(valid).unwrap(),
+            code
+        );
+
+        for (field, value) in [
+            ("adherence_level", serde_json::json!(6)),
+            ("scopes", serde_json::json!([])),
+            ("scopes", serde_json::json!(["Family", "Adult"])),
+            ("uvc_token", serde_json::json!("family.safe.guide|E")),
+            ("uvc_token", serde_json::json!("Family.Safe.Guide")),
+        ] {
+            let mut invalid = serde_json::to_value(&code).unwrap();
+            invalid[field] = value;
+            assert!(serde_json::from_value::<Csm1CompactCode>(invalid).is_err());
+        }
+
+        let mut unknown = serde_json::to_value(&code).unwrap();
+        unknown["namespace"] = serde_json::json!("ELEM");
+        assert!(serde_json::from_value::<Csm1CompactCode>(unknown).is_err());
+    }
+
+    // ── CSM-1 Token ─────────────────────────────────────
 
     const SAMPLE_TOKEN_7: &str = "\
 VCP:1.0:profile-123
@@ -1267,7 +1730,7 @@ F:coppa,gdpr
 S:internal-marker";
 
     const SAMPLE_TOKEN_8: &str = "\
-VCP:1.1:profile-456
+VCP:1.0:profile-456
 C:workplace@2.0.0
 P:A:4
 G:advise:professional:formal
@@ -1300,7 +1763,7 @@ R:\u{1F9E0}focused:4|\u{1F4AD}calm:3";
     #[test]
     fn parse_8_line_token() {
         let token = Csm1Token::parse(SAMPLE_TOKEN_8).unwrap();
-        assert_eq!(token.version, "1.1");
+        assert_eq!(token.version, "1.0");
         assert_eq!(token.persona, Persona::Ambassador);
         assert_eq!(token.adherence, 4);
         assert!(token.personal_state.is_some());
@@ -1344,8 +1807,77 @@ R:\u{1F9E0}focused:4|\u{1F4AD}calm:3";
     }
 
     #[test]
-    fn token_rejects_extra_lines_instead_of_silently_ignoring_them() {
+    fn token_rejects_lines_without_an_extension_prefix() {
         assert!(Csm1Token::parse(&format!("{SAMPLE_TOKEN_8}\nS:shadow-state")).is_err());
+        assert!(Csm1Token::parse(&format!("{SAMPLE_TOKEN_7}\nZZ:unknown")).is_err());
+        // The R-line must come directly after line 7.
+        assert!(Csm1Token::parse(&format!(
+            "{SAMPLE_TOKEN_7}\nLC:\u{1F9E0}A:42s\nR:\u{1F9E0}focused:4"
+        ))
+        .is_err());
+    }
+
+    #[test]
+    fn token_accepts_extension_lines_after_the_r_line() {
+        let extensions = [
+            "LC:\u{1F9E0}A:42s|\u{1F4AD}D:180s",
+            "WC:\u{1F6D1}\u{1F4CA}:2:welfare.creed-space.v1",
+            "AS:\u{1F3AF}aligned:4",
+            "Q:0.0:NONE::|WC_MIN:\u{1F6D1}",
+        ];
+        let raw = format!("{SAMPLE_TOKEN_8}\n{}", extensions.join("\n"));
+        let token = Csm1Token::parse(&raw).unwrap();
+        assert!(token.personal_state.as_ref().unwrap().has_any());
+        assert_eq!(token.extension_lines, extensions);
+        assert_eq!(token.encode(), raw);
+        assert_eq!(Csm1Token::parse(&token.encode()).unwrap(), token);
+    }
+
+    #[test]
+    fn token_accepts_extension_lines_without_an_r_line() {
+        let raw = format!("{SAMPLE_TOKEN_7}\nLC:\u{1F9E0}A:42s");
+        let token = Csm1Token::parse(&raw).unwrap();
+        assert!(token.personal_state.is_none());
+        assert_eq!(token.extension_lines, vec!["LC:\u{1F9E0}A:42s"]);
+        assert_eq!(token.encode(), raw);
+    }
+
+    #[test]
+    fn token_accepts_minimal_adherence() {
+        let token = Csm1Token::parse(&SAMPLE_TOKEN_7.replace("P:N:5", "P:N:0")).unwrap();
+        assert_eq!(token.adherence, 0);
+        assert!(Csm1Token::parse(&token.encode()).is_ok());
+    }
+
+    #[test]
+    fn token_r_none_declares_empty_personal_state() {
+        let raw = format!("{SAMPLE_TOKEN_7}\nR:none");
+        let token = Csm1Token::parse(&raw).unwrap();
+        let state = token.personal_state.as_ref().unwrap();
+        assert!(!state.has_any());
+        assert_eq!(token.encode(), raw);
+
+        // SDK 4.2.0 wrote empty declared state as a bare `R:`.
+        let legacy = Csm1Token::parse(&format!("{SAMPLE_TOKEN_7}\nR:")).unwrap();
+        assert_eq!(legacy, token);
+
+        let mut declared_empty = Csm1Token::parse(SAMPLE_TOKEN_7).unwrap();
+        declared_empty.personal_state = Some(PersonalState::default());
+        assert_eq!(declared_empty.encode(), raw);
+        let json = serde_json::to_value(&declared_empty).unwrap();
+        assert_eq!(
+            serde_json::from_value::<Csm1Token>(json).unwrap(),
+            declared_empty
+        );
+    }
+
+    #[test]
+    fn token_r_line_skips_unknown_dimension_emoji() {
+        let raw = format!("{SAMPLE_TOKEN_7}\nR:\u{1F984}sparkly:2|\u{1F9E0}focused:4");
+        let token = Csm1Token::parse(&raw).unwrap();
+        let state = token.personal_state.unwrap();
+        assert_eq!(state.cognitive.unwrap().value, "focused");
+        assert!(state.emotional.is_none());
     }
 
     #[test]
@@ -1390,8 +1922,25 @@ R:\u{1F9E0}focused:4|\u{1F4AD}calm:3";
         assert_eq!(serde_json::from_value::<Csm1Token>(valid).unwrap(), token);
 
         let mut invalid_adherence = serde_json::to_value(&token).unwrap();
-        invalid_adherence["adherence"] = serde_json::json!(0);
+        invalid_adherence["adherence"] = serde_json::json!(6);
         assert!(serde_json::from_value::<Csm1Token>(invalid_adherence).is_err());
+
+        let mut minimal_adherence = serde_json::to_value(&token).unwrap();
+        minimal_adherence["adherence"] = serde_json::json!(0);
+        assert_eq!(
+            serde_json::from_value::<Csm1Token>(minimal_adherence)
+                .unwrap()
+                .adherence,
+            0
+        );
+
+        let mut injected_extension = serde_json::to_value(&token).unwrap();
+        injected_extension["extension_lines"] = serde_json::json!(["LC:ok\nS:forged"]);
+        assert!(serde_json::from_value::<Csm1Token>(injected_extension).is_err());
+
+        let mut unknown_extension = serde_json::to_value(&token).unwrap();
+        unknown_extension["extension_lines"] = serde_json::json!(["ZZ:unknown"]);
+        assert!(serde_json::from_value::<Csm1Token>(unknown_extension).is_err());
 
         let mut injected_line = serde_json::to_value(&token).unwrap();
         injected_line["flags"] = serde_json::json!(["safe\nS:forged"]);

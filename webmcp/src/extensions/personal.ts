@@ -2,7 +2,7 @@
  * VCP 3.1 Personal State Extensions
  *
  * Categorical personal dimensions with intensity (1-5) and exponential decay.
- * Layer 3 reflects self-reported state for adaptation only — not diagnostic.
+ * The personal tier reflects self-reported state for adaptation only — not diagnostic.
  */
 
 // === Enums ===
@@ -70,6 +70,8 @@ export const SignalSource = {
   DECLARED: 'declared',
   INFERRED: 'inferred',
   INFERRED_LOCAL: 'inferred_local',
+  MEASURED: 'measured',
+  ELICITATION: 'elicitation',
   PRESET: 'preset',
   DECAYED: 'decayed',
 } as const;

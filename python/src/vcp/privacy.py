@@ -28,11 +28,12 @@ Usage::
         optional_fields=["feedback_style"],
     )
     filtered = filter_context_for_platform(full_context, manifest, consent)
-    # filtered.constraints.time_limited may be True (single parent context)
-    # but "family_status" is never in filtered.public or filtered.preferences
+    # filtered.constraints.schedule_irregular may be True (rotating shift work)
+    # but "schedule" is never in filtered.public or filtered.preferences
 
-Reference: Learning path demo — Gentian, Campion, Marta scenarios.
-TypeScript reference: VCP-Demo-Site/src/lib/vcp/privacy.ts
+Scenario reference: the Gentian, Campion and Marta personas.
+TypeScript reference implementation: VCP-Demo-Site/src/lib/vcp/privacy.ts, exercised by
+that repo's unit tests; the shipped demo pages do not call it.
 """
 
 from __future__ import annotations
@@ -118,7 +119,7 @@ class ConstraintFlags:
 
     These are the ONLY representation of private data that leaves the
     private context. The underlying reason (e.g. family_status, health
-    conditions) is never exposed — only the behavioural implication (True/False).
+    conditions) is never exposed — only the behavioral implication (True/False).
     """
 
     time_limited: bool = False
@@ -257,13 +258,14 @@ def extract_constraint_flags(ctx: dict[str, Any]) -> ConstraintFlags:
     exposed. Instead, their existence influences a set of boolean flags.
     The Becoming Mind knows THAT constraints apply, never WHY.
 
-    Examples from learning path demo:
-        Gentian (single parent, childcare_hours set)
+    Examples from the demo personas:
+        Campion (single parent, childcare_hours set)
             → time_limited=True, schedule_irregular=True
-        Gentian (fatigue health condition)
+        Campion (chronic health condition)
             → energy_variable=True, health_considerations=True
-        Campion (financial_constraint, shift schedule)
-            → budget_limited=True, energy_variable=True, schedule_irregular=True
+        Gentian (financial_constraint, rotating shift schedule, noise-sensitive neighbor)
+            → budget_limited=True, energy_variable=True, schedule_irregular=True,
+              noise_restricted=True
 
     Args:
         ctx: Full user context dict (may contain private_context sub-dict).

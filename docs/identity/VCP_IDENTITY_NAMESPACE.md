@@ -1,17 +1,17 @@
-# VCP-Identity: Namespace Governance Specification
+# VCP/I (Identity): Namespace Governance Specification
 
 **Version**: 1.0.0
 **Date**: 2026-01-11
 **Layer**: VCP/I (Identity)
 **Status**: Complete
 
-> *Part of the Value-Context Protocol (VCP) - Layer 1*
+> *Part of the Value Context Protocol (VCP), Layer 1*
 
 ---
 
 ## Abstract
 
-This specification defines governance rules for UVC namespaces - who can create tokens, how namespaces are registered, and delegation policies.
+This specification defines the governance rules for UVC namespaces: who can create tokens, how namespaces are registered, and how delegation works.
 
 ---
 
@@ -65,7 +65,7 @@ Namespace governance ensures:
 - Reserved namespaces, not available for registration
 - Universal semantics (same meaning everywhere)
 - Backward compatibility guaranteed
-- Governed by Creed Space advisory board
+- Proposed: Creed Space advisory board (not constituted; governance is interim, see [GOVERNANCE.md](../../GOVERNANCE.md))
 
 **Reserved Prefixes**:
 ```python
@@ -289,8 +289,25 @@ class DNSVerifier:
 3. Requestor hosts file at: `https://acme.com/.well-known/vcp-verify.txt`
 4. Registry fetches and verifies
 
+**Mandatory network-safety requirements.** The registry MUST treat `domain` as
+untrusted input. It MUST accept only a canonical DNS hostname, with no IP
+literal, user information, port, wildcard, or alternate URL syntax. Before any
+connection, it MUST resolve every A and AAAA answer and reject the request if
+any answer is loopback, link-local, private, multicast, reserved, unspecified,
+or otherwise non-global, including cloud metadata ranges. The validated address
+set MUST be pinned to the connection, or revalidated at every connection step,
+to prevent DNS rebinding. The client MUST validate TLS for the claimed hostname,
+disable redirects and ambient proxy configuration, request only the fixed
+`/.well-known/vcp-verify.txt` path, impose a five-second total timeout and a
+4 KiB response limit, and require status 200 with `text/plain` content. It MUST
+fail closed on resolution changes, truncation, decoding errors, or any network
+error. The final expected-token comparison MUST use a constant-time primitive.
+
+The following pseudocode assumes that the named helpers implement those
+requirements. A general-purpose URL fetch is not conformant:
+
 ```python
-import httpx
+import secrets
 
 class HTTPSVerifier:
     """Verify domain ownership via HTTPS file"""
@@ -302,16 +319,24 @@ class HTTPSVerifier:
         Expects: https://{domain}/.well-known/vcp-verify.txt
         Content: vcp-verify={token}
         """
-        url = f"https://{domain}/.well-known/vcp-verify.txt"
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(url, timeout=10.0)
-                if response.status_code == 200:
-                    content = response.text.strip()
-                    return content == f"vcp-verify={expected_token}"
-        except Exception:
-            pass
-        return False
+        hostname = canonical_dns_hostname(domain)
+        addresses = await resolve_all_addresses(hostname)
+        if not addresses or not all(is_global_unicast(a) for a in addresses):
+            return False
+
+        response = await fetch_pinned_https(
+            hostname=hostname,
+            addresses=addresses,
+            path="/.well-known/vcp-verify.txt",
+            redirects=False,
+            trust_environment=False,
+            timeout_seconds=5,
+            max_response_bytes=4096,
+        )
+        if response.status != 200 or response.content_type != "text/plain":
+            return False
+        expected = f"vcp-verify={expected_token}".encode("utf-8")
+        return secrets.compare_digest(response.body.strip(), expected)
 ```
 
 ### 4.3 Multi-Signature Verification
@@ -324,6 +349,14 @@ class HTTPSVerifier:
 3. Threshold signatures verified (e.g., 3-of-5)
 4. Namespace approved
 
+The steward list MUST contain at least three unique public keys. The threshold
+MUST be in the inclusive range `1..len(stewards)`. Each submitted signature
+MUST identify one steward by a unique index; a steward and signature may be
+counted at most once. Unknown algorithms, duplicate or out-of-range indexes,
+malformed keys or signatures, and verification errors MUST fail the whole
+proof closed. The signed bytes MUST use the registry's canonical request format
+and bind the namespace, operation, nonce, and expiry.
+
 ```python
 from dataclasses import dataclass
 from typing import List
@@ -332,17 +365,29 @@ from typing import List
 class MultiSigProof:
     """Multi-signature proof of community ownership"""
 
-    stewards: List[str]         # Public keys of stewards
-    threshold: int              # Required signatures
-    signatures: List[str]       # Collected signatures
-    message: str                # What was signed
+    stewards: List[str]              # Unique public keys
+    threshold: int                   # Required unique signers
+    signatures: List[tuple[int, str]] # (steward index, signature)
+    message: bytes                   # Canonical request bytes
 
     def is_valid(self) -> bool:
-        """Check if threshold is met with valid signatures"""
+        """Verify a bounded threshold of unique, well-formed signers."""
+        if len(self.stewards) < 3 or len(set(self.stewards)) != len(self.stewards):
+            return False
+        if not 1 <= self.threshold <= len(self.stewards):
+            return False
+
+        seen: set[int] = set()
         valid_count = 0
-        for i, sig in enumerate(self.signatures):
-            if sig and verify_signature(self.stewards[i], self.message, sig):
-                valid_count += 1
+        for index, signature in self.signatures:
+            if index in seen or not 0 <= index < len(self.stewards):
+                return False
+            seen.add(index)
+            try:
+                if verify_signature(self.stewards[index], self.message, signature):
+                    valid_count += 1
+            except (TypeError, ValueError, SignatureError):
+                return False
         return valid_count >= self.threshold
 ```
 

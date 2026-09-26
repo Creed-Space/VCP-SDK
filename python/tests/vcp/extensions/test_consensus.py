@@ -202,7 +202,7 @@ class TestSchulzeElection:
     def test_unranked_candidates_at_bottom(self) -> None:
         """Candidates not mentioned in ballot are tied at bottom."""
         election = SchulzeElection(["A", "B", "C", "D"])
-        # Only mention A and B -- C and D at bottom
+        # Only mention A and B; C and D rank at the bottom
         election.add_ballot(Ballot(voter_id="v1", rankings=[["A"], ["B"]]))
         result = election.compute()
         # A should beat B, C, D. B should beat C, D.
