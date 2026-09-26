@@ -5,7 +5,7 @@
 **Layer**: VCP/A (Adaptation)
 **Status**: Complete
 
-> *Part of the Value-Context Protocol (VCP), Layer 4*
+> *Part of the Value Context Protocol (VCP), Layer 4*
 
 > **Companion copy.** This document and its duplicate
 > [`docs/context/VCP_CONTEXT_SPECIFICATION.md`](../context/VCP_CONTEXT_SPECIFICATION.md)

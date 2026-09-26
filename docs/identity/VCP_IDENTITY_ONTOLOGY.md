@@ -5,7 +5,7 @@
 **Layer**: VCP/I (Identity)
 **Status**: Complete (Specification) | Optional (Data)
 
-> *Part of the Value-Context Protocol (VCP), Layer 1*
+> *Part of the Value Context Protocol (VCP), Layer 1*
 
 ---
 

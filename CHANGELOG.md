@@ -6,12 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-Version 4.2.0 was published to PyPI, npm and crates.io on 2026-09-03 from
-signed tag `v4.2.0` (see `release/publication-state.json`). The first Added
-and Changed lists below record changes made after that tag; the published
+These changes were made after signed tag `v4.2.0`. The published 4.2.0
 packages do not contain them, and the next registry release will carry a new
-version. The lists after them predate the tag and ship in the published 4.2.0
-artifacts.
+version.
 
 ### Added
 - The COMPACT tier of CSM-1 codes (VCP/S §2.8.3),
@@ -74,7 +71,10 @@ artifacts.
   optional R-line and extension lines), and describe the token header version (currently `1.0`) as opaque.
   Error messages and doc comments use American spelling ("unrecognized").
 
-**Included in the published 4.2.0 artifacts**
+## [4.2.0] - 2026-09-03
+
+Published to PyPI, npm and crates.io from signed tag `v4.2.0` (see
+`release/publication-state.json`).
 
 ### Changed
 - WebMCP package published under the `@creedspace` npm scope as `@creedspace/vcp-sdk`; the
@@ -163,8 +163,6 @@ artifacts.
   echoes extra boolean core features like the native SDKs; `HookRegistry`,
   `TorchConsumer.receiveTorch`, `computeDecayedIntensity`, and
   `createVCPTools({personas})` validate their inputs.
-- WebMCP package renamed from `@vcp/webmcp` to `@creedspace/vcp-sdk` (applied
-  in 4.2.0; recorded here because the 4.2.0 entry omitted it).
 - Online status responses must echo the requested JTI and issuer. Confirmed
   revocations must include a non-empty reason and a strict RFC 3339 timestamp.
 - The Python HTTPS transport now enforces JSON content types, identity encoding,
@@ -174,7 +172,7 @@ artifacts.
   only the safe standard-library engine. These updates do not change the SDK's
   public API, wire behavior, package version, or Rust 1.87 minimum.
 
-## [4.2.0] - 2026-04-22
+**Set as the version on 2026-04-22:**
 
 ### Added
 - **VCP v3.2 / VEP-0004 adaptation layer** — `vcp.adaptation.context` (Python), `src/extensions/context.ts` (TypeScript), `vcp_core::situational` + `vcp_core::context` (Rust) now implement the full 18-dimension v3.2 context model:
@@ -282,9 +280,9 @@ artifacts.
 - Dependabot configuration for all package ecosystems
 - Comprehensive README with architecture diagrams, quick-start guides, and full documentation index
 
-<!-- No vX.Y.Z tags exist yet; links use the commits that set each version. -->
-[Unreleased]: https://github.com/Creed-Space/VCP-SDK/compare/4367ca4...HEAD
-[4.2.0]: https://github.com/Creed-Space/VCP-SDK/commit/4367ca4
+<!-- v4.2.0 is the first signed tag; older links use the commits that set each version. -->
+[Unreleased]: https://github.com/Creed-Space/VCP-SDK/compare/v4.2.0...HEAD
+[4.2.0]: https://github.com/Creed-Space/VCP-SDK/releases/tag/v4.2.0
 [4.1.0]: https://github.com/Creed-Space/VCP-SDK/commits/4367ca4/CHANGELOG.md
 [4.0.0]: https://github.com/Creed-Space/VCP-SDK/commits/4367ca4/CHANGELOG.md
 [3.1.0]: https://github.com/Creed-Space/VCP-SDK/commits/4367ca4/CHANGELOG.md

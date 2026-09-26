@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vcp.creed.space/schema/manifest/v1.json",
   "title": "VCP Manifest Schema v1.0",
-  "description": "JSON Schema for Value-Context Protocol bundle manifests",
+  "description": "JSON Schema for Value Context Protocol bundle manifests",
   "type": "object",
   "required": [
     "vcp_version",

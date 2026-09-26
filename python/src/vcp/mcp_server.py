@@ -1,5 +1,5 @@
 """
-MCP server for VCP (Value-Context Protocol) operations.
+MCP server for VCP (Value Context Protocol) operations.
 
 Exposes VCP tools via Model Context Protocol, allowing any MCP-compatible
 agent to validate tokens, parse CSM1 codes, and encode context.
