@@ -80,9 +80,24 @@ pub fn encode_context_wire(obj: JsValue) -> Result<String, JsValue> {
 
 /// Validate a VCP/I identity token (e.g. `"family.safe.guide@1.2.0"`).
 ///
-/// Returns the parsed token as a JS object on success.
+/// Checks syntax, then the VCP/I §3.4.1 semantic rules: a listed namespace
+/// prefix, exactly three segments for a Core token, and no reserved-word
+/// segment. Returns the parsed token as a JS object on success; a semantic
+/// failure is reported as `"<code>: <message>"`, where the code is
+/// `unknown_namespace_prefix`, `core_segment_count` or `reserved_word`.
 #[wasm_bindgen]
 pub fn validate_token(token: &str) -> Result<JsValue, JsValue> {
+    let parsed = VcpToken::parse(token).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    parsed
+        .validate()
+        .map_err(|e| JsValue::from_str(&format!("{}: {e}", e.code())))?;
+    serde_wasm_bindgen::to_value(&parsed).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+/// Parse a VCP/I identity token by syntax only, without the semantic rules
+/// that [`validate_token`] applies. Use it to relay, log or display a token.
+#[wasm_bindgen]
+pub fn parse_token(token: &str) -> Result<JsValue, JsValue> {
     let parsed = VcpToken::parse(token).map_err(|e| JsValue::from_str(&e.to_string()))?;
     serde_wasm_bindgen::to_value(&parsed).map_err(|e| JsValue::from_str(&e.to_string()))
 }

@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vcp.creed.space/schema/csm1-code/v1.json",
-  "title": "CSM1 Code Schema",
-  "description": "JSON Schema for Constitutional Safety Minicode (CSM1) validation",
+  "title": "CSM-1 Code Schema",
+  "description": "JSON Schema for Constitutional Safety Minicode (CSM-1) validation",
   "type": "object",
   "properties": {
     "code": {
       "type": "string",
-      "description": "The CSM1 code string",
+      "description": "The CSM-1 code string",
       "pattern": "^(?![^:@]*(?:\\+F[^:@]*\\+A|\\+A[^:@]*\\+F|\\+V[^:@]*\\+A|\\+A[^:@]*\\+V|\\+H[^:@]*\\+A|\\+A[^:@]*\\+H))(?![^:@]*\\+([FWPETOVAHSR])(?:\\+[FWPETOVAHSR])*\\+\\1(?=\\+|[:@]|$))(?:C[0-5](?:\\+[FWPETOVAHSR])*:[A-Z]{1,8}|[NZGAMD][0-5](?:\\+[FWPETOVAHSR])*(?::[A-Z]{1,8})?)(?:@(?:(?:0|[1-9][0-9]{0,2})\\.(?:0|[1-9][0-9]{0,2})\\.(?:0|[1-9][0-9]{0,2})|latest|canary))?$",
       "minLength": 2,
       "maxLength": 45,

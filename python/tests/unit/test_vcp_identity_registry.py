@@ -258,7 +258,7 @@ class TestBloomFilter:
 
         # Items that definitely aren't there should (mostly) return False
         # Note: false positives are possible but rare
-        not_present = "completely.different.token"
+        not_present = "reality.different.anchor"
         # This could be a false positive, so we just test the method exists
         result = bloom.might_contain(not_present)
         assert isinstance(result, bool)
@@ -525,7 +525,7 @@ class TestLocalRegistry:
         from vcp.identity.token import Token
 
         registry = LocalRegistry()
-        token = Token.parse("nonexistent.token.here")
+        token = Token.parse("family.missing.guide")
 
         resolved = registry.resolve(token)
 
@@ -548,7 +548,7 @@ class TestLocalRegistry:
         from vcp.identity.token import Token
 
         registry = LocalRegistry()
-        token = Token.parse("nonexistent.token.here")
+        token = Token.parse("family.missing.guide")
 
         assert registry.exists(token) is False
 
@@ -1003,7 +1003,7 @@ class TestEdgeCases:
 
         auth = AuthorizationContext()
         # Non-matching exact pattern
-        result = registry.find("nonexistent.token.here", auth)
+        result = registry.find("family.missing.guide", auth)
         assert len(result.tokens) == 0
 
     def test_find_with_no_entries(self) -> None:

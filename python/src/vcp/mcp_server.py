@@ -36,8 +36,13 @@ async def list_tools() -> list[Tool]:
             name="vcp_validate_token",
             description="""Validate a VCP/I identity token string.
 
-Parses the token according to VCP/I grammar and returns its components:
+Parses the token according to the VCP/I grammar, then applies the VCP/I
+semantic rules: the first segment must be a listed namespace prefix
+(family, work, secure, creative, reality, company, school, ngo, religion,
+culture, community, user), a Core token has exactly three segments, and no
+segment is a reserved word. Returns its components:
 - domain: Value domain (e.g., 'family', 'company')
+- namespace_tier: core, org, community or personal
 - approach: Constitutional approach (e.g., 'safe', 'balanced')
 - role: Functional role (e.g., 'guide', 'guardian')
 - version: Semantic version (optional)
@@ -298,20 +303,34 @@ async def _handle_validate_token(arguments: dict[str, Any]) -> list[TextContent]
 
     token_str = arguments.get("token", "")
 
+    from vcp.identity.namespace import TokenValidationError, validate_token_semantics
+
     try:
         token = Token.parse(token_str)
-        result = {
-            "valid": True,
-            "canonical": token.canonical,
-            "domain": token.domain,
-            "approach": token.approach,
-            "role": token.role,
-            "version": token.version,
-            "namespace": token.namespace,
-            "uri": token.to_uri(),
-        }
     except ValueError as e:
-        result = {"valid": False, "error": str(e)}
+        result: dict[str, Any] = {"valid": False, "error": str(e)}
+    else:
+        try:
+            tier = validate_token_semantics(token)
+        except TokenValidationError as e:
+            result = {
+                "valid": False,
+                "syntax_valid": True,
+                "error": str(e),
+                "error_code": e.code,
+            }
+        else:
+            result = {
+                "valid": True,
+                "canonical": token.canonical,
+                "domain": token.domain,
+                "approach": token.approach,
+                "role": token.role,
+                "version": token.version,
+                "namespace": token.namespace,
+                "namespace_tier": tier.value,
+                "uri": token.to_uri(),
+            }
 
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 

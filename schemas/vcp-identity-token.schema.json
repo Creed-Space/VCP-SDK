@@ -2,16 +2,23 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vcp.creed.space/schema/uvc-token/v1.json",
   "title": "UVC Token Schema",
-  "description": "JSON Schema for Universal Value Code (UVC) token validation",
+  "description": "JSON Schema for Universal Value Code (UVC) token validation. It is the semantic validator of VCP/I §3.4.1: a token that matches the syntax pattern but uses an unlisted prefix is invalid here, although a parser may still read it.",
   "type": "object",
 
   "properties": {
     "token": {
       "type": "string",
-      "description": "The UVC token string (3-10 segments)",
+      "description": "The UVC token string (3-10 segments). `pattern` is the VCP/I §3.4 ABNF syntax, which any lowercase first segment satisfies. `allOf` adds the VCP/I §3.4.1 semantic rule: the first segment is a listed prefix (core_namespace, org_prefix, community_prefix, personal_prefix) and a Core token has exactly three segments. Segments may end with a hyphen and may contain consecutive hyphens; the whole token is at most 256 characters.",
       "pattern": "^[a-z][a-z0-9-]{0,31}(?:\\.[a-z][a-z0-9-]{0,31}){2,9}(?:@(?:[\\^~]?[0-9]{1,5}\\.[0-9]{1,5}\\.[0-9]{1,5}(?:-[a-zA-Z0-9.-]+)?|latest|canary))?(?::[A-Z][A-Z0-9]{0,31})?$",
       "minLength": 5,
       "maxLength": 256,
+      "allOf": [
+        {
+          "type": "string",
+          "description": "Semantic prefix rule (VCP/I §3.4.1, §3.6, §4.2): Core prefixes take exactly three segments; organizational, community and personal prefixes take three to ten.",
+          "pattern": "^(?:(?:family|work|secure|creative|reality)(?:\\.[a-z][a-z0-9-]{0,31}){2}|(?:company|school|ngo|religion|culture|community|user)(?:\\.[a-z][a-z0-9-]{0,31}){2,9})(?:[@:].*)?$"
+        }
+      ],
       "examples": [
         "family.safe.guide",
         "family.safe.guide@1.2.0",
@@ -60,7 +67,8 @@
 
     "domain": {
       "type": "string",
-      "description": "First segment (domain/category)",
+      "description": "First segment: one of the namespace prefixes (VCP/I §3.2, §4.2)",
+      "enum": ["family", "work", "secure", "creative", "reality", "company", "school", "ngo", "religion", "culture", "community", "user"],
       "pattern": "^[a-z][a-z0-9-]*$",
       "maxLength": 32
     },
@@ -137,6 +145,12 @@
       "type": "string",
       "enum": ["religion", "culture", "community"],
       "description": "Community namespace prefixes"
+    },
+
+    "personal_prefix": {
+      "type": "string",
+      "const": "user",
+      "description": "Personal namespace prefix"
     },
 
     "segment": {

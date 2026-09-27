@@ -1,6 +1,10 @@
 """
 VCP/I Token parsing and validation.
 
+``Token.parse`` checks syntax only; ``Token.validate`` adds the VCP/I
+§3.4.1 semantic rules (listed namespace prefix, three-segment Core tokens,
+no reserved words).
+
 Token format (ABNF from spec):
     token = segment 2*("." segment) ["@" version] [":" namespace]
     segment = ALPHA *(ALPHA / DIGIT / "-")
@@ -486,6 +490,34 @@ class Token:
             True if other's segments are a prefix of this token's
         """
         return other.is_ancestor_of(self)
+
+    def validate(self) -> Self:
+        """Apply VCP/I §3.4.1 semantic validation and return this token.
+
+        :meth:`parse` accepts any syntactically valid token, so a parser can
+        relay, log or display it. A validator must also reject a token whose
+        first segment is not a listed namespace prefix, a Core token that
+        does not have exactly three segments, and a reserved-word segment.
+
+        Raises:
+            vcp.identity.namespace.TokenValidationError: A ``ValueError``
+                with a ``code`` attribute, if a semantic rule fails.
+        """
+        from .namespace import validate_token_semantics
+
+        validate_token_semantics(self)
+        return self
+
+    @property
+    def is_semantically_valid(self) -> bool:
+        """Whether :meth:`validate` would succeed."""
+        from .namespace import TokenValidationError, validate_token_semantics
+
+        try:
+            validate_token_semantics(self)
+        except TokenValidationError:
+            return False
+        return True
 
     def __str__(self) -> str:
         return self.full

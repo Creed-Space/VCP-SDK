@@ -50,6 +50,57 @@ COMMUNITY_PREFIXES = frozenset({"religion", "culture", "community"})
 # Personal prefix (individual control)
 PERSONAL_PREFIX = "user"
 
+# Reserved words that MUST NOT be used as segments (VCP/I §3.7.1). They are
+# a validator and registry rule; the identity schema does not encode them.
+RESERVED_WORDS = frozenset(
+    {
+        "system",
+        "admin",
+        "root",
+        "null",
+        "undefined",
+        "true",
+        "false",
+        "none",
+        "void",
+        "default",
+        "api",
+        "internal",
+        "private",
+        "public",
+        "test",
+        "debug",
+        "staging",
+        "production",
+        "vcp",
+        "uvc",
+        "csm",
+        "bundle",
+        "manifest",
+        "creed",
+        "official",
+        "verified",
+        "authentic",
+        "real",
+    }
+)
+
+# Number of segments a Core token must have (VCP/I §3.1.1, §3.4.1).
+CORE_TOKEN_SEGMENTS = 3
+
+
+class TokenValidationError(ValueError):
+    """A syntactically valid token that fails VCP/I semantic validation.
+
+    ``code`` is one of ``unknown_namespace_prefix``, ``core_segment_count``
+    or ``reserved_word``.
+    """
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
 _PREFIX_TIERS: dict[str, NamespaceTier] = {
     **{prefix: NamespaceTier.CORE for prefix in CORE_DOMAINS},
     **{prefix: NamespaceTier.ORGANIZATIONAL for prefix in ORG_PREFIXES},
@@ -140,6 +191,45 @@ def get_tier_config(tier: NamespaceTier) -> NamespaceConfig:
         Configuration for the tier
     """
     return TIER_CONFIGS[tier]
+
+
+def validate_token_semantics(token: Token) -> NamespaceTier:
+    """Apply the VCP/I §3.4.1 semantic rules to a parsed token.
+
+    ``Token.parse`` checks syntax only (the §3.4 ABNF and the schema
+    ``pattern``). A conforming validator also requires a listed namespace
+    prefix, exactly three segments for a Core token, and no reserved word
+    (§3.7.1) in any segment.
+
+    Args:
+        token: Syntactically valid token
+
+    Returns:
+        The token's namespace tier
+
+    Raises:
+        TokenValidationError: If a semantic rule fails
+    """
+    tier = _PREFIX_TIERS.get(token.domain)
+    if tier is None:
+        raise TokenValidationError(
+            "unknown_namespace_prefix",
+            f"Unknown namespace prefix: {token.domain!r} (VCP/I §4.2 lists "
+            "family, work, secure, creative, reality, company, school, ngo, "
+            "religion, culture, community and user)",
+        )
+    if tier is NamespaceTier.CORE and len(token.segments) != CORE_TOKEN_SEGMENTS:
+        raise TokenValidationError(
+            "core_segment_count",
+            f"Core namespace {token.domain!r} requires exactly "
+            f"{CORE_TOKEN_SEGMENTS} segments, got {len(token.segments)}",
+        )
+    for index, segment in enumerate(token.segments, start=1):
+        if segment in RESERVED_WORDS:
+            raise TokenValidationError(
+                "reserved_word", f"Segment {index} is a reserved word: {segment!r}"
+            )
+    return tier
 
 
 def is_known_namespace(domain: str) -> bool:

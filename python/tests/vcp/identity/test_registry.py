@@ -73,7 +73,7 @@ class TestLocalRegistry:
 
     def test_exists_non_existent(self, registry):
         """Non-existent token returns False."""
-        token = Token.parse("nonexistent.token.here")
+        token = Token.parse("family.missing.guide")
         assert registry.exists(token) is False
 
     def test_find_exact(self, registry, public_auth):

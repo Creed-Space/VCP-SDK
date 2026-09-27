@@ -96,6 +96,57 @@ def rust_token(raw: str, *, uri: bool = False) -> dict[str, Any]:
     }
 
 
+def validate_python(raw: str) -> dict[str, Any]:
+    """Syntax, then VCP/I §3.4.1 semantic validation (Token.validate)."""
+    if str(PYTHON_SRC) not in sys.path:
+        sys.path.insert(0, str(PYTHON_SRC))
+    from vcp.identity import Token, TokenValidationError
+    from vcp.identity.namespace import validate_token_semantics
+
+    try:
+        token = Token.parse(raw)
+    except ValueError:
+        return {"valid": False, "syntax_valid": False, "error": "syntax"}
+    try:
+        tier = validate_token_semantics(token)
+    except TokenValidationError as error:
+        return {"valid": False, "syntax_valid": True, "error": error.code}
+    return {"valid": True, "syntax_valid": True, "namespace_tier": tier.value}
+
+
+def validate_rust(raw: str) -> dict[str, Any]:
+    result = subprocess.run(
+        [str(RUST_BINARY), "validate-token", raw],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        timeout=10,
+        check=False,
+    )
+    stdout = result.stdout.strip()
+    if not stdout:
+        return {"valid": False, "syntax_valid": False, "error": "syntax"}
+    payload = json.loads(stdout)
+    if payload["valid"]:
+        return {
+            "valid": True,
+            "syntax_valid": True,
+            "namespace_tier": payload["namespace_tier"],
+        }
+    return {"valid": False, "syntax_valid": True, "error": payload["error_code"]}
+
+
+def check_validation(
+    case_id: str, actual: dict[str, Any], expected: dict[str, Any]
+) -> list[str]:
+    return [
+        f"{case_id}: {key}={actual.get(key)!r}, expected={value!r}"
+        for key, value in expected.items()
+        if key in {"valid", "syntax_valid", "error", "namespace_tier"}
+        and actual.get(key) != value
+    ]
+
+
 def canonicalize_python(raw: str) -> tuple[bool, str]:
     if str(PYTHON_SRC) not in sys.path:
         sys.path.insert(0, str(PYTHON_SRC))
@@ -223,6 +274,19 @@ def main() -> int:
             cases.append({"id": case_id, "python": python_values, "rust": rust_values})
             continue
         raw = vector["input"]
+        if vector.get("operation") == "validate":
+            py = validate_python(raw)
+            rs = validate_rust(raw)
+            failures.extend(
+                f"Python {failure}" for failure in check_validation(case_id, py, expected)
+            )
+            failures.extend(
+                f"Rust {failure}" for failure in check_validation(case_id, rs, expected)
+            )
+            if py != rs:
+                failures.append(f"{case_id}: Python and Rust validation differ")
+            cases.append({"id": case_id, "python": py, "rust": rs})
+            continue
         parse_uri = vector.get("operation") == "parse_uri"
         py = python_token(raw, uri=parse_uri)
         rs = rust_token(raw, uri=parse_uri)

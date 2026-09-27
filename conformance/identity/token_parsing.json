@@ -361,6 +361,127 @@
         "valid": false,
         "error": "ambiguous_uri_path"
       }
+    },
+    {
+      "id": "token-validate-001",
+      "description": "Core token with a listed prefix and three segments is valid",
+      "operation": "validate",
+      "input": "family.safe.guide@1.2.0",
+      "expected": {
+        "valid": true,
+        "syntax_valid": true,
+        "namespace_tier": "core"
+      }
+    },
+    {
+      "id": "token-validate-002",
+      "description": "Organizational token (company prefix) is valid",
+      "operation": "validate",
+      "input": "company.acme.legal.compliance:SEC",
+      "expected": {
+        "valid": true,
+        "syntax_valid": true,
+        "namespace_tier": "org"
+      }
+    },
+    {
+      "id": "token-validate-003",
+      "description": "Community token (religion prefix) is valid",
+      "operation": "validate",
+      "input": "religion.buddhist.mindfulness",
+      "expected": {
+        "valid": true,
+        "syntax_valid": true,
+        "namespace_tier": "community"
+      }
+    },
+    {
+      "id": "token-validate-004",
+      "description": "Personal token (user prefix) is valid",
+      "operation": "validate",
+      "input": "user.alice.notes",
+      "expected": {
+        "valid": true,
+        "syntax_valid": true,
+        "namespace_tier": "personal"
+      }
+    },
+    {
+      "id": "token-validate-005",
+      "description": "Default demo constitution is a valid Core token",
+      "operation": "validate",
+      "input": "creative.growth.muse",
+      "expected": {
+        "valid": true,
+        "syntax_valid": true,
+        "namespace_tier": "core"
+      }
+    },
+    {
+      "id": "token-validate-err-001",
+      "description": "Unlisted prefix parses (token-005) but fails semantic validation (VCP/I 3.4.1)",
+      "operation": "validate",
+      "input": "my-org.safe-net.web-guard",
+      "expected": {
+        "valid": false,
+        "syntax_valid": true,
+        "error": "unknown_namespace_prefix"
+      }
+    },
+    {
+      "id": "token-validate-err-002",
+      "description": "Retired tier-first prefix personal is not a namespace",
+      "operation": "validate",
+      "input": "personal.growth.creative",
+      "expected": {
+        "valid": false,
+        "syntax_valid": true,
+        "error": "unknown_namespace_prefix"
+      }
+    },
+    {
+      "id": "token-validate-err-003",
+      "description": "health is not a Core prefix",
+      "operation": "validate",
+      "input": "health.privacy.hipaa",
+      "expected": {
+        "valid": false,
+        "syntax_valid": true,
+        "error": "unknown_namespace_prefix"
+      }
+    },
+    {
+      "id": "token-validate-err-004",
+      "description": "Core token must have exactly three segments",
+      "operation": "validate",
+      "input": "family.safe.guide.extra",
+      "expected": {
+        "valid": false,
+        "syntax_valid": true,
+        "error": "core_segment_count"
+      }
+    },
+    {
+      "id": "token-validate-err-005",
+      "description": "Reserved word segment (VCP/I 3.7.1)",
+      "operation": "validate",
+      "input": "user.alice.private",
+      "expected": {
+        "valid": false,
+        "syntax_valid": true,
+        "error": "reserved_word"
+      }
+    },
+    {
+      "id": "token-validate-err-006",
+      "description": "Syntax errors fail before semantic rules",
+      "operation": "validate",
+      "input": "Family.Safe.Guide",
+      "expected": {
+        "valid": false,
+        "syntax_valid": false,
+        "error": "syntax"
+      }
     }
   ]
 }

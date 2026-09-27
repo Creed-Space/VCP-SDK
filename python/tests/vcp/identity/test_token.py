@@ -302,7 +302,7 @@ class TestTokenUriParsing:
                 "creed://acme.example/company/acme/legal@latest",
                 "company.acme.legal@latest",
             ),
-            ("vcp://core.ethics.consent", "core.ethics.consent"),
+            ("vcp://family.safe.guide", "family.safe.guide"),
         ],
     )
     def test_accepts_required_alternative_and_legacy_uri_forms(
@@ -518,3 +518,52 @@ class TestWithNamespaceValidation:
         t = Token.parse("family.safe.guide")
         with pytest.raises(ValueError, match="Invalid namespace format"):
             t.with_namespace("SEC\n")
+
+
+class TestSemanticValidation:
+    """VCP/I §3.4.1: parse is syntactic, validate adds the semantic rules."""
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "family.safe.guide",
+            "creative.growth.muse@1.0.0",
+            "reality.factual.anchor:SEC",
+            "company.acme.legal.compliance",
+            "school.mit.research",
+            "ngo.redcross.humanitarian",
+            "religion.buddhist.mindfulness",
+            "culture.japanese.formal",
+            "community.gaming.esports",
+            "user.alice.notes",
+            "company.a.b.c.d.e.f.g.h.i",
+        ],
+    )
+    def test_listed_prefixes_validate(self, raw):
+        token = Token.parse(raw)
+        assert token.validate() is token
+        assert token.is_semantically_valid
+
+    @pytest.mark.parametrize(
+        ("raw", "code"),
+        [
+            ("my-org.safe-net.web-guard", "unknown_namespace_prefix"),
+            ("personal.growth.creative", "unknown_namespace_prefix"),
+            ("org.example.dept.team.policy", "unknown_namespace_prefix"),
+            ("core.ethics.consent", "unknown_namespace_prefix"),
+            ("a.b.c", "unknown_namespace_prefix"),
+            ("family.safe.guide.extra", "core_segment_count"),
+            ("work.a.b.c.d", "core_segment_count"),
+            ("family.test.guide", "reserved_word"),
+            ("company.acme.default", "reserved_word"),
+        ],
+    )
+    def test_semantic_failures_still_parse(self, raw, code):
+        from vcp.identity import TokenValidationError
+
+        token = Token.parse(raw)
+        assert not token.is_semantically_valid
+        with pytest.raises(TokenValidationError) as caught:
+            token.validate()
+        assert caught.value.code == code
+        assert isinstance(caught.value, ValueError)

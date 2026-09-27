@@ -147,3 +147,44 @@ def test_mcp_2_adapter_rejects_arguments_outside_tool_schema(server_module) -> N
     )
     assert called.is_error is True
     assert "Invalid arguments" in json.loads(called.content[0].text)["error"]
+
+
+@pytest.mark.parametrize(
+    ("token", "tier"),
+    [
+        ("family.safe.guide@1.2.0", "core"),
+        ("company.acme.legal.compliance:SEC", "org"),
+        ("religion.buddhist.mindfulness", "community"),
+        ("user.alice.notes", "personal"),
+    ],
+)
+def test_validate_token_reports_tier_for_listed_prefixes(server_module, token, tier) -> None:
+    response = asyncio.run(server_module._handle_validate_token({"token": token}))
+    payload = json.loads(response[0].text)
+    assert payload["valid"] is True
+    assert payload["namespace_tier"] == tier
+
+
+@pytest.mark.parametrize(
+    ("token", "code"),
+    [
+        ("personal.growth.creative", "unknown_namespace_prefix"),
+        ("health.privacy.hipaa", "unknown_namespace_prefix"),
+        ("my-org.safe-net.web-guard", "unknown_namespace_prefix"),
+        ("family.safe.guide.extra", "core_segment_count"),
+        ("user.alice.private", "reserved_word"),
+    ],
+)
+def test_validate_token_rejects_semantic_failures(server_module, token, code) -> None:
+    response = asyncio.run(server_module._handle_validate_token({"token": token}))
+    payload = json.loads(response[0].text)
+    assert payload["valid"] is False
+    assert payload["syntax_valid"] is True
+    assert payload["error_code"] == code
+
+
+def test_validate_token_reports_syntax_errors_without_syntax_valid(server_module) -> None:
+    response = asyncio.run(server_module._handle_validate_token({"token": "Not A Token"}))
+    payload = json.loads(response[0].text)
+    assert payload["valid"] is False
+    assert "syntax_valid" not in payload

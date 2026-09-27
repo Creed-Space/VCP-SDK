@@ -13,6 +13,7 @@ import type {
 	WebMCPToolExecuteOptions,
 	WebMCPToolResult
 } from './types.js';
+import { validateIdentityToken } from './identity.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -289,10 +290,11 @@ const DEFAULT_PERSONAS: PersonaInfo[] = [
 const DEFAULT_PERSONA_ID = 'ambassador';
 
 /**
- * Constitution used by `vcp_chat` when the caller omits one. A VCP/I identity
- * token needs at least three dot-separated segments.
+ * Constitution used by `vcp_chat` when the caller omits one: a Core VCP/I
+ * token (listed prefix, exactly three segments) that passes
+ * `validateIdentityToken`.
  */
-const DEFAULT_CONSTITUTION_ID = 'personal.growth.creative';
+const DEFAULT_CONSTITUTION_ID = 'creative.growth.muse';
 
 const MAX_PERSONAS = 100;
 const PERSONA_ID_PATTERN = /^[a-z0-9_-]{1,64}$/;
@@ -432,7 +434,7 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 				constitution_id: {
 					type: 'string',
 					description:
-						"Constitution ID, a VCP/I token with at least three segments (e.g. 'personal.growth.creative', the default)."
+						"Constitution ID, a valid VCP/I token: its first segment is a listed namespace prefix (family, work, secure, creative, reality, company, school, ngo, religion, culture, community or user) and a Core token has exactly three segments (e.g. 'creative.growth.muse', the default)."
 				},
 				persona: {
 					type: 'string',
@@ -459,6 +461,14 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 						args.constitution_id.length > 2048)
 				) {
 					return errorResult('constitution_id must contain 1 to 2048 characters');
+				}
+				if (typeof args.constitution_id === 'string') {
+					const validation = validateIdentityToken(args.constitution_id);
+					if (!validation.valid) {
+						return errorResult(
+							`constitution_id is not a valid VCP/I token (${validation.error}): ${validation.message}`
+						);
+					}
 				}
 
 				if (args.persona !== undefined) {

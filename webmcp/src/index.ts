@@ -34,6 +34,22 @@ export { createVCPTools } from './tools.js';
 export { registerVCPTools } from './registration.js';
 
 export {
+	IDENTITY_TOKEN_SYNTAX,
+	MAX_IDENTITY_TOKEN_LENGTH,
+	NAMESPACE_PREFIXES,
+	RESERVED_WORDS,
+	isIdentityTokenSyntax,
+	namespaceTierOf,
+	validateIdentityToken,
+} from './identity.js';
+
+export type {
+	NamespaceTier,
+	IdentityValidationError,
+	IdentityValidationResult,
+} from './identity.js';
+
+export {
 	HookRegistry,
 	HookType,
 } from './hooks.js';

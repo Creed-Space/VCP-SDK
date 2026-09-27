@@ -70,6 +70,14 @@ enum Commands {
         token: String,
     },
 
+    /// Validate a VCP/I identity token: syntax, then the VCP/I §3.4.1
+    /// semantic rules (listed namespace prefix, three-segment Core tokens,
+    /// no reserved words). Prints JSON; exits non-zero when invalid.
+    ValidateToken {
+        /// Token string (e.g. "family.safe.guide@1.2.0").
+        token: String,
+    },
+
     /// Parse a strict creed:// or vcp:// identity URI.
     ParseUri {
         /// Identity URI (e.g. "creed://creed.space/family.safe.guide@1.2.0").
@@ -196,6 +204,7 @@ fn main() {
             descendant,
         } => cmd_token_hierarchy(&ancestor, &descendant),
         Commands::ParseToken { token } => cmd_parse_token(&token),
+        Commands::ValidateToken { token } => cmd_validate_token(&token),
         Commands::ParseUri { uri } => cmd_parse_uri(&uri),
         Commands::ParseCsm1 { code } => cmd_parse_csm1(&code),
         Commands::ResolvePersona { code } => cmd_resolve_persona(&code),
@@ -293,6 +302,35 @@ fn cmd_token_hierarchy(ancestor_raw: &str, descendant_raw: &str) -> Result<(), S
 fn cmd_parse_token(raw: &str) -> Result<(), String> {
     let token = VcpToken::parse(raw).map_err(|e| e.to_string())?;
     print_parsed_token(&token)
+}
+
+fn cmd_validate_token(raw: &str) -> Result<(), String> {
+    let token = VcpToken::parse(raw).map_err(|e| e.to_string())?;
+    match token.validate() {
+        Ok(tier) => {
+            println!(
+                "{}",
+                serde_json::json!({
+                    "valid": true,
+                    "canonical": token.full(),
+                    "namespace_tier": tier.label(),
+                })
+            );
+            Ok(())
+        }
+        Err(error) => {
+            println!(
+                "{}",
+                serde_json::json!({
+                    "valid": false,
+                    "syntax_valid": true,
+                    "error_code": error.code(),
+                    "error": error.to_string(),
+                })
+            );
+            Err(format!("{}: {error}", error.code()))
+        }
+    }
 }
 
 fn cmd_parse_uri(raw: &str) -> Result<(), String> {

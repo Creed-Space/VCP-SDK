@@ -634,9 +634,30 @@ describe('createVCPTools — default personas', () => {
 			const bodies = fetchMock.mock.calls.map(
 				(call) => JSON.parse((call as unknown as [string, RequestInit])[1].body as string),
 			);
-			expect(bodies[0].constitution_id).toBe('personal.growth.creative');
+			expect(bodies[0].constitution_id).toBe('creative.growth.muse');
 			expect(bodies[0].constitution_id.split('.').length).toBeGreaterThanOrEqual(3);
 			expect(bodies[1].constitution_id).toBe('company.acme.procurement.approval-policy');
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
+	it('rejects a constitution ID that fails VCP/I semantic validation', async () => {
+		const fetchMock = vi.fn(async () => new Response(JSON.stringify({ response: 'ok' })));
+		vi.stubGlobal('fetch', fetchMock);
+		try {
+			const tool = chatTool();
+			for (const [constitution_id, code] of [
+				['personal.growth.creative', 'unknown_namespace_prefix'],
+				['family.safe.guide.extra', 'core_segment_count'],
+				['user.alice.private', 'reserved_word'],
+				['Not A Token', 'syntax'],
+			]) {
+				const result = await tool.execute({ query: 'hello', constitution_id });
+				expect(result.content[0].text).toMatch(/^Error: constitution_id is not a valid VCP\/I token/);
+				expect(result.content[0].text).toContain(code);
+			}
+			expect(fetchMock).not.toHaveBeenCalled();
 		} finally {
 			vi.unstubAllGlobals();
 		}

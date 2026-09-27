@@ -760,6 +760,170 @@ impl fmt::Display for VcpToken {
     }
 }
 
+// ── Semantic validation (VCP/I §3.4.1) ──────────────────────
+
+/// Core namespace prefixes (VCP/I §3.2, §4.2.1). A Core token has exactly
+/// three segments.
+pub const CORE_PREFIXES: [&str; 5] = ["family", "work", "secure", "creative", "reality"];
+/// Organizational namespace prefixes (VCP/I §4.2.2).
+pub const ORG_PREFIXES: [&str; 3] = ["company", "school", "ngo"];
+/// Community namespace prefixes (VCP/I §4.2.3).
+pub const COMMUNITY_PREFIXES: [&str; 3] = ["religion", "culture", "community"];
+/// Personal namespace prefix (VCP/I §4.2.4).
+pub const PERSONAL_PREFIX: &str = "user";
+/// Words that must not be used as segments (VCP/I §3.7.1).
+pub const RESERVED_WORDS: [&str; 28] = [
+    "system",
+    "admin",
+    "root",
+    "null",
+    "undefined",
+    "true",
+    "false",
+    "none",
+    "void",
+    "default",
+    "api",
+    "internal",
+    "private",
+    "public",
+    "test",
+    "debug",
+    "staging",
+    "production",
+    "vcp",
+    "uvc",
+    "csm",
+    "bundle",
+    "manifest",
+    "creed",
+    "official",
+    "verified",
+    "authentic",
+    "real",
+];
+
+/// Namespace governance tier selected by a token's first segment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum NamespaceTier {
+    /// `family`, `work`, `secure`, `creative`, `reality`.
+    Core,
+    /// `company`, `school`, `ngo`. Serialized as `org`.
+    #[serde(rename = "org")]
+    Organizational,
+    /// `religion`, `culture`, `community`.
+    Community,
+    /// `user`.
+    Personal,
+}
+
+impl NamespaceTier {
+    /// Tier for a first segment, or `None` for an unlisted prefix.
+    pub fn from_prefix(prefix: &str) -> Option<Self> {
+        if CORE_PREFIXES.contains(&prefix) {
+            Some(Self::Core)
+        } else if ORG_PREFIXES.contains(&prefix) {
+            Some(Self::Organizational)
+        } else if COMMUNITY_PREFIXES.contains(&prefix) {
+            Some(Self::Community)
+        } else if prefix == PERSONAL_PREFIX {
+            Some(Self::Personal)
+        } else {
+            None
+        }
+    }
+
+    /// Wire label: `core`, `org`, `community` or `personal`.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Core => "core",
+            Self::Organizational => "org",
+            Self::Community => "community",
+            Self::Personal => "personal",
+        }
+    }
+}
+
+/// A syntactically valid token that fails VCP/I §3.4.1 semantic validation.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum TokenValidationError {
+    /// The first segment is not a listed namespace prefix.
+    #[error("unknown namespace prefix: '{0}'")]
+    UnknownNamespacePrefix(String),
+    /// A Core token does not have exactly three segments.
+    #[error("core namespace '{prefix}' requires exactly 3 segments, got {segments}")]
+    CoreSegmentCount {
+        /// The Core prefix.
+        prefix: String,
+        /// The number of segments found.
+        segments: usize,
+    },
+    /// A segment is a reserved word.
+    #[error("segment {index} is a reserved word: '{segment}'")]
+    ReservedWord {
+        /// One-based segment position.
+        index: usize,
+        /// The reserved segment.
+        segment: String,
+    },
+}
+
+impl TokenValidationError {
+    /// Stable machine-readable code, shared with the Python SDK.
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::UnknownNamespacePrefix(_) => "unknown_namespace_prefix",
+            Self::CoreSegmentCount { .. } => "core_segment_count",
+            Self::ReservedWord { .. } => "reserved_word",
+        }
+    }
+}
+
+impl From<TokenValidationError> for VcpError {
+    fn from(error: TokenValidationError) -> Self {
+        VcpError::MalformedToken(error.to_string())
+    }
+}
+
+impl VcpToken {
+    /// Namespace tier of the first segment, or `None` for an unlisted prefix.
+    pub fn namespace_tier(&self) -> Option<NamespaceTier> {
+        NamespaceTier::from_prefix(self.domain())
+    }
+
+    /// Apply the VCP/I §3.4.1 semantic rules.
+    ///
+    /// [`VcpToken::parse`] checks syntax only, so it accepts any lowercase
+    /// first segment (a parser may relay or display such a token). A
+    /// validator also requires a listed namespace prefix, exactly three
+    /// segments for a Core token, and no reserved-word segment.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first [`TokenValidationError`] found.
+    pub fn validate(&self) -> Result<NamespaceTier, TokenValidationError> {
+        let tier = self
+            .namespace_tier()
+            .ok_or_else(|| TokenValidationError::UnknownNamespacePrefix(self.domain().into()))?;
+        if tier == NamespaceTier::Core && self.segments.len() != 3 {
+            return Err(TokenValidationError::CoreSegmentCount {
+                prefix: self.domain().into(),
+                segments: self.segments.len(),
+            });
+        }
+        for (index, segment) in self.segments.iter().enumerate() {
+            if RESERVED_WORDS.contains(&segment.as_str()) {
+                return Err(TokenValidationError::ReservedWord {
+                    index: index + 1,
+                    segment: segment.clone(),
+                });
+            }
+        }
+        Ok(tier)
+    }
+}
+
 // ── Tests ───────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -839,6 +1003,47 @@ mod tests {
         let t = VcpToken::parse("company.acme.legal.compliance:SEC").unwrap();
         assert_eq!(t.namespace.as_deref(), Some("SEC"));
         assert_eq!(t.depth(), 4);
+    }
+
+    #[test]
+    fn validate_accepts_listed_prefixes() {
+        for (raw, tier) in [
+            ("family.safe.guide", NamespaceTier::Core),
+            ("creative.growth.muse@1.0.0", NamespaceTier::Core),
+            (
+                "company.acme.legal.compliance:SEC",
+                NamespaceTier::Organizational,
+            ),
+            ("religion.buddhist.mindfulness", NamespaceTier::Community),
+            ("user.alice.notes", NamespaceTier::Personal),
+        ] {
+            assert_eq!(VcpToken::parse(raw).unwrap().validate(), Ok(tier), "{raw}");
+        }
+    }
+
+    #[test]
+    fn validate_rejects_semantic_failures_that_still_parse() {
+        for (raw, code) in [
+            ("my-org.safe-net.web-guard", "unknown_namespace_prefix"),
+            ("personal.growth.creative", "unknown_namespace_prefix"),
+            ("health.privacy.hipaa", "unknown_namespace_prefix"),
+            ("family.safe.guide.extra", "core_segment_count"),
+            ("family.test.guide", "reserved_word"),
+        ] {
+            let token = VcpToken::parse(raw).unwrap();
+            let error = token.validate().unwrap_err();
+            assert_eq!(error.code(), code, "{raw}");
+            assert!(matches!(VcpError::from(error), VcpError::MalformedToken(_)));
+        }
+    }
+
+    #[test]
+    fn namespace_tier_serializes_with_schema_labels() {
+        assert_eq!(
+            serde_json::to_string(&NamespaceTier::Organizational).unwrap(),
+            "\"org\""
+        );
+        assert_eq!(NamespaceTier::Personal.label(), "personal");
     }
 
     #[test]

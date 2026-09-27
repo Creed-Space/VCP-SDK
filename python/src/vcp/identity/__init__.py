@@ -8,7 +8,12 @@ The foundational layer providing:
 - Pseudonymous identity (PseudonymousRegistry)
 """
 
-from .namespace import NamespaceConfig, NamespaceTier, validate_namespace_access
+from .namespace import (
+    NamespaceConfig,
+    NamespaceTier,
+    TokenValidationError,
+    validate_namespace_access,
+)
 from .registry import (
     AuthorizationContext,
     BloomFilter,
@@ -33,6 +38,7 @@ __all__ = [
     "NamespaceTier",
     "NamespaceConfig",
     "validate_namespace_access",
+    "TokenValidationError",
     # Registry
     "Registry",
     "LocalRegistry",
