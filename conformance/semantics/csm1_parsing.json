@@ -320,7 +320,7 @@
     },
     {
       "id": "csm1-err-014",
-      "description": "Healthcare and Adult scopes are mutually exclusive",
+      "description": "Health and Adult scopes are mutually exclusive",
       "input": "N5+H+A",
       "expected": {
         "valid": false,

@@ -212,9 +212,20 @@ pub enum Scope {
     Official,
     Vulnerable,
     Adult,
-    Healthcare,
+    /// Scope `H`, named "Health" in VCP/S §2.6.1. Deserialization also
+    /// accepts the retired variant name `Healthcare`.
+    #[serde(alias = "Healthcare")]
+    Health,
     Social,
     Religious,
+}
+
+#[allow(non_upper_case_globals)]
+impl Scope {
+    /// Deprecated alias for [`Scope::Health`], kept so code written against
+    /// the former variant name still compiles.
+    #[deprecated(note = "use `Scope::Health` (VCP/S §2.6.1)")]
+    pub const Healthcare: Scope = Scope::Health;
 }
 
 impl Scope {
@@ -229,7 +240,7 @@ impl Scope {
             Self::Official => 'O',
             Self::Vulnerable => 'V',
             Self::Adult => 'A',
-            Self::Healthcare => 'H',
+            Self::Health => 'H',
             Self::Social => 'S',
             Self::Religious => 'R',
         }
@@ -251,7 +262,7 @@ impl Scope {
             'O' => Ok(Self::Official),
             'V' => Ok(Self::Vulnerable),
             'A' => Ok(Self::Adult),
-            'H' => Ok(Self::Healthcare),
+            'H' => Ok(Self::Health),
             'S' => Ok(Self::Social),
             'R' => Ok(Self::Religious),
             _ => Err(VcpError::InvalidScope(c)),
@@ -269,7 +280,7 @@ impl Scope {
             Self::Official => "Official and governmental context",
             Self::Vulnerable => "Vulnerable populations",
             Self::Adult => "Adult-only context",
-            Self::Healthcare => "Medical and health",
+            Self::Health => "Health and medical context",
             Self::Social => "Social media and community",
             Self::Religious => "Religious and spiritual context",
         }
@@ -382,7 +393,7 @@ impl Csm1Code {
         for (left, right) in [
             (Scope::Family, Scope::Adult),
             (Scope::Vulnerable, Scope::Adult),
-            (Scope::Healthcare, Scope::Adult),
+            (Scope::Health, Scope::Adult),
         ] {
             if scopes.contains(&left) && scopes.contains(&right) {
                 return Err(VcpError::ParseError(format!(
@@ -1257,7 +1268,7 @@ mod tests {
             ('O', Scope::Official),
             ('V', Scope::Vulnerable),
             ('A', Scope::Adult),
-            ('H', Scope::Healthcare),
+            ('H', Scope::Health),
             ('S', Scope::Social),
             ('R', Scope::Religious),
         ];
@@ -1271,6 +1282,24 @@ mod tests {
         for legacy_or_invalid in ['I', 'L', 'G', 'X'] {
             assert!(Scope::from_char(legacy_or_invalid).is_err());
         }
+    }
+
+    #[test]
+    fn scope_h_is_named_health() {
+        assert_eq!(Scope::from_char('H').unwrap(), Scope::Health);
+        assert_eq!(Scope::Health.description(), "Health and medical context");
+        assert_eq!(serde_json::to_string(&Scope::Health).unwrap(), "\"Health\"");
+        let legacy: Scope = serde_json::from_str("\"Healthcare\"").unwrap();
+        assert_eq!(legacy, Scope::Health);
+        let current: Scope = serde_json::from_str("\"Health\"").unwrap();
+        assert_eq!(current, Scope::Health);
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn deprecated_healthcare_alias_is_health() {
+        assert_eq!(Scope::Healthcare, Scope::Health);
+        assert!(matches!(Scope::from_char('H').unwrap(), Scope::Healthcare));
     }
 
     // ── Code Parsing (NANO and MICRO) ───────────────────
@@ -1315,7 +1344,7 @@ mod tests {
         assert_eq!(code.adherence_level, 4);
         assert_eq!(
             code.scopes,
-            vec![Scope::Family, Scope::Education, Scope::Healthcare]
+            vec![Scope::Family, Scope::Education, Scope::Health]
         );
         assert_eq!(code.namespace.as_deref(), Some("ELEM"));
         assert_eq!(code.version.as_deref(), Some("2.1.0"));
@@ -1384,7 +1413,7 @@ mod tests {
                 Scope::Technical,
                 Scope::Official,
                 Scope::Vulnerable,
-                Scope::Healthcare,
+                Scope::Health,
                 Scope::Social,
                 Scope::Religious,
             ]

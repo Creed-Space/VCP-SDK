@@ -57,7 +57,7 @@ class TestScope:
         assert Scope.from_char("O") == Scope.OFFICIAL
         assert Scope.from_char("V") == Scope.VULNERABLE
         assert Scope.from_char("A") == Scope.ADULT
-        assert Scope.from_char("H") == Scope.HEALTHCARE
+        assert Scope.from_char("H") == Scope.HEALTH
         assert Scope.from_char("S") == Scope.SOCIAL
         assert Scope.from_char("R") == Scope.RELIGIOUS
 
@@ -65,6 +65,18 @@ class TestScope:
         """from_char should raise for invalid char."""
         with pytest.raises(ValueError, match="Unknown scope"):
             Scope.from_char("X")
+
+    def test_health_is_canonical_name_for_h(self):
+        """VCP/S §2.6.1 names scope H "Health"; HEALTHCARE is a deprecated alias."""
+        assert Scope("H").name == "HEALTH"
+        assert Scope.HEALTHCARE is Scope.HEALTH
+        assert Scope["HEALTHCARE"] is Scope.HEALTH
+        assert len(Scope) == 11
+        assert "HEALTHCARE" not in [scope.name for scope in Scope]
+
+    def test_health_adult_conflict_names_health(self):
+        with pytest.raises(ValueError, match="Health and Adult scopes cannot be combined"):
+            CSM1Code.parse("N5+H+A")
 
     def test_description(self):
         """Each scope should have a description."""
@@ -112,7 +124,7 @@ class TestCSM1Parsing:
         code = CSM1Code.parse("G4+F+E+H:ELEM@2.1.0")
         assert code.persona == Persona.GODPARENT
         assert code.adherence_level == 4
-        assert code.scopes == [Scope.FAMILY, Scope.EDUCATION, Scope.HEALTHCARE]
+        assert code.scopes == [Scope.FAMILY, Scope.EDUCATION, Scope.HEALTH]
         assert code.namespace == "ELEM"
         assert code.version == "2.1.0"
 

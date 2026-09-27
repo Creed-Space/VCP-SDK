@@ -14,7 +14,7 @@ const SCOPES: [Scope; 11] = [
     Scope::Official,
     Scope::Vulnerable,
     Scope::Adult,
-    Scope::Healthcare,
+    Scope::Health,
     Scope::Social,
     Scope::Religious,
 ];
@@ -60,7 +60,7 @@ proptest! {
         prop_assume!(!(selected.contains(&Scope::Adult)
             && (selected.contains(&Scope::Family)
                 || selected.contains(&Scope::Vulnerable)
-                || selected.contains(&Scope::Healthcare))));
+                || selected.contains(&Scope::Health))));
         let selected_persona = persona(persona_index);
         let code = Csm1Code {
             persona: selected_persona,

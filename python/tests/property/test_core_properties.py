@@ -27,7 +27,7 @@ def csm1_codes(draw: st.DrawFn) -> CSM1Code:
     incompatible = (
         (Scope.FAMILY, Scope.ADULT),
         (Scope.VULNERABLE, Scope.ADULT),
-        (Scope.HEALTHCARE, Scope.ADULT),
+        (Scope.HEALTH, Scope.ADULT),
     )
     if any(left in scopes and right in scopes for left, right in incompatible):
         scopes = [scope for scope in scopes if scope is not Scope.ADULT]

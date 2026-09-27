@@ -149,9 +149,12 @@ class Scope(Enum):
     OFFICIAL = "O"
     VULNERABLE = "V"
     ADULT = "A"
-    HEALTHCARE = "H"
+    HEALTH = "H"
     SOCIAL = "S"
     RELIGIOUS = "R"
+    # Deprecated alias for HEALTH (VCP/S §2.6.1 names scope H "Health").
+    # ``Scope.HEALTHCARE is Scope.HEALTH``; its ``name`` is "HEALTH".
+    HEALTHCARE = "H"
 
     @classmethod
     def from_char(cls, char: str) -> Scope:
@@ -173,7 +176,7 @@ class Scope(Enum):
             Scope.OFFICIAL: "Official and governmental context",
             Scope.VULNERABLE: "Vulnerable populations",
             Scope.ADULT: "Adult-only, mature content",
-            Scope.HEALTHCARE: "Healthcare and medical context",
+            Scope.HEALTH: "Health and medical context",
             Scope.SOCIAL: "Social media and community",
             Scope.RELIGIOUS: "Religious and spiritual context",
         }
@@ -223,7 +226,7 @@ class CSM1Code:
         for left, right in (
             (Scope.FAMILY, Scope.ADULT),
             (Scope.VULNERABLE, Scope.ADULT),
-            (Scope.HEALTHCARE, Scope.ADULT),
+            (Scope.HEALTH, Scope.ADULT),
         ):
             if left in self.scopes and right in self.scopes:
                 raise ValueError(
