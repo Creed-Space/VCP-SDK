@@ -103,7 +103,7 @@ class TestRegistryEntry:
         from vcp.identity.registry import PrivacyTier, RegistryEntry
         from vcp.identity.token import Token
 
-        token = Token.parse("pseudo.abc123.private")
+        token = Token.parse("user.pseudo-0123456789abcdef01234567.notes")
         encrypted = b"encrypted_data_bytes"
 
         entry = RegistryEntry(
@@ -767,7 +767,7 @@ class TestPseudonymousRegistry:
         pseudonym = pseudo.generate_pseudonym("alice@example.com", secret)
 
         assert pseudonym is not None
-        assert len(pseudonym) == 32  # SHA256 truncated to 32 chars
+        assert len(pseudonym) == 24  # HMAC-SHA256 truncated to 24 hex (96 bits)
 
     def test_pseudonym_uniqueness(self) -> None:
         """Test that different inputs generate different pseudonyms."""
@@ -789,15 +789,16 @@ class TestPseudonymousRegistry:
             PrivacyTier,
             PseudonymousRegistry,
         )
-        from vcp.identity.token import Token
 
         base = LocalRegistry()
         pseudo = PseudonymousRegistry(base)
 
         secret = b"user_secret_key_12345678901234"
         pseudonym = pseudo.generate_pseudonym("alice@example.com", secret)
-        # Use a valid segment format (lowercase alphanumeric, max 32 chars)
-        token = Token.parse("anon.abc123hash.private")
+        from vcp.identity import pseudonymous_token
+
+        token = pseudonymous_token("anon", pseudonym, "notes")
+        assert token.full == f"user.anon-{pseudonym}.notes"
         encrypted = b"encrypted_creed_data"
 
         entry = pseudo.register_pseudonymous(token, pseudonym, encrypted)
@@ -815,8 +816,7 @@ class TestPseudonymousRegistry:
 
         secret = b"user_secret_key_12345678901234"
         pseudonym = pseudo.generate_pseudonym("alice@example.com", secret)
-        # Use a valid segment format
-        token = Token.parse("anon.abc123hash.private")
+        token = Token.parse(f"user.anon-{pseudonym}.notes")
 
         proof = pseudo.prove_ownership(token, pseudonym, secret)
         assert proof is not None
@@ -836,8 +836,7 @@ class TestPseudonymousRegistry:
         secret = b"user_secret_key_12345678901234"
         wrong_secret = b"wrong_secret_key_123456789012"
         pseudonym = pseudo.generate_pseudonym("alice@example.com", secret)
-        # Use a valid segment format
-        token = Token.parse("anon.abc123hash.private")
+        token = Token.parse(f"user.anon-{pseudonym}.notes")
 
         # Generate proof with wrong secret
         wrong_proof = pseudo.prove_ownership(token, pseudonym, wrong_secret)
@@ -911,10 +910,13 @@ class TestConvenienceFunctions:
         from vcp.identity.registry import PrivacyTier, infer_privacy_tier
         from vcp.identity.token import Token
 
-        for domain in ["anon", "pseudo"]:
-            token = Token.parse(f"{domain}.abc123.private")
+        for kind in ["anon", "pseudo"]:
+            token = Token.parse(f"user.{kind}-0123456789abcdef01234567.notes")
             tier = infer_privacy_tier(token)
-            assert tier == PrivacyTier.PSEUDONYMOUS, f"Expected PSEUDONYMOUS for {domain}"
+            assert tier == PrivacyTier.PSEUDONYMOUS, f"Expected PSEUDONYMOUS for {kind}"
+            # The retired anon.* / pseudo.* prefixes are unlisted: restrictive default.
+            legacy = Token.parse(f"{kind}.abcdef0123456789abcdef01.notes")
+            assert infer_privacy_tier(legacy) == PrivacyTier.ORGANIZATIONAL
 
     def test_infer_privacy_tier_unknown_defaults_to_organizational(self) -> None:
         """Test that unknown domains default to organizational."""
@@ -1031,13 +1033,13 @@ class TestEdgeCases:
 
         # Register public parent
         registry.register(
-            Token.parse("company.acme.public"),
+            Token.parse("company.acme.open"),
             privacy_tier=PrivacyTier.PUBLIC,
         )
 
         # Register private child
         registry.register(
-            Token.parse("company.acme.private.secret"),
+            Token.parse("company.acme.restricted.secret"),
             privacy_tier=PrivacyTier.PERSONAL,
         )
 

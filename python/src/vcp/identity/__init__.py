@@ -26,6 +26,10 @@ from .registry import (
     RegistryEntry,
     create_authorization,
     infer_privacy_tier,
+    is_pseudonymous_token,
+    migrate_legacy_pseudonymous_token,
+    pseudonym_of,
+    pseudonymous_token,
 )
 from .token import Token, canonicalize_token, uri_to_canonical
 
@@ -51,4 +55,8 @@ __all__ = [
     "BloomFilter",
     "create_authorization",
     "infer_privacy_tier",
+    "pseudonymous_token",
+    "pseudonym_of",
+    "is_pseudonymous_token",
+    "migrate_legacy_pseudonymous_token",
 ]

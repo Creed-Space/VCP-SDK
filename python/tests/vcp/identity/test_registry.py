@@ -218,11 +218,13 @@ class TestInferPrivacyTier:
         assert infer_privacy_tier(Token.parse("user.alice.personal")) == PrivacyTier.PERSONAL
 
     def test_pseudonymous_namespaces(self):
-        """Pseudonymous namespaces are unlinkable."""
-        assert (
-            infer_privacy_tier(Token.parse("anon.abc123.constitution")) == PrivacyTier.PSEUDONYMOUS
-        )
-        assert infer_privacy_tier(Token.parse("pseudo.xyz789.private")) == PrivacyTier.PSEUDONYMOUS
+        """Pseudonymous identities live under user.anon-<hex> and user.pseudo-<hex>."""
+        anon = Token.parse("user.anon-0123456789abcdef01234567.constitution")
+        pseudo = Token.parse("user.pseudo-89abcdef0123456789abcdef.notes")
+        assert infer_privacy_tier(anon) == PrivacyTier.PSEUDONYMOUS
+        assert infer_privacy_tier(pseudo) == PrivacyTier.PSEUDONYMOUS
+        # A user token whose username only looks similar stays PERSONAL.
+        assert infer_privacy_tier(Token.parse("user.anon-short.notes")) == PrivacyTier.PERSONAL
 
 
 class TestPseudonymousRegistry:
@@ -238,8 +240,8 @@ class TestPseudonymousRegistry:
         secret = b"my_secret_key"
         pseudonym = registry.generate_pseudonym("alice@example.com", secret)
 
-        assert len(pseudonym) == 32
-        assert pseudonym.isalnum()
+        assert len(pseudonym) == 24
+        assert all(char in "0123456789abcdef" for char in pseudonym)
 
     def test_pseudonym_is_deterministic_with_salt(self, registry):
         """Same identity + secret produces consistent pseudonym (with stored salt)."""
@@ -247,14 +249,14 @@ class TestPseudonymousRegistry:
         p1 = registry.generate_pseudonym("alice@example.com", secret)
         # Note: Different calls generate different salts
         # This tests the format, not determinism
-        assert len(p1) == 32
+        assert len(p1) == 24
 
     def test_prove_and_verify_ownership(self, registry):
         """Ownership can be proven and verified."""
         secret = b"my_secret_key"
         pseudonym = registry.generate_pseudonym("alice@example.com", secret)
 
-        token = Token.parse("anon.abc.def.xyz")
+        token = Token.parse(f"user.anon-{pseudonym}.def.xyz")
         proof = registry.prove_ownership(token, pseudonym, secret)
 
         assert registry.verify_ownership(token, pseudonym, proof, secret) is True
@@ -265,7 +267,7 @@ class TestPseudonymousRegistry:
         wrong_secret = b"wrong_secret"
         pseudonym = registry.generate_pseudonym("alice@example.com", secret)
 
-        token = Token.parse("anon.abc.def.xyz")
+        token = Token.parse(f"user.anon-{pseudonym}.def.xyz")
         proof = registry.prove_ownership(token, pseudonym, secret)
 
         assert registry.verify_ownership(token, pseudonym, proof, wrong_secret) is False
@@ -305,7 +307,7 @@ class TestSubscriptions:
         sub_id = registry.subscribe("company.**", auth, callback)
         registry.unsubscribe(sub_id)
 
-        registry.register(Token.parse("company.test.token.here"))
+        registry.register(Token.parse("company.acme.token.here"))
 
         assert len(notifications) == 0
 
@@ -320,7 +322,7 @@ class TestQueryResult:
 
         # Register more tokens than max_results
         for i in range(10):
-            registry.register(Token.parse(f"family.test.token{i}"))
+            registry.register(Token.parse(f"family.bulk.token{i}"))
 
         result = registry.find("family.**", auth, max_results=5)
         assert len(result.tokens) == 5
@@ -344,3 +346,87 @@ class TestQueryResult:
         assert len(result.tokens) == 0
         assert result.redacted_count == 1
         assert result.scope_authorized is False
+
+
+class TestPseudonymousTokens:
+    """Pseudonym mapping under user.<...> (canon round 3)."""
+
+    def test_pseudonymous_token_shape(self):
+        from vcp.identity import is_pseudonymous_token, pseudonym_of, pseudonymous_token
+
+        hex24 = "0123456789abcdef01234567"
+        token = pseudonymous_token("pseudo", hex24, "private-notes", version="1.0.0")
+        assert token.full == f"user.pseudo-{hex24}.private-notes@1.0.0"
+        assert token.is_semantically_valid
+        assert is_pseudonymous_token(token)
+        assert pseudonym_of(token) == ("pseudo", hex24)
+        assert len(token.segments[1]) <= 32
+
+    @pytest.mark.parametrize(
+        ("kind", "pseudonym", "rest"),
+        [
+            ("ghost", "0123456789abcdef01234567", ("notes",)),
+            ("anon", "0123456789ABCDEF01234567", ("notes",)),
+            ("anon", "0123456789abcdef0123456", ("notes",)),
+            ("anon", "0123456789abcdef01234567", ()),
+            ("anon", "0123456789abcdef01234567", ("private",)),
+        ],
+    )
+    def test_invalid_pseudonymous_tokens(self, kind, pseudonym, rest):
+        from vcp.identity import pseudonymous_token
+
+        with pytest.raises(ValueError):
+            pseudonymous_token(kind, pseudonym, *rest)
+
+    def test_legacy_forms_parse_but_do_not_validate_or_register(self):
+        from vcp.identity import TokenValidationError, migrate_legacy_pseudonymous_token
+
+        legacy = Token.parse("anon.abcdef0123456789abcdef0123456789.notes@2.0.0:SEC")
+        assert not legacy.is_semantically_valid
+        with pytest.raises(TokenValidationError) as caught:
+            LocalRegistry().register(legacy)
+        assert caught.value.code == "unknown_namespace_prefix"
+        migrated = migrate_legacy_pseudonymous_token(legacy)
+        assert migrated.full == "user.anon-abcdef0123456789abcdef01.notes@2.0.0:SEC"
+        assert LocalRegistry().register(migrated).token == migrated
+        with pytest.raises(ValueError):
+            migrate_legacy_pseudonymous_token(Token.parse("anon.abc123.notes"))
+        with pytest.raises(ValueError):
+            migrate_legacy_pseudonymous_token(Token.parse("family.safe.guide"))
+
+    def test_register_pseudonymous_requires_matching_user_token(self):
+        from vcp.identity import pseudonymous_token
+
+        pseudo = PseudonymousRegistry(LocalRegistry())
+        pseudonym = pseudo.generate_pseudonym("alice@example.com", b"secret")
+        with pytest.raises(ValueError, match="user.anon"):
+            pseudo.register_pseudonymous(Token.parse("anon.abc.notes"), pseudonym, b"x")
+        other = pseudonymous_token("anon", "f" * 24, "notes")
+        with pytest.raises(ValueError, match="does not carry"):
+            pseudo.register_pseudonymous(other, pseudonym, b"x")
+        entry = pseudo.register_pseudonymous(
+            pseudonymous_token("anon", pseudonym, "notes"), pseudonym, b"x"
+        )
+        assert entry.privacy_tier == PrivacyTier.PSEUDONYMOUS
+
+
+class TestRegistryRejectsInvalidTokens:
+    """VCP/I §3.4.1: a registry MUST NOT register an invalid token."""
+
+    @pytest.mark.parametrize(
+        ("raw", "code"),
+        [
+            ("health.privacy.hipaa", "unknown_namespace_prefix"),
+            ("pseudo.abcdef0123456789abcdef01.notes", "unknown_namespace_prefix"),
+            ("family.safe.guide.extra", "core_segment_count"),
+            ("company.acme.test", "reserved_word"),
+        ],
+    )
+    def test_register_rejects(self, raw, code):
+        from vcp.identity import TokenValidationError
+
+        registry = LocalRegistry()
+        with pytest.raises(TokenValidationError) as caught:
+            registry.register(Token.parse(raw))
+        assert caught.value.code == code
+        assert not registry.exists(Token.parse(raw))

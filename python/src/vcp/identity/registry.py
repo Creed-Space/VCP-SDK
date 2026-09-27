@@ -26,10 +26,27 @@ Privacy Model:
 │                │ Existence hidden, only owner can enumerate             │
 │                │ Others need exact token to resolve                     │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  PSEUDONYMOUS  │ anon.<hash>.*, pseudo.<hash>.*                         │
+│  PSEUDONYMOUS  │ user.anon-<24 hex>.*, user.pseudo-<24 hex>.*           │
 │                │ Hash-based identity, unlinkable to real identity       │
 │                │ Encrypted metadata, ZK proofs for ownership            │
 └─────────────────────────────────────────────────────────────────────────┘
+
+Namespace rules (VCP/I §3.4.1, §4.2):
+- A registry MUST NOT register a token with an unlisted prefix, a Core token
+  without exactly three segments, or a reserved-word segment, so
+  ``LocalRegistry.register`` validates every token with ``Token.validate``.
+- VCP/I defines no ``anon`` or ``pseudo`` prefix. Pseudonymous identities
+  are Personal-tier tokens whose username segment carries the kind and a
+  24-character lowercase hex pseudonym: ``user.anon-<hex>.<rest...>`` and
+  ``user.pseudo-<hex>.<rest...>``. Tokens in the retired ``anon.<hash>.*`` and
+  ``pseudo.<hash>.*`` forms still parse, fail validation, and can be converted
+  with ``migrate_legacy_pseudonymous_token``.
+- VCP/I §4.2.4 lists email verification among the Personal-tier registration
+  requirements. For pseudonymous owners this SDK substitutes proof of
+  possession of the pseudonym secret (``PseudonymousRegistry.prove_ownership``
+  and ``verify_ownership``), because an email address would link the
+  pseudonym to a real identity. Deployments that need the §4.2.4 email check
+  must perform it outside the registry.
 
 Query Privacy:
 - Exact lookup: Always allowed, reveals nothing about siblings
@@ -42,19 +59,101 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import re
 import secrets
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any, Literal
 
 from ..metrics import vcp_registry_size, vcp_token_lookups_total
 from .namespace import COMMUNITY_PREFIXES, CORE_DOMAINS, ORG_PREFIXES, PERSONAL_PREFIX
+from .token import Token
 
-if TYPE_CHECKING:
-    from .token import Token
+# Pseudonymous identities (see the module docstring).
+PSEUDONYM_HEX_LENGTH = 24
+PSEUDONYM_KINDS = ("anon", "pseudo")
+_PSEUDONYM_RE = re.compile(rf"[0-9a-f]{{{PSEUDONYM_HEX_LENGTH}}}")
+_PSEUDONYMOUS_USERNAME_RE = re.compile(rf"(anon|pseudo)-([0-9a-f]{{{PSEUDONYM_HEX_LENGTH}}})")
+_LEGACY_PSEUDONYM_RE = re.compile(rf"[0-9a-f]{{{PSEUDONYM_HEX_LENGTH},}}")
+
+
+def pseudonymous_token(
+    kind: Literal["anon", "pseudo"],
+    pseudonym: str,
+    *rest: str,
+    version: str | None = None,
+    namespace: str | None = None,
+) -> Token:
+    """Build a pseudonymous Personal-tier token ``user.<kind>-<pseudonym>.<rest...>``.
+
+    Args:
+        kind: ``"anon"`` or ``"pseudo"``.
+        pseudonym: Exactly 24 lowercase hex characters (96 bits), as returned
+            by :meth:`PseudonymousRegistry.generate_pseudonym`.
+        rest: One to eight further segments.
+        version: Optional version selector.
+        namespace: Optional ``:NS`` suffix.
+
+    Raises:
+        ValueError: If the kind, pseudonym or segments are invalid.
+    """
+    if kind not in PSEUDONYM_KINDS:
+        raise ValueError(f"pseudonym kind must be one of {PSEUDONYM_KINDS}")
+    if not _PSEUDONYM_RE.fullmatch(pseudonym):
+        raise ValueError(f"pseudonym must be {PSEUDONYM_HEX_LENGTH} lowercase hex characters")
+    if not rest:
+        raise ValueError("a pseudonymous token needs at least one segment after the username")
+    token = Token(
+        segments=(PERSONAL_PREFIX, f"{kind}-{pseudonym}", *rest),
+        version=version,
+        namespace=namespace,
+    )
+    return token.validate()
+
+
+def pseudonym_of(token: Token) -> tuple[str, str] | None:
+    """Return ``(kind, pseudonym)`` for a pseudonymous token, else ``None``."""
+    if token.domain != PERSONAL_PREFIX or len(token.segments) < 3:
+        return None
+    match = _PSEUDONYMOUS_USERNAME_RE.fullmatch(token.segments[1])
+    if match is None:
+        return None
+    return match.group(1), match.group(2)
+
+
+def is_pseudonymous_token(token: Token) -> bool:
+    """Whether ``token`` is a ``user.anon-<hex>`` or ``user.pseudo-<hex>`` token."""
+    return pseudonym_of(token) is not None
+
+
+def migrate_legacy_pseudonymous_token(token: Token) -> Token:
+    """Convert a retired ``anon.<hash>.<rest>`` or ``pseudo.<hash>.<rest>`` token.
+
+    The legacy hash segment must be lowercase hex of at least 24 characters;
+    its first 24 characters become the pseudonym, so the result is
+    ``user.<kind>-<hash[:24]>.<rest>``. Version and namespace suffix are kept.
+
+    Raises:
+        ValueError: If ``token`` is not a convertible legacy pseudonymous token.
+    """
+    kind = token.domain
+    if kind not in PSEUDONYM_KINDS or len(token.segments) < 3:
+        raise ValueError(f"not a legacy pseudonymous token: {token.full}")
+    legacy_hash = token.segments[1]
+    if not _LEGACY_PSEUDONYM_RE.fullmatch(legacy_hash):
+        raise ValueError(
+            f"legacy pseudonym must be at least {PSEUDONYM_HEX_LENGTH} lowercase hex characters"
+        )
+    return pseudonymous_token(
+        kind,  # type: ignore[arg-type]
+        legacy_hash[:PSEUDONYM_HEX_LENGTH],
+        *token.segments[2:],
+        version=token.version,
+        namespace=token.namespace,
+    )
 
 
 class PrivacyTier(Enum):
@@ -430,7 +529,16 @@ class LocalRegistry(Registry):
         owner_id: str | None = None,
         metadata: dict[str, object] | None = None,
     ) -> RegistryEntry:
-        """Register a new token."""
+        """Register a new token.
+
+        Raises:
+            vcp.identity.TokenValidationError: If the token fails VCP/I
+                §3.4.1 semantic validation (unlisted prefix, including the
+                retired ``anon`` and ``pseudo`` prefixes; a Core token without
+                exactly three segments; a reserved-word segment). A registry
+                MUST NOT register such a token.
+        """
+        token.validate()
         entry = RegistryEntry(
             token=token,
             privacy_tier=privacy_tier,
@@ -627,13 +735,17 @@ class PseudonymousRegistry:
         self._pseudonym_salts: dict[str, bytes] = {}
 
     def generate_pseudonym(self, real_identity: str, secret: bytes) -> str:
-        """Generate a pseudonymous identity hash."""
+        """Generate a pseudonym: 24 lowercase hex characters (96 bits).
+
+        The length fits the username segment of ``user.anon-<hex>`` and
+        ``user.pseudo-<hex>`` tokens (see :func:`pseudonymous_token`).
+        """
         salt = secrets.token_bytes(32)
         pseudonym = hmac.new(
             secret,
             f"{real_identity}:{salt.hex()}".encode(),
             hashlib.sha256,
-        ).hexdigest()[:32]
+        ).hexdigest()[:PSEUDONYM_HEX_LENGTH]
         self._pseudonym_salts[pseudonym] = salt
         return pseudonym
 
@@ -643,7 +755,23 @@ class PseudonymousRegistry:
         pseudonym: str,
         encrypted_metadata: bytes,
     ) -> RegistryEntry:
-        """Register a token under a pseudonymous identity."""
+        """Register a token under a pseudonymous identity.
+
+        ``token`` must be ``user.anon-<pseudonym>.*`` or
+        ``user.pseudo-<pseudonym>.*`` for this ``pseudonym``.
+
+        Raises:
+            ValueError: If the token is not pseudonymous or names another
+                pseudonym.
+        """
+        parts = pseudonym_of(token)
+        if parts is None:
+            raise ValueError(
+                "pseudonymous tokens must be user.anon-<hex>.* or user.pseudo-<hex>.*; "
+                "use migrate_legacy_pseudonymous_token for anon.* or pseudo.* tokens"
+            )
+        if parts[1] != pseudonym:
+            raise ValueError("token username does not carry this pseudonym")
         return self._base.register(
             token=token,
             privacy_tier=PrivacyTier.PSEUDONYMOUS,
@@ -702,13 +830,13 @@ def infer_privacy_tier(token: Token) -> PrivacyTier:
     if domain in COMMUNITY_PREFIXES:
         return PrivacyTier.COMMUNITY
 
+    # Pseudonymous identities live under user.anon-<hex> / user.pseudo-<hex>
+    if is_pseudonymous_token(token):
+        return PrivacyTier.PSEUDONYMOUS
+
     # Personal namespaces
     if domain == PERSONAL_PREFIX:
         return PrivacyTier.PERSONAL
-
-    # Pseudonymous namespaces
-    if domain in ("anon", "pseudo"):
-        return PrivacyTier.PSEUDONYMOUS
 
     # Default to organizational (restrictive)
     return PrivacyTier.ORGANIZATIONAL

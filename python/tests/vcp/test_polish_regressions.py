@@ -65,10 +65,10 @@ class TestRegistryPrivacy:
 
     def test_suffix_query_is_segment_aware(self) -> None:
         registry = LocalRegistry()
-        registry.register(Token.parse("x.y.another"))
-        registry.register(Token.parse("x.y.other"))
-        result = registry.find("**.other", AuthorizationContext())
-        assert [t.full for t in result.tokens] == ["x.y.other"]
+        registry.register(Token.parse("company.y.another"))
+        registry.register(Token.parse("company.y.other"))
+        result = registry.find("**.other", AuthorizationContext(org_memberships=["y"]))
+        assert [t.full for t in result.tokens] == ["company.y.other"]
 
 
 class TestTokenGlob:
