@@ -268,7 +268,8 @@ impl PersonalDimension {
     }
 
     /// Encode for the CSM-1 token R-line: `value:intensity[:extended]`
-    /// (VCP/S §2.4.1). The R-line always states the intensity.
+    /// (VCP/S §2.4.1). Encoders SHOULD state the intensity, so it is always
+    /// written here, as 3 when it was omitted on input.
     pub fn to_r_line(&self) -> String {
         match &self.extended {
             Some(extended) => format!("{}:{}:{extended}", self.value, self.intensity),
@@ -276,19 +277,19 @@ impl PersonalDimension {
         }
     }
 
-    /// Parse a CSM-1 R-line value: `value:intensity[:extended]`.
+    /// Parse a CSM-1 R-line value: `value[:intensity[:extended]]`
+    /// (VCP/S §2.4.1). An omitted intensity defaults to 3; a sub-signal
+    /// requires an explicit intensity, so `unwell:migraine` is malformed.
     ///
     /// # Errors
     ///
-    /// Returns [`VcpError::ParseError`] if the intensity is missing or not
-    /// one digit 1-5, or if the value or sub-signal is malformed.
+    /// Returns [`VcpError::ParseError`] if the intensity is not one digit
+    /// 1-5, or if the value or sub-signal is malformed.
     pub fn from_r_line(wire: &str) -> VcpResult<Self> {
         let mut parts = wire.splitn(3, ':');
         let value = parts.next().unwrap_or_default();
         let Some(intensity) = parts.next() else {
-            return Err(VcpError::ParseError(format!(
-                "R-line personal dimension must be value:intensity, got: {wire}"
-            )));
+            return Self::without_intensity(value);
         };
         let intensity = Self::parse_intensity(intensity)?;
         match parts.next() {
@@ -422,11 +423,13 @@ impl PersonalState {
     }
 
     /// Parse personal state from the CSM-1 token R-line (after `R:`), where
-    /// each value states its intensity and may carry `:extended`.
+    /// each value may state an intensity (default 3) and, after it,
+    /// `:extended` (VCP/S §2.4.1).
     ///
     /// # Errors
     ///
-    /// As [`PersonalState::from_wire`], and a value without an intensity.
+    /// As [`PersonalState::from_wire`], and a sub-signal without an explicit
+    /// intensity.
     pub fn from_r_line(wire: &str) -> VcpResult<Self> {
         Self::decode(wire, PersonalDimension::from_r_line)
     }
@@ -612,7 +615,6 @@ mod tests {
             );
         }
         assert!(PersonalState::from_wire("\u{1FA7A}pain:4[migraine]").is_err());
-        assert!(PersonalDimension::from_r_line("pain").is_err());
         assert!(PersonalDimension::from_r_line("pain:4[migraine]").is_err());
     }
 
@@ -627,7 +629,7 @@ mod tests {
         assert_eq!(back, d);
         let wire = "\u{1F9E0}focused|\u{1F4AD}calm:5|\u{1F50B}rested:4|\u{26A1}pressured:4|\u{1FA7A}neutral";
         assert_eq!(PersonalState::from_wire(wire).unwrap().to_wire(), wire);
-        // The R-line always states the intensity.
+        // Encoders state the R-line intensity (VCP/S §2.4.1 SHOULD).
         assert_eq!(d.to_r_line(), "focused:3");
     }
 
@@ -641,10 +643,32 @@ mod tests {
     }
 
     #[test]
-    fn r_line_requires_intensity() {
-        // The context string allows an omitted intensity; the R-line does not.
-        assert!(PersonalDimension::from_wire("focused").is_ok());
-        assert!(PersonalDimension::from_r_line("focused").is_err());
+    fn r_line_intensity_is_optional() {
+        // VCP/S §2.4.1: dimension = emoji value [ ":" intensity [ ":" extended ] ].
+        let bare = PersonalDimension::from_r_line("focused").unwrap();
+        assert_eq!(bare.intensity, 3);
+        assert!(!bare.intensity_explicit);
+        assert_eq!(bare.to_r_line(), "focused:3");
+        let full = PersonalDimension::from_r_line("unwell:3:migraine").unwrap();
+        assert_eq!(full.extended.as_deref(), Some("migraine"));
+        // A sub-signal requires an explicit intensity.
+        for malformed in [
+            "unwell:migraine",
+            "unwell:04",
+            "unwell::migraine",
+            "unwell:3:",
+        ] {
+            assert!(
+                PersonalDimension::from_r_line(malformed).is_err(),
+                "{malformed}"
+            );
+        }
+        let token_body = "\u{1F9E0}focused|\u{1FA7A}unwell:3:migraine";
+        let state = PersonalState::from_r_line(token_body).unwrap();
+        assert_eq!(
+            state.to_r_line(),
+            "\u{1F9E0}focused:3|\u{1FA7A}unwell:3:migraine"
+        );
     }
 
     #[test]
