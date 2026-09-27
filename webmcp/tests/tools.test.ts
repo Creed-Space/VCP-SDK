@@ -630,13 +630,13 @@ describe('createVCPTools — default personas', () => {
 			const tool = chatTool();
 			expect(tool.inputSchema.properties.constitution_id?.description).not.toContain("'general'");
 			await tool.execute({ query: 'hello' });
-			await tool.execute({ query: 'hello', constitution_id: 'org.procurement.approval-policy' });
+			await tool.execute({ query: 'hello', constitution_id: 'company.acme.procurement.approval-policy' });
 			const bodies = fetchMock.mock.calls.map(
 				(call) => JSON.parse((call as unknown as [string, RequestInit])[1].body as string),
 			);
 			expect(bodies[0].constitution_id).toBe('personal.growth.creative');
 			expect(bodies[0].constitution_id.split('.').length).toBeGreaterThanOrEqual(3);
-			expect(bodies[1].constitution_id).toBe('org.procurement.approval-policy');
+			expect(bodies[1].constitution_id).toBe('company.acme.procurement.approval-policy');
 		} finally {
 			vi.unstubAllGlobals();
 		}

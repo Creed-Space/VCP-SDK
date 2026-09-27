@@ -1,41 +1,87 @@
 """Tests for VCP/I Namespace governance and validation."""
 
+import pytest
+
 from vcp.identity import NamespaceTier, Token, validate_namespace_access
 from vcp.identity.namespace import (
+    COMMUNITY_PREFIXES,
     CORE_DOMAINS,
+    ORG_PREFIXES,
+    PERSONAL_PREFIX,
     get_tier_config,
     infer_tier,
     is_core_domain,
+    is_known_namespace,
 )
 
 
 class TestNamespaceTierInference:
-    """Test automatic tier inference from tokens."""
+    """Test automatic tier inference from tokens (VCP/I §4.2)."""
 
     def test_core_domain_family(self):
         """Core domains infer to CORE tier."""
         t = Token.parse("family.safe.guide")
         assert infer_tier(t) == NamespaceTier.CORE
 
-    def test_core_domain_health(self):
-        """Health is a core domain."""
-        t = Token.parse("health.privacy.hipaa")
-        assert infer_tier(t) == NamespaceTier.CORE
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "family.safe.guide",
+            "work.professional.assistant",
+            "secure.privacy.guardian",
+            "creative.artistic.muse",
+            "reality.factual.anchor",
+        ],
+    )
+    def test_all_core_prefixes(self, raw):
+        assert infer_tier(Token.parse(raw)) == NamespaceTier.CORE
 
-    def test_organizational_company(self):
-        """company prefix infers to ORGANIZATIONAL."""
-        t = Token.parse("company-acme.legal.compliance")
-        assert infer_tier(t) == NamespaceTier.ORGANIZATIONAL
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "company.acme.legal.compliance",
+            "school.mit.research",
+            "ngo.redcross.humanitarian",
+        ],
+    )
+    def test_organizational_prefixes(self, raw):
+        """company, school and ngo infer to ORGANIZATIONAL."""
+        assert infer_tier(Token.parse(raw)) == NamespaceTier.ORGANIZATIONAL
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "religion.buddhist.mindfulness",
+            "culture.japanese.formal",
+            "community.gaming.esports",
+        ],
+    )
+    def test_community_prefixes(self, raw):
+        """religion, culture and community infer to COMMUNITY."""
+        assert infer_tier(Token.parse(raw)) == NamespaceTier.COMMUNITY
 
     def test_personal_user(self):
         """user prefix infers to PERSONAL."""
-        t = Token.parse("user-john.creative.writer")
+        t = Token.parse("user.john.creative.writer")
         assert infer_tier(t) == NamespaceTier.PERSONAL
 
-    def test_community_default(self):
-        """Non-matching domains infer to COMMUNITY."""
-        t = Token.parse("opensource.permissive.mit")
-        assert infer_tier(t) == NamespaceTier.COMMUNITY
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "health.privacy.hipaa",
+            "education.k12.tutor",
+            "finance.retail.advisor",
+            "legal.contract.reviewer",
+            "opensource.permissive.mit",
+            "company-acme.legal.compliance",
+            "user-john.creative.writer",
+            "org.example.dept.team.policy",
+        ],
+    )
+    def test_unknown_prefix_has_no_tier(self, raw):
+        """Unknown prefixes are an invalid namespace (VCP/I §3.7.2, §4.2)."""
+        with pytest.raises(ValueError, match="Unknown namespace prefix"):
+            infer_tier(Token.parse(raw))
 
 
 class TestNamespaceValidation:
@@ -53,38 +99,41 @@ class TestNamespaceValidation:
 
     def test_org_validates_for_org(self):
         """Organizational domain validates for ORGANIZATIONAL tier."""
-        t = Token.parse("company-acme.legal.compliance")
+        t = Token.parse("company.acme.legal.compliance")
         assert validate_namespace_access(t, NamespaceTier.ORGANIZATIONAL) is True
 
     def test_personal_validates_for_personal(self):
         """Personal domain validates for PERSONAL tier."""
-        t = Token.parse("user-john.creative.writer")
+        t = Token.parse("user.john.creative.writer")
         assert validate_namespace_access(t, NamespaceTier.PERSONAL) is True
+
+    @pytest.mark.parametrize("tier", list(NamespaceTier))
+    def test_unknown_prefix_fails_closed_for_every_tier(self, tier):
+        t = Token.parse("opensource.permissive.mit")
+        assert validate_namespace_access(t, tier) is False
 
 
 class TestCoreDomains:
-    """Test core domain definitions."""
+    """Test namespace prefix definitions."""
 
     def test_all_core_domains_defined(self):
-        """All expected core domains are defined."""
-        expected = {
-            "family",
-            "work",
-            "education",
-            "health",
-            "finance",
-            "legal",
-            "safety",
-            "privacy",
-            "accessibility",
-            "environment",
-        }
-        assert CORE_DOMAINS == expected
+        """Core domains are exactly the five VCP/I §4.2.1 prefixes."""
+        assert CORE_DOMAINS == {"family", "work", "secure", "creative", "reality"}
+
+    def test_other_tier_prefixes(self):
+        assert ORG_PREFIXES == {"company", "school", "ngo"}
+        assert COMMUNITY_PREFIXES == {"religion", "culture", "community"}
+        assert PERSONAL_PREFIX == "user"
+
+    def test_is_known_namespace(self):
+        assert is_known_namespace("family") is True
+        assert is_known_namespace("user") is True
+        assert is_known_namespace("health") is False
 
     def test_is_core_domain_true(self):
         """is_core_domain returns True for core domains."""
         assert is_core_domain("family") is True
-        assert is_core_domain("health") is True
+        assert is_core_domain("reality") is True
 
     def test_is_core_domain_false(self):
         """is_core_domain returns False for non-core domains."""

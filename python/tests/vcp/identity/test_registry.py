@@ -193,7 +193,7 @@ class TestInferPrivacyTier:
         """Core namespaces are public."""
         assert infer_privacy_tier(Token.parse("family.safe.guide")) == PrivacyTier.PUBLIC
         assert infer_privacy_tier(Token.parse("work.pro.assistant")) == PrivacyTier.PUBLIC
-        assert infer_privacy_tier(Token.parse("education.k12.safety")) == PrivacyTier.PUBLIC
+        assert infer_privacy_tier(Token.parse("secure.privacy.guardian")) == PrivacyTier.PUBLIC
 
     def test_organizational_namespaces(self):
         """Organizational namespaces are restricted."""
@@ -202,7 +202,8 @@ class TestInferPrivacyTier:
             infer_privacy_tier(Token.parse("school.mit.research.x")) == PrivacyTier.ORGANIZATIONAL
         )
         assert (
-            infer_privacy_tier(Token.parse("org.example.dept.policy")) == PrivacyTier.ORGANIZATIONAL
+            infer_privacy_tier(Token.parse("company.example.dept.policy"))
+            == PrivacyTier.ORGANIZATIONAL
         )
 
     def test_community_namespaces(self):

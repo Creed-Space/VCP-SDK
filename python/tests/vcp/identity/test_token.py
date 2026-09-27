@@ -426,8 +426,8 @@ class TestMultiSegmentTokens:
 
     def test_five_segment_token(self):
         """Parse 5-segment token."""
-        t = Token.parse("org.example.dept.team.policy@1.0.0")
-        assert t.domain == "org"
+        t = Token.parse("company.example.dept.team.policy@1.0.0")
+        assert t.domain == "company"
         assert t.approach == "team"
         assert t.role == "policy"
         assert t.depth == 5

@@ -15,7 +15,7 @@ Examples:
     family.safe.guide@1.2.0
     company.acme.legal.compliance          (4 segments)
     company.acme.legal.compliance:SEC
-    org.example.dept.team.policy@1.0.0     (5 segments)
+    company.example.dept.team.policy@1.0.0 (5 segments)
 """
 
 from __future__ import annotations

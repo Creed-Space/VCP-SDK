@@ -144,13 +144,13 @@ segment           = LALPHA *31(LALPHA / DIGIT / "-")
 ; Examples:
 ;   3 segments: family.safe.guide (domain=family, approach=safe, role=guide)
 ;   4 segments: company.acme.legal.compliance (domain=company, path=[acme], approach=legal, role=compliance)
-;   5 segments: org.example.dept.team.policy (domain=org, path=[example,dept], approach=team, role=policy)
+;   5 segments: company.example.dept.team.policy (domain=company, path=[example,dept], approach=team, role=policy)
 
 ; Namespace suffix (optional, uppercase)
 namespace-suffix  = UALPHA *31(UALPHA / DIGIT)
 
 ; Namespace governance (determined by first segment):
-;   Core: family, work, secure, creative, reality, education, health, finance, legal
+;   Core: family, work, secure, creative, reality
 ;   Organizational: company.*, school.*, ngo.*
 ;   Community: religion.*, culture.*, community.*
 ;   Personal: user.*
@@ -240,7 +240,7 @@ class UVCValidationRules:
     RULES = {
         # Length constraints
         'max_total_length': 128,       # Maximum total token length
-        'max_segments': 8,              # Maximum hierarchy depth
+        'max_segments': 10,             # Maximum hierarchy depth (ABNF token-path)
         'max_segment_length': 32,       # Maximum single segment length
 
         # Character constraints
@@ -328,9 +328,9 @@ class UVCTokenValidator:
         # Split into segments
         segments = base_token.split('.')
 
-        if len(segments) > 8:
+        if len(segments) > 10:
             return ValidationResult(False, ValidationError.TOO_MANY_SEGMENTS,
-                f"Too many segments (max 8): {len(segments)}")
+                f"Too many segments (max 10): {len(segments)}")
 
         # Check for empty segments (consecutive dots)
         for i, seg in enumerate(segments):

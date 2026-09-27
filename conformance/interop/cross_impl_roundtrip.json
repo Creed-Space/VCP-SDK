@@ -90,7 +90,7 @@
         "family.safe.guide",
         "family.safe.guide@1.2.0",
         "company.acme.legal.compliance:SEC",
-        "org.example.dept.team.policy@1.0.0:GOV"
+        "company.example.dept.team.policy@1.0.0:GOV"
       ],
       "expected": {
         "all_implementations_parse_identically": true,

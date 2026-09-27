@@ -11,7 +11,7 @@ safety = Constitution(
     priority=1,
 )
 learning = Constitution(
-    id="education.tutor.math",
+    id="school.example.tutor.math",
     rules=["Encourage step-by-step reasoning", "Celebrate small victories"],
     priority=0,
 )

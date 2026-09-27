@@ -51,6 +51,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from ..metrics import vcp_registry_size, vcp_token_lookups_total
+from .namespace import COMMUNITY_PREFIXES, CORE_DOMAINS, ORG_PREFIXES, PERSONAL_PREFIX
 
 if TYPE_CHECKING:
     from .token import Token
@@ -255,14 +256,14 @@ class PrefixTree:
         if node.privacy_tier == PrivacyTier.ORGANIZATIONAL:
             # Check org membership
             parts = prefix.split(".")
-            if len(parts) >= 2 and parts[0] in ("company", "school", "ngo"):
+            if len(parts) >= 2 and parts[0] in ORG_PREFIXES:
                 org_name = parts[1]
                 return org_name in auth.org_memberships
             return False
 
         if node.privacy_tier == PrivacyTier.COMMUNITY:
             parts = prefix.split(".")
-            if len(parts) >= 2 and parts[0] in ("religion", "culture", "community"):
+            if len(parts) >= 2 and parts[0] in COMMUNITY_PREFIXES:
                 community_name = parts[1]
                 return community_name in auth.community_memberships
             return False
@@ -328,7 +329,7 @@ class PrefixTree:
         if entry.privacy_tier == PrivacyTier.ORGANIZATIONAL:
             # Extract org name from token (second segment for company.acme.*)
             segments = entry.token.segments
-            if len(segments) >= 2 and segments[0] in ("company", "school", "ngo", "org"):
+            if len(segments) >= 2 and segments[0] in ORG_PREFIXES:
                 org_name = segments[1]
                 if org_name in auth.org_memberships:
                     return True
@@ -336,7 +337,7 @@ class PrefixTree:
         # Check community membership
         if entry.privacy_tier == PrivacyTier.COMMUNITY:
             segments = entry.token.segments
-            if len(segments) >= 2 and segments[0] in ("religion", "culture", "community"):
+            if len(segments) >= 2 and segments[0] in COMMUNITY_PREFIXES:
                 community_name = segments[1]
                 if community_name in auth.community_memberships:
                     return True
@@ -682,23 +683,27 @@ class PseudonymousRegistry:
 
 
 def infer_privacy_tier(token: Token) -> PrivacyTier:
-    """Infer privacy tier from token's first segment."""
+    """Infer privacy tier from token's first segment.
+
+    Uses the VCP/I §4.2 prefix lists. A first segment outside them gets the
+    restrictive ORGANIZATIONAL tier.
+    """
     domain = token.domain
 
     # Core namespaces are public
-    if domain in ("family", "work", "secure", "creative", "reality", "education", "health"):
+    if domain in CORE_DOMAINS:
         return PrivacyTier.PUBLIC
 
     # Organizational namespaces
-    if domain in ("company", "school", "ngo", "org"):
+    if domain in ORG_PREFIXES:
         return PrivacyTier.ORGANIZATIONAL
 
     # Community namespaces
-    if domain in ("religion", "culture", "community"):
+    if domain in COMMUNITY_PREFIXES:
         return PrivacyTier.COMMUNITY
 
     # Personal namespaces
-    if domain == "user":
+    if domain == PERSONAL_PREFIX:
         return PrivacyTier.PERSONAL
 
     # Pseudonymous namespaces

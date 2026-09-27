@@ -17,7 +17,7 @@
         "family.safe.guide@1.2.0",
         "company.acme.legal.compliance",
         "company.acme.legal.compliance:SEC",
-        "org.example.dept.team.policy@1.0.0",
+        "company.example.dept.team.policy@1.0.0",
         "religion.buddhist.meditation",
         "user.alice.personal"
       ]
@@ -184,16 +184,16 @@
       "version_constraint": "compatible"
     },
     {
-      "token": "org.example.dept.team.policy@1.0.0",
-      "canonical": "org.example.dept.team.policy@1.0.0",
-      "segments": ["org", "example", "dept", "team", "policy"],
+      "token": "company.example.dept.team.policy@1.0.0",
+      "canonical": "company.example.dept.team.policy@1.0.0",
+      "segments": ["company", "example", "dept", "team", "policy"],
       "depth": 5,
-      "domain": "org",
+      "domain": "company",
       "approach": "team",
       "role": "policy",
       "path": ["example", "dept"],
       "namespace_type": "org",
-      "namespace": "org.example",
+      "namespace": "company.example",
       "version": "1.0.0",
       "version_constraint": "exact"
     }

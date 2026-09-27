@@ -53,10 +53,10 @@
     {
       "id": "token-004",
       "description": "Token with version and namespace (5 segments)",
-      "input": "org.example.dept.team.policy@1.0.0:GOV",
+      "input": "company.example.dept.team.policy@1.0.0:GOV",
       "expected": {
         "valid": true,
-        "domain": "org",
+        "domain": "company",
         "depth": 5,
         "version": "1.0.0",
         "version_major": 1,

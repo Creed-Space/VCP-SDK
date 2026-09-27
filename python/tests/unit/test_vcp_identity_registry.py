@@ -583,7 +583,7 @@ class TestLocalRegistry:
         tokens = [
             Token.parse("family.safe.guide"),
             Token.parse("work.career.guide"),
-            Token.parse("education.learning.guide"),
+            Token.parse("creative.learning.guide"),
         ]
 
         for token in tokens:
@@ -860,18 +860,27 @@ class TestConvenienceFunctions:
         from vcp.identity.registry import PrivacyTier, infer_privacy_tier
         from vcp.identity.token import Token
 
-        public_domains = ["family", "work", "secure", "creative", "reality", "education", "health"]
+        public_domains = ["family", "work", "secure", "creative", "reality"]
         for domain in public_domains:
             token = Token.parse(f"{domain}.safe.guide")
             tier = infer_privacy_tier(token)
             assert tier == PrivacyTier.PUBLIC, f"Expected PUBLIC for {domain}"
+
+    def test_non_core_domains_are_not_public(self) -> None:
+        """education, health, finance and legal are not Core prefixes (VCP/I §4.2)."""
+        from vcp.identity.registry import PrivacyTier, infer_privacy_tier
+        from vcp.identity.token import Token
+
+        for domain in ["education", "health", "finance", "legal", "org"]:
+            tier = infer_privacy_tier(Token.parse(f"{domain}.safe.guide"))
+            assert tier == PrivacyTier.ORGANIZATIONAL, f"Expected restrictive tier for {domain}"
 
     def test_infer_privacy_tier_organizational(self) -> None:
         """Test inferring organizational privacy tier."""
         from vcp.identity.registry import PrivacyTier, infer_privacy_tier
         from vcp.identity.token import Token
 
-        org_domains = ["company", "school", "ngo", "org"]
+        org_domains = ["company", "school", "ngo"]
         for domain in org_domains:
             token = Token.parse(f"{domain}.example.policy")
             tier = infer_privacy_tier(token)

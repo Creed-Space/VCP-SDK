@@ -843,7 +843,7 @@ mod tests {
 
     #[test]
     fn parse_with_version_and_namespace() {
-        let t = VcpToken::parse("org.example.dept.team.policy@1.0.0:GOV").unwrap();
+        let t = VcpToken::parse("company.example.dept.team.policy@1.0.0:GOV").unwrap();
         assert_eq!(t.depth(), 5);
         assert_eq!(
             t.version,
