@@ -1,8 +1,10 @@
 //! Personal state dimensions (VCP v3.1 personal context tier).
 //!
 //! Personal state carries five categorical dimensions, each with a named
-//! value and a 1-5 intensity.  An optional `extended` sub-signal provides
-//! additional specificity (e.g. `body_signals = pain:4 [migraine]`).
+//! value and an optional 1-5 intensity.  An optional `extended` sub-signal
+//! provides additional specificity; it travels only on the CSM-1 token
+//! R-line (`🩺pain:4:migraine`, VCP/S §2.4.1), never in a VCP/A context
+//! string (VCP/A §2.3).
 //!
 //! This tier is **not diagnostic or therapeutic**; it reflects
 //! self-reported state for adaptation purposes only.
@@ -82,20 +84,56 @@ impl fmt::Display for PersonalDimensionKind {
 
 /// A single personal-state dimension with a categorical value,
 /// intensity (1-5, default 3), and optional extended sub-signal.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+///
+/// Two wire forms exist (VCP/A §2.3, VCP/S §2.4.1):
+///
+/// * the VCP/A context string ([`PersonalDimension::to_wire`]):
+///   `value[:intensity]`, where the intensity may be omitted (it then
+///   defaults to 3 and the omission is kept on re-encode) and no sub-signal
+///   is ever carried;
+/// * the CSM-1 token R-line ([`PersonalDimension::to_r_line`]):
+///   `value:intensity[:extended]`, the only wire form for `extended`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PersonalDimension {
     /// Categorical value (e.g. "focused", "calm", "rested").
     pub value: String,
-    /// Intensity 1-5.  1 = barely noticeable, 5 = extreme.
+    /// Intensity 1-5.  1 = barely noticeable, 5 = extreme.  3 when omitted.
     pub intensity: u8,
-    /// Optional extended qualifier (e.g. "migraine", "bathroom").
-    #[serde(skip_serializing_if = "Option::is_none")]
+    /// Optional extended qualifier (e.g. "migraine"). Carried only on the
+    /// CSM-1 R-line, never in a VCP/A context string.
     pub extended: Option<String>,
+    /// Whether the intensity was stated. A context-string value without an
+    /// intensity (`🧠focused`) decodes with `intensity == 3` and
+    /// `intensity_explicit == false`, and re-encodes without one.
+    pub intensity_explicit: bool,
+}
+
+impl Serialize for PersonalDimension {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+
+        let fields =
+            1 + usize::from(self.intensity_explicit) + usize::from(self.extended.is_some());
+        let mut state = serializer.serialize_struct("PersonalDimension", fields)?;
+        state.serialize_field("value", &self.value)?;
+        if self.intensity_explicit {
+            state.serialize_field("intensity", &self.intensity)?;
+        }
+        if let Some(extended) = &self.extended {
+            state.serialize_field("extended", extended)?;
+        }
+        state.end()
+    }
 }
 
 impl PersonalDimension {
     const MAX_VALUE_CHARS: usize = 64;
     const MAX_EXTENDED_CHARS: usize = 256;
+    /// Intensity used when a context-string value omits it.
+    pub const DEFAULT_INTENSITY: u8 = 3;
 
     fn validate(value: &str, intensity: u8, extended: Option<&str>) -> VcpResult<()> {
         let valid_value = !value.is_empty()
@@ -116,18 +154,30 @@ impl PersonalDimension {
             return Err(VcpError::InvalidIntensity(intensity));
         }
         if let Some(extended) = extended {
+            // VCP/S §2.4.1: extended = 1*( ALPHA / "_" ).
             if extended.is_empty()
                 || extended.chars().count() > Self::MAX_EXTENDED_CHARS
-                || extended.chars().any(|character| {
-                    character.is_control() || matches!(character, '[' | ']' | '|' | '\u{2016}')
-                })
+                || !extended
+                    .chars()
+                    .all(|character| character.is_ascii_alphabetic() || character == '_')
             {
                 return Err(VcpError::ParseError(
-                    "extended personal value is empty, oversized, or wire-ambiguous".to_string(),
+                    "extended personal value must be 1-256 ASCII letters or underscores"
+                        .to_string(),
                 ));
             }
         }
         Ok(())
+    }
+
+    /// Parse the intensity field: exactly one ASCII digit 1-5 (VCP/A §2.3).
+    fn parse_intensity(raw: &str) -> VcpResult<u8> {
+        match raw.as_bytes() {
+            [digit @ b'1'..=b'5'] => Ok(digit - b'0'),
+            _ => Err(VcpError::ParseError(format!(
+                "invalid intensity (must be one digit 1-5): {raw}"
+            ))),
+        }
     }
 
     /// Create with validation.
@@ -142,14 +192,34 @@ impl PersonalDimension {
             value,
             intensity,
             extended: None,
+            intensity_explicit: true,
         })
     }
 
-    /// Create with an extended sub-signal.
+    /// Create a value without a stated intensity (intensity 3, omitted on
+    /// the VCP/A wire).
     ///
     /// # Errors
     ///
-    /// Returns [`VcpError::InvalidIntensity`] if `intensity` is not in 1..=5.
+    /// Returns [`VcpError::ParseError`] if the value is not a category name.
+    pub fn without_intensity(value: impl Into<String>) -> VcpResult<Self> {
+        let value = value.into();
+        Self::validate(&value, Self::DEFAULT_INTENSITY, None)?;
+        Ok(Self {
+            value,
+            intensity: Self::DEFAULT_INTENSITY,
+            extended: None,
+            intensity_explicit: false,
+        })
+    }
+
+    /// Create with an extended sub-signal (carried only on the CSM-1 R-line).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::InvalidIntensity`] if `intensity` is not in 1..=5,
+    /// or [`VcpError::ParseError`] if `extended` is not 1-256 ASCII letters
+    /// or underscores (VCP/S §2.4.1).
     pub fn with_extended(
         value: impl Into<String>,
         intensity: u8,
@@ -162,66 +232,69 @@ impl PersonalDimension {
             value,
             intensity,
             extended: Some(extended),
+            intensity_explicit: true,
         })
     }
 
-    /// Encode to wire-format segment: `value:intensity` or `value:intensity[ext]`.
+    /// Encode for a VCP/A context string: `value` or `value:intensity`.
+    ///
+    /// A context string carries no sub-signal (VCP/A §2.3), so `extended` is
+    /// never written here; use [`PersonalDimension::to_r_line`] for the
+    /// CSM-1 R-line.
     pub fn to_wire(&self) -> String {
-        let mut s = format!("{}:{}", self.value, self.intensity);
-        if let Some(ref ext) = self.extended {
-            s.push('[');
-            s.push_str(ext);
-            s.push(']');
+        if self.intensity_explicit {
+            format!("{}:{}", self.value, self.intensity)
+        } else {
+            self.value.clone()
         }
-        s
     }
 
-    /// Parse from wire-format segment: `value:intensity` or `value:intensity[ext]`.
+    /// Parse a VCP/A context-string value: `value` or `value:intensity`.
     ///
     /// # Errors
     ///
-    /// Returns [`VcpError::ParseError`] if the wire format is malformed,
-    /// or [`VcpError::InvalidIntensity`] if the intensity is out of range.
+    /// Returns [`VcpError::ParseError`] if the intensity is not exactly one
+    /// digit 1-5 or anything follows it, including a sub-signal such as
+    /// `pain:4[migraine]` or `pain:4:migraine` (VCP/A §2.3), or if the value
+    /// is not a category name.
     pub fn from_wire(wire: &str) -> VcpResult<Self> {
-        // Check for extended: value:intensity[ext]
-        let (main, extended) = if let Some(bracket_start) = wire.find('[') {
-            if !wire.ends_with(']') {
-                return Err(VcpError::ParseError(format!(
-                    "unterminated bracket in personal dimension: {wire}"
-                )));
+        match wire.split_once(':') {
+            None => Self::without_intensity(wire),
+            Some((value, intensity)) => {
+                let intensity = Self::parse_intensity(intensity)?;
+                Self::new(value, intensity)
             }
-            let ext = &wire[bracket_start + 1..wire.len() - 1];
-            (&wire[..bracket_start], Some(ext.to_string()))
-        } else {
-            (wire, None)
-        };
-
-        let parts: Vec<&str> = main.split(':').collect();
-        if parts.len() != 2 {
-            return Err(VcpError::ParseError(format!(
-                "personal dimension must be value:intensity, got: {wire}"
-            )));
         }
+    }
 
-        let value = parts[0].to_string();
-        // Exactly one ASCII digit 1-5 (VCP/A §2.3): "04", "+4", "0" and "6"
-        // are malformed.
-        let intensity: u8 = match parts[1].as_bytes() {
-            [digit @ b'1'..=b'5'] => digit - b'0',
-            _ => {
-                return Err(VcpError::ParseError(format!(
-                    "invalid intensity (must be one digit 1-5): {}",
-                    parts[1]
-                )))
-            }
+    /// Encode for the CSM-1 token R-line: `value:intensity[:extended]`
+    /// (VCP/S §2.4.1). The R-line always states the intensity.
+    pub fn to_r_line(&self) -> String {
+        match &self.extended {
+            Some(extended) => format!("{}:{}:{extended}", self.value, self.intensity),
+            None => format!("{}:{}", self.value, self.intensity),
+        }
+    }
+
+    /// Parse a CSM-1 R-line value: `value:intensity[:extended]`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VcpError::ParseError`] if the intensity is missing or not
+    /// one digit 1-5, or if the value or sub-signal is malformed.
+    pub fn from_r_line(wire: &str) -> VcpResult<Self> {
+        let mut parts = wire.splitn(3, ':');
+        let value = parts.next().unwrap_or_default();
+        let Some(intensity) = parts.next() else {
+            return Err(VcpError::ParseError(format!(
+                "R-line personal dimension must be value:intensity, got: {wire}"
+            )));
         };
-
-        Self::validate(&value, intensity, extended.as_deref())?;
-        Ok(Self {
-            value,
-            intensity,
-            extended,
-        })
+        let intensity = Self::parse_intensity(intensity)?;
+        match parts.next() {
+            Some(extended) => Self::with_extended(value, intensity, extended),
+            None => Self::new(value, intensity),
+        }
     }
 }
 
@@ -241,13 +314,14 @@ impl<'de> Deserialize<'de> for PersonalDimension {
         }
 
         let wire = WireDimension::deserialize(deserializer)?;
-        let intensity = wire.intensity.unwrap_or(3);
+        let intensity = wire.intensity.unwrap_or(Self::DEFAULT_INTENSITY);
         PersonalDimension::validate(&wire.value, intensity, wire.extended.as_deref())
             .map_err(D::Error::custom)?;
         Ok(PersonalDimension {
             value: wire.value,
             intensity,
             extended: wire.extended,
+            intensity_explicit: wire.intensity.is_some(),
         })
     }
 }
@@ -298,10 +372,20 @@ impl PersonalState {
             || self.body.is_some()
     }
 
-    /// Encode personal state to wire format (the part after `\u{2016}`).
-    ///
-    /// Format: `<symbol><value>:<intensity>[|...]`
+    /// Encode personal state for a VCP/A context string (the part after
+    /// `\u{2016}`): `<symbol><value>[:<intensity>][|...]`. No sub-signal is
+    /// written (VCP/A §2.3).
     pub fn to_wire(&self) -> String {
+        self.encode(PersonalDimension::to_wire)
+    }
+
+    /// Encode personal state for the CSM-1 token R-line (after `R:`):
+    /// `<symbol><value>:<intensity>[:<extended>][|...]` (VCP/S §2.4.1).
+    pub fn to_r_line(&self) -> String {
+        self.encode(PersonalDimension::to_r_line)
+    }
+
+    fn encode(&self, dimension_wire: fn(&PersonalDimension) -> String) -> String {
         let mut parts = Vec::new();
 
         let dims: [(PersonalDimensionKind, &Option<PersonalDimension>); 5] = [
@@ -314,7 +398,7 @@ impl PersonalState {
 
         for (kind, dim_opt) in &dims {
             if let Some(dim) = dim_opt {
-                parts.push(format!("{}{}", kind.symbol(), dim.to_wire()));
+                parts.push(format!("{}{}", kind.symbol(), dimension_wire(dim)));
             }
         }
         parts.extend(self.unknown.iter().cloned());
@@ -334,6 +418,23 @@ impl PersonalState {
     /// leading emoji, repeats a dimension, or carries malformed dimension
     /// data.
     pub fn from_wire(wire: &str) -> VcpResult<Self> {
+        Self::decode(wire, PersonalDimension::from_wire)
+    }
+
+    /// Parse personal state from the CSM-1 token R-line (after `R:`), where
+    /// each value states its intensity and may carry `:extended`.
+    ///
+    /// # Errors
+    ///
+    /// As [`PersonalState::from_wire`], and a value without an intensity.
+    pub fn from_r_line(wire: &str) -> VcpResult<Self> {
+        Self::decode(wire, PersonalDimension::from_r_line)
+    }
+
+    fn decode(
+        wire: &str,
+        dimension_parser: fn(&str) -> VcpResult<PersonalDimension>,
+    ) -> VcpResult<Self> {
         let mut state = PersonalState::default();
 
         if wire.is_empty() {
@@ -367,7 +468,7 @@ impl PersonalState {
                 continue;
             };
 
-            let dim = PersonalDimension::from_wire(rest)?;
+            let dim = dimension_parser(rest)?;
 
             let slot = match kind {
                 PersonalDimensionKind::CognitiveState => &mut state.cognitive,
@@ -478,6 +579,8 @@ mod tests {
             "",
             "nested[detail]",
             "one|two",
+            "one:two",
+            "one-two",
             "one\u{2016}two",
             "one\0two",
         ] {
@@ -490,12 +593,47 @@ mod tests {
     fn dimension_with_extended() {
         let d = PersonalDimension::with_extended("pain", 4, "migraine").unwrap();
         assert_eq!(d.extended.as_deref(), Some("migraine"));
-        assert_eq!(d.to_wire(), "pain:4[migraine]");
+        // A VCP/A context string carries no sub-signal (VCP/A §2.3) ...
+        assert_eq!(d.to_wire(), "pain:4");
+        // ... which travels only on the CSM-1 R-line (VCP/S §2.4.1).
+        assert_eq!(d.to_r_line(), "pain:4:migraine");
+        assert_eq!(
+            PersonalDimension::from_r_line("pain:4:migraine").unwrap(),
+            d
+        );
+    }
+
+    #[test]
+    fn context_wire_rejects_sub_signals() {
+        for malformed in ["pain:4[migraine]", "pain:4:migraine", "pain:4:"] {
+            assert!(
+                PersonalDimension::from_wire(malformed).is_err(),
+                "{malformed}"
+            );
+        }
+        assert!(PersonalState::from_wire("\u{1FA7A}pain:4[migraine]").is_err());
+        assert!(PersonalDimension::from_r_line("pain").is_err());
+        assert!(PersonalDimension::from_r_line("pain:4[migraine]").is_err());
+    }
+
+    #[test]
+    fn intensity_may_be_omitted_in_context_strings() {
+        let d = PersonalDimension::from_wire("focused").unwrap();
+        assert_eq!(d.intensity, 3);
+        assert!(!d.intensity_explicit);
+        assert_eq!(d.to_wire(), "focused");
+        assert_eq!(serde_json::to_string(&d).unwrap(), r#"{"value":"focused"}"#);
+        let back: PersonalDimension = serde_json::from_str(r#"{"value":"focused"}"#).unwrap();
+        assert_eq!(back, d);
+        let wire = "\u{1F9E0}focused|\u{1F4AD}calm:5|\u{1F50B}rested:4|\u{26A1}pressured:4|\u{1FA7A}neutral";
+        assert_eq!(PersonalState::from_wire(wire).unwrap().to_wire(), wire);
+        // The R-line always states the intensity.
+        assert_eq!(d.to_r_line(), "focused:3");
     }
 
     #[test]
     fn dimension_wire_roundtrip() {
-        let cases = vec!["focused:4", "calm:3", "pain:4[migraine]", "rested:1"];
+        let cases = vec!["focused:4", "calm:3", "pain:4", "rested:1", "calm"];
         for case in cases {
             let d = PersonalDimension::from_wire(case).unwrap();
             assert_eq!(d.to_wire(), case);
@@ -503,8 +641,10 @@ mod tests {
     }
 
     #[test]
-    fn dimension_wire_error_missing_colon() {
-        assert!(PersonalDimension::from_wire("focused").is_err());
+    fn r_line_requires_intensity() {
+        // The context string allows an omitted intensity; the R-line does not.
+        assert!(PersonalDimension::from_wire("focused").is_ok());
+        assert!(PersonalDimension::from_r_line("focused").is_err());
     }
 
     #[test]
@@ -592,10 +732,13 @@ mod tests {
         assert_eq!(parsed.energy.as_ref().unwrap().value, "depleted");
         assert_eq!(parsed.urgency.as_ref().unwrap().value, "critical");
         assert_eq!(parsed.body.as_ref().unwrap().value, "pain");
-        assert_eq!(
-            parsed.body.as_ref().unwrap().extended.as_deref(),
-            Some("migraine")
-        );
+        // The context string drops the sub-signal (VCP/A §2.3) ...
+        assert_eq!(parsed.body.as_ref().unwrap().extended, None);
+        assert!(!wire.contains("migraine"));
+        // ... and the R-line keeps it (VCP/S §2.4.1).
+        let r_line = ps.to_r_line();
+        assert!(r_line.ends_with("\u{1FA7A}pain:4:migraine"));
+        assert_eq!(PersonalState::from_r_line(&r_line).unwrap(), ps);
     }
 
     #[test]

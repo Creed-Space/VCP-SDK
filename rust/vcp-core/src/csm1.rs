@@ -1034,7 +1034,7 @@ impl Csm1Token {
                 if state_line.is_empty() || state_line == "none" {
                     Some(PersonalState::default())
                 } else {
-                    Some(PersonalState::from_wire(state_line)?)
+                    Some(PersonalState::from_r_line(state_line)?)
                 }
             }
             None => None,
@@ -1109,7 +1109,7 @@ impl Csm1Token {
         // Line 8 (only if personal state is declared)
         if let Some(ref ps) = self.personal_state {
             if ps.has_any() {
-                lines.push(format!("R:{}", ps.to_wire()));
+                lines.push(format!("R:{}", ps.to_r_line()));
             } else {
                 lines.push("R:none".to_string());
             }
