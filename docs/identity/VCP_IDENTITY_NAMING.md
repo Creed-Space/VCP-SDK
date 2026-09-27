@@ -1,11 +1,20 @@
-# VCP-Identity: Naming Specification
+# VCP/I (Identity): Naming Specification
+
+<!-- vcp-document-control
+status: Reference companion, status-classified
+normative-authority: Accepted specifications and schemas control
+protocol-version: Lineage document, see document body
+last-reviewed: 2026-09-27 identity rules aligned with VCP/I §3.4.1 and §3.7
+owner: VCP Spec maintainers
+evidence-boundary: Explanatory material, not implementation conformance
+-->
 
 **Version**: 1.0.0
 **Date**: 2026-01-11
 **Layer**: VCP/I (Identity)
 **Status**: Complete
 
-> *Part of the Value Context Protocol (VCP) - Layer 1*
+> *Part of the Value Context Protocol (VCP), Layer 1*
 
 ---
 
@@ -63,9 +72,9 @@ Examples:
 
 | Component | Description | Constraints |
 |-----------|-------------|-------------|
-| `domain` | Value domain (family, work, secure) | 1-32 lowercase alpha |
-| `approach` | Approach within domain | 1-32 lowercase alpha |
-| `role` | Specific role/function | 1-32 lowercase alpha |
+| `domain` | Value domain: one of the five Core prefixes | 1-32 characters: a lowercase letter, then lowercase letters, digits or hyphens |
+| `approach` | Approach within domain | 1-32 characters: a lowercase letter, then lowercase letters, digits or hyphens |
+| `role` | Specific role/function | 1-32 characters: a lowercase letter, then lowercase letters, digits or hyphens |
 
 ### 2.2 Hierarchical Token
 
@@ -82,7 +91,7 @@ Examples:
 | Component | Description | Constraints |
 |-----------|-------------|-------------|
 | `namespace` | Governance tier (company, religion, user) | See §2.3 |
-| `segment` | Path within namespace | 1-32 lowercase alphanumeric + hyphen |
+| `segment` | Path within namespace | 1-32 characters: a lowercase letter, then lowercase letters, digits or hyphens |
 
 ### 2.3 Namespace Prefixes
 
@@ -99,7 +108,7 @@ Examples:
 | `religion.<tradition>` | Religious | `religion.buddhist.mindfulness` |
 | `culture.<region>` | Cultural | `culture.japanese.formal` |
 | `community.<name>` | Community | `community.gaming.esports` |
-| `user.<username>` | Personal | `user.alice.private` |
+| `user.<username>` | Personal | `user.alice.personal` |
 
 ### 2.4 Versioned Token
 
@@ -183,30 +192,21 @@ ALPHA             = %x41-5A / %x61-7A          ; A-Z / a-z
 UVC_TOKEN_PATTERN = r"""
     ^
     (?:
-        # Core namespace (simple token)
+        # Core namespace: exactly 3 segments
         (?:family|work|secure|creative|reality)
-        \.
-        [a-z]{1,32}
-        \.
-        [a-z]{1,32}
+        (?:\.[a-z][a-z0-9-]{0,31}){2}
     |
-        # Organizational namespace
+        # Organizational namespace: 3-10 segments
         (?:company|school|ngo)
-        \.
-        [a-z0-9-]{1,32}
-        (?:\.[a-z0-9-]{1,32})+
+        (?:\.[a-z][a-z0-9-]{0,31}){2,9}
     |
-        # Community namespace
+        # Community namespace: 3-10 segments
         (?:religion|culture|community)
-        \.
-        [a-z0-9-]{1,32}
-        (?:\.[a-z0-9-]{1,32})+
+        (?:\.[a-z][a-z0-9-]{0,31}){2,9}
     |
-        # Personal namespace
+        # Personal namespace: 3-10 segments
         user
-        \.
-        [a-z0-9_-]{1,32}
-        (?:\.[a-z0-9-]{1,32})*
+        (?:\.[a-z][a-z0-9-]{0,31}){2,9}
     )
     # Optional version
     (?:
@@ -225,6 +225,8 @@ UVC_TOKEN_PATTERN = r"""
             canary
         )
     )?
+    # Optional namespace suffix
+    (?::[A-Z][A-Z0-9]{0,31})?
     $
 """
 ```
@@ -241,28 +243,29 @@ class UVCValidationRules:
 
     RULES = {
         # Length constraints
-        'max_total_length': 128,       # Maximum total token length
+        'max_total_length': 256,       # Maximum total token length (schema maxLength)
         'max_segments': 10,             # Maximum hierarchy depth (ABNF token-path)
         'max_segment_length': 32,       # Maximum single segment length
 
         # Character constraints
         'allowed_segment_chars': r'^[a-z0-9-]+$',
-        'segment_start_char': r'^[a-z]',    # Must start with letter
-        'segment_end_char': r'[a-z0-9]$',   # Must end with letter or digit
+        'segment_start_char': r'^[a-z]',    # MUST start with letter
+        # A segment MAY end with a hyphen (ABNF; VCP/I §3.4.1)
 
         # Structural constraints
         'no_consecutive_dots': True,
         'no_leading_dot': True,
         'no_trailing_dot': True,
-        'no_consecutive_hyphens': True,
         'no_leading_hyphen': True,
-        'no_trailing_hyphen': True,
 
-        # Reserved words (cannot be used as segments)
+        # Reserved words (MUST NOT be used as segments)
         'reserved_words': [
             'system', 'admin', 'root', 'null', 'undefined',
             'true', 'false', 'none', 'void', 'default',
-            'api', 'internal', 'private', 'public', 'test'
+            'api', 'internal', 'private', 'public', 'test',
+            'debug', 'staging', 'production',
+            'vcp', 'uvc', 'csm', 'bundle', 'manifest', 'creed',
+            'official', 'verified', 'authentic', 'real',
         ],
     }
 ```
@@ -282,9 +285,9 @@ class ValidationError(Enum):
     SEGMENT_TOO_LONG = 3
     INVALID_CHARACTERS = 4
     INVALID_START_CHAR = 5
-    INVALID_END_CHAR = 6
+    INVALID_END_CHAR = 6          # retired 2026-09-27; not raised
     CONSECUTIVE_DOTS = 7
-    CONSECUTIVE_HYPHENS = 8
+    CONSECUTIVE_HYPHENS = 8       # retired 2026-09-27; not raised
     RESERVED_WORD = 9
     INVALID_NAMESPACE = 10
     INVALID_VERSION = 11
@@ -314,18 +317,21 @@ class UVCTokenValidator:
     def validate(self, token: str) -> ValidationResult:
         """Validate a UVC token"""
 
-        # Handle versioned tokens
+        # Handle the optional namespace suffix and version
         base_token = token
         version = None
-        if '@' in token:
-            parts = token.split('@', 1)
-            base_token = parts[0]
-            version = parts[1]
+        if ':' in base_token:
+            base_token, suffix = base_token.rsplit(':', 1)
+            if not re.match(r'^[A-Z][A-Z0-9]{0,31}$', suffix):
+                return ValidationResult(False, ValidationError.INVALID_CHARACTERS,
+                    f"Invalid namespace suffix: '{suffix}'")
+        if '@' in base_token:
+            base_token, version = base_token.split('@', 1)
 
         # Basic length check
-        if len(token) > 128:
+        if len(token) > 256:
             return ValidationResult(False, ValidationError.TOO_LONG,
-                f"Token exceeds maximum length (128): {len(token)}")
+                f"Token exceeds maximum length (256): {len(token)}")
 
         # Split into segments
         segments = base_token.split('.')
@@ -374,14 +380,6 @@ class UVCTokenValidator:
             return ValidationResult(False, ValidationError.INVALID_START_CHAR,
                 f"Segment '{segment}' must start with letter", position)
 
-        if segment[-1] == '-':
-            return ValidationResult(False, ValidationError.INVALID_END_CHAR,
-                f"Segment '{segment}' cannot end with hyphen", position)
-
-        if '--' in segment:
-            return ValidationResult(False, ValidationError.CONSECUTIVE_HYPHENS,
-                f"Segment '{segment}' has consecutive hyphens", position)
-
         if segment in self.RESERVED_WORDS:
             return ValidationResult(False, ValidationError.RESERVED_WORD,
                 f"Segment '{segment}' is a reserved word", position)
@@ -416,9 +414,9 @@ class UVCTokenValidator:
 
         # Personal namespace
         if first == self.PERSONAL_PREFIX:
-            if len(segments) < 2:
+            if len(segments) < 3:
                 return ValidationResult(False, ValidationError.INVALID_NAMESPACE,
-                    "Personal namespace 'user' requires at least 2 segments")
+                    "Personal namespace 'user' requires at least 3 segments")
             return ValidationResult(True, ValidationError.NONE, "Valid")
 
         return ValidationResult(False, ValidationError.INVALID_NAMESPACE,
@@ -683,8 +681,8 @@ def hash_uvc_token(token: str) -> str:
 **Risk**: Extremely long tokens could cause DoS.
 
 **Mitigation**:
-1. Hard limit of 128 characters total
-2. Maximum 8 segments
+1. Hard limit of 256 characters total, including version and namespace suffix
+2. Maximum 10 segments
 3. Maximum 32 characters per segment
 
 ---
@@ -834,7 +832,11 @@ __version__ = '1.0.0'
 
 ### 8.2 JSON Schema
 
-See `data/schemas/uvc-token.schema.json` for JSON Schema validation.
+This companion does not ship the formerly anticipated
+`data/schemas/uvc-token.schema.json`. The maintained
+[VCP identity-token schema](../../schemas/vcp-identity-token.schema.json)
+defines the current machine contract; it does not imply validation of every
+illustrative UVC naming example in this document.
 
 ---
 

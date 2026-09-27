@@ -150,7 +150,8 @@ VCP-Spec layer specifications. Integrators upgrading from 4.2.0 should check:
   `validateIdentityToken`, the MCP `vcp_validate_token` tool, `vcp-wasm`
   `validate_token` and the WebMCP `vcp_chat` `constitution_id` check reject
   unlisted prefixes, Core tokens without exactly three segments and reserved
-  words. The WebMCP `vcp_chat` default constitution is `creative.growth.muse`.
+  words. The WebMCP `vcp_chat` default constitution is `work.professional.assistant`,
+  matching its default Ambassador persona.
 * Pseudonymous identities are `user.anon-<24 hex>.*` and
   `user.pseudo-<24 hex>.*`. The registry rejects `anon.*`, `pseudo.*` and any
   other token that fails `Token.validate()`. Convert stored legacy tokens with
@@ -159,3 +160,8 @@ VCP-Spec layer specifications. Integrators upgrading from 4.2.0 should check:
 * A personal-state intensity is exactly one digit 1-5 in every binding;
   `focused:04`, `focused:+4` and `focused:0` are malformed. A personal-only
   context string begins with `‖`.
+* Context strings carry no personal-state sub-signal. Rust no longer writes
+  `🩺pain:4[migraine]`; use the CSM-1 R-line (`PersonalState::to_r_line`,
+  `🩺pain:4:migraine`) or a VCP-X-Personal signal's `extended` field. A
+  dimension repeated in one context string is malformed in every binding.
+* `AuditLogger.get_entries(since=...)` needs `AuditLevel.STANDARD` or higher.

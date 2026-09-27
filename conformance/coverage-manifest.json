@@ -4,7 +4,7 @@
   "schema": "vcp-conformance-coverage/1",
   "suites": [
     {
-      "case_count": 14,
+      "case_count": 22,
       "cases": [
         {
           "applicability": "protocol_behavior",
@@ -271,10 +271,162 @@
               "status": "checked"
             }
           }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A sub-signal never appears in a context string; every binding reads the Rust encoding",
+          "id": "ctx-015",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "VCP/A 2.4 personal-only example with omitted intensities",
+          "id": "ctx-016",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A known emergency value keeps its meaning next to an unknown value",
+          "id": "ctx-017",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A repeated situational dimension is malformed",
+          "id": "ctx-018",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A repeated personal-state dimension is malformed",
+          "id": "ctx-019",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "RELATIONSHIP with a tie strength only",
+          "id": "ctx-020",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "RELATIONSHIP with a function only",
+          "id": "ctx-021",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A sub-signal suffix in a context string is malformed",
+          "id": "ctx-022",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
         }
       ],
       "fixture": "conformance/adaptation/context_encoding.json",
-      "fixture_sha256": "91d6e42e96f2ac9c1be0addea332309e40bd3b79f8bb72bbcb3677dbbff52abc",
+      "fixture_sha256": "7ba6f64244870d987de6331510e622f54ab45ce11700910e99facb742c456ca1",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/docs/context/VCP_CONTEXT_SPECIFICATION.md",
       "runner": "conformance/runners/context_parity.py",
@@ -3456,7 +3608,7 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Default demo constitution is a valid Core token",
+          "description": "WebMCP vcp_chat default constitution (VCP/I 2.3.2 default for Ambassador) is a valid Core token",
           "id": "token-validate-005",
           "implementations": {
             "python": {
@@ -3589,7 +3741,7 @@
         }
       ],
       "fixture": "conformance/identity/token_parsing.json",
-      "fixture_sha256": "7ead27c92e7be11be7ca2caece6c4ac3c5e2a78e9ecdd76c75fa6ed576ee3331",
+      "fixture_sha256": "2da96afb4a8eb3720254842f6fee18418efa8d31cc7fb2c45b3cd85ae091347c",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/specs/VCP_IDENTITY_v2.0.md",
       "runner": "conformance/runners/identity_parity.py",
@@ -7360,22 +7512,22 @@
     "fixture_count": 30,
     "implementation_status": {
       "python": {
-        "checked": 354,
+        "checked": 362,
         "not_applicable": 8,
         "unsupported": 6
       },
       "rust": {
-        "checked": 294,
+        "checked": 302,
         "not_applicable": 8,
         "unsupported": 66
       },
       "webmcp": {
-        "checked": 79,
+        "checked": 87,
         "not_applicable": 283,
         "unsupported": 6
       }
     },
-    "vector_count": 368,
+    "vector_count": 376,
     "webmcp_surface_checks": 2
   },
   "webmcp_surface": {

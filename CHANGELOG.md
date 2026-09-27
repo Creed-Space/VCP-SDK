@@ -35,12 +35,6 @@ version.
   and `SIGNAL_SOURCE_VALUES` (exported from `vcp.extensions`), Rust
   `SignalSource::Measured` and `SignalSource::Elicitation`, and WebMCP
   `SignalSource.MEASURED` and `SignalSource.ELICITATION`.
-- Python `EMERGENCY_VALUES` (`vcp.adaptation.state`), used by `StateTracker`
-  and `RedisStateTracker`, now also contains 🔥 and 🌪️ (ENVIRONMENT hazards),
-  matching the VCP/A §7.1 `EMERGENCY_TOKENS`, plus the VS16-less spellings 🌪
-  and ⚠. A context carrying any of them is an EMERGENCY transition. 🚨, 🛑
-  (EMBODIMENT emergency_stop, VEP-0004), ⚠️ and 🆘 still count. Rust and
-  WebMCP have no emergency set.
 - Python `vcp.identity.namespace` exports `ORG_PREFIXES`,
   `COMMUNITY_PREFIXES`, `PERSONAL_PREFIX` and `is_known_namespace()`, the
   VCP/I §4.2 prefix lists for the tiers other than Core.
@@ -83,6 +77,56 @@ version.
   WebMCP).
 
 ### Changed
+- Python `EMERGENCY_VALUES` (`vcp.adaptation.state`), used by `StateTracker`
+  and `RedisStateTracker`, now also contains 🔥 and 🌪️ (ENVIRONMENT hazards),
+  matching the VCP/A §7.1 `EMERGENCY_TOKENS`, plus the VS16-less spellings 🌪
+  and ⚠. A context carrying any of them is an EMERGENCY transition. 🚨, 🛑
+  (EMBODIMENT emergency_stop, VEP-0004), ⚠️ and 🆘 still count. Detection
+  now matches an indicator inside a raw value too (new
+  `contains_emergency`), so `🎭🦖🔥` is an emergency. Rust and WebMCP have no
+  emergency set.
+- **Breaking:** Rust personal-state wire forms follow the VCP-Spec
+  sub-signal ruling. `PersonalDimension::to_wire` and
+  `PersonalState::to_wire` write VCP/A context strings, which carry no
+  sub-signal (VCP/A §2.3), so `🩺pain:4[migraine]` is no longer emitted and
+  `from_wire` rejects both `pain:4[migraine]` and `pain:4:migraine`. The
+  sub-signal travels on the CSM-1 R-line as a third field
+  (`🩺pain:4:migraine`, VCP/S §2.4.1) through the new `to_r_line` and
+  `from_r_line`, which `Csm1Token` now uses; the former bracket form is not
+  read. `extended` must be 1-256 ASCII letters or underscores. A new
+  cross-feed step in the context parity runner decodes every Rust encoding
+  with Python and WebMCP (vector `ctx-015`).
+- **Breaking:** Rust accepts a VCP/A personal value without an intensity
+  (`🧠focused`): it decodes with `intensity` 3 and the new public field
+  `intensity_explicit` set to `false`, and re-encodes without one
+  (`PersonalDimension::without_intensity`). JSON omits `intensity` in that
+  case. The R-line still requires an intensity. Vector `ctx-016` is the
+  VCP/A §2.4 personal-only example.
+- Python and WebMCP keep known values in a group that also holds unknown
+  ones: `🎭🚨🦖` decodes to `🚨` and a raw `🦖` (it used to become one raw
+  value, hiding the emergency). Unmatched runs are kept as written, and
+  strict validators report only them (vector `ctx-017`).
+- **Breaking:** Python and WebMCP reject a dimension repeated in one context
+  string (`⏰🌅|⏰🌙`, `‖🧠focused|🧠foggy`), as Rust already did (VCP/A
+  §2.3; vectors `ctx-018`, `ctx-019`).
+- Python RELATIONSHIP values accept the single-part forms VCP/A allows,
+  `{tie}` and `:{function}` (vectors `ctx-020`, `ctx-021`), and the MCP
+  `vcp_encode_context` schema accepts them too.
+- **Breaking:** `AuditLogger.get_entries(since=...)` raises `ValueError` on a
+  `minimal` logger and leaves out entries recorded below `standard`, since
+  filtering by time would reveal timestamps that level withholds.
+- The MCP `vcp_encode_context` schema accepts the deprecated value names the
+  encoder resolves (`midday`, `transit`, `noisy`, `casual`).
+- Registry prefix nodes inherit the most restrictive privacy tier by an
+  explicit rank (`PRIVACY_TIER_RANK`: public, community, organizational,
+  personal, pseudonymous). The comparison used the alphabetical order of the
+  enum values, under which `public` counted as the most restrictive, so a
+  prefix shared with a personal or pseudonymous entry could be enumerated.
+- `docs/identity/VCP_IDENTITY_NAMING.md` and
+  `docs/uvc/UVC_NAMING_SPECIFICATION.md` are exact copies of the VCP-Spec
+  companions (the VCP/I §3.4.1 and §3.7 rules and the 256-character limit),
+  the namespace companions state the username rule, and the adaptation
+  companions carry the VCP/A §2.3 repeated-dimension and sub-signal rules.
 - **Breaking:** VCP/I defines no `anon` or `pseudo` prefix, so pseudonymous
   identities move to `user.anon-<hex>.*` and `user.pseudo-<hex>.*`
   (the round-3 pseudonym decision). `LocalRegistry.register` now applies
@@ -253,10 +297,13 @@ version.
   The WebMCP `vcp_list_personas` descriptions and use cases for all six
   personas were rewritten; Nanny now holds the child-safety and vulnerable-user
   role and Godparent the ethical-guidance role.
-- WebMCP `vcp_chat` sends `constitution_id` `creative.growth.muse` when the
-  caller omits one, instead of `general`, which is not a valid VCP/I token.
-  (An earlier unreleased revision used `personal.growth.creative`, whose
-  `personal` prefix is not a VCP/I namespace.) The `vcp_chat` and `vcp_build_token` tool descriptions now say
+- WebMCP `vcp_chat` sends `constitution_id` `work.professional.assistant`
+  when the caller omits one, instead of `general`, which is not a valid VCP/I
+  token. It is the VCP/I §2.3.2 default token for the Ambassador persona,
+  which is also the default `vcp_chat` persona. (Earlier unreleased revisions
+  used `personal.growth.creative`, whose `personal` prefix is not a VCP/I
+  namespace, and then `creative.growth.muse`, which belongs to the Muse
+  persona.) The `vcp_chat` and `vcp_build_token` tool descriptions now say
   what the context and token actually carry.
 - The messaging conformance suite id is now `messaging/messaging` (was
   `adaptation/messaging`), and its fixture moved from

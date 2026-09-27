@@ -21,7 +21,7 @@ package-install smoke tests, schema synchronization, and dependency audits.
 | Python behavior | Unit, integration, property, and protocol-vector tests under `python/tests/` | `make python`, `make property`, and `make coverage` |
 | Rust behavior | Unit, integration, property, examples, CLI, and documentation | `make rust`, `make examples`, and `make packages` |
 | WebMCP behavior | Type checks, unit tests, property tests, registration lifecycle, and packed-package import | `make webmcp` |
-| Cross-language behavior | 30 JSON fixture files containing 368 tracked cases (242 vectors plus 126 test cases) | `make conformance` |
+| Cross-language behavior | 30 JSON fixture files containing 376 tracked cases (250 vectors plus 126 test cases) | `make conformance` |
 | Security depth | Critical module statement and branch floors, scheduled mutation lanes, fuzzing, and audits | `make coverage`, `mutation.yml`, `fuzz.yml`, and `make audits` |
 | Runtime compatibility | Python 3.10 through 3.14, two Node LTS lines, Rust 1.87 and stable, native OS matrix, WASM | `.github/workflows/ci.yml` |
 | Installed artifacts | Wheel, sdist, three Cargo crates, npm tarball, and WASM target | `scripts/verify_artifacts.py` |

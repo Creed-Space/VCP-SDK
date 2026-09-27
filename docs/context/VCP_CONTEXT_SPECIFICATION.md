@@ -395,9 +395,17 @@ The value tables in Section 2.2 and the personal-state categories in Section 3.1
 A receiver or decoder MUST NOT reject a context string because a dimension carries a value that is not in those vocabularies, or because a group begins with a dimension symbol it does not recognize.
 Such a group is an unknown dimension block, not a malformation, which is the same rule VEP-0004 sets for receivers that do not implement its dimensions.
 The receiver ignores the unknown value or block when it adapts behavior, and passes it through unchanged when it relays the context; it MUST NOT treat it as a default or as a known value.
-Known values in the same string, including emergency indicators (Section 5.1.6), keep their meaning.
+Known values keep their meaning, including known values in a group that also holds unknown values and emergency indicators (Section 5.1.6): `🎭🚨🦄` is an emergency even though `🦄` is unknown.
+The ABNF above lists a closed set of dimension symbols because it describes what a conforming emitter produces; a receiver applies it together with this rule, so a group that begins with an unlisted symbol is tolerated rather than rejected.
 A validator running in a strict validation mode, for example a conformance test or an emitter checking its own output, reports each unknown value or dimension as a validation error or warning.
 A string that is malformed in any other way, for example an empty group, an intensity outside 1-5, or a missing separator, is still a validation error and is rejected (Section 5.6).
+A dimension MUST NOT appear in more than one group of the same string: `⏰🌅|⏰🌙` or `‖🧠focused|🧠foggy` is malformed, and several values for one dimension go in a single group (`⏰🌅📅`).
+
+#### Sub-signals
+
+A VCP/A context string carries no sub-signal or extended detail after a personal-state value or intensity.
+The optional `extended` sub-signal belongs to the CSM-1 token's R-line (VCP/S §2.4.1, third field, for example `🩺unwell:4:migraine`) and to the `extended` field of a VCP-X-Personal signal object (VCP-X-Personal §2.4), and travels only there.
+In a context string, `🩺pain:4[migraine]` and `🩺pain:4:migraine` are both malformed.
 
 ### 3.2 Encoding Examples
 

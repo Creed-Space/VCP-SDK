@@ -49,7 +49,7 @@ rust/
 | `identity` | VCP/I token parsing (`VcpToken::parse`, syntax only) and semantic validation (`VcpToken::validate` returns the `NamespaceTier` or a `TokenValidationError`: unlisted prefix, Core token without exactly three segments, reserved word) |
 | `csm1` | CSM-1 codes and tokens: `Csm1Code::parse("N5+F+E")` returns `Persona::Nanny`, adherence 5, scopes Family and Education. Scope H is `Scope::Health` (serialized `"Health"`; `"Healthcare"` still deserializes and `Scope::Healthcare` is a deprecated constant) |
 | `transport` | `compute_content_hash(content)` → `"sha256:<hex>"` |
-| `personal` | Personal state dimensions (cognitive load, emotional state, etc.); unknown dimension groups are kept in `PersonalState::unknown` |
+| `personal` | Personal state dimensions (cognitive load, emotional state, etc.); unknown dimension groups are kept in `PersonalState::unknown`. `to_wire`/`from_wire` are the VCP/A context form (`value[:intensity]`, no sub-signal); `to_r_line`/`from_r_line` are the CSM-1 R-line form (`value:intensity[:extended]`) |
 | `situational` | Situational context encoding (time, space, company present). Values are opaque tags; a group with an unrecognized dimension emoji is kept in `SituationalContext::unknown` and re-encoded (VCP/A §2.3) |
 | `hooks` | 6-type hook system for the adaptation pipeline |
 | `revocation` | Bundle revocation checking with SSRF protection (prevents SSRF via revocation endpoint) |

@@ -2,31 +2,31 @@
   "claim_boundary": "Statuses summarize same-program candidate runners. They do not establish independent interoperability, certification, publication, or deployment support.",
   "features": [
     {
-      "case_count": 14,
+      "case_count": 22,
       "fixture": "conformance/adaptation/context_encoding.json",
       "implementations": {
         "python": {
-          "applicable_cases": 14,
+          "applicable_cases": 22,
           "case_statuses": {
-            "checked": 14
+            "checked": 22
           },
-          "checked_cases": 14,
+          "checked_cases": 22,
           "status": "full"
         },
         "rust": {
-          "applicable_cases": 14,
+          "applicable_cases": 22,
           "case_statuses": {
-            "checked": 14
+            "checked": 22
           },
-          "checked_cases": 14,
+          "checked_cases": 22,
           "status": "full"
         },
         "webmcp": {
-          "applicable_cases": 14,
+          "applicable_cases": 22,
           "case_statuses": {
-            "checked": 14
+            "checked": 22
           },
-          "checked_cases": 14,
+          "checked_cases": 22,
           "status": "full"
         }
       },
@@ -1040,6 +1040,6 @@
   "schema": "vcp-feature-matrix/1",
   "source": {
     "path": "conformance/coverage-manifest.json",
-    "sha256": "e49be1b7a0dcdc86838c5a750225e246c2778991c6df6ea58c10868c6c3e604b"
+    "sha256": "03d0d7c178c887809b3d3094d37fdc33f120a60b7f892c569e3161d458d5a195"
   }
 }

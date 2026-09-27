@@ -31,7 +31,7 @@ This is the browser-analog to the MCP server pattern: MCP server = CLI/server to
 
 (webmcp/src/ directory listing)
 
-`vcp_chat` sends `creative.growth.muse` as the default `constitution_id` and rejects a caller-supplied one that fails `validateIdentityToken`.
+`vcp_chat` sends `work.professional.assistant` (the VCP/I §2.3.2 default for its default Ambassador persona) as the default `constitution_id` and rejects a caller-supplied one that fails `validateIdentityToken`.
 
 ## Build and Test
 

@@ -43,3 +43,11 @@ Sources ingested: /home/claude/vcp/pseudonym_decision.md; VCP-Spec bc743e6
 (VCP/A §2.3 personal-only form and one-digit intensity); python/src/vcp/identity/registry.py.
 Key changes: pseudonymous identities under user.anon-<hex> and user.pseudo-<hex>;
 the registry rejects unlisted prefixes; intensity is exactly one digit 1-5.
+
+## [2026-09-27] update | Canon round 4: review fixes
+Pages updated: systems/webmcp-typescript, systems/testing-approach
+Sources ingested: /home/claude/vcp/subsignal_decision.md; VCP-Spec 05c3a98
+(VCP/A §2.3 repeated dimensions, mixed groups, sub-signals).
+Key changes: vcp_chat default constitution work.professional.assistant; context
+strings carry no sub-signal (the Rust R-line form is value:intensity:extended);
+repeated dimensions are malformed; conformance inventory 250 vectors.

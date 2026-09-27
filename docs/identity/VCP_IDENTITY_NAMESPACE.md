@@ -120,7 +120,7 @@ CORE_NAMESPACES = {
 1. Email verification
 2. Username uniqueness check
 3. Terms acceptance
-4. No special characters (except `-`, `_`)
+4. The username is a token segment: a lowercase letter, then lowercase letters, digits or hyphens; `_` is not permitted (VCP/I §3.4.1)
 
 ---
 
