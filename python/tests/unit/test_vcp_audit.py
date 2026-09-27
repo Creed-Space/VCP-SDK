@@ -10,6 +10,7 @@ Verifies:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 from vcp.audit import AuditEntry, AuditLevel, AuditLogger, _hash_for_privacy
 
@@ -149,6 +150,77 @@ class TestAuditTierBoundaries:
         entry = _make_entry(AuditLevel.STANDARD)
         parsed = json.loads(entry.to_json())
         assert parsed["verification"]["result"] == "VALID"
+
+
+class TestAuditDefaultLevel:
+    """VCP core audit §3.1 and Amendment J: ``minimal`` is the default level."""
+
+    @staticmethod
+    def _bundle() -> SimpleNamespace:
+        manifest = SimpleNamespace(
+            signature=SimpleNamespace(value="base64:" + "A" * 64),
+            bundle=SimpleNamespace(id="bundle-1", content_hash="sha256:abc123", version="1.2.0"),
+            issuer=SimpleNamespace(id="issuer-1"),
+            budget=SimpleNamespace(token_count=500),
+        )
+        return SimpleNamespace(manifest=manifest, content="Constitution text " * 20)
+
+    def test_logger_defaults_to_minimal(self) -> None:
+        assert AuditLogger().level is AuditLevel.MINIMAL
+
+    def test_entry_defaults_to_minimal(self) -> None:
+        entry = _make_entry()
+        entry_default = AuditEntry(
+            **{k: v for k, v in entry.__dict__.items() if k != "audit_level"}
+        )
+        assert entry_default.audit_level is AuditLevel.MINIMAL
+
+    def test_minimal_emits_exactly_the_minimal_fields(self) -> None:
+        d = _make_entry(AuditLevel.MINIMAL).to_dict()
+        assert d == {
+            "vcp_audit_version": "1.1",
+            "audit_level": "minimal",
+            "verification": {"result": "VALID"},
+            "bundle_ref": {
+                "id_hash": _hash_for_privacy("bundle-1"),
+                "content_hash": "sha256:abc123",
+            },
+        }
+
+    def test_standard_includes_request_id(self) -> None:
+        assert "request_id" not in _make_entry(AuditLevel.MINIMAL).to_dict()
+        assert "request_id" in _make_entry(AuditLevel.STANDARD).to_dict()
+
+    def test_default_logger_emits_no_session_or_timing_data(self) -> None:
+        from vcp.types import VerificationResult
+
+        logger = AuditLogger()
+        entry = logger.log_verification(
+            self._bundle(),
+            VerificationResult.VALID,
+            session_id="sess-1",
+            request_id="req-1",
+            duration_ms=12,
+        )
+        assert entry.audit_level is AuditLevel.MINIMAL
+        assert entry.duration_ms is None
+        assert entry.token_count is None
+        assert entry.content_preview is None
+        d = entry.to_dict()
+        assert set(d) == {"vcp_audit_version", "audit_level", "verification", "bundle_ref"}
+        assert set(d["verification"]) == {"result"}
+        assert set(d["bundle_ref"]) == {"id_hash", "content_hash"}
+
+    def test_standard_is_opt_in(self) -> None:
+        from vcp.types import VerificationResult
+
+        logger = AuditLogger(level=AuditLevel.STANDARD)
+        d = logger.log_verification(
+            self._bundle(), VerificationResult.VALID, session_id="sess-1"
+        ).to_dict()
+        assert d["audit_level"] == "standard"
+        assert "session_id_hash" in d
+        assert "timestamp" in d
 
 
 # ---------------------------------------------------------------------------

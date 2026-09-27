@@ -27,7 +27,12 @@ _PRIVACY_SALT: bytes = os.urandom(32)
 
 
 class AuditLevel(Enum):
-    """Audit log detail levels."""
+    """Audit log detail levels (VCP core audit §3.1, Amendment J).
+
+    Levels are cumulative. ``MINIMAL`` is the default whenever the operator
+    has not configured a level; higher levels are opt-in, and
+    ``DIAGNOSTIC`` must not be used in production.
+    """
 
     MINIMAL = "minimal"
     STANDARD = "standard"
@@ -48,7 +53,7 @@ class AuditEntry:
     issuer_hash: str
     version: str
     manifest_signature: str
-    audit_level: AuditLevel = AuditLevel.STANDARD
+    audit_level: AuditLevel = AuditLevel.MINIMAL
 
     # Optional fields for higher audit levels
     request_id: str | None = None
@@ -59,11 +64,14 @@ class AuditEntry:
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for logging.
 
-        Respects Amendment J audit tier boundaries:
-            minimal:    bundle ID hash, content hash, verification result only
-            standard:   + timestamps, session, issuer, version, signature
+        Respects the audit tier boundaries of VCP core audit §3 and
+        Amendment J (cumulative; no field above the entry's level is emitted):
+            minimal:    audit level, bundle ID hash, content hash,
+                        verification result only
+            standard:   + timestamp, session hash, checks passed, issuer hash,
+                        version, manifest signature, request ID hash
             full:       + duration, token count (complete manifest, no content)
-            diagnostic: + content preview (first 100 chars)
+            diagnostic: + content preview (first 100 chars); never in production
         """
         verification: dict[str, Any] = {
             "result": self.verification_result,
@@ -142,7 +150,7 @@ class AuditLogger:
 
     def __init__(
         self,
-        level: AuditLevel = AuditLevel.STANDARD,
+        level: AuditLevel = AuditLevel.MINIMAL,
         log_callback: Callable[[AuditEntry], None] | None = None,
         privacy_salt: bytes | None = None,
     ):
@@ -150,7 +158,9 @@ class AuditLogger:
         Initialize audit logger.
 
         Args:
-            level: Detail level for logging
+            level: Detail level for logging. Defaults to ``MINIMAL``, the
+                   most privacy-preserving level; pass
+                   ``AuditLevel.STANDARD`` or higher to opt in to more fields.
             log_callback: Function to call with audit entries
                          (entry: AuditEntry) -> None
             privacy_salt: Optional stable secret salt for privacy hashing.
