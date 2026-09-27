@@ -43,15 +43,18 @@ _DIMENSION_DESCRIPTIONS = {
 
 def _situational_input_properties() -> dict[str, Any]:
     """JSON Schema properties for every situational dimension (VCP/A §2.2)."""
-    from vcp.adaptation.context import SituationalDimension
+    from vcp.adaptation.context import _DEPRECATED_VALUE_NAMES, SituationalDimension
 
     properties: dict[str, Any] = {}
     for dim in SituationalDimension:
         name = dim._name
         if dim.is_free_form:
-            properties[name] = {"type": "string", "pattern": "^[^:]+:[^:]+$"}
+            # VCP/A §2.3 rel-value: "{tie}", "{tie}:{function}" or ":{function}".
+            properties[name] = {"type": "string", "pattern": "^(?:[^:]+(?::[^:]+)?|:[^:]+)$"}
             continue
-        names = list(dim.values.values())
+        # Canonical names, then the deprecated names the encoder still
+        # resolves (with a DeprecationWarning), e.g. midday -> daytime.
+        names = list(dim.values.values()) + sorted(_DEPRECATED_VALUE_NAMES.get(dim, {}))
         single: dict[str, Any] = {"type": "string", "enum": names}
         if name in _MULTI_VALUE_DIMENSIONS:
             schema: dict[str, Any] = {

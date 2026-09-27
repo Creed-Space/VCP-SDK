@@ -7,7 +7,7 @@ Tracks context state over time and detects transitions.
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
@@ -39,6 +39,16 @@ MAJOR_DIMENSIONS = {Dimension.OCCASION, Dimension.AGENCY, Dimension.CONSTRAINTS}
 # ⚠️ and 🆘 are also accepted from free-form callers, as VCP/A allows.
 # VS16-less spellings are included so an emergency is never missed.
 EMERGENCY_VALUES = {"🚨", "🔥", "🌪️", "🌪", "🛑", "⚠️", "⚠", "🆘"}
+
+
+def contains_emergency(values: Iterable[str]) -> bool:
+    """Whether any situational value is or contains an emergency indicator.
+
+    Values are matched as substrings so that an indicator held inside a raw
+    run of a known dimension (for example 🔥 written in OCCASION next to an
+    unknown emoji) still counts (VCP/A §2.3, §7.1).
+    """
+    return any(token in value for value in values for token in EMERGENCY_VALUES)
 
 
 @dataclass
@@ -214,7 +224,7 @@ class StateTracker:
             all_current_values.update(vals)
 
         # Determine severity
-        if all_current_values & EMERGENCY_VALUES:
+        if contains_emergency(all_current_values):
             severity = TransitionSeverity.EMERGENCY
         elif any(d in MAJOR_DIMENSIONS for d in changed) or len(changed) >= 3:
             severity = TransitionSeverity.MAJOR

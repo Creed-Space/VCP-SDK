@@ -61,7 +61,9 @@ from ..metrics import track_duration, vcp_context_encode_duration_seconds, vcp_c
 PERSONAL_SEPARATOR = "\u2016"  # ‖  U+2016 DOUBLE VERTICAL LINE
 DIM_SEPARATOR = "|"
 INTENSITY_SEPARATOR = ":"
-_RELATIONSHIP_RE = re.compile(r"^[^:|\u2016]+:[^:|\u2016]+$")
+# RELATIONSHIP grammar (VCP/A §2.3 rel-value): "{tie}", "{tie}:{function}"
+# or ":{function}".
+_RELATIONSHIP_RE = re.compile(r"^(?:[^:|\u2016]+(?::[^:|\u2016]+)?|:[^:|\u2016]+)$")
 _TRAILING_INTEGER_RE = re.compile(r".*:[+-]?\d+\s*$")
 # Exactly one ASCII digit 1-5 (VCP/A §2.3 ``intensity``); not \d, which
 # also matches non-ASCII digits.
@@ -544,7 +546,7 @@ class VCPContext:
                 _RELATIONSHIP_RE.fullmatch(item) is None for item in items
             ):
                 raise ValueError(
-                    "relationship values must use an unambiguous '{tie}:{function}' form"
+                    "relationship values must be '{tie}', '{tie}:{function}' or ':{function}'"
                 )
             if any(DIM_SEPARATOR in item or PERSONAL_SEPARATOR in item for item in items):
                 raise ValueError("situational values must not contain wire-format separators")
@@ -671,13 +673,16 @@ class VCPContext:
                     continue
                 if not raw:
                     raise ValueError(f"situational dimension {dim._name} has no value")
+                if dim in situational:
+                    # Values for one dimension share a group (VCP/A §2.3).
+                    raise ValueError(f"situational dimension {dim._name} is repeated")
                 if dim.is_free_form:
                     # RELATIONSHIP: raw string preserved intact
                     situational[dim] = [raw]
                 else:
-                    values = cls._extract_known_values(raw, dim)
-                    # Unknown value: keep the raw text (VCP/A §2.3).
-                    situational[dim] = values if values else [raw]
+                    # Known values keep their meaning; unknown runs are kept
+                    # as written (VCP/A §2.3).
+                    situational[dim] = cls._extract_known_values(raw, dim)
 
         # Decode personal-state band.
         if per_part:
@@ -702,6 +707,8 @@ class VCPContext:
                 raw = part[len(pdim.symbol) :]
                 if not raw:
                     raise ValueError(f"personal dimension {pdim._name} has no value")
+                if pdim in personal:
+                    raise ValueError(f"personal dimension {pdim._name} is repeated")
                 personal[pdim] = PersonalState.decode(raw)
 
         return cls(
@@ -730,7 +737,13 @@ class VCPContext:
 
     @staticmethod
     def _extract_known_values(raw: str, dim: SituationalDimension) -> list[str]:
-        """Decode a finite vocabulary without splitting ZWJ emoji sequences."""
+        """Split a group's values without splitting ZWJ emoji sequences.
+
+        Known values (longest match first, VS16-optional) become canonical
+        emoji. Text between them that matches no known value is kept as
+        written, one raw value per unmatched run, so ``🚨🦖`` yields
+        ``["🚨", "🦖"]`` and the emergency keeps its meaning (VCP/A §2.3).
+        """
         aliases: list[tuple[str, str]] = []
         for canonical in dim.values:
             aliases.append((canonical, canonical))
@@ -740,6 +753,7 @@ class VCPContext:
         aliases.sort(key=lambda item: len(item[0]), reverse=True)
 
         values: list[str] = []
+        pending = ""
         cursor = 0
         while cursor < len(raw):
             match = next(
@@ -751,10 +765,17 @@ class VCPContext:
                 None,
             )
             if match is None:
-                return []
+                pending += raw[cursor]
+                cursor += 1
+                continue
+            if pending:
+                values.append(pending)
+                pending = ""
             alias, canonical = match
             values.append(canonical)
             cursor += len(alias)
+        if pending:
+            values.append(pending)
         return values
 
     # ── JSON ───────────────────────────────────────────────────────────────

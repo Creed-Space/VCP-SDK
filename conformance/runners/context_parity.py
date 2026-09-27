@@ -223,6 +223,32 @@ def main() -> int:
             except RuntimeError as error:
                 failures.append(f"{case_id}: WebMCP rejected input: {error}")
                 web = {}
+            # Cross-feed: each binding must read the Rust encoder's output and
+            # re-encode it unchanged, so Rust never emits a form the others
+            # reject (for example a sub-signal suffix).
+            if str(PYTHON_SRC) not in sys.path:
+                sys.path.insert(0, str(PYTHON_SRC))
+            from vcp.adaptation.context import VCPContext as _PyContext
+
+            try:
+                if _PyContext.decode(rs["wire"]).encode() != rs["wire"]:
+                    failures.append(f"{case_id}: Python re-encodes Rust output differently")
+            except ValueError as error:
+                failures.append(f"{case_id}: Python rejects Rust output {rs['wire']!r}: {error}")
+            try:
+                if webmcp_context({"wire_input": rs["wire"]})["wire"] != rs["wire"]:
+                    failures.append(f"{case_id}: WebMCP re-encodes Rust output differently")
+            except RuntimeError as error:
+                failures.append(f"{case_id}: WebMCP rejects Rust output {rs['wire']!r}: {error}")
+            if "has_emergency" in vector["expected"]:
+                from vcp.adaptation.state import StateTracker, TransitionSeverity
+
+                tracker = StateTracker()
+                tracker.record(_PyContext())
+                transition = tracker.record(_PyContext.decode(py["wire"]))
+                emergency = transition.severity is TransitionSeverity.EMERGENCY
+                if emergency != vector["expected"]["has_emergency"]:
+                    failures.append(f"{case_id}: Python has_emergency={emergency}")
             failures.extend(f"Python {failure}" for failure in assert_expected(case_id, py, vector["expected"]))
             failures.extend(f"Rust {failure}" for failure in assert_expected(case_id, rs, vector["expected"]))
             if web:

@@ -264,6 +264,96 @@
         "valid": false,
         "note": "An intensity is exactly one digit from 1 to 5; 04, 0 and 6 are malformed (VCP/A 2.3), not unknown values."
       }
+    },
+    {
+      "id": "ctx-015",
+      "description": "A sub-signal never appears in a context string; every binding reads the Rust encoding",
+      "input": {
+        "situational": {},
+        "personal": {
+          "body_signals": {
+            "value": "pain",
+            "intensity": 4,
+            "extended": "migraine"
+          }
+        }
+      },
+      "expected": {
+        "wire": "\u2016\ud83e\ude7apain:4",
+        "has_personal": true,
+        "conformance_level": "VCP-Standard",
+        "note": "The extended sub-signal travels only on the CSM-1 R-line or in a VCP-X-Personal signal object (VCP/A 2.3 Sub-signals). The runner feeds the Rust output to Python and WebMCP."
+      }
+    },
+    {
+      "id": "ctx-016",
+      "description": "VCP/A 2.4 personal-only example with omitted intensities",
+      "wire_input": "\u2016\ud83e\udde0focused|\ud83d\udcadcalm:5|\ud83d\udd0brested:4|\u26a1pressured:4|\ud83e\ude7aneutral",
+      "expected": {
+        "wire": "\u2016\ud83e\udde0focused|\ud83d\udcadcalm:5|\ud83d\udd0brested:4|\u26a1pressured:4|\ud83e\ude7aneutral",
+        "has_situational": false,
+        "has_personal": true,
+        "conformance_level": "VCP-Standard",
+        "note": "Exact string from VCP-Spec schemas/examples/vcp-adaptation-context.valid-personal-only.json. An omitted intensity stays omitted on re-encode."
+      }
+    },
+    {
+      "id": "ctx-017",
+      "description": "A known emergency value keeps its meaning next to an unknown value",
+      "wire_input": "\ud83c\udfad\ud83d\udea8\ud83e\udd96",
+      "expected": {
+        "wire": "\ud83c\udfad\ud83d\udea8\ud83e\udd96",
+        "has_situational": true,
+        "has_emergency": true,
+        "note": "\ud83e\udd96 is not an OCCASION value; \ud83d\udea8 still signals an emergency (VCP/A 2.3)."
+      }
+    },
+    {
+      "id": "ctx-018",
+      "description": "A repeated situational dimension is malformed",
+      "wire_input": "\u23f0\ud83c\udf05|\u23f0\ud83c\udf19",
+      "expected": {
+        "valid": false,
+        "note": "Values for one dimension share a group (VCP/A 2.3)."
+      }
+    },
+    {
+      "id": "ctx-019",
+      "description": "A repeated personal-state dimension is malformed",
+      "wire_input": "\u2016\ud83e\udde0focused:4|\ud83e\udde0foggy:2",
+      "expected": {
+        "valid": false,
+        "note": "Values for one dimension share a group (VCP/A 2.3)."
+      }
+    },
+    {
+      "id": "ctx-020",
+      "description": "RELATIONSHIP with a tie strength only",
+      "wire_input": "\ud83e\udea2colleague",
+      "expected": {
+        "wire": "\ud83e\udea2colleague",
+        "has_vep_0004": true,
+        "conformance_level": "VCP-Extended"
+      }
+    },
+    {
+      "id": "ctx-021",
+      "description": "RELATIONSHIP with a function only",
+      "wire_input": "\ud83e\udea2:professional",
+      "expected": {
+        "wire": "\ud83e\udea2:professional",
+        "has_vep_0004": true,
+        "conformance_level": "VCP-Extended"
+      }
+    },
+    {
+      "id": "ctx-022",
+      "description": "A sub-signal suffix in a context string is malformed",
+      "wire_input": "\u2016\ud83e\ude7apain:4[migraine]",
+      "expected": {
+        "valid": false,
+        "note": "VCP/A 2.3 Sub-signals: \ud83e\ude7apain:4[migraine] and \ud83e\ude7apain:4:migraine are malformed."
+      }
     }
   ]
 }

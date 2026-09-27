@@ -466,10 +466,11 @@ function afterDimensionSymbol(part: string, symbol: string): string | null {
 }
 
 /**
- * Decode a finite vocabulary without splitting ZWJ sequences or dropping
+ * Split a group's values without splitting ZWJ sequences or dropping
  * VS16-qualified symbols. Mirrors the Python `_extract_known_values`: the
- * scanner takes the longest alias at each position and returns [] as soon as
- * an unknown value is encountered so the caller can fall back to the raw part.
+ * scanner takes the longest alias at each position; text between known values
+ * is kept as written, one raw value per unmatched run, so `🚨🦖` yields
+ * `['🚨', '🦖']` and the emergency keeps its meaning (VCP/A §2.3).
  */
 function extractKnownValues(raw: string, spec: SituationalDimensionSpec): string[] {
   const aliases: Array<[alias: string, canonical: string]> = [];
@@ -481,13 +482,25 @@ function extractKnownValues(raw: string, spec: SituationalDimensionSpec): string
   aliases.sort((a, b) => b[0].length - a[0].length);
 
   const values: string[] = [];
+  let pending = '';
   let cursor = 0;
   while (cursor < raw.length) {
     const match = aliases.find(([alias]) => raw.startsWith(alias, cursor));
-    if (!match) return [];
+    if (!match) {
+      // Advance by one code point so surrogate pairs stay intact.
+      const codePoint = String.fromCodePoint(raw.codePointAt(cursor) as number);
+      pending += codePoint;
+      cursor += codePoint.length;
+      continue;
+    }
+    if (pending) {
+      values.push(pending);
+      pending = '';
+    }
     values.push(match[1]);
     cursor += match[0].length;
   }
+  if (pending) values.push(pending);
   return values;
 }
 
@@ -526,13 +539,12 @@ export function decodeContext(encoded: string): VCPContext {
         if (raw === null) continue;
         matched = true;
         if (!raw) throw new SyntaxError(`situational dimension ${dim} has no value`);
-        if (spec.freeForm) {
-          situational[dim] = [raw];
-        } else {
-          const values = extractKnownValues(raw, spec);
-          // Unknown value: keep the raw text (VCP/A §2.3).
-          situational[dim] = values.length > 0 ? values : [raw];
+        if (situational[dim] !== undefined) {
+          // Values for one dimension share a group (VCP/A §2.3).
+          throw new SyntaxError(`situational dimension ${dim} is repeated`);
         }
+        // Known values keep their meaning; unknown runs are kept as written.
+        situational[dim] = spec.freeForm ? [raw] : extractKnownValues(raw, spec);
         break;
       }
       if (!matched) {
@@ -561,6 +573,7 @@ export function decodeContext(encoded: string): VCPContext {
       }
       const raw = part.slice(PERSONAL_STATE_SPECS[dim].symbol.length);
       if (!raw) throw new SyntaxError(`personal dimension ${dim} has no value`);
+      if (personal[dim] !== undefined) throw new SyntaxError(`personal dimension ${dim} is repeated`);
       personal[dim] = decodePersonalState(raw);
     }
   }

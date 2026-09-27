@@ -17,7 +17,13 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
 from .context import Dimension, PersonalStateDimension, VCPContext
-from .state import EMERGENCY_VALUES, MAJOR_DIMENSIONS, StateTracker, Transition, TransitionSeverity
+from .state import (
+    MAJOR_DIMENSIONS,
+    StateTracker,
+    Transition,
+    TransitionSeverity,
+    contains_emergency,
+)
 
 if TYPE_CHECKING:
     import redis
@@ -273,7 +279,7 @@ class RedisStateTracker:
             all_current_values.update(vals)
 
         # Determine severity
-        if all_current_values & EMERGENCY_VALUES:
+        if contains_emergency(all_current_values):
             severity = TransitionSeverity.EMERGENCY
         elif any(d in MAJOR_DIMENSIONS for d in changed) or len(changed) >= 3:
             severity = TransitionSeverity.MAJOR

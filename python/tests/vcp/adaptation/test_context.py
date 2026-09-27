@@ -840,3 +840,51 @@ class TestIntensityGrammar:
 
         assert validate_context_wire("‖🧠focused:4|💭calm") == []
         assert validate_context_wire("‖🧠focused:04")[0].startswith("malformed:")
+
+
+class TestReviewFixes:
+    """Canon round 4: mixed groups, repeated dimensions, relationship forms."""
+
+    def test_known_values_survive_unknown_neighbors(self):
+        ctx = VCPContext.decode("🎭🚨🦖")
+        assert ctx.get(SituationalDimension.OCCASION) == ["🚨", "🦖"]
+        assert ctx.encode() == "🎭🚨🦖"
+        ctx = VCPContext.decode("🎭🦖🚨🎂")
+        assert ctx.get(SituationalDimension.OCCASION) == ["🦖", "🚨", "🎂"]
+        from vcp.adaptation import validate_context_wire
+
+        assert validate_context_wire("🎭🚨🦖") == ["unknown occasion value: '🦖'"]
+
+    def test_mixed_group_is_an_emergency(self):
+        from vcp.adaptation import StateTracker, TransitionSeverity
+
+        tracker = StateTracker()
+        tracker.record(VCPContext.decode("⏰🌅"))
+        assert tracker.record(VCPContext.decode("🎭🚨🦖")).severity is TransitionSeverity.EMERGENCY
+        # An indicator outside the dimension's vocabulary, inside a raw run.
+        tracker.record(VCPContext.decode("⏰🌅"))
+        assert tracker.record(VCPContext.decode("🎭🦖🔥")).severity is TransitionSeverity.EMERGENCY
+
+    @pytest.mark.parametrize(
+        "wire", ["⏰🌅|⏰🌙", "⏰🌅|📍🏡|⏰🌙", "‖🧠focused|🧠foggy", "🌡️🥵|🌡🥶"]
+    )
+    def test_repeated_dimension_is_malformed(self, wire):
+        with pytest.raises(ValueError, match="repeated"):
+            VCPContext.decode(wire)
+
+    @pytest.mark.parametrize("value", ["colleague", ":professional", "colleague:professional"])
+    def test_relationship_single_part_forms(self, value):
+        ctx = VCPContext.decode(f"🪢{value}")
+        assert ctx.get(SituationalDimension.RELATIONSHIP) == [value]
+        assert ctx.encode() == f"🪢{value}"
+        assert ContextEncoder().encode(relationship=value).encode() == f"🪢{value}"
+
+    @pytest.mark.parametrize("value", ["a:b:c", "colleague:", ":"])
+    def test_relationship_rejects_other_forms(self, value):
+        with pytest.raises(ValueError):
+            VCPContext(situational={SituationalDimension.RELATIONSHIP: [value]})
+
+    def test_sub_signals_are_malformed_in_context_strings(self):
+        for wire in ("‖🩺pain:4[migraine]", "‖🩺pain:4:migraine"):
+            with pytest.raises(ValueError):
+                VCPContext.decode(wire)

@@ -496,6 +496,25 @@ mod tests {
     }
 
     #[test]
+    fn mixed_known_and_unknown_values_round_trip() {
+        let ctx = SituationalContext::from_wire("🎭🚨🦖").unwrap();
+        assert_eq!(ctx.to_wire(), "🎭🚨🦖");
+        for relationship in ["colleague", ":professional", "colleague:professional"] {
+            let wire = format!("🪢{relationship}");
+            assert_eq!(
+                SituationalContext::from_wire(&wire).unwrap().to_wire(),
+                wire
+            );
+        }
+        for repeated in ["⏰🌅|⏰🌙", "🌡️🥵|🌡🥶"] {
+            assert!(
+                SituationalContext::from_wire(repeated).is_err(),
+                "{repeated}"
+            );
+        }
+    }
+
+    #[test]
     fn malformed_groups_are_rejected() {
         for wire in ["⏰🌅||📍🏡", "⏰🌅|", "⏰", "abc", "⏰🌅|x"] {
             assert!(SituationalContext::from_wire(wire).is_err(), "{wire}");

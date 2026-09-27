@@ -188,3 +188,30 @@ def test_validate_token_reports_syntax_errors_without_syntax_valid(server_module
     payload = json.loads(response[0].text)
     assert payload["valid"] is False
     assert "syntax_valid" not in payload
+
+
+@pytest.mark.parametrize(
+    ("dimension", "name", "emoji"),
+    [
+        ("time", "midday", "☀️"),
+        ("space", "transit", "🚗"),
+        ("environment", "noisy", "📢"),
+        ("culture", "casual", "👋"),
+    ],
+)
+def test_encode_context_accepts_deprecated_names(server_module, dimension, name, emoji) -> None:
+    with pytest.warns(DeprecationWarning):
+        called = asyncio.run(
+            server_module._call_tool_adapter(
+                None,
+                CallToolRequestParams(name="vcp_encode_context", arguments={dimension: name}),
+            )
+        )
+    assert called.is_error is False
+    assert emoji in json.loads(called.content[0].text)["wire_format"]
+
+
+@pytest.mark.parametrize("value", ["colleague", ":professional", "colleague:professional"])
+def test_encode_context_accepts_relationship_forms(server_module, value) -> None:
+    response = asyncio.run(server_module._handle_encode_context({"relationship": value}))
+    assert json.loads(response[0].text)["wire_format"] == f"🪢{value}"

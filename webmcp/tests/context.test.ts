@@ -476,3 +476,30 @@ describe('forward-compatible decoding (VCP/A 2.3)', () => {
     expect(validateContextWire('⏰🌅||📍🏡')[0]).toMatch(/^malformed:/);
   });
 });
+
+describe('review fixes (canon round 4)', () => {
+  it('keeps known values next to unknown ones', () => {
+    expect(decodeContext('🎭🚨🦖').situational.occasion).toEqual(['🚨', '🦖']);
+    expect(decodeContext('🎭🦖🚨🎂').situational.occasion).toEqual(['🦖', '🚨', '🎂']);
+    expect(encodeContext(decodeContext('🎭🚨🦖'))).toBe('🎭🚨🦖');
+    expect(validateContextWire('🎭🚨🦖')).toEqual(["unknown occasion value: '🦖'"]);
+  });
+
+  it.each(['⏰🌅|⏰🌙', '⏰🌅|📍🏡|⏰🌙', '‖🧠focused|🧠foggy', '🌡️🥵|🌡🥶'])(
+    'rejects the repeated dimension in %s',
+    (wire) => {
+      expect(() => decodeContext(wire)).toThrow(/repeated/);
+    },
+  );
+
+  it.each(['colleague', ':professional', 'colleague:professional'])(
+    'keeps the RELATIONSHIP form %s',
+    (value) => {
+      expect(decodeContext(`🪢${value}`).situational.relationship).toEqual([value]);
+    },
+  );
+
+  it.each(['‖🩺pain:4[migraine]', '‖🩺pain:4:migraine'])('rejects the sub-signal in %s', (wire) => {
+    expect(() => decodeContext(wire)).toThrow(SyntaxError);
+  });
+});
