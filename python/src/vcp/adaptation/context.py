@@ -63,6 +63,9 @@ DIM_SEPARATOR = "|"
 INTENSITY_SEPARATOR = ":"
 _RELATIONSHIP_RE = re.compile(r"^[^:|\u2016]+:[^:|\u2016]+$")
 _TRAILING_INTEGER_RE = re.compile(r".*:[+-]?\d+\s*$")
+# Exactly one ASCII digit 1-5 (VCP/A §2.3 ``intensity``); not \d, which
+# also matches non-ASCII digits.
+_INTENSITY_RE = re.compile(r"[1-5]")
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -449,15 +452,19 @@ class PersonalState:
 
     @classmethod
     def decode(cls, segment: str) -> PersonalState:
-        """Decode a wire segment like 'focused:4' or 'calm'."""
+        """Decode a wire segment like 'focused:4' or 'calm'.
+
+        An intensity is exactly one ASCII digit from 1 to 5 (VCP/A §2.3):
+        ``04``, ``0``, ``6``, ``+4`` or any other text after ``:`` is
+        malformed and raises ``ValueError``.
+        """
         if INTENSITY_SEPARATOR in segment:
             value, intensity_str = segment.rsplit(INTENSITY_SEPARATOR, 1)
-            try:
-                intensity = int(intensity_str)
-            except ValueError:
-                # Not an intensity — whole segment is the value (edge case).
-                return cls(value=segment)
-            return cls(value=value, intensity=intensity)
+            if not _INTENSITY_RE.fullmatch(intensity_str):
+                raise ValueError(
+                    f"personal-state intensity must be one digit 1-5, got {intensity_str!r}"
+                )
+            return cls(value=value, intensity=int(intensity_str))
         return cls(value=segment)
 
 

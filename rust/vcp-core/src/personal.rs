@@ -204,9 +204,17 @@ impl PersonalDimension {
         }
 
         let value = parts[0].to_string();
-        let intensity: u8 = parts[1]
-            .parse()
-            .map_err(|_| VcpError::ParseError(format!("invalid intensity: {}", parts[1])))?;
+        // Exactly one ASCII digit 1-5 (VCP/A §2.3): "04", "+4", "0" and "6"
+        // are malformed.
+        let intensity: u8 = match parts[1].as_bytes() {
+            [digit @ b'1'..=b'5'] => digit - b'0',
+            _ => {
+                return Err(VcpError::ParseError(format!(
+                    "invalid intensity (must be one digit 1-5): {}",
+                    parts[1]
+                )))
+            }
+        };
 
         Self::validate(&value, intensity, extended.as_deref())?;
         Ok(Self {
@@ -422,6 +430,26 @@ fn split_leading_emoji(s: &str) -> VcpResult<(&str, &str)> {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+
+    #[test]
+    fn intensity_is_exactly_one_digit_one_to_five() {
+        for bad in [
+            "focused:04",
+            "focused:0",
+            "focused:6",
+            "focused:+4",
+            "focused: 4",
+            "focused:",
+            "focused:\u{0664}",
+        ] {
+            assert!(PersonalDimension::from_wire(bad).is_err(), "{bad}");
+        }
+        for digit in 1..=5u8 {
+            let parsed = PersonalDimension::from_wire(&format!("focused:{digit}")).unwrap();
+            assert_eq!(parsed.intensity, digit);
+        }
+        assert!(PersonalState::from_wire("\u{1F9E0}focused:04").is_err());
+    }
 
     #[test]
     fn dimension_new_valid() {

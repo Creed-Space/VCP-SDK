@@ -375,18 +375,21 @@ export function encodePersonalState(state: PersonalState): string {
   return `${state.value}${INTENSITY_SEPARATOR}${state.intensity}`;
 }
 
+/**
+ * Decode a personal-state segment such as `focused:4` or `calm`. An intensity
+ * is exactly one digit from 1 to 5 (VCP/A §2.3); `04`, `0`, `6`, `+4` or any
+ * other text after `:` throws a `SyntaxError`.
+ */
 export function decodePersonalState(segment: string): PersonalState {
   const idx = segment.lastIndexOf(INTENSITY_SEPARATOR);
   if (idx === -1) {
     return { value: segment, intensity: null };
   }
   const raw = segment.slice(idx + 1);
-  const n = Number.parseInt(raw, 10);
-  if (Number.isNaN(n) || n < 1 || n > 5 || String(n) !== raw) {
-    // Not an intensity — whole segment is the value.
-    return { value: segment, intensity: null };
+  if (!/^[1-5]$/.test(raw)) {
+    throw new SyntaxError(`personal-state intensity must be one digit 1-5, got '${raw}'`);
   }
-  return { value: segment.slice(0, idx), intensity: n };
+  return { value: segment.slice(0, idx), intensity: Number(raw) };
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -558,12 +561,7 @@ export function decodeContext(encoded: string): VCPContext {
       }
       const raw = part.slice(PERSONAL_STATE_SPECS[dim].symbol.length);
       if (!raw) throw new SyntaxError(`personal dimension ${dim} has no value`);
-      const state = decodePersonalState(raw);
-      const intensity = /:(-?[0-9]+)$/.exec(raw);
-      if (state.intensity === null && intensity !== null) {
-        throw new SyntaxError(`personal dimension ${dim} intensity must be 1-5`);
-      }
-      personal[dim] = state;
+      personal[dim] = decodePersonalState(raw);
     }
   }
 

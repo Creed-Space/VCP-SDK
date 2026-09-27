@@ -7,7 +7,7 @@
   "properties": {
     "context": {
       "type": "string",
-      "description": "Wire-format context string. Situational band uses pipe-separated symbol+value groups; personal band (if present) is introduced by ‖ and contains pipe-separated symbol+value[:intensity] groups.",
+      "description": "Wire-format context string. Situational band uses pipe-separated symbol+value groups; personal band (if present) is introduced by ‖ and contains pipe-separated symbol+value[:intensity] groups. In the personal band every intensity is exactly one digit from 1 to 5 (VCP/A §2.3): `:04`, `:0` and `:6` are rejected.",
       "examples": [
         "⏰🌅|📍🏡|👥👶",
         "⏰🌙|📍🏢|👥👔|🔶⚖️",
@@ -15,7 +15,7 @@
       ],
       "minLength": 1,
       "maxLength": 8192,
-      "pattern": "^[^\\s\\u0000-\\u001F\\u007F]+$"
+      "pattern": "^(?!.*‖.*:(?![1-5](?:\\||$)))[^\\s\\u0000-\\u001F\\u007F]+$"
     },
     "parsed": {
       "type": "object",
@@ -514,13 +514,13 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 8192,
-          "pattern": "^[^\\s\\u0000-\\u001F\\u007F]+$"
+          "pattern": "^(?!.*‖.*:(?![1-5](?:\\||$)))[^\\s\\u0000-\\u001F\\u007F]+$"
         },
         "to_context": {
           "type": "string",
           "minLength": 1,
           "maxLength": 8192,
-          "pattern": "^[^\\s\\u0000-\\u001F\\u007F]+$"
+          "pattern": "^(?!.*‖.*:(?![1-5](?:\\||$)))[^\\s\\u0000-\\u001F\\u007F]+$"
         }
       },
       "additionalProperties": false

@@ -94,10 +94,19 @@ describe('PersonalState', () => {
     expect(() => makePersonalState('x', 6)).toThrow(RangeError);
   });
 
-  it('decodes a value containing a colon but non-numeric suffix as raw', () => {
-    const ps = decodePersonalState('colleague:professional');
-    // Non-numeric suffix → whole string is the value.
-    expect(ps).toEqual({ value: 'colleague:professional', intensity: null });
+  it('rejects any intensity that is not exactly one digit 1-5 (VCP/A 2.3)', () => {
+    for (const segment of ['colleague:professional', 'focused:04', 'focused:0', 'focused:6', 'focused:+4', 'focused:', 'focused:٤']) {
+      expect(() => decodePersonalState(segment)).toThrow(SyntaxError);
+    }
+    expect(decodePersonalState('focused:4')).toEqual({ value: 'focused', intensity: 4 });
+    expect(() => decodeContext('‖🧠focused:04')).toThrow(SyntaxError);
+  });
+
+  it('decodes a personal-only context that begins with the separator', () => {
+    const ctx = decodeContext('‖🧠focused:4|💭calm');
+    expect(ctx.situational).toEqual({});
+    expect(ctx.personal.cognitive_state).toEqual({ value: 'focused', intensity: 4 });
+    expect(encodeContext(ctx)).toBe('‖🧠focused:4|💭calm');
   });
 });
 

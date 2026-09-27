@@ -803,3 +803,40 @@ class TestForwardCompatibleDecoding:
         with pytest.raises(ValueError, match="unknown occasion value"):
             VCPContext.decode("🎭😢", strict=True)
         assert VCPContext.decode("🎭⚰️", strict=True).get(SituationalDimension.OCCASION) == ["⚰️"]
+
+
+class TestIntensityGrammar:
+    """VCP/A §2.3: an intensity is exactly one digit 1-5."""
+
+    @pytest.mark.parametrize(
+        "segment",
+        [
+            "focused:04",
+            "focused:0",
+            "focused:6",
+            "focused:+4",
+            "focused: 4",
+            "focused:",
+            "focused:٤",
+            "focused:4.0",
+            "colleague:professional",
+        ],
+    )
+    def test_malformed_intensity_is_rejected(self, segment):
+        with pytest.raises(ValueError):
+            PersonalState.decode(segment)
+        with pytest.raises(ValueError):
+            VCPContext.decode(f"‖🧠{segment}")
+
+    @pytest.mark.parametrize("digit", ["1", "2", "3", "4", "5"])
+    def test_single_digit_intensity(self, digit):
+        assert PersonalState.decode(f"focused:{digit}") == PersonalState("focused", int(digit))
+
+    def test_personal_only_context(self):
+        ctx = VCPContext.decode("‖🧠focused:4|💭calm")
+        assert ctx.situational == {}
+        assert ctx.encode() == "‖🧠focused:4|💭calm"
+        from vcp.adaptation import validate_context_wire
+
+        assert validate_context_wire("‖🧠focused:4|💭calm") == []
+        assert validate_context_wire("‖🧠focused:04")[0].startswith("malformed:")

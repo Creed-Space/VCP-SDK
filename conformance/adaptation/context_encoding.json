@@ -243,6 +243,27 @@
         "valid": false,
         "note": "An empty group is a validation error, not an unknown value (VCP/A 2.3)."
       }
+    },
+    {
+      "id": "ctx-013",
+      "description": "Personal-only context begins with the separator (VCP/A 2.3)",
+      "wire_input": "\u2016\ud83e\udde0focused:4|\ud83d\udcadcalm:5",
+      "expected": {
+        "wire": "\u2016\ud83e\udde0focused:4|\ud83d\udcadcalm:5",
+        "has_situational": false,
+        "has_personal": true,
+        "conformance_level": "VCP-Standard",
+        "note": "A string with personal state only begins with U+2016 and has no situational band."
+      }
+    },
+    {
+      "id": "ctx-014",
+      "description": "Intensity with a leading zero is malformed",
+      "wire_input": "\u2016\ud83e\udde0focused:04",
+      "expected": {
+        "valid": false,
+        "note": "An intensity is exactly one digit from 1 to 5; 04, 0 and 6 are malformed (VCP/A 2.3), not unknown values."
+      }
     }
   ]
 }
