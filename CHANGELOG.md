@@ -35,8 +35,72 @@ version.
   and `SIGNAL_SOURCE_VALUES` (exported from `vcp.extensions`), Rust
   `SignalSource::Measured` and `SignalSource::Elicitation`, and WebMCP
   `SignalSource.MEASURED` and `SignalSource.ELICITATION`.
+- Python `EMERGENCY_VALUES` (`vcp.adaptation.state`), used by `StateTracker`
+  and `RedisStateTracker`, now also contains 🔥 and 🌪️ (ENVIRONMENT hazards),
+  matching the VCP/A §7.1 `EMERGENCY_TOKENS`, plus the VS16-less spellings 🌪
+  and ⚠. A context carrying any of them is an EMERGENCY transition. 🚨, 🛑
+  (EMBODIMENT emergency_stop, VEP-0004), ⚠️ and 🆘 still count. Rust and
+  WebMCP have no emergency set.
+- Python `vcp.identity.namespace` exports `ORG_PREFIXES`,
+  `COMMUNITY_PREFIXES`, `PERSONAL_PREFIX` and `is_known_namespace()`, the
+  VCP/I §4.2 prefix lists for the tiers other than Core.
+- Conformance vector `ctx-010` exercises the canonical CULTURE and
+  SYSTEM_CONTEXT vocabularies in Python, Rust and WebMCP.
 
 ### Changed
+- **Breaking:** the SYSTEM_CONTEXT (📡, position 9) vocabulary follows
+  VCP/A §2.1: 💻 `personal_device`, 🏢 `workplace_system`, 🖥️
+  `shared_terminal`, 👁️ `monitored_environment`. The SDK's former values
+  (🟢 online, 🟡 degraded, 🔴 offline, 🔒 sandboxed, 🧪 testing) were never
+  in the specification and are removed from Python `SituationalDimension`,
+  `ContextEncoder`, the MCP server's `vcp_encode_context` input schema and
+  the WebMCP `SITUATIONAL_SPECS` and `buildContext`. The encoders reject the
+  old names (Python strict mode raises `ValueError`; WebMCP drops them).
+  Decoders still accept any value on the wire and keep an unknown one as a
+  raw string. `schemas/vcp-adaptation-context.schema.json` is synchronized
+  with VCP-Spec. Rust `vcp-core` has no value vocabulary and is unchanged.
+- **Breaking:** the CULTURE (🌍, position 4) vocabulary follows VCP/A §2.1:
+  🔇 `high_context`, 📢 `low_context`, 🎩 `formal`, 👋 `informal`, 📊
+  `hierarchical`, ⚖️ `egalitarian`, 👥 `collectivist`, 👤 `individualist`, in
+  the same bindings. 😎 `casual` and 🌐 `mixed` are removed; the encoders
+  still resolve the name `casual` to 👋 `informal` (deprecated), and `mixed`
+  has no replacement. Python `ContextEncoder.encode(culture=...)` and WebMCP
+  `buildContext({culture})` accept a list, as COMPANY and CONSTRAINTS do.
+- **Breaking:** Python `AuditLogger` and `AuditEntry` default to
+  `AuditLevel.MINIMAL` instead of `AuditLevel.STANDARD`, matching VCP core
+  audit §3.1 and Amendment J. At `minimal` an entry carries only the audit
+  level, the verification result, the bundle ID hash and the content hash; the
+  timestamp, session hash, checks, issuer hash, version, signature and request
+  ID hash need `standard` or higher. Pass `level=AuditLevel.STANDARD` to keep
+  the old output. Field placement per level is unchanged.
+- **Breaking:** scope H is named "Health" (VCP/S §2.6.1). Python
+  `Scope.HEALTH` is canonical and `Scope.HEALTH.name` is `"HEALTH"`, so the MCP
+  server's `vcp_parse_csm1` reports `HEALTH` and the Health/Adult conflict
+  error names "Health". Rust renames `Scope::Healthcare` to `Scope::Health`,
+  which serializes as `"Health"` (for example in `vcp-wasm` `parse_csm1`
+  output); deserialization still accepts `"Healthcare"`. The description reads
+  "Health and medical context" in both.
+- **Breaking:** Python namespace tier inference follows the VCP/I §4.2 prefix
+  table. `CORE_DOMAINS` is `family`, `work`, `secure`, `creative`, `reality`
+  (it listed `education`, `health`, `finance`, `legal`, `safety`, `privacy`,
+  `accessibility` and `environment`, and omitted `secure`, `creative` and
+  `reality`). `infer_tier` maps `company`, `school` and `ngo` to
+  ORGANIZATIONAL, `religion`, `culture` and `community` to COMMUNITY and `user`
+  to PERSONAL, and raises `ValueError` for any other first segment instead of
+  returning COMMUNITY (VCP/I §3.7.2 rejects unknown prefixes).
+  `validate_namespace_access` returns `False` for such tokens. The
+  hyphenated `company-*` and `user-*` forms no longer infer a tier.
+  `Token.parse` stays syntactic, as the §3.4 ABNF and the identity schema
+  pattern are. Registry `infer_privacy_tier` uses the same lists, so
+  `education` and `health` tokens get the restrictive ORGANIZATIONAL tier
+  instead of PUBLIC, and registry organizational membership checks no longer
+  treat `org` as an organizational prefix.
+- Tests, examples and conformance vectors use canonical namespace prefixes
+  (`company.example.dept.team.policy` replaces `org.example.dept.team.policy`
+  in `token-004` and `xrt-003`), and `csm1-err-014` is described as the Health
+  and Adult conflict. The identity and adaptation companion documents in
+  `docs/` list the five Core prefixes, `max_segments` 10, and the canonical
+  CULTURE and SYSTEM_CONTEXT values.
 - Python `PersonalSignal` now raises `ValueError` for a `source` outside the
   seven VCP-X-Personal §2.3 values; it previously accepted any string.
 - The CSM-1 token parser in Rust accepts adherence 0 (Minimal, advisory only) on
@@ -70,6 +134,13 @@ version.
   "CSM-1 code" and the multi-line form a "CSM-1 token" (7 lines, then an
   optional R-line and extension lines), and describe the token header version (currently `1.0`) as opaque.
   Error messages and doc comments use American spelling ("unrecognized").
+
+### Deprecated
+- Python `Scope.HEALTHCARE`, now an alias of `Scope.HEALTH`, and Rust
+  `Scope::Healthcare`, now a deprecated associated constant equal to
+  `Scope::Health`.
+- The CULTURE value name `casual` in Python `ContextEncoder` (which emits a
+  `DeprecationWarning`) and WebMCP `buildContext`; use `informal`.
 
 ## [4.2.0] - 2026-09-03
 

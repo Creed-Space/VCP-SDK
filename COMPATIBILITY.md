@@ -112,3 +112,25 @@ The unreleased source tree adds COMPACT to the Python SDK and to Rust
 and MICRO only. The WebMCP package has no CSM-1 code parser of its own; it
 builds and parses tokens through the encoder and parser the host supplies. The
 standalone `vcp-sdk` package and VCP-Inspector also parse COMPACT.
+
+## Canon reconciliation migration note
+
+The unreleased source tree aligns several vocabularies and defaults with the
+VCP-Spec layer specifications. Integrators upgrading from 4.2.0 should check:
+
+* SYSTEM_CONTEXT values are 💻 `personal_device`, 🏢 `workplace_system`,
+  🖥️ `shared_terminal` and 👁️ `monitored_environment` (VCP/A §2.1). The
+  former 🟢🟡🔴🔒🧪 values have no replacement.
+* CULTURE values are the eight VCP/A §2.1 communication styles. `casual`
+  still resolves to 👋 `informal` in the encoders; `mixed` has no replacement.
+  Decoders in every binding keep tolerating unknown values on the wire.
+* Python `AuditLogger` defaults to `AuditLevel.MINIMAL`. Pass
+  `level=AuditLevel.STANDARD` to keep timestamps, session hashes and the other
+  standard fields in audit output.
+* Scope H is `Scope.HEALTH` in Python and `Scope::Health` in Rust. The old
+  names remain as deprecated aliases, and Rust deserialization accepts
+  `"Healthcare"`, but serialized Rust output and Python enum names now say
+  Health.
+* Python `infer_tier` raises `ValueError` for a token whose first segment is
+  not a VCP/I §4.2 prefix, and `validate_namespace_access` returns `False` for
+  it. Core prefixes are `family`, `work`, `secure`, `creative` and `reality`.

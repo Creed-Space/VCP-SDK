@@ -4,7 +4,7 @@
   "schema": "vcp-conformance-coverage/1",
   "suites": [
     {
-      "case_count": 9,
+      "case_count": 10,
       "cases": [
         {
           "applicability": "protocol_behavior",
@@ -176,10 +176,29 @@
               "status": "checked"
             }
           }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Canonical CULTURE and SYSTEM_CONTEXT vocabularies (VCP/A 2.1)",
+          "id": "ctx-010",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
         }
       ],
       "fixture": "conformance/adaptation/context_encoding.json",
-      "fixture_sha256": "b9f2a55978eefd6d21dd8cab19de1589a8295c9c289667f86388a59e4f3c7542",
+      "fixture_sha256": "62f238cb9376d56478a44a7ff99f0dd18d89608cb0f0eaaf2b608a75eac7b08c",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/docs/context/VCP_CONTEXT_SPECIFICATION.md",
       "runner": "conformance/runners/context_parity.py",
@@ -3285,7 +3304,7 @@
         }
       ],
       "fixture": "conformance/identity/token_parsing.json",
-      "fixture_sha256": "be093ebbdcb833cc934fa6fdfee7bbc188ce45b467c84c9bbb7d202a26232b66",
+      "fixture_sha256": "efc6eb0feab1985b5b58aed0654a38c2752d1c94e36914285c679b1dcc0a6b4a",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/specs/VCP_IDENTITY_v2.0.md",
       "runner": "conformance/runners/identity_parity.py",
@@ -3442,7 +3461,7 @@
         }
       ],
       "fixture": "conformance/interop/cross_impl_roundtrip.json",
-      "fixture_sha256": "72c8e9fb7fe9e122d4e68fe304a37c7e44be0325986a46e8f6ec8c85fee46afa",
+      "fixture_sha256": "939046186a0c2e5d49f592ee3070550b535ba97fb8e341a34459b632f4f30b13",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/specs/VCP_SPECIFICATION_v3.1.md",
       "runner": "conformance/runners/interop_parity.py",
@@ -5547,7 +5566,7 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "Healthcare and Adult scopes are mutually exclusive",
+          "description": "Health and Adult scopes are mutually exclusive",
           "id": "csm1-err-014",
           "implementations": {
             "python": {
@@ -5566,7 +5585,7 @@
         }
       ],
       "fixture": "conformance/semantics/csm1_parsing.json",
-      "fixture_sha256": "682b096f4f234f36e47e22eb96b46c6292d619b27bc89d306fdf1c9bacc46285",
+      "fixture_sha256": "22642319d526a0292b65b7413c6a146b74e34b4af5beb03addec99c2f3c19d73",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/docs/content/CSM1_GRAMMAR_SPECIFICATION.md",
       "runner": "conformance/runners/csm1_parity.py",
@@ -7056,22 +7075,22 @@
     "fixture_count": 30,
     "implementation_status": {
       "python": {
-        "checked": 338,
+        "checked": 339,
         "not_applicable": 8,
         "unsupported": 6
       },
       "rust": {
-        "checked": 278,
+        "checked": 279,
         "not_applicable": 8,
         "unsupported": 66
       },
       "webmcp": {
-        "checked": 74,
+        "checked": 75,
         "not_applicable": 272,
         "unsupported": 6
       }
     },
-    "vector_count": 352,
+    "vector_count": 353,
     "webmcp_surface_checks": 2
   },
   "webmcp_surface": {

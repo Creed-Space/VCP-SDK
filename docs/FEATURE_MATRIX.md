@@ -16,7 +16,7 @@ This file is generated from `conformance/coverage-manifest.json`. Run
 
 | Feature suite | Version | Maturity | Cases | Python | Rust | WebMCP |
 |:---|:---|:---|---:|:---|:---|:---|
-| adaptation/context_encoding | 3.2.0 | conformance-candidate | 9 | full | full | full |
+| adaptation/context_encoding | 3.2.0 | conformance-candidate | 10 | full | full | full |
 | adaptation/context_encoding_extended | 3.2.0 | conformance-candidate | 12 | full | full | full |
 | adaptation/state_machine | 1.0.0 | conformance-candidate | 14 | full | unsupported | not_applicable |
 | agent-runtime/accretive_contracts | 0.1.0 | conformance-candidate | 2 | full | full | full |
