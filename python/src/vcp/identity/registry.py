@@ -166,6 +166,17 @@ class PrivacyTier(Enum):
     PSEUDONYMOUS = "pseudonymous"  # Hash-based, unlinkable
 
 
+#: Restrictiveness of each privacy tier, least restrictive first. A prefix
+#: node takes the most restrictive tier of any entry registered beneath it.
+PRIVACY_TIER_RANK: dict[PrivacyTier, int] = {
+    PrivacyTier.PUBLIC: 0,
+    PrivacyTier.COMMUNITY: 1,
+    PrivacyTier.ORGANIZATIONAL: 2,
+    PrivacyTier.PERSONAL: 3,
+    PrivacyTier.PSEUDONYMOUS: 4,
+}
+
+
 class QueryScope(Enum):
     """Scope of a wildcard query."""
 
@@ -286,8 +297,9 @@ class PrefixTree:
             if segment not in node.children:
                 node.children[segment] = self.Node(segment=segment)
             node = node.children[segment]
-            # Inherit strictest privacy tier
-            if entry.privacy_tier.value > node.privacy_tier.value:
+            # Inherit the most restrictive privacy tier (by explicit rank,
+            # not by the alphabetical order of the enum values).
+            if PRIVACY_TIER_RANK[entry.privacy_tier] > PRIVACY_TIER_RANK[node.privacy_tier]:
                 node.privacy_tier = entry.privacy_tier
         node.entries.append(entry)
 

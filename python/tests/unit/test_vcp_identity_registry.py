@@ -1046,9 +1046,42 @@ class TestEdgeCases:
         auth = AuthorizationContext()
         result = registry.find("company.acme.**", auth)
 
-        # Should only get public entries
-        assert len(result.tokens) == 1
-        assert result.redacted_count == 1
+        # The PERSONAL child makes the shared company.acme prefix PERSONAL
+        # (most restrictive wins), so an anonymous prefix query is refused
+        # and both entries are redacted.
+        assert result.tokens == []
+        assert result.scope_authorized is False
+        assert result.redacted_count == 2
+
+        # Exact lookups still work, and the owner may enumerate the prefix.
+        assert registry.resolve(Token.parse("company.acme.open")) is not None
+        owner = AuthorizationContext(owned_prefixes={"company.acme"})
+        assert len(registry.find("company.acme.**", owner).tokens) == 2
+
+    def test_privacy_tier_rank_is_explicit(self) -> None:
+        """Prefix nodes take the most restrictive tier by rank, not alphabetically."""
+        from vcp.identity.registry import (
+            PRIVACY_TIER_RANK,
+            PrefixTree,
+            PrivacyTier,
+            RegistryEntry,
+        )
+        from vcp.identity.token import Token
+
+        order = [
+            PrivacyTier.PUBLIC,
+            PrivacyTier.COMMUNITY,
+            PrivacyTier.ORGANIZATIONAL,
+            PrivacyTier.PERSONAL,
+            PrivacyTier.PSEUDONYMOUS,
+        ]
+        assert sorted(PrivacyTier, key=PRIVACY_TIER_RANK.__getitem__) == order
+        for weaker, stronger in zip(order, order[1:]):
+            for first, second in ((weaker, stronger), (stronger, weaker)):
+                tree = PrefixTree()
+                tree.insert(RegistryEntry(token=Token.parse("user.alice.one"), privacy_tier=first))
+                tree.insert(RegistryEntry(token=Token.parse("user.alice.two"), privacy_tier=second))
+                assert tree.root.children["user"].privacy_tier is stronger
 
     def test_max_history_entries(self) -> None:
         """Test that prefix queries respect max_results."""
