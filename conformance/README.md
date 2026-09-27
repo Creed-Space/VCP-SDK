@@ -2,7 +2,8 @@
 
 This directory contains authored, language-neutral fixtures and checked runners
 for the VCP 3.1 source baseline and the labeled 3.2 candidates that SDK 4.2.0
-implements. The corpus currently contains 30 JSON fixtures and 352 cases.
+implements. The corpus currently contains 30 JSON fixtures and 379 cases
+(253 vectors and 126 test cases); the published 4.2.0 release carried 352.
 Presence in the corpus is not a pass.
 [`coverage-manifest.json`](coverage-manifest.json) is the machine-readable
 authority for every vector's source, applicability, runner, fixture hash, and

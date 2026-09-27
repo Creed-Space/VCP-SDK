@@ -143,7 +143,8 @@ await loadPolyfillIfRequested({
 
 ## Conformance and schemas
 
-The fixture corpus currently contains 30 JSON fixtures and 352 cases.
+The fixture corpus currently contains 30 JSON fixtures and 379 cases (253
+vectors and 126 test cases). The published 4.2.0 release carried 352 cases.
 Fixture presence alone does not establish a pass. The vector-level coverage
 manifest distinguishes checked, unsupported, and not-applicable behavior. Run
 the complete checked gate and repository validator:

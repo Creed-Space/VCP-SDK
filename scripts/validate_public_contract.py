@@ -293,24 +293,38 @@ def validate_publication_state(
                 if isinstance(suite, dict)
                 and str(suite.get("suite", "")).startswith("extensions/")
             )
-            require_equal(
-                problems,
-                "publication-state fixture count",
-                conformance.get("fixture_count"),
-                coverage_summary.get("fixture_count"),
-            )
-            require_equal(
-                problems,
-                "publication-state case count",
-                conformance.get("case_count"),
-                coverage_summary.get("vector_count"),
-            )
-            require_equal(
-                problems,
-                "publication-state extension suite count",
-                conformance.get("extension_suite_count"),
-                extension_suites,
-            )
+            # A published record keeps the counts of the release it describes,
+            # while the source tree may add fixtures and vectors afterwards.
+            # Before publication the record must match the tree exactly; after
+            # it, the published counts may not exceed the current corpus.
+            for label, recorded, current in (
+                (
+                    "publication-state fixture count",
+                    conformance.get("fixture_count"),
+                    coverage_summary.get("fixture_count"),
+                ),
+                (
+                    "publication-state case count",
+                    conformance.get("case_count"),
+                    coverage_summary.get("vector_count"),
+                ),
+                (
+                    "publication-state extension suite count",
+                    conformance.get("extension_suite_count"),
+                    extension_suites,
+                ),
+            ):
+                if not published:
+                    require_equal(problems, label, recorded, current)
+                elif not (
+                    isinstance(recorded, int)
+                    and isinstance(current, int)
+                    and 0 < recorded <= current
+                ):
+                    problems.append(
+                        f"{label} for the published release is {recorded!r}; "
+                        f"it must be a positive count no larger than the current {current!r}"
+                    )
         for label, expected in (
             ("protocol_layer_count", 6),
             ("full_project_controlled_implementations", 2),
