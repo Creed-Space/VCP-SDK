@@ -46,8 +46,102 @@ version.
   VCP/I §4.2 prefix lists for the tiers other than Core.
 - Conformance vector `ctx-010` exercises the canonical CULTURE and
   SYSTEM_CONTEXT vocabularies in Python, Rust and WebMCP.
+- VCP/I §3.4.1 semantic token validation, separate from syntactic parsing:
+  Python `Token.validate()` and `Token.is_semantically_valid` (raising
+  `vcp.identity.TokenValidationError`, a `ValueError` with a `code`), Rust
+  `VcpToken::validate()`, `VcpToken::namespace_tier()`, `NamespaceTier`,
+  `TokenValidationError` and the prefix and `RESERVED_WORDS` constants, a
+  `vcp-cli validate-token` command, a `vcp-wasm` `parse_token` binding (syntax
+  only), and WebMCP `validateIdentityToken`, `isIdentityTokenSyntax`,
+  `namespaceTierOf`, `NAMESPACE_PREFIXES` and `RESERVED_WORDS`. A token fails
+  validation with `unknown_namespace_prefix`, `core_segment_count` (a Core
+  token without exactly three segments) or `reserved_word` (VCP/I §3.7.1).
+  Conformance vectors `token-validate-*` check Python and Rust agreement;
+  the syntactic `token-*` parse vectors are unchanged.
+- VCP/A §2.3 forward compatibility. Python `VCPContext` gains
+  `unknown_situational` and `unknown_personal`, Rust `SituationalContext` and
+  `PersonalState` gain `unknown`, and WebMCP `VCPContext` gains an optional
+  `unknown`: a group whose dimension emoji is not recognized is kept and
+  re-encoded unchanged after the known dimensions, and plays no part in
+  adaptation. Strict validators Python `validate_context_wire` (and
+  `VCPContext.decode(..., strict=True)`) and WebMCP `validateContextWire`
+  report unknown values, unknown dimension groups and non-canonical
+  personal-state categories. Conformance vectors `ctx-011` (pass-through) and
+  `ctx-012` (malformed input rejected by all three bindings).
+- Python `AuditEntry.redacted()`, the view of an entry holding only the
+  fields permitted at its level.
 
 ### Changed
+- **Breaking:** the audit privacy hash is the keyed form of VCP core audit §6:
+  `"hmac-sha256:"` followed by the first 32 lowercase hex characters of
+  HMAC-SHA256(K_audit, UTF-8(identifier)), replacing the salted
+  `sha256:` hash. `K_audit` is the operator key passed as
+  `AuditLogger(audit_key=...)` (bytes, or text encoded as UTF-8; shorter than
+  32 bytes is rejected), otherwise 32 bytes from `os.urandom` generated when
+  the module loads and never logged, exported or persisted. The
+  `privacy_salt` argument is a deprecated alias for `audit_key` and is now
+  subject to the same 32-byte minimum. Pseudonyms written by earlier
+  versions do not match new ones, so purges by session do not reach entries
+  exported before the upgrade.
+- **Breaking:** `AuditLogger` hands `log_callback`, the return value of
+  `log_verification` and `log_privacy_filter`, `get_entries()` and the purge
+  tombstone event the `AuditEntry.redacted()` view: fields above the logger's
+  level are `None`, matching `to_dict()`. At the default `minimal` level a
+  callback no longer receives the session hash, timestamp, issuer hash,
+  version, signature, checks or request ID hash. The in-memory store keeps the
+  full entry so `purge_by_session` still works. `AuditEntry` fields
+  `timestamp`, `session_id_hash`, `checks_passed`, `issuer_hash`, `version`
+  and `manifest_signature` are now typed as optional.
+- **Breaking:** the MCP `vcp_validate_token` tool applies VCP/I §3.4.1
+  semantic validation after parsing. A syntactically valid token with an
+  unlisted prefix, a Core token without exactly three segments or a
+  reserved-word segment now reports `valid: false` with `syntax_valid: true`
+  and an `error_code`; valid tokens also report `namespace_tier`. The
+  `vcp-wasm` `validate_token` binding applies the same rules. WebMCP
+  `vcp_chat` rejects a `constitution_id` that fails `validateIdentityToken`.
+- **Breaking:** every VCP/A situational vocabulary follows the §2.2 tables
+  and the synchronized schema enums exactly, in Python `SituationalDimension`,
+  the MCP `vcp_encode_context` schema (now generated from those tables) and
+  WebMCP `SITUATIONAL_SPECS`. TIME adds 📅 🎉 ⏰ 📆 🔄 and ☀️ is `daytime`;
+  SPACE adds ⛪ 🏛️ 🏪 🌳 💻 🏠 🔒 and 🚗 is `vehicle`; COMPANY adds 👨‍🏫 👮 👴 💑
+  🤝 👨‍⚕️ 🐕, 👥 is `crowd` and `strangers` is 🧑‍🤝‍🧑; OCCASION adds 💒 🏥 👨‍🏫 🎪
+  ⚖️ 🗳️ 🎓 and `mourning` is ⚰️ (was 😢); ENVIRONMENT is 🥵 🥶 🌧️ 🌪️ 🔇 📢 🔥 💨
+  🌫️ 🌤️ 🏔️ 🌊 (☀️ `comfortable` and 🔊 `noisy` are removed); AGENCY adds 💰 💵
+  🕳️ 🏡 🔑 🎓 🆓 🏃 and `subordinate` is 👇 (was 📋); CONSTRAINTS adds 🚧 🤐 📱 🚨
+  👮 📜 🏥 🔒 and `time` is ⏰ (was ⏱️). The encoders still resolve the retired
+  names `midday`, `transit` and `noisy` (deprecated); `comfortable` has no
+  replacement. Python `PersonalStateDimension` value sets are the VCP/A §3.1
+  categories (focused, distracted, overloaded, foggy, reflective; calm, tense,
+  frustrated, neutral, uplifted; rested, low_energy, fatigued, wired,
+  depleted; unhurried, time_aware, pressured, critical; neutral, discomfort,
+  pain, unwell, recovering), and WebMCP exports them as
+  `PERSONAL_STATE_CATEGORIES`.
+- **Breaking:** context decoders reject malformed strings in every binding:
+  an empty group, a group that does not begin with an emoji, a dimension with
+  no value, an empty personal band after `‖`, or an intensity outside 1-5.
+  Python and WebMCP previously skipped empty or valueless groups, and Rust
+  previously rejected groups with an unrecognized dimension emoji, which are
+  now passed through. Python raises `ValueError`; WebMCP `decodeContext` throws
+  `SyntaxError`. Rust `SituationalContext` and `PersonalState` gain a public
+  `unknown` field, so struct literals need it or `..Default::default()`.
+- **Breaking:** the synchronized `vcp-identity-token.schema.json` adds the
+  VCP/I §3.4.1 semantic rule (`token.allOf`, a `domain` enum and
+  `personal_prefix`), and `vcp-semantics-csm1.schema.json` spells CSM-1 with a
+  hyphen; both are byte copies of VCP-Spec.
+- Conformance vectors `vep-004` and `vep-009` use the RELATIONSHIP tables
+  (`vep-009` now documents that an unlisted value is tolerated), and
+  `ctx-006` and `ctx-007` use canonical values.
+- The illustrative `csm1_to_canonical` mapping in the identity and UVC
+  encoding companion docs follows VCP/I §2.3.2: three-segment Core tokens for
+  the six standard personas, a namespace becomes the `:NS` suffix, and a
+  Custom code has no default instead of producing a `custom.` token. No SDK
+  code emits a `custom.` token.
+- Tests, examples and companion docs use canonical identity prefixes
+  (`vcp://family.safe.guide` replaces `vcp://core.ethics.consent`, and the
+  composition examples use `school.example`, `secure.ethics.foundation` and
+  `user.alice`). The adaptation companion docs reproduce VCP/A §2.1 to §2.4
+  (revision 2.1.1) and regenerate the quick-reference card; their remaining
+  pre-v3.1 code samples are marked historical.
 - **Breaking:** the SYSTEM_CONTEXT (📡, position 9) vocabulary follows
   VCP/A §2.1: 💻 `personal_device`, 🏢 `workplace_system`, 🖥️
   `shared_terminal`, 👁️ `monitored_environment`. The SDK's former values
@@ -121,9 +215,10 @@ version.
   The WebMCP `vcp_list_personas` descriptions and use cases for all six
   personas were rewritten; Nanny now holds the child-safety and vulnerable-user
   role and Godparent the ethical-guidance role.
-- WebMCP `vcp_chat` sends `constitution_id` `personal.growth.creative` when the
-  caller omits one, instead of `general`, which is not a valid three-segment
-  VCP/I token. The `vcp_chat` and `vcp_build_token` tool descriptions now say
+- WebMCP `vcp_chat` sends `constitution_id` `creative.growth.muse` when the
+  caller omits one, instead of `general`, which is not a valid VCP/I token.
+  (An earlier unreleased revision used `personal.growth.creative`, whose
+  `personal` prefix is not a VCP/I namespace.) The `vcp_chat` and `vcp_build_token` tool descriptions now say
   what the context and token actually carry.
 - The messaging conformance suite id is now `messaging/messaging` (was
   `adaptation/messaging`), and its fixture moved from
@@ -140,7 +235,10 @@ version.
   `Scope::Healthcare`, now a deprecated associated constant equal to
   `Scope::Health`.
 - The CULTURE value name `casual` in Python `ContextEncoder` (which emits a
-  `DeprecationWarning`) and WebMCP `buildContext`; use `informal`.
+  `DeprecationWarning`) and WebMCP `buildContext`; use `informal`. Likewise
+  TIME `midday` (use `daytime`), SPACE `transit` (use `vehicle`) and
+  ENVIRONMENT `noisy` (use `loud`).
+- Python `AuditLogger(privacy_salt=...)`; use `audit_key`.
 
 ## [4.2.0] - 2026-09-03
 

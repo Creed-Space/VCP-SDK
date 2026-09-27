@@ -4,7 +4,7 @@
   "schema": "vcp-conformance-coverage/1",
   "suites": [
     {
-      "case_count": 10,
+      "case_count": 12,
       "cases": [
         {
           "applicability": "protocol_behavior",
@@ -195,10 +195,48 @@
               "status": "checked"
             }
           }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Unknown values and unknown dimension groups are tolerated and passed through (VCP/A 2.3)",
+          "id": "ctx-011",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A malformed context string is still rejected: empty group",
+          "id": "ctx-012",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
         }
       ],
       "fixture": "conformance/adaptation/context_encoding.json",
-      "fixture_sha256": "62f238cb9376d56478a44a7ff99f0dd18d89608cb0f0eaaf2b608a75eac7b08c",
+      "fixture_sha256": "c2f7987c88bf7f9b4d6bdcff50adbcf7aa89be20b67409d63fa65351f8c56844",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/docs/context/VCP_CONTEXT_SPECIFICATION.md",
       "runner": "conformance/runners/context_parity.py",
@@ -267,7 +305,7 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "RELATIONSHIP alternates: stranger:service, family:caregiving, friend:social",
+          "description": "RELATIONSHIP alternates: stranger:transactional, family:intimate, friend:social",
           "id": "vep-004",
           "implementations": {
             "python": {
@@ -362,7 +400,7 @@
         },
         {
           "applicability": "protocol_behavior",
-          "description": "RELATIONSHIP containing an emoji in the tie slot",
+          "description": "RELATIONSHIP value outside the VCP/A 2.2 tables is kept as written",
           "id": "vep-009",
           "implementations": {
             "python": {
@@ -438,7 +476,7 @@
         }
       ],
       "fixture": "conformance/adaptation/context_encoding_extended.json",
-      "fixture_sha256": "30671d536f8e11f6289edd5b228ae6e83dd7f55c4b3838586b0ee62ff5dfd434",
+      "fixture_sha256": "d459d982bad7af37c9acca3a49c33c9e1d161cb25e3bc2287a21c0d5f05698a0",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/docs/context/VCP_CONTEXT_SPECIFICATION.md",
       "runner": "conformance/runners/context_parity.py",
@@ -2673,7 +2711,7 @@
       "version": "1.0.0"
     },
     {
-      "case_count": 33,
+      "case_count": 44,
       "cases": [
         {
           "applicability": "protocol_behavior",
@@ -3301,10 +3339,219 @@
               "status": "not_applicable"
             }
           }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Core token with a listed prefix and three segments is valid",
+          "id": "token-validate-001",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Organizational token (company prefix) is valid",
+          "id": "token-validate-002",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Community token (religion prefix) is valid",
+          "id": "token-validate-003",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Personal token (user prefix) is valid",
+          "id": "token-validate-004",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Default demo constitution is a valid Core token",
+          "id": "token-validate-005",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Unlisted prefix parses (token-005) but fails semantic validation (VCP/I 3.4.1)",
+          "id": "token-validate-err-001",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Retired tier-first prefix personal is not a namespace",
+          "id": "token-validate-err-002",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "health is not a Core prefix",
+          "id": "token-validate-err-003",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Core token must have exactly three segments",
+          "id": "token-validate-err-004",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Reserved word segment (VCP/I 3.7.1)",
+          "id": "token-validate-err-005",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Syntax errors fail before semantic rules",
+          "id": "token-validate-err-006",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Fixture does not exercise the WebMCP package surface",
+              "status": "not_applicable"
+            }
+          }
         }
       ],
       "fixture": "conformance/identity/token_parsing.json",
-      "fixture_sha256": "efc6eb0feab1985b5b58aed0654a38c2752d1c94e36914285c679b1dcc0a6b4a",
+      "fixture_sha256": "7ead27c92e7be11be7ca2caece6c4ac3c5e2a78e9ecdd76c75fa6ed576ee3331",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/specs/VCP_IDENTITY_v2.0.md",
       "runner": "conformance/runners/identity_parity.py",
@@ -7075,22 +7322,22 @@
     "fixture_count": 30,
     "implementation_status": {
       "python": {
-        "checked": 339,
+        "checked": 352,
         "not_applicable": 8,
         "unsupported": 6
       },
       "rust": {
-        "checked": 279,
+        "checked": 292,
         "not_applicable": 8,
         "unsupported": 66
       },
       "webmcp": {
-        "checked": 75,
-        "not_applicable": 272,
+        "checked": 77,
+        "not_applicable": 283,
         "unsupported": 6
       }
     },
-    "vector_count": 353,
+    "vector_count": 366,
     "webmcp_surface_checks": 2
   },
   "webmcp_surface": {

@@ -134,3 +134,20 @@ VCP-Spec layer specifications. Integrators upgrading from 4.2.0 should check:
 * Python `infer_tier` raises `ValueError` for a token whose first segment is
   not a VCP/I §4.2 prefix, and `validate_namespace_access` returns `False` for
   it. Core prefixes are `family`, `work`, `secure`, `creative` and `reality`.
+* Audit identifiers are keyed `hmac-sha256:` pseudonyms (core audit §6).
+  Configure `AuditLogger(audit_key=...)` with at least 32 bytes when purges or
+  correlation must survive a restart; pseudonyms from earlier versions do not
+  match. `log_callback` receives only the fields permitted at the level.
+* Every VCP/A situational vocabulary equals the §2.2 tables. Several emoji
+  changed (for example OCCASION `mourning` is ⚰️, AGENCY `subordinate` is 👇,
+  CONSTRAINTS `time` is ⏰), and `midday`, `transit` and `noisy` are deprecated
+  names for `daytime`, `vehicle` and `loud`.
+* Context decoders pass unknown dimension groups through and reject malformed
+  strings (empty groups, groups without a leading emoji, valueless dimensions,
+  intensities outside 1-5). Use `validate_context_wire` (Python) or
+  `validateContextWire` (WebMCP) for strict checks.
+* Token parsing stays syntactic. `Token.validate`, `VcpToken::validate`,
+  `validateIdentityToken`, the MCP `vcp_validate_token` tool, `vcp-wasm`
+  `validate_token` and the WebMCP `vcp_chat` `constitution_id` check reject
+  unlisted prefixes, Core tokens without exactly three segments and reserved
+  words. The WebMCP `vcp_chat` default constitution is `creative.growth.muse`.

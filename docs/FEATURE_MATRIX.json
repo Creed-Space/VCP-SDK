@@ -2,31 +2,31 @@
   "claim_boundary": "Statuses summarize same-program candidate runners. They do not establish independent interoperability, certification, publication, or deployment support.",
   "features": [
     {
-      "case_count": 10,
+      "case_count": 12,
       "fixture": "conformance/adaptation/context_encoding.json",
       "implementations": {
         "python": {
-          "applicable_cases": 10,
+          "applicable_cases": 12,
           "case_statuses": {
-            "checked": 10
+            "checked": 12
           },
-          "checked_cases": 10,
+          "checked_cases": 12,
           "status": "full"
         },
         "rust": {
-          "applicable_cases": 10,
+          "applicable_cases": 12,
           "case_statuses": {
-            "checked": 10
+            "checked": 12
           },
-          "checked_cases": 10,
+          "checked_cases": 12,
           "status": "full"
         },
         "webmcp": {
-          "applicable_cases": 10,
+          "applicable_cases": 12,
           "case_statuses": {
-            "checked": 10
+            "checked": 12
           },
-          "checked_cases": 10,
+          "checked_cases": 12,
           "status": "full"
         }
       },
@@ -519,29 +519,29 @@
       "version": "1.0.0"
     },
     {
-      "case_count": 33,
+      "case_count": 44,
       "fixture": "conformance/identity/token_parsing.json",
       "implementations": {
         "python": {
-          "applicable_cases": 33,
+          "applicable_cases": 44,
           "case_statuses": {
-            "checked": 33
+            "checked": 44
           },
-          "checked_cases": 33,
+          "checked_cases": 44,
           "status": "full"
         },
         "rust": {
-          "applicable_cases": 33,
+          "applicable_cases": 44,
           "case_statuses": {
-            "checked": 33
+            "checked": 44
           },
-          "checked_cases": 33,
+          "checked_cases": 44,
           "status": "full"
         },
         "webmcp": {
           "applicable_cases": 0,
           "case_statuses": {
-            "not_applicable": 33
+            "not_applicable": 44
           },
           "checked_cases": 0,
           "status": "not_applicable"
@@ -1040,6 +1040,6 @@
   "schema": "vcp-feature-matrix/1",
   "source": {
     "path": "conformance/coverage-manifest.json",
-    "sha256": "8d13d8ca36962f7b1a22a2d626ddbc5824171bf0ecafe7981ed84f8bce65b38a"
+    "sha256": "ffa137946ec3b80dfc830dff1bd51537cb54b7909d78d83b1028dd0d22b49b94"
   }
 }

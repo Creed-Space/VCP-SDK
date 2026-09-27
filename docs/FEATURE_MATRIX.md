@@ -16,7 +16,7 @@ This file is generated from `conformance/coverage-manifest.json`. Run
 
 | Feature suite | Version | Maturity | Cases | Python | Rust | WebMCP |
 |:---|:---|:---|---:|:---|:---|:---|
-| adaptation/context_encoding | 3.2.0 | conformance-candidate | 10 | full | full | full |
+| adaptation/context_encoding | 3.2.0 | conformance-candidate | 12 | full | full | full |
 | adaptation/context_encoding_extended | 3.2.0 | conformance-candidate | 12 | full | full | full |
 | adaptation/state_machine | 1.0.0 | conformance-candidate | 14 | full | unsupported | not_applicable |
 | agent-runtime/accretive_contracts | 0.1.0 | conformance-candidate | 2 | full | full | full |
@@ -31,7 +31,7 @@ This file is generated from `conformance/coverage-manifest.json`. Run
 | extensions/torch_handoff | 1.0.0 | conformance-candidate | 7 | full | full | not_applicable |
 | extensions/welfare | 0.1.0-draft | draft | 3 | unsupported | unsupported | unsupported |
 | identity/token_canonicalization | 1.0.0 | conformance-candidate | 10 | full | full | not_applicable |
-| identity/token_parsing | 1.0.0 | conformance-candidate | 33 | full | full | not_applicable |
+| identity/token_parsing | 1.0.0 | conformance-candidate | 44 | full | full | not_applicable |
 | interop/complete_bundle | 1.0.0 | conformance-candidate | 2 | full | full | not_applicable |
 | interop/cross_impl_roundtrip | 1.0.0 | conformance-candidate | 5 | full | full | not_applicable |
 | messaging/messaging | 2.0.0 | conformance-candidate | 41 | full | unsupported | not_applicable |
