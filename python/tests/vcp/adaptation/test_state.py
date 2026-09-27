@@ -132,7 +132,7 @@ class TestStateTracker:
 
     def test_multiple_changes_is_major(self, tracker, encoder):
         """Three or more dimension changes should be MAJOR."""
-        ctx1 = encoder.encode(time="morning", space="home", culture="casual")
+        ctx1 = encoder.encode(time="morning", space="home", culture="informal")
         ctx2 = encoder.encode(time="evening", space="office", culture="formal")
         tracker.record(ctx1)
         transition = tracker.record(ctx2)
@@ -153,6 +153,38 @@ class TestStateTracker:
         tracker.record(ctx1)
         transition = tracker.record(ctx2)
         assert transition.severity == TransitionSeverity.EMERGENCY
+
+    @pytest.mark.parametrize(
+        ("dimension", "value"),
+        [
+            (Dimension.OCCASION, "🚨"),
+            (Dimension.CONSTRAINTS, "🚨"),
+            (Dimension.ENVIRONMENT, "🔥"),
+            (Dimension.ENVIRONMENT, "🌪️"),
+            (Dimension.ENVIRONMENT, "🌪"),
+            (Dimension.EMBODIMENT, "🛑"),
+            (Dimension.OCCASION, "⚠️"),
+            (Dimension.OCCASION, "🆘"),
+        ],
+    )
+    def test_spec_emergency_indicators(self, tracker, dimension, value):
+        """VCP/A §5.1.6 and §7.1 emergency indicators trigger EMERGENCY."""
+        tracker.record(VCPContext(dimensions={Dimension.TIME: ["🌅"]}))
+        transition = tracker.record(
+            VCPContext(dimensions={Dimension.TIME: ["🌅"], dimension: [value]})
+        )
+        assert transition.severity == TransitionSeverity.EMERGENCY
+
+    def test_emergency_values_cover_spec_tokens(self):
+        from vcp.adaptation.state import EMERGENCY_VALUES
+
+        assert {"🚨", "🔥", "🌪️", "🛑"} <= EMERGENCY_VALUES
+        assert {"⚠️", "🆘"} <= EMERGENCY_VALUES
+
+    def test_non_emergency_environment_is_not_emergency(self, tracker):
+        tracker.record(VCPContext(dimensions={Dimension.ENVIRONMENT: ["🥵"]}))
+        transition = tracker.record(VCPContext(dimensions={Dimension.ENVIRONMENT: ["🥶"]}))
+        assert transition.severity == TransitionSeverity.MINOR
 
     def test_current_property(self, tracker, encoder):
         """current should return latest context."""

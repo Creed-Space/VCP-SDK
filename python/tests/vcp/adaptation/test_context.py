@@ -553,8 +553,64 @@ class TestContextEncoder:
         assert ctx.get(SituationalDimension.FORMALITY) == ["💼"]
 
     def test_encode_system_context(self, encoder):
-        ctx = encoder.encode(system_context="online")
-        assert ctx.get(SituationalDimension.SYSTEM_CONTEXT) == ["🟢"]
+        ctx = encoder.encode(system_context="personal_device")
+        assert ctx.get(SituationalDimension.SYSTEM_CONTEXT) == ["💻"]
+
+    def test_system_context_vocabulary_matches_spec(self):
+        """SYSTEM_CONTEXT follows VCP/A §2.1 (computing environment)."""
+        assert SituationalDimension.SYSTEM_CONTEXT.values == {
+            "💻": "personal_device",
+            "🏢": "workplace_system",
+            "🖥️": "shared_terminal",
+            "👁️": "monitored_environment",
+        }
+
+    @pytest.mark.parametrize("retired", ["online", "degraded", "offline", "sandboxed", "testing"])
+    def test_retired_system_context_names_are_rejected(self, encoder, retired):
+        with pytest.raises(ValueError, match="Unknown system_context value"):
+            encoder.encode(system_context=retired)
+
+    def test_culture_vocabulary_matches_spec(self):
+        """CULTURE follows VCP/A §2.1 (communication styles)."""
+        assert SituationalDimension.CULTURE.values == {
+            "🔇": "high_context",
+            "📢": "low_context",
+            "🎩": "formal",
+            "👋": "informal",
+            "📊": "hierarchical",
+            "⚖️": "egalitarian",
+            "👥": "collectivist",
+            "👤": "individualist",
+        }
+
+    def test_culture_casual_is_deprecated_alias_for_informal(self, encoder):
+        with pytest.warns(DeprecationWarning, match="informal"):
+            ctx = encoder.encode(culture="casual")
+        assert ctx.get(SituationalDimension.CULTURE) == ["👋"]
+
+    def test_culture_mixed_is_retired(self, encoder):
+        with pytest.raises(ValueError, match="Unknown culture value"):
+            encoder.encode(culture="mixed")
+
+    def test_new_vocabularies_roundtrip_through_wire(self, encoder):
+        ctx = encoder.encode(
+            culture=["hierarchical", "collectivist"],
+            system_context="monitored_environment",
+        )
+        wire = ctx.encode()
+        assert wire == "🌍📊👥|📡👁️"
+        decoded = VCPContext.decode(wire)
+        assert decoded.get(SituationalDimension.CULTURE) == ["📊", "👥"]
+        assert decoded.get(SituationalDimension.SYSTEM_CONTEXT) == ["👁️"]
+        # VS16-less input still resolves to the canonical emoji.
+        bare = VCPContext.decode("📡🖥")
+        assert bare.get(SituationalDimension.SYSTEM_CONTEXT) == ["🖥️"]
+
+    def test_retired_values_on_the_wire_are_tolerated(self):
+        """Unknown values decode as raw strings rather than failing (VCP/A §2.1)."""
+        decoded = VCPContext.decode("🌍😎|📡🟢")
+        assert decoded.get(SituationalDimension.CULTURE) == ["😎"]
+        assert decoded.get(SituationalDimension.SYSTEM_CONTEXT) == ["🟢"]
 
     def test_encode_culture_communication_style(self, encoder):
         """CULTURE must accept communication-style values, not nationalities."""

@@ -846,6 +846,19 @@ class TestTransitionDetection:
 
         assert transition.severity == TransitionSeverity.EMERGENCY
 
+    @pytest.mark.parametrize("value", ["🔥", "🌪️", "🛑"])
+    def test_detect_spec_emergency_tokens(self, tracker: Any, value: str) -> None:
+        """VCP/A §7.1 hazard and emergency_stop indicators are EMERGENCY."""
+        from vcp.adaptation.context import Dimension, VCPContext
+        from vcp.adaptation.state import TransitionSeverity
+
+        context1 = VCPContext(dimensions={Dimension.ENVIRONMENT: ["🥵"]})
+        context2 = VCPContext(dimensions={Dimension.ENVIRONMENT: [value]})
+
+        transition = tracker._detect_transition(context1, context2)
+
+        assert transition.severity == TransitionSeverity.EMERGENCY
+
     def test_transition_has_previous_and_current(self, tracker: Any) -> None:
         """Test that transition contains previous and current contexts."""
         from vcp.adaptation.context import Dimension, VCPContext

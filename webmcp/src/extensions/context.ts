@@ -105,13 +105,16 @@ export const SITUATIONAL_SPECS: Readonly<
     name: 'culture',
     symbol: '🌍',
     position: 4,
-    // Communication styles per CSM1 / VCP v3.2 — NOT nationalities.
+    // Communication styles per VCP/A §2.1 and §2.2, NOT nationalities.
     values: {
       '🔇': 'high_context',
       '📢': 'low_context',
       '🎩': 'formal',
-      '😎': 'casual',
-      '🌐': 'mixed',
+      '👋': 'informal',
+      '📊': 'hierarchical',
+      '⚖️': 'egalitarian',
+      '👥': 'collectivist',
+      '👤': 'individualist',
     },
     freeForm: false,
     isVep0004: false,
@@ -164,12 +167,12 @@ export const SITUATIONAL_SPECS: Readonly<
     name: 'system_context',
     symbol: '📡',
     position: 9,
+    // Computing environment per VCP/A §2.1 and §2.2.
     values: {
-      '🟢': 'online',
-      '🟡': 'degraded',
-      '🔴': 'offline',
-      '🔒': 'sandboxed',
-      '🧪': 'testing',
+      '💻': 'personal_device',
+      '🏢': 'workplace_system',
+      '🖥️': 'shared_terminal',
+      '👁️': 'monitored_environment',
     },
     freeForm: false,
     isVep0004: false,
@@ -548,7 +551,7 @@ export interface EncoderInput {
   time?: string;
   space?: string;
   company?: string | string[];
-  culture?: string;
+  culture?: string | string[];
   occasion?: string;
   environment?: string;
   agency?: string;
@@ -569,13 +572,30 @@ export interface EncoderInput {
   body_signals?: string | [string, number];
 }
 
+/**
+ * Retired value names that {@link buildContext} still resolves to the
+ * canonical VCP/A §2.2 value that replaced them. Deprecated: pass the
+ * canonical name. The retired CULTURE `mixed` and every retired
+ * SYSTEM_CONTEXT value (online, degraded, offline, sandboxed, testing)
+ * have no equivalent and are dropped like any other unknown name.
+ */
+const DEPRECATED_VALUE_NAMES: Readonly<
+  Partial<Record<SituationalDimension, Readonly<Record<string, string>>>>
+> = {
+  culture: { casual: 'informal' },
+};
+
 function lookupEmoji(spec: SituationalDimensionSpec, value: string): string | null {
   if (!value) return null;
   // Pass-through: value is already a registered emoji.
-  if (value in spec.values) return value;
+  if (Object.prototype.hasOwnProperty.call(spec.values, value)) return value;
   const lower = value.toLowerCase();
   for (const [emoji, name] of Object.entries(spec.values)) {
     if (name === lower) return emoji;
+  }
+  const aliases = DEPRECATED_VALUE_NAMES[spec.name];
+  if (aliases && Object.prototype.hasOwnProperty.call(aliases, lower)) {
+    return lookupEmoji(spec, aliases[lower]);
   }
   return null;
 }

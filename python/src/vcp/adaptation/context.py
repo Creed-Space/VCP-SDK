@@ -45,6 +45,7 @@ Conformance levels (per VEP-0004):
 from __future__ import annotations
 
 import re
+import warnings
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -98,13 +99,16 @@ class SituationalDimension(Enum):
         "culture",
         "🌍",
         4,
-        # Communication styles per CSM1 / VCP v3.2 — NOT nationalities.
+        # Communication styles per VCP/A §2.1 and §2.2, NOT nationalities.
         {
             "🔇": "high_context",
             "📢": "low_context",
             "🎩": "formal",
-            "😎": "casual",
-            "🌐": "mixed",
+            "👋": "informal",
+            "📊": "hierarchical",
+            "⚖️": "egalitarian",
+            "👥": "collectivist",
+            "👤": "individualist",
         },
     )
     OCCASION = (
@@ -141,12 +145,12 @@ class SituationalDimension(Enum):
         "system_context",
         "📡",
         9,
+        # Computing environment per VCP/A §2.1 and §2.2.
         {
-            "🟢": "online",
-            "🟡": "degraded",
-            "🔴": "offline",
-            "🔒": "sandboxed",
-            "🧪": "testing",
+            "💻": "personal_device",
+            "🏢": "workplace_system",
+            "🖥️": "shared_terminal",
+            "👁️": "monitored_environment",
         },
     )
     # ── VEP-0004 (positions 10-13) ─────────────────────────────────────────
@@ -231,6 +235,15 @@ class SituationalDimension(Enum):
             if dim._name == name.lower():
                 return dim
         raise ValueError(f"Unknown situational dimension: {name}")
+
+
+# Retired value names that still resolve in ContextEncoder, with a
+# DeprecationWarning, to the canonical VCP/A §2.2 value that replaced them.
+# The retired CULTURE "mixed" and every retired SYSTEM_CONTEXT value
+# (online, degraded, offline, sandboxed, testing) have no equivalent.
+_DEPRECATED_VALUE_NAMES: dict[SituationalDimension, dict[str, str]] = {
+    SituationalDimension.CULTURE: {"casual": "informal"},
+}
 
 
 # Backwards-compatible alias. Note: the v3.0 STATE dimension was removed in
@@ -731,7 +744,7 @@ class ContextEncoder:
         time: str | None = None,
         space: str | None = None,
         company: list[str] | str | None = None,
-        culture: str | None = None,
+        culture: list[str] | str | None = None,
         occasion: str | None = None,
         environment: str | None = None,
         agency: str | None = None,
@@ -833,6 +846,14 @@ class ContextEncoder:
         for emoji, name in dim.values.items():
             if name == value_lower:
                 return emoji
+        replacement = _DEPRECATED_VALUE_NAMES.get(dim, {}).get(value_lower)
+        if replacement is not None:
+            warnings.warn(
+                f"{dim._name} value {value!r} is deprecated; use {replacement!r}",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            return self._lookup(dim, replacement, strict=strict)
         if strict:
             raise ValueError(
                 f"Unknown {dim._name} value: {value!r}; "

@@ -135,7 +135,7 @@
             "\ud83d\udc76"
           ],
           "culture": [
-            "\ud83c\udf10"
+            "\ud83d\udce2"
           ],
           "occasion": [
             "\u2796"
@@ -150,7 +150,7 @@
             "\u25cb"
           ],
           "system_context": [
-            "\ud83d\udfe2"
+            "\ud83d\udcbb"
           ]
         },
         "personal": {}
@@ -196,6 +196,30 @@
       "expected": {
         "has_children": true,
         "note": "Baby emoji in COMPANY dimension indicates children are present"
+      }
+    },
+    {
+      "id": "ctx-010",
+      "description": "Canonical CULTURE and SYSTEM_CONTEXT vocabularies (VCP/A 2.1)",
+      "input": {
+        "situational": {
+          "culture": [
+            "\ud83d\udcca",
+            "\ud83d\udc65"
+          ],
+          "system_context": [
+            "\ud83d\udc41\ufe0f"
+          ]
+        },
+        "personal": {}
+      },
+      "expected": {
+        "wire": "\ud83c\udf0d\ud83d\udcca\ud83d\udc65|\ud83d\udce1\ud83d\udc41\ufe0f",
+        "has_situational": true,
+        "has_personal": false,
+        "has_vep_0004": false,
+        "conformance_level": "VCP-Minimal",
+        "note": "CULTURE carries communication styles (hierarchical, collectivist); SYSTEM_CONTEXT carries the computing environment (monitored_environment). The retired online/degraded/offline/sandboxed/testing and casual/mixed values are not canonical."
       }
     }
   ]

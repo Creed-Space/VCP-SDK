@@ -138,8 +138,11 @@ The Enneagram Protocol encodes context across 9 dimensions:
 | 🔇 | high_context | High-context communication (implicit, relational) |
 | 📢 | low_context | Low-context communication (explicit, direct) |
 | 🎩 | formal | Formal register (professional, ceremonial) |
-| 😎 | casual | Casual register (informal, peer-to-peer) |
-| 🌐 | mixed | Mixed-register or culturally hybrid context |
+| 👋 | informal | Casual register acceptable |
+| 📊 | hierarchical | Respect for authority structures |
+| ⚖️ | egalitarian | Flat social structure |
+| 👥 | collectivist | Group harmony prioritized |
+| 👤 | individualist | Individual autonomy prioritized |
 
 #### OCCASION (🎭)
 
@@ -1197,12 +1200,12 @@ SITUATIONAL DIMENSIONS (13)
 TIME:           🌅🌙📅🎉⏰
 SPACE:          🏡🏢🏫🏥💻🌳
 COMPANY:        👤👶👨‍👩‍👧👔👮🤝
-CULTURE:        🔇📢🎩😎🌐
+CULTURE:        🔇📢🎩👋📊⚖️👥👤   (high context, low context, formal, informal, hierarchical, egalitarian, collectivist, individualist)
 OCCASION:       ➖🎂💼🚨🎪⚖️
 ENV:            ☀️🥵🥶🌧️🌪️🔇🔥
 AGENCY:         👑🤝👇💰🔐🆓
 CONSTRAINTS:    ○🚧⚖️💸⏰🚨
-SYSTEM_CONTEXT: 🟢🟡🔴⚙️🔌
+SYSTEM_CONTEXT: 💻🏢🖥️👁️   (personal device, workplace system, shared terminal, monitored environment)
 EMBODIMENT:     🧍🚶✋🫳🛑   (stationary, navigating, manipulating, carrying, emergency stop)
 PROXIMITY:      🌐🛋️🤝🤏👆   (distant, same room, nearby, close, contact)
 RELATIONSHIP:   free-form '{tie}:{function}' — e.g. colleague:professional, family:caregiving

@@ -258,13 +258,16 @@
     },
     "culture_values": {
       "type": "string",
-      "description": "CULTURE 🌍 (position 4) — communication styles per CSM1, NOT nationalities.",
+      "description": "CULTURE 🌍 (position 4). Communication styles per VCP/A §2.1 and §2.2, NOT nationalities: 🔇 high_context, 📢 low_context, 🎩 formal, 👋 informal, 📊 hierarchical, ⚖️ egalitarian, 👥 collectivist, 👤 individualist. This enum is the canonical vocabulary; parsed.situational arrays use dimension_values and do not restrict values to it.",
       "enum": [
         "🔇",
         "📢",
         "🎩",
-        "😎",
-        "🌐"
+        "👋",
+        "📊",
+        "⚖️",
+        "👥",
+        "👤"
       ]
     },
     "occasion_values": {
@@ -311,13 +314,12 @@
     },
     "system_context_values": {
       "type": "string",
-      "description": "SYSTEM_CONTEXT 📡 (position 9)",
+      "description": "SYSTEM_CONTEXT 📡 (position 9). Computing environment per VCP/A §2.1 and §2.2: 💻 personal_device, 🏢 workplace_system, 🖥️ shared_terminal, 👁️ monitored_environment. This enum is the canonical vocabulary; parsed.situational arrays use dimension_values and do not restrict values to it.",
       "enum": [
-        "🟢",
-        "🟡",
-        "🔴",
-        "🔒",
-        "🧪"
+        "💻",
+        "🏢",
+        "🖥️",
+        "👁️"
       ]
     },
     "embodiment_values": {

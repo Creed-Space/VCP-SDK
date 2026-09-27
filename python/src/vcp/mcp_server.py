@@ -94,12 +94,14 @@ Encodes contextual state across 13 situational and 5 personal-state dimensions:
 - time: morning, midday, evening, night
 - space: home, office, school, hospital, transit
 - company: alone, children, colleagues, family, strangers
-- culture: high_context, low_context, formal, casual, mixed
+- culture: high_context, low_context, formal, informal, hierarchical,
+  egalitarian, collectivist, individualist
 - occasion: normal, celebration, mourning, emergency, business
 - environment: comfortable, hot, cold, quiet, noisy
 - agency: leader, peer, subordinate, limited
 - constraints: minimal, legal, economic, time
-- system_context: online, degraded, offline, sandboxed, testing
+- system_context: personal_device, workplace_system, shared_terminal,
+  monitored_environment
 - embodiment: stationary, navigating, manipulating, carrying, emergency_stop
 - proximity: distant, same_room, nearby, close, contact
 - relationship: compound tie:function value
@@ -146,7 +148,17 @@ Returns wire format (emoji-based) and JSON format.""",
                     },
                     "culture": {
                         "type": "string",
-                        "enum": ["high_context", "low_context", "formal", "casual", "mixed"],
+                        "enum": [
+                            "high_context",
+                            "low_context",
+                            "formal",
+                            "informal",
+                            "hierarchical",
+                            "egalitarian",
+                            "collectivist",
+                            "individualist",
+                        ],
+                        "description": "Communication style (not nationality)",
                     },
                     "occasion": {
                         "type": "string",
@@ -177,7 +189,13 @@ Returns wire format (emoji-based) and JSON format.""",
                     },
                     "system_context": {
                         "type": "string",
-                        "enum": ["online", "degraded", "offline", "sandboxed", "testing"],
+                        "enum": [
+                            "personal_device",
+                            "workplace_system",
+                            "shared_terminal",
+                            "monitored_environment",
+                        ],
+                        "description": "Computing environment",
                     },
                     "embodiment": {
                         "type": "string",

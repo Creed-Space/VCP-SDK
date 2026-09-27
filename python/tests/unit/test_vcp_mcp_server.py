@@ -50,7 +50,7 @@ def test_encode_context_handles_extended_and_intensity_dimensions(server_module)
         server_module._handle_encode_context(
             {
                 "time": "morning",
-                "system_context": "testing",
+                "system_context": "shared_terminal",
                 "relationship": "colleague:professional",
                 "cognitive_state": {"value": "focused", "intensity": 4},
             }
@@ -58,7 +58,7 @@ def test_encode_context_handles_extended_and_intensity_dimensions(server_module)
     )
     payload = json.loads(response[0].text)
 
-    assert payload["wire_format"] == "⏰🌅|📡🧪|🪢colleague:professional‖🧠focused:4"
+    assert payload["wire_format"] == "⏰🌅|📡🖥️|🪢colleague:professional‖🧠focused:4"
     assert payload["dimensions_set"] == [
         "time",
         "system_context",

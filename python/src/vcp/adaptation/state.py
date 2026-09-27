@@ -32,9 +32,13 @@ class TransitionSeverity(Enum):
 # Dimensions that trigger major transitions when changed
 MAJOR_DIMENSIONS = {Dimension.OCCASION, Dimension.AGENCY, Dimension.CONSTRAINTS}
 
-# Values that indicate emergency state (OCCASION=🚨 or EMBODIMENT=🛑 per the
-# adaptation-context schema; ⚠️/🆘 are accepted from free-form callers).
-EMERGENCY_VALUES = {"🚨", "🛑", "⚠️", "🆘"}
+# Values that indicate emergency state, checked in every situational
+# dimension (VCP/A §5.1.6 and §7.1 EMERGENCY_TOKENS):
+#   🚨 OCCASION or CONSTRAINTS emergency, 🔥 and 🌪️ ENVIRONMENT hazards,
+#   🛑 EMBODIMENT emergency_stop (experimental, VEP-0004).
+# ⚠️ and 🆘 are also accepted from free-form callers, as VCP/A allows.
+# VS16-less spellings are included so an emergency is never missed.
+EMERGENCY_VALUES = {"🚨", "🔥", "🌪️", "🌪", "🛑", "⚠️", "⚠", "🆘"}
 
 
 @dataclass

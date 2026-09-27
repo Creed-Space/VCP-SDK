@@ -291,6 +291,58 @@ describe('buildContext', () => {
     expect(ctx.situational.culture).toEqual(['🔇']);
   });
 
+  it('CULTURE vocabulary matches VCP/A §2.1', () => {
+    expect(SITUATIONAL_SPECS.culture.values).toEqual({
+      '🔇': 'high_context',
+      '📢': 'low_context',
+      '🎩': 'formal',
+      '👋': 'informal',
+      '📊': 'hierarchical',
+      '⚖️': 'egalitarian',
+      '👥': 'collectivist',
+      '👤': 'individualist',
+    });
+  });
+
+  it('SYSTEM_CONTEXT vocabulary matches VCP/A §2.1', () => {
+    expect(SITUATIONAL_SPECS.system_context.values).toEqual({
+      '💻': 'personal_device',
+      '🏢': 'workplace_system',
+      '🖥️': 'shared_terminal',
+      '👁️': 'monitored_environment',
+    });
+  });
+
+  it('resolves the deprecated CULTURE name casual to informal', () => {
+    expect(buildContext({ culture: 'casual' }).situational.culture).toEqual(['👋']);
+    expect(buildContext({ culture: 'mixed' }).situational.culture).toBeUndefined();
+  });
+
+  it('drops retired SYSTEM_CONTEXT names', () => {
+    for (const retired of ['online', 'degraded', 'offline', 'sandboxed', 'testing']) {
+      expect(buildContext({ system_context: retired }).situational.system_context).toBeUndefined();
+    }
+  });
+
+  it('encodes and decodes the canonical CULTURE and SYSTEM_CONTEXT values', () => {
+    const ctx = buildContext({
+      culture: ['hierarchical', 'collectivist'],
+      system_context: 'monitored_environment',
+    });
+    const wire = encodeContext(ctx);
+    expect(wire).toBe('🌍📊👥|📡👁️');
+    const decoded = decodeContext(wire);
+    expect(decoded.situational.culture).toEqual(['📊', '👥']);
+    expect(decoded.situational.system_context).toEqual(['👁️']);
+    expect(decodeContext('📡🖥').situational.system_context).toEqual(['🖥️']);
+  });
+
+  it('tolerates retired values on the wire', () => {
+    const decoded = decodeContext('🌍😎|📡🟢');
+    expect(decoded.situational.culture).toEqual(['😎']);
+    expect(decoded.situational.system_context).toEqual(['🟢']);
+  });
+
   it('supports personal-state inline "value:intensity" strings', () => {
     const ctx = buildContext({ emotional_tone: 'calm:5' });
     expect(ctx.personal.emotional_tone).toEqual({ value: 'calm', intensity: 5 });
