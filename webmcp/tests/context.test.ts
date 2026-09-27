@@ -503,3 +503,23 @@ describe('review fixes (canon round 4)', () => {
     expect(() => decodeContext(wire)).toThrow(SyntaxError);
   });
 });
+
+describe('grapheme boundaries (canon round 5)', () => {
+  it.each([
+    ['📡👁️‍🗨️', 'system_context', ['👁️‍🗨️']],
+    ['👥👶🏽', 'company', ['👶🏽']],
+    ['📍🏠️', 'space', ['🏠️']],
+    ['👥👶🏽👔', 'company', ['👶🏽', '👔']],
+    ['🔷🧑‍🤝', 'agency', ['🧑‍🤝']],
+    ['👥👨‍👩‍👧👶', 'company', ['👨‍👩‍👧', '👶']],
+    ['📡👁️', 'system_context', ['👁️']],
+  ] as const)('keeps %s whole', (wire, dim, values) => {
+    const ctx = decodeContext(wire);
+    expect(ctx.situational[dim]).toEqual(values);
+    expect(encodeContext(ctx)).toBe(wire);
+  });
+
+  it('reports the unknown sequence instead of a known value', () => {
+    expect(validateContextWire('📡👁️‍🗨️')).toEqual(["unknown system_context value: '👁️‍🗨️'"]);
+  });
+});

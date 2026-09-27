@@ -64,6 +64,21 @@ INTENSITY_SEPARATOR = ":"
 # RELATIONSHIP grammar (VCP/A §2.3 rel-value): "{tie}", "{tie}:{function}"
 # or ":{function}".
 _RELATIONSHIP_RE = re.compile(r"^(?:[^:|\u2016]+(?::[^:|\u2016]+)?|:[^:|\u2016]+)$")
+_ZWJ = "\u200d"
+
+
+def _continues_cluster(text: str, index: int) -> bool:
+    """Whether the code point at ``index`` extends the preceding emoji cluster."""
+    if index >= len(text):
+        return False
+    code_point = ord(text[index])
+    return (
+        code_point in (0x200D, 0xFE0F, 0x20E3)
+        or 0x1F3FB <= code_point <= 0x1F3FF
+        or 0xE0020 <= code_point <= 0xE007F
+    )
+
+
 _TRAILING_INTEGER_RE = re.compile(r".*:[+-]?\d+\s*$")
 # Exactly one ASCII digit 1-5 (VCP/A §2.3 ``intensity``); not \d, which
 # also matches non-ASCII digits.
@@ -743,6 +758,12 @@ class VCPContext:
         emoji. Text between them that matches no known value is kept as
         written, one raw value per unmatched run, so ``🚨🦖`` yields
         ``["🚨", "🦖"]`` and the emergency keeps its meaning (VCP/A §2.3).
+
+        A known value is accepted only on a grapheme boundary: it must not
+        follow a ZERO WIDTH JOINER, and the next code point must not extend
+        the cluster (ZWJ, VS16, a skin-tone modifier, a combining keycap or a
+        tag character). ``👁️‍🗨️``, ``👶🏽`` and ``🏠️`` therefore stay whole raw
+        values instead of being read as ``👁️``, ``👶`` or ``🏠``.
         """
         aliases: list[tuple[str, str]] = []
         for canonical in dim.values:
@@ -756,11 +777,14 @@ class VCPContext:
         pending = ""
         cursor = 0
         while cursor < len(raw):
+            at_boundary = cursor == 0 or raw[cursor - 1] != _ZWJ
             match = next(
                 (
                     (alias, canonical)
                     for alias, canonical in aliases
-                    if raw.startswith(alias, cursor)
+                    if at_boundary
+                    and raw.startswith(alias, cursor)
+                    and not _continues_cluster(raw, cursor + len(alias))
                 ),
                 None,
             )

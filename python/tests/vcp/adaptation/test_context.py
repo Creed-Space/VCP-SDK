@@ -888,3 +888,33 @@ class TestReviewFixes:
         for wire in ("‖🩺pain:4[migraine]", "‖🩺pain:4:migraine"):
             with pytest.raises(ValueError):
                 VCPContext.decode(wire)
+
+
+class TestGraphemeBoundaries:
+    """A known value never matches inside an emoji sequence (VCP/A §2.3)."""
+
+    @pytest.mark.parametrize(
+        ("wire", "dimension", "values"),
+        [
+            ("📡👁️‍🗨️", SituationalDimension.SYSTEM_CONTEXT, ["👁️‍🗨️"]),
+            ("👥👶🏽", SituationalDimension.COMPANY, ["👶🏽"]),
+            ("📍🏠️", SituationalDimension.SPACE, ["🏠️"]),
+            ("👥👶🏽👔", SituationalDimension.COMPANY, ["👶🏽", "👔"]),
+            ("🔷🧑‍🤝", SituationalDimension.AGENCY, ["🧑‍🤝"]),
+            ("👥👨‍👩‍👧👶", SituationalDimension.COMPANY, ["👨‍👩‍👧", "👶"]),
+            ("📡👁️", SituationalDimension.SYSTEM_CONTEXT, ["👁️"]),
+        ],
+    )
+    def test_sequences_are_not_split(self, wire, dimension, values):
+        ctx = VCPContext.decode(wire)
+        assert ctx.get(dimension) == values
+        assert ctx.encode() == wire
+
+    def test_unknown_sequence_is_reported_not_treated_as_known(self):
+        from vcp.adaptation import validate_context_wire
+
+        sequence = "👁️‍🗨️"
+        assert validate_context_wire(f"📡{sequence}") == [
+            f"unknown system_context value: {sequence!r}"
+        ]
+        assert validate_context_wire("👥👶🏽") == ["unknown company value: '👶🏽'"]

@@ -305,7 +305,13 @@
         "wire": "\ud83c\udfad\ud83d\udea8\ud83e\udd96",
         "has_situational": true,
         "has_emergency": true,
-        "note": "\ud83e\udd96 is not an OCCASION value; \ud83d\udea8 still signals an emergency (VCP/A 2.3)."
+        "note": "\ud83e\udd96 is not an OCCASION value; \ud83d\udea8 still signals an emergency (VCP/A 2.3).",
+        "situational_values": {
+          "occasion": [
+            "\ud83d\udea8",
+            "\ud83e\udd96"
+          ]
+        }
       }
     },
     {
@@ -353,6 +359,54 @@
       "expected": {
         "valid": false,
         "note": "VCP/A 2.3 Sub-signals: \ud83e\ude7apain:4[migraine] and \ud83e\ude7apain:4:migraine are malformed."
+      }
+    },
+    {
+      "id": "ctx-023",
+      "description": "A ZWJ sequence that starts with a known value is one unknown value",
+      "wire_input": "\ud83d\udce1\ud83d\udc41\ufe0f\u200d\ud83d\udde8\ufe0f",
+      "expected": {
+        "wire": "\ud83d\udce1\ud83d\udc41\ufe0f\u200d\ud83d\udde8\ufe0f",
+        "has_situational": true,
+        "conformance_level": "VCP-Minimal",
+        "note": "\ud83d\udc41\ufe0f\u200d\ud83d\udde8\ufe0f (eye in speech bubble) is not SYSTEM_CONTEXT \ud83d\udc41\ufe0f monitored_environment; decoders keep it whole as an unknown value (VCP/A 2.3).",
+        "situational_values": {
+          "system_context": [
+            "\ud83d\udc41\ufe0f\u200d\ud83d\udde8\ufe0f"
+          ]
+        }
+      }
+    },
+    {
+      "id": "ctx-024",
+      "description": "A skin-tone modifier stays with its base emoji",
+      "wire_input": "\ud83d\udc65\ud83d\udc76\ud83c\udffd",
+      "expected": {
+        "wire": "\ud83d\udc65\ud83d\udc76\ud83c\udffd",
+        "has_situational": true,
+        "conformance_level": "VCP-Minimal",
+        "note": "\ud83d\udc76\ud83c\udffd is kept as one unknown COMPANY value, not \ud83d\udc76 children plus a stray modifier.",
+        "situational_values": {
+          "company": [
+            "\ud83d\udc76\ud83c\udffd"
+          ]
+        }
+      }
+    },
+    {
+      "id": "ctx-025",
+      "description": "A VS16 tail on a value without one stays with it",
+      "wire_input": "\ud83d\udccd\ud83c\udfe0\ufe0f",
+      "expected": {
+        "wire": "\ud83d\udccd\ud83c\udfe0\ufe0f",
+        "has_situational": true,
+        "conformance_level": "VCP-Minimal",
+        "note": "\ud83c\udfe0\ufe0f (with U+FE0F) is kept as one unknown SPACE value, not \ud83c\udfe0 shared_space plus a stray selector.",
+        "situational_values": {
+          "space": [
+            "\ud83c\udfe0\ufe0f"
+          ]
+        }
       }
     }
   ]

@@ -471,7 +471,27 @@ function afterDimensionSymbol(part: string, symbol: string): string | null {
  * scanner takes the longest alias at each position; text between known values
  * is kept as written, one raw value per unmatched run, so `🚨🦖` yields
  * `['🚨', '🦖']` and the emergency keeps its meaning (VCP/A §2.3).
+ *
+ * A known value is accepted only on a grapheme boundary: it must not follow a
+ * ZERO WIDTH JOINER, and the next code point must not extend the cluster (ZWJ,
+ * VS16, a skin-tone modifier, a combining keycap or a tag character), so
+ * `👁️‍🗨️`, `👶🏽` and `🏠️` stay whole raw values.
  */
+const ZWJ = '\u200d';
+
+/** Whether the code point at `index` extends the preceding emoji cluster. */
+function continuesCluster(text: string, index: number): boolean {
+  if (index >= text.length) return false;
+  const codePoint = text.codePointAt(index) as number;
+  return (
+    codePoint === 0x200d ||
+    codePoint === 0xfe0f ||
+    codePoint === 0x20e3 ||
+    (codePoint >= 0x1f3fb && codePoint <= 0x1f3ff) ||
+    (codePoint >= 0xe0020 && codePoint <= 0xe007f)
+  );
+}
+
 function extractKnownValues(raw: string, spec: SituationalDimensionSpec): string[] {
   const aliases: Array<[alias: string, canonical: string]> = [];
   for (const canonical of Object.keys(spec.values)) {
@@ -485,7 +505,13 @@ function extractKnownValues(raw: string, spec: SituationalDimensionSpec): string
   let pending = '';
   let cursor = 0;
   while (cursor < raw.length) {
-    const match = aliases.find(([alias]) => raw.startsWith(alias, cursor));
+    const atBoundary = cursor === 0 || raw[cursor - 1] !== ZWJ;
+    const match = atBoundary
+      ? aliases.find(
+          ([alias]) =>
+            raw.startsWith(alias, cursor) && !continuesCluster(raw, cursor + alias.length),
+        )
+      : undefined;
     if (!match) {
       // Advance by one code point so surrogate pairs stay intact.
       const codePoint = String.fromCodePoint(raw.codePointAt(cursor) as number);

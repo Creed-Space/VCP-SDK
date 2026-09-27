@@ -240,6 +240,19 @@ def main() -> int:
                     failures.append(f"{case_id}: WebMCP re-encodes Rust output differently")
             except RuntimeError as error:
                 failures.append(f"{case_id}: WebMCP rejects Rust output {rs['wire']!r}: {error}")
+            expected_values = vector["expected"].get("situational_values")
+            if expected_values is not None and "wire_input" in vector:
+                # Value splitting: each binding must keep emoji sequences whole.
+                py_values = _PyContext.decode(vector["wire_input"]).to_json()["situational"]
+                web_values = web.get("roundtrip", {}).get("situational", {}) if web else {}
+                for dimension, values in expected_values.items():
+                    if py_values.get(dimension) != values:
+                        failures.append(f"{case_id}: Python {dimension}={py_values.get(dimension)!r}")
+                    if web and web_values.get(dimension) != values:
+                        failures.append(f"{case_id}: WebMCP {dimension}={web_values.get(dimension)!r}")
+                    rust_joined = "".join(rust_decoded.get("situational", {}).get(dimension) or [])
+                    if rust_joined != "".join(values):
+                        failures.append(f"{case_id}: Rust {dimension}={rust_joined!r}")
             if "has_emergency" in vector["expected"]:
                 from vcp.adaptation.state import StateTracker, TransitionSeverity
 
