@@ -16,7 +16,7 @@ import {
 function makeInput(overrides: Partial<HookInput> = {}): HookInput {
 	return {
 		context: { dimensions: {} },
-		constitution: { id: 'creative.growth.muse' },
+		constitution: { id: 'work.professional.assistant' },
 		event: {},
 		session: {},
 		chainState: {},

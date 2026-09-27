@@ -634,7 +634,7 @@ describe('createVCPTools — default personas', () => {
 			const bodies = fetchMock.mock.calls.map(
 				(call) => JSON.parse((call as unknown as [string, RequestInit])[1].body as string),
 			);
-			expect(bodies[0].constitution_id).toBe('creative.growth.muse');
+			expect(bodies[0].constitution_id).toBe('work.professional.assistant');
 			expect(bodies[0].constitution_id.split('.').length).toBeGreaterThanOrEqual(3);
 			expect(bodies[1].constitution_id).toBe('company.acme.procurement.approval-policy');
 		} finally {

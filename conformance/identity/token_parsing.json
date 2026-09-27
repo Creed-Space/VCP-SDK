@@ -408,9 +408,9 @@
     },
     {
       "id": "token-validate-005",
-      "description": "Default demo constitution is a valid Core token",
+      "description": "WebMCP vcp_chat default constitution (VCP/I 2.3.2 default for Ambassador) is a valid Core token",
       "operation": "validate",
-      "input": "creative.growth.muse",
+      "input": "work.professional.assistant",
       "expected": {
         "valid": true,
         "syntax_valid": true,

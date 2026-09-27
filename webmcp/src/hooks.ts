@@ -300,7 +300,7 @@ function validateHookDefinition(hook: HookDefinition): void {
  *
  * const result = registry.fire(HookType.PostSelect, {
  *   context: { dimensions: {} },
- *   constitution: { id: 'creative.growth.muse' },
+ *   constitution: { id: 'work.professional.assistant' },
  *   event: {},
  *   session: {},
  *   chainState: {},

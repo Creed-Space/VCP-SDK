@@ -290,11 +290,12 @@ const DEFAULT_PERSONAS: PersonaInfo[] = [
 const DEFAULT_PERSONA_ID = 'ambassador';
 
 /**
- * Constitution used by `vcp_chat` when the caller omits one: a Core VCP/I
- * token (listed prefix, exactly three segments) that passes
+ * Constitution used by `vcp_chat` when the caller omits one. It matches the
+ * default persona (Ambassador): `work.professional.assistant` is the VCP/I
+ * §2.3.2 default token for persona `A`, a Core token that passes
  * `validateIdentityToken`.
  */
-const DEFAULT_CONSTITUTION_ID = 'creative.growth.muse';
+const DEFAULT_CONSTITUTION_ID = 'work.professional.assistant';
 
 const MAX_PERSONAS = 100;
 const PERSONA_ID_PATTERN = /^[a-z0-9_-]{1,64}$/;
@@ -434,7 +435,7 @@ function createChatTool(config: VCPWebMCPConfig): WebMCPToolDefinition {
 				constitution_id: {
 					type: 'string',
 					description:
-						"Constitution ID, a valid VCP/I token: its first segment is a listed namespace prefix (family, work, secure, creative, reality, company, school, ngo, religion, culture, community or user) and a Core token has exactly three segments (e.g. 'creative.growth.muse', the default)."
+						"Constitution ID, a valid VCP/I token: its first segment is a listed namespace prefix (family, work, secure, creative, reality, company, school, ngo, religion, culture, community or user) and a Core token has exactly three segments (e.g. 'work.professional.assistant', the default)."
 				},
 				persona: {
 					type: 'string',
