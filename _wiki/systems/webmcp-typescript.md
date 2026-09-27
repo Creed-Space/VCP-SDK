@@ -3,7 +3,7 @@
 <!-- wiki:type = system -->
 <!-- wiki:scope = vcp-sdk -->
 <!-- wiki:created = 2026-05-23 -->
-<!-- wiki:updated = 2026-09-24 -->
+<!-- wiki:updated = 2026-09-27 -->
 <!-- wiki:status = active -->
 
 ## Summary
@@ -25,10 +25,13 @@ This is the browser-analog to the MCP server pattern: MCP server = CLI/server to
 | `types.ts` | TypeScript type definitions |
 | `hooks.ts` | Hook implementations |
 | `registration.ts` | Registers the tools on `document.modelContext`, falling back to `navigator.modelContext` |
+| `identity.ts` | VCP/I token validation (`validateIdentityToken`): syntax, then listed namespace prefix, three-segment Core tokens and no reserved words (VCP/I §3.4.1) |
 | `polyfill.ts` | Runs a caller-supplied polyfill loader (behind `?webmcp=polyfill`) to populate `document.modelContext` where WebMCP is not native |
-| `extensions/` | Extension tool registrations |
+| `extensions/` | Extension modules, including `context.ts`: VCP/A §2.2 vocabularies, tolerant `decodeContext` (unknown values kept, unknown dimension groups passed through) and strict `validateContextWire` |
 
 (webmcp/src/ directory listing)
+
+`vcp_chat` sends `creative.growth.muse` as the default `constitution_id` and rejects a caller-supplied one that fails `validateIdentityToken`.
 
 ## Build and Test
 
@@ -55,7 +58,7 @@ There is no general-purpose TypeScript/JavaScript VCP SDK (comparable to the Pyt
 ## Provenance
 
 - Sources consulted: `webmcp/package.json` (description, scripts, main); `webmcp/src/` directory listing; `webmcp/src/registration.ts` and `webmcp/src/polyfill.ts` (API target)
-- Last verified against sources: 2026-09-24
+- Last verified against sources: 2026-09-24; identity validation, context vocabularies and the `vcp_chat` default rechecked 2026-09-27 against `webmcp/src/identity.ts`, `webmcp/src/extensions/context.ts` and `webmcp/src/tools.ts`
 
 ## See Also
 

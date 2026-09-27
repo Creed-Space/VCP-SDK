@@ -4,7 +4,7 @@
 **Version**: 1.1.0
 **Date**: 2026-02-13
 **Layer**: VCP/S (Semantics)
-**Amends**: CSM1 Grammar Specification v1.0.0
+**Amends**: CSM-1 Grammar Specification v1.0.0
 
 ---
 

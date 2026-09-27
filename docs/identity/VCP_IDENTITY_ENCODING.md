@@ -20,7 +20,7 @@ This specification defines the multiple encoding formats for UVC tokens. A singl
 1. [Introduction](#1-introduction)
 2. [Format Registry](#2-format-registry)
 3. [Canonical Format](#3-canonical-format)
-4. [CSM1 Format](#4-csm1-format)
+4. [CSM-1 Format](#4-csm-1-format)
 5. [URI Format](#5-uri-format)
 6. [Obfuscated Format](#6-obfuscated-format)
 7. [Phonetic Format](#7-phonetic-format)
@@ -36,7 +36,7 @@ This specification defines the multiple encoding formats for UVC tokens. A singl
 ### 1.1 Purpose
 
 Multiple encoding formats enable:
-- **Efficiency**: CSM1 for wire protocols
+- **Efficiency**: CSM-1 for wire protocols
 - **Readability**: Canonical for humans
 - **Privacy**: Obfuscated for sensitive contexts
 - **Accessibility**: Phonetic for voice, emoji for visual
@@ -47,7 +47,7 @@ Multiple encoding formats enable:
 | Format | Length | Human-Readable | Privacy | Machine-Parseable |
 |--------|--------|----------------|---------|-------------------|
 | Canonical | Variable | Yes | No | Yes |
-| CSM1 | Short | Partial | No | Yes |
+| CSM-1 | Short | Partial | No | Yes |
 | URI | Long | Yes | No | Yes |
 | Obfuscated | Fixed | Yes | Yes | With key |
 | Phonetic | Variable | Voice | No | Yes |
@@ -166,7 +166,7 @@ def canonicalize(token: str) -> str:
 
 ---
 
-## 4. CSM1 Format
+## 4. CSM-1 Format
 
 ### 4.1 Specification
 
@@ -179,33 +179,28 @@ csm1-code = persona adherence [scopes] [":" namespace] ["@" version]
 ### 4.2 Mapping to UVC
 
 ```python
+# Illustrative defaults. A CSM-1 code names a persona, adherence and scopes,
+# not a constitution; the COMPACT tier (VCP/S §2.8.3) carries the UVC token
+# explicitly. Every default is a Core token of exactly three segments.
 CSM1_TO_UVC_MAPPING = {
-    # Persona → UVC prefix
-    'N': 'family.safe',
-    'Z': 'secure.privacy',
-    'G': 'family.ethics',
-    'A': 'work.professional',
-    'M': 'creative.artistic',
-    'R': 'reality.factual',
-    'H': 'work.technical',
-    'C': 'custom',  # Requires namespace
+    'N': 'family.safe.guide',            # Nanny
+    'Z': 'secure.privacy.guardian',      # Sentinel
+    'G': 'family.ethics.guide',          # Godparent
+    'A': 'work.professional.assistant',  # Ambassador
+    'M': 'creative.artistic.muse',       # Muse
+    'D': 'work.fair.mediator',           # Mediator
+    # 'C' (Custom) has no default token; name the constitution explicitly.
 }
 
 def csm1_to_canonical(csm1: str) -> str:
-    """Convert CSM1 code to canonical UVC token"""
+    """Return the default canonical UVC token for a CSM-1 code"""
     parsed = parse_csm1(csm1)
-    base = CSM1_TO_UVC_MAPPING[parsed.persona]
-
-    if parsed.persona == 'C' and parsed.namespace:
-        return f"custom.{parsed.namespace.lower()}"
-
-    # Add scope modifiers
-    if 'E' in parsed.scopes:
-        base += '.education'
-    elif 'W' in parsed.scopes:
-        base += '.work'
-
-    return base
+    if parsed.persona == 'C':
+        raise ValueError("Custom persona has no default token")
+    token = CSM1_TO_UVC_MAPPING[parsed.persona]
+    if parsed.namespace:
+        token += f":{parsed.namespace}"   # uppercase namespace suffix (§3.4)
+    return token
 ```
 
 ---
@@ -358,7 +353,7 @@ Phonetic encoding for voice communication:
 
 ### 7.2 Specification
 
-Uses NATO phonetic alphabet for CSM1 codes:
+Uses NATO phonetic alphabet for CSM-1 codes:
 
 ```python
 NATO_PHONETIC = {

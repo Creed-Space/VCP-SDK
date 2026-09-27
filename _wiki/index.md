@@ -1,7 +1,7 @@
 # VCP-SDK Wiki Index
 
 <!-- wiki:scope = vcp-sdk -->
-<!-- wiki:updated = 2026-05-23 -->
+<!-- wiki:updated = 2026-09-27 -->
 
 ## Systems
 - [[vcp-sdk:systems/sdk-architecture]] — Python/Rust/TypeScript SDK structure, python/src/vcp/ module inventory (updated: 2026-05-23)

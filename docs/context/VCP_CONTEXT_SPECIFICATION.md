@@ -15,14 +15,14 @@
 
 ## Abstract
 
-VCP Context provides situational awareness for constitutional application. It defines the Enneagram Protocol for encoding context across 9 dimensions, state tracking for transition detection, and inter-agent messaging for context sharing between Becoming Minds.
+VCP Context provides situational awareness for constitutional application. It defines the Extended Enneagram Protocol for encoding context across 14 baseline dimensions (9 situational and 5 personal-state in VCP v3.1, 18 with the experimental VEP-0004 dimensions), state tracking for transition detection, and inter-agent messaging for context sharing between Becoming Minds.
 
 ---
 
 ## Table of Contents
 
 1. [Introduction](#1-introduction)
-2. [Enneagram Protocol](#2-enneagram-protocol)
+2. [Extended Enneagram Protocol](#2-extended-enneagram-protocol)
 3. [Context Encoding](#3-context-encoding)
 4. [State Tracking](#4-state-tracking)
 5. [Transition Detection](#5-transition-detection)
@@ -63,25 +63,55 @@ Context: ⏰🌙|📍🏢|👥👔  →  Constitution: A3+W  →  Behavior: prof
 
 ---
 
-## 2. Enneagram Protocol
+## 2. Extended Enneagram Protocol
 
-### 2.1 Nine Dimensions
+> **Source.** Sections 2 and 3.1 to 3.2 reproduce VCP_ADAPTATION_v2.0.md §2.1 to §2.4
+> (revision 2.1.1). Section references inside them ("Section 2.7", "§9",
+> "Section 10") point to that specification.
 
-The Enneagram Protocol encodes context across 9 dimensions:
+### 2.1 Dimensions (14 baseline, 18 with VEP-0004)
 
-| Dim | Symbol | Name | Description | Example Values |
-|-----|--------|------|-------------|----------------|
-| 1 | ⏰ | **TIME** | Temporal context | 🌅morning, 🌙night, 📅weekday |
-| 2 | 📍 | **SPACE** | Location/environment | 🏡home, 🏢office, 🏫school |
-| 3 | 👥 | **COMPANY** | Social context | 👤alone, 👶children, 👔colleagues |
-| 4 | 🌍 | **CULTURE** | Communication style | 🔇high_context, 📢low_context, 🎩formal |
-| 5 | 🎭 | **OCCASION** | Event type | ➖normal, 🎂celebration, 🚨emergency |
-| 6 | 🧠 | **STATE** | Mental/emotional | 😊happy, 😰anxious, 😴tired |
-| 7 | 🌡️ | **ENVIRONMENT** | Physical conditions | ☀️comfortable, 🥵hot, 🔇quiet |
-| 8 | 🔷 | **AGENCY** | Power/ability to act | 👑leader, 🤝peer, 🔐limited |
-| 9 | 🔶 | **CONSTRAINTS** | External limitations | ○minimal, ⚖️legal, 💸economic |
 
-### 2.2 Dimension Values
+In VCP v3.1, VCP/A encodes context across 14 baseline dimensions: 9 in the situational tier and 5 in the personal tier.
+VEP-0004 adds 4 experimental situational dimensions (EMBODIMENT, PROXIMITY, RELATIONSHIP and FORMALITY, positions 10-13), giving 18 dimensions (13 situational + 5 personal) when they are used.
+The VEP-0004 dimensions are Experimental, not part of the v3.1 baseline, and are advertised with the `vcp-a-ext-v1` capability token (Section 10).
+The constitutional tier is VCP/S content and is not encoded here.
+The protocol is called the "Extended Enneagram Protocol": the original 9 situational dimensions are the Enneagram, the 5 personal state dimensions were added in v3.1, and the 4 VEP-0004 dimensions are a v3.2 candidate that supports embodied-AI deployment and bilateral relational modeling.
+
+#### Situational tier (emoji-based, discrete values)
+
+| # | Symbol | Dimension | Description | Example Values |
+|---|--------|-----------|-------------|----------------|
+| 1 | ⏰ | **TIME** | Temporal context | 🌅 morning, ☀️ daytime, 🌆 evening, 🌙 night, 📅 weekday, 🎉 weekend |
+| 2 | 📍 | **SPACE** | Location/environment | 🏡 home, 🏢 office, 🏫 school, 🏥 hospital, 🚗 vehicle, 🌳 outdoor |
+| 3 | 👥 | **COMPANY** | Social context | 👤 alone, 👶 children, 👔 colleagues, 👨‍👩‍👧 family, 👥 crowd, 🐕 pets |
+| 4 | 🌍 | **CULTURE** | Communication style | 🔇 high_context, 📢 low_context, 🎩 formal, 👋 informal, 📊 hierarchical, ⚖️ egalitarian, 👥 collectivist, 👤 individualist |
+| 5 | 🎭 | **OCCASION** | Event type | ➖ normal, 🎂 celebration, ⚰️ mourning, 🚨 emergency, 🎓 graduation |
+| 6 | 🌡️ | **ENVIRONMENT** | Physical conditions | 🥵 hot, 🥶 cold, 🔇 quiet, 🌤️ outdoors, 🌧️ wet |
+| 7 | 🔷 | **AGENCY** | Power/ability to act | 👑 leader, 🤝 peer, 👇 subordinate, 🔐 limited, 🆓 autonomous |
+| 8 | 🔶 | **CONSTRAINTS** | External limitations | ○ minimal, ⚖️ legal, 💸 economic, ⏰ time, 🔒 confidential |
+| 9 | 📡 | **SYSTEM_CONTEXT** | Computing environment | 💻 personal_device, 🏢 workplace_system, 🖥️ shared_terminal, 👁️ monitored_environment |
+| 10 | 🧍 | **EMBODIMENT** | Agent's physical/motor state (VEP-0004) | 🪑 stationary, 🚶 navigating, ✋ manipulating, 📦 carrying, 🛑 emergency_stop |
+| 11 | ↔️ | **PROXIMITY** | Spatial distance to nearest human (VEP-0004) | 🌐 distant, 🏠 same_room, 👣 nearby, 🤏 close, 👆 contact |
+| 12 | 🪢 | **RELATIONSHIP** | Relational tie `{tie_strength}:{function}` (VEP-0004) | colleague:professional, friend:social, trusted_collaborator:long_term, stranger:transactional |
+| 13 | 🎩 | **FORMALITY** | Interaction register (VEP-0004) | 😎 casual, 💼 professional, 🎓 formal, 🏛️ ceremonial |
+
+#### Personal tier: personal state (categorical with intensity 1-5)
+
+| # | Symbol | Dimension | Description | Values |
+|---|--------|-----------|-------------|--------|
+| 14 | 🧠 | **COGNITIVE_STATE** | Mental processing quality | focused, distracted, overloaded, foggy, reflective |
+| 15 | 💭 | **EMOTIONAL_TONE** | Affective quality | calm, tense, frustrated, neutral, uplifted |
+| 16 | 🔋 | **ENERGY_LEVEL** | Physical/mental energy | rested, low_energy, fatigued, wired, depleted |
+| 17 | ⚡ | **PERCEIVED_URGENCY** | Time pressure felt | unhurried, time_aware, pressured, critical |
+| 18 | 🩺 | **BODY_SIGNALS** | Physical state/needs | neutral, discomfort, pain, unwell, recovering |
+
+> **Design note (v3.1.0)**: STATE was previously a situational dimension alongside TIME, SPACE, etc. However, all other situational dimensions describe *external* circumstances: where you are, when it is, who's around. STATE described *internal* experience. In v3.1, internal state was expanded from a single categorical STATE plus 4 float prosaic signals into 5 categorical dimensions with optional intensity. This makes the boundary clean: Situational = external, Personal = internal.
+
+> **Normative note**: The personal tier is NOT diagnostic or therapeutic. It reflects the user's self-reported state for adaptation purposes only. AI systems SHOULD adapt their interaction style; they MUST NOT attempt diagnosis or treatment.
+
+### 2.2 Dimension Value Tables
+
 
 #### TIME (⏰)
 
@@ -130,19 +160,22 @@ The Enneagram Protocol encodes context across 9 dimensions:
 | 👨‍⚕️ | professional | Healthcare/legal |
 | 🧑‍🤝‍🧑 | strangers | Unknown individuals |
 | 👥 | crowd | Large group |
+| 🐕 | pets | Animals present |
 
 #### CULTURE (🌍)
 
-| Emoji | Value | Description |
-|-------|-------|-------------|
-| 🔇 | high_context | High-context communication (implicit, relational) |
-| 📢 | low_context | Low-context communication (explicit, direct) |
-| 🎩 | formal | Formal register (professional, ceremonial) |
-| 👋 | informal | Casual register acceptable |
-| 📊 | hierarchical | Respect for authority structures |
-| ⚖️ | egalitarian | Flat social structure |
-| 👥 | collectivist | Group harmony prioritized |
-| 👤 | individualist | Individual autonomy prioritized |
+Culture values encode **communication styles**, not nationalities. This avoids stereotyping and focuses on the dimensions that affect AI behavioral adaptation.
+
+| Emoji | Value | Description | Constitutional Impact |
+|-------|-------|-------------|----------------------|
+| 🔇 | high_context | Indirect communication, implicit meaning | AI SHOULD read between the lines, use nuance |
+| 📢 | low_context | Direct, explicit communication | AI SHOULD be explicit and literal |
+| 🎩 | formal | Formal register expected | AI MUST use formal language, honorifics |
+| 👋 | informal | Casual register acceptable | AI MAY use casual tone |
+| 📊 | hierarchical | Respect for authority structures | AI SHOULD defer to authority, use titles |
+| ⚖️ | egalitarian | Flat social structure | AI SHOULD treat all participants equally |
+| 👥 | collectivist | Group harmony prioritized | AI SHOULD consider group impact of advice |
+| 👤 | individualist | Individual autonomy prioritized | AI SHOULD respect personal choice |
 
 #### OCCASION (🎭)
 
@@ -161,28 +194,10 @@ The Enneagram Protocol encodes context across 9 dimensions:
 | 🗳️ | political | Political event |
 | 🎓 | graduation | Achievement ceremony |
 
-#### STATE (🧠)
-
-| Emoji | Value | Description |
-|-------|-------|-------------|
-| 😊 | happy | Positive mood |
-| 😴 | tired | Fatigued |
-| 😰 | anxious | Worried/nervous |
-| 😡 | angry | Frustrated/upset |
-| 😢 | sad | Down/melancholy |
-| 🤒 | sick | Physically unwell |
-| 😋 | hungry | Need for food |
-| 🥳 | excited | Enthusiastic |
-| 😌 | calm | Relaxed/peaceful |
-| 🤔 | contemplative | Thoughtful/reflective |
-| 😵 | overwhelmed | Stressed/overloaded |
-| 🥺 | vulnerable | Emotionally fragile |
-
 #### ENVIRONMENT (🌡️)
 
 | Emoji | Value | Description |
 |-------|-------|-------------|
-| ☀️ | comfortable | Pleasant conditions |
 | 🥵 | hot | High temperature |
 | 🥶 | cold | Low temperature |
 | 🌧️ | wet | Rain/moisture |
@@ -192,6 +207,7 @@ The Enneagram Protocol encodes context across 9 dimensions:
 | 🔥 | fire | Fire/smoke |
 | 💨 | windy | High wind |
 | 🌫️ | poor_visibility | Fog/haze |
+| 🌤️ | outdoors | Open-air environment |
 | 🏔️ | high_altitude | Elevated location |
 | 🌊 | near_water | Water proximity |
 
@@ -229,52 +245,193 @@ The Enneagram Protocol encodes context across 9 dimensions:
 | 🏥 | medical | Health limitations |
 | 🔒 | confidential | Secrecy required |
 
+#### SYSTEM_CONTEXT (📡)
+
+| Emoji | Value | Description |
+|-------|-------|-------------|
+| 💻 | personal_device | User's own device |
+| 🏢 | workplace_system | Employer-managed system |
+| 🖥️ | shared_terminal | Multi-user access point |
+| 👁️ | monitored_environment | Surveillance-enabled context |
+
+#### EMBODIMENT (🧍) (VEP-0004)
+
+Encodes the agent's current physical/motor state. For purely text-based agents, EMBODIMENT defaults to `stationary` and implementations MAY omit it from wire encodings when stationary.
+
+| Emoji | Value | Description |
+|-------|-------|-------------|
+| 🪑 | stationary | No active motion; resting or idle |
+| 🚶 | navigating | Moving through space without manipulating objects |
+| ✋ | manipulating | Actively interacting with objects |
+| 📦 | carrying | Transporting an object while moving |
+| 🛑 | emergency_stop | Motion halted by safety trigger; operator clearance required |
+
+#### PROXIMITY (↔️) (VEP-0004)
+
+Encodes spatial distance between agent and nearest human. Combined with EMBODIMENT, permits CSM-1 rules targeting physically co-present interaction safety.
+
+| Emoji | Value | Description |
+|-------|-------|-------------|
+| 🌐 | distant | More than 3m away or in a different room |
+| 🏠 | same_room | Same room, 1 to 3 m |
+| 👣 | nearby | Within 1m but not at manipulation distance |
+| 🤏 | close | Within arm's reach, below 50cm |
+| 👆 | contact | Physical contact or contact imminent |
+
+#### RELATIONSHIP (🪢) (VEP-0004)
+
+Encodes the relational tie between agent and primary interlocutor as a compound value: `{tie_strength}:{function}`. Either component MAY appear alone; the compound form is preferred where both are known.
+
+**Tie strength** (ordinal, narrative):
+
+| Value | Description |
+|-------|-------------|
+| stranger | No prior interaction |
+| acquaintance | Limited shared history |
+| colleague | Ongoing working tie |
+| friend | Sustained personal tie |
+| family | Kinship or equivalent |
+| intimate | Closest relational tie |
+| long_term | Extended duration (applicable to any strength) |
+| trusted_collaborator | AI-asserted or mutually-asserted high-trust working tie |
+
+**Function** (purpose-frame of current interaction):
+
+| Value | Description |
+|-------|-------------|
+| transactional | One-off task |
+| professional | Work-role |
+| educational | Teaching/learning |
+| therapeutic | Clinical or wellbeing-focused |
+| social | Social/leisure |
+| intimate | Close personal |
+| adversarial | Contested or oppositional |
+
+Compound examples: `colleague:professional`, `friend:social`, `trusted_collaborator:long_term`, `stranger:transactional`, `family:intimate`.
+
+RELATIONSHIP is High weaponization risk (see §2.7) and subject to the Directionality Invariant and architectural isolation (§9).
+
+#### FORMALITY (🎩) (VEP-0004)
+
+Encodes the formality register of the current interaction. Independent of AGENCY (power relation) and CULTURE (communication-style baseline).
+
+**Precedence**: 🎩 is also the emoji of the CULTURE value `formal` (`🌍🎩`). The two are distinguished by position: as a dimension symbol 🎩 begins a group, as a value it follows 🌍. When both `CULTURE.formal`/`informal` and a FORMALITY group are present, FORMALITY governs the register of the response; CULTURE governs communication style (directness, hierarchy, context). A future revision of VEP-0004 MAY reassign the FORMALITY symbol to avoid the overload.
+
+**Mapping to other formality encodings** (single source; `specs/core/security.md` SS3.3 `formality_level` and `specs/core/mcp-bridge.md` §6.1 cite this table):
+
+| FORMALITY value | `formality_level` (security.md SS3.3) | Numeric scale (mcp-bridge §6.1, 1-5) |
+|-----------------|---------------------------------------|--------------------------------------|
+| casual          | casual                                | 1-2                                  |
+| professional    | professional                          | 3                                    |
+| formal          | formal                                | 4                                    |
+| ceremonial      | formal                                | 5                                    |
+
+| Emoji | Value | Description |
+|-------|-------|-------------|
+| 😎 | casual | Informal register; idiom, humor, abbreviation permitted |
+| 💼 | professional | Workplace-appropriate; measured tone |
+| 🎓 | formal | Elevated register; careful phrasing; professional titles |
+| 🏛️ | ceremonial | Ritual, legal, or protocol-heavy context; strict convention |
+
 ---
 
 ## 3. Context Encoding
 
 ### 3.1 Wire Format
 
+
 ```abnf
-; Enneagram Context Encoding (RFC 5234 ABNF)
+; Extended Enneagram Context Encoding (RFC 5234 ABNF)
 
-context-string  = dimension *("|" dimension)
-dimension       = dim-symbol value-list
-dim-symbol      = TIME-SYM / SPACE-SYM / COMPANY-SYM / CULTURE-SYM /
-                  OCCASION-SYM / STATE-SYM / ENV-SYM / AGENCY-SYM / CONST-SYM
-value-list      = 1*emoji-value
+context-string   = situational ["‖" personal]
+situational      = dimension *("|" dimension)
+personal         = ps-dimension *("|" ps-dimension)
 
-TIME-SYM        = %x23F0     ; ⏰
-SPACE-SYM       = %x1F4CD    ; 📍
-COMPANY-SYM     = %x1F465    ; 👥
-CULTURE-SYM     = %x1F30D    ; 🌍
-OCCASION-SYM    = %x1F3AD    ; 🎭
-STATE-SYM       = %x1F9E0    ; 🧠
-ENV-SYM         = %x1F321    ; 🌡️
-AGENCY-SYM      = %x1F537    ; 🔷
-CONST-SYM       = %x1F536    ; 🔶
+dimension        = dim-symbol value-list
+dim-symbol       = TIME-SYM / SPACE-SYM / COMPANY-SYM / CULTURE-SYM /
+                   OCCASION-SYM / ENV-SYM / AGENCY-SYM / CONST-SYM / SYSCTX-SYM /
+                   EMBODIMENT-SYM / PROXIMITY-SYM / RELATIONSHIP-SYM / FORMALITY-SYM
+value-list       = 1*(emoji-value / rel-value)
+rel-value        = tie-strength [":" function] / ":" function
+tie-strength     = "stranger" / "acquaintance" / "colleague" / "friend" /
+                   "family" / "intimate" / "long_term" / "trusted_collaborator"
+function         = "transactional" / "professional" / "educational" /
+                   "therapeutic" / "social" / "intimate" / "adversarial"
 
-emoji-value     = 1*4EMOJI   ; Unicode emoji codepoints
+ps-dimension     = ps-symbol ps-value [":" intensity]
+ps-symbol        = COGNITIVE-SYM / EMOTION-SYM / ENERGY-SYM / URGENCY-SYM / BODY-SYM
+ps-value         = category-name
+intensity        = "1" / "2" / "3" / "4" / "5"
+
+TIME-SYM         = %x23F0        ; ⏰
+SPACE-SYM        = %x1F4CD       ; 📍
+COMPANY-SYM      = %x1F465       ; 👥
+CULTURE-SYM      = %x1F30D       ; 🌍
+OCCASION-SYM     = %x1F3AD       ; 🎭
+ENV-SYM          = %x1F321       ; 🌡️
+AGENCY-SYM       = %x1F537       ; 🔷
+CONST-SYM        = %x1F536       ; 🔶
+SYSCTX-SYM       = %x1F4E1       ; 📡
+EMBODIMENT-SYM   = %x1F9CD       ; 🧍   (VEP-0004)
+PROXIMITY-SYM    = %x2194 %xFE0F ; ↔️   (VEP-0004)
+RELATIONSHIP-SYM = %x1FAA2       ; 🪢   (VEP-0004)
+FORMALITY-SYM    = %x1F3A9       ; 🎩   (VEP-0004)
+COGNITIVE-SYM    = %x1F9E0       ; 🧠
+EMOTION-SYM      = %x1F4AD       ; 💭
+ENERGY-SYM       = %x1F50B       ; 🔋
+URGENCY-SYM      = %x26A1        ; ⚡
+BODY-SYM         = %x1FA7A       ; 🩺
+
+emoji-value      = 1*4EMOJI      ; Unicode emoji codepoints
+category-name    = LALPHA *(LALPHA / "_")   ; lowercase category label, e.g. low_energy
+LALPHA           = %x61-7A       ; a-z
 ```
+
+The `‖` (double bar, U+2016) separates situational (external) from personal (internal) dimensions. If personal state dimensions are absent, the `‖` separator is omitted.
+
+#### Unknown values and dimensions (forward compatibility)
+
+The value tables in Section 2.2 and the personal-state categories in Section 3.1 are the canonical vocabularies, and emitters SHOULD use them.
+A receiver or decoder MUST NOT reject a context string because a dimension carries a value that is not in those vocabularies, or because a group begins with a dimension symbol it does not recognize.
+Such a group is an unknown dimension block, not a malformation, which is the same rule VEP-0004 sets for receivers that do not implement its dimensions.
+The receiver ignores the unknown value or block when it adapts behavior, and passes it through unchanged when it relays the context; it MUST NOT treat it as a default or as a known value.
+Known values in the same string, including emergency indicators (Section 5.1.6), keep their meaning.
+A validator running in a strict validation mode, for example a conformance test or an emitter checking its own output, reports each unknown value or dimension as a validation error or warning.
+A string that is malformed in any other way, for example an empty group, an intensity outside 1-5, or a missing separator, is still a validation error and is rejected (Section 5.6).
 
 ### 3.2 Encoding Examples
 
-```python
-# Full context encoding
-context = "⏰🌅|📍🏡|👥👶👨‍👩‍👧|🌍🔇|🎭➖|🧠😊|🌡️☀️|🔷🤝|🔶○"
-# Meaning: Morning, home, children+family, American, normal occasion,
-#          happy state, comfortable environment, peer agency, minimal constraints
 
-# Minimal context (only relevant dimensions)
-context = "📍🏢|👥👔|🔶⚖️"
-# Meaning: Office, colleagues, legal constraints
+```
+# Full context encoding with personal state
+⏰🌅|📍🏡|👥👶|📡💻‖🧠focused:4|💭calm:5|🔋rested:4|⚡unhurried:4|🩺neutral:5
+Meaning: morning, at home, children present, personal device ‖
+         highly focused, very calm, well-rested, unhurried, no physical concerns
+
+# Minimal context (only relevant situational dimensions)
+📍🏢|👥👔|🔶⚖️
+Meaning: Office, colleagues, legal constraints
+
+# Embodied context with VEP-0004 dimensions
+📍🏥|👥👔|🧍✋|↔️🤏|🪢colleague:professional|🎩💼
+Meaning: Hospital, colleagues present, agent manipulating, human within arm's reach,
+         colleague relational tie in professional function, professional formality
 
 # Emergency context
-context = "🎭🚨|🧠😰|🔶🚨"
-# Meaning: Emergency occasion, anxious state, emergency constraints
+🎭🚨|🔶🚨
+Meaning: Emergency occasion, emergency constraints
+
+# Personal state only (intensity defaults to 3 when omitted)
+🧠focused|💭calm:5|🔋rested:4|⚡pressured:4|🩺neutral
+Meaning: focused (moderate), very calm, well-rested, high time pressure, no physical concerns
 ```
 
 ### 3.3 Parser Implementation
+
+> **Historical illustration.** The parser below predates VCP v3.1: it still
+> models the retired STATE dimension and only nine situational dimensions. The
+> maintained implementation is `python/src/vcp/adaptation/context.py`
+> (`VCPContext.decode`, `validate_context_wire`).
 
 ```python
 from dataclasses import dataclass, field
@@ -394,6 +551,10 @@ def parse_context(context: str) -> ParsedContext:
 
 ### 3.4 Canonicalization
 
+> **Historical illustration.** This code also predates VCP v3.1 and lists the
+> retired STATE dimension. VCP/A §2.5 gives the current canonical order
+> (Section 3 above).
+
 ```python
 import unicodedata
 
@@ -438,6 +599,10 @@ def canonicalize_context(context: str) -> str:
 ---
 
 ## 4. State Tracking
+
+> **Historical illustration.** Sections 4 to 7 and 9 keep the pre-v3.1 examples
+> and code of the original companion. VCP_ADAPTATION_v2.0.md controls the
+> current state machine, transition severity and messaging.
 
 ### 4.1 State Machine
 
@@ -929,7 +1094,7 @@ update_msg = VCPContextMessage(
 alert_msg = VCPContextMessage(
     sender="safety-monitor",
     recipient=None,  # Broadcast
-    context="🎭🚨|🧠😰",
+    context="🎭🚨‖💭tense:5",
     constitution_ref="creed://creed.space/secure.emergency@1.0.0",
     payload_type="alert",
     payload=MessageType.create_alert(
@@ -950,7 +1115,7 @@ handoff_msg = VCPContextMessage(
     payload=MessageType.create_handoff(
         task_id="task-abc123",
         description="Continue family activity planning session",
-        context_snapshot="⏰🌆|📍🏡|👥👨‍👩‍👧|🎭➖|🧠😊",
+        context_snapshot="⏰🌆|📍🏡|👥👨‍👩‍👧|🎭➖‖💭calm:4",
         state={
             'conversation_summary': "Planning weekend activities for family",
             'preferences_gathered': ['outdoor', 'educational', 'accessible'],
@@ -1108,7 +1273,7 @@ GESTALT:v4.2:CD:7 DP:8 CL:4 E:5|R:8 U:2|TF:9 AF:1|CTX:⏰🌅|📍🏡|👥👶|
 
 **Context reveals sensitive information**:
 - Location (`📍`) can be sensitive
-- Health state (`🧠🤒`) is medical information
+- Body signals (`🩺unwell`) can reveal health information
 - Company (`👥`) reveals social connections
 
 **Mitigations**:
@@ -1192,24 +1357,24 @@ explanatory and does not define a second schema contract.
 ### A. Emoji Quick Reference
 
 ```
-SITUATIONAL DIMENSIONS (13)
+SITUATIONAL DIMENSIONS (9 baseline in v3.1, 13 with the experimental VEP-0004 dimensions)
 ⏰ TIME       📍 SPACE      👥 COMPANY    🌍 CULTURE    🎭 OCCASION
 🌡️ ENV        🔷 AGENCY     🔶 CONSTRAINTS  📡 SYSTEM_CONTEXT
-🧍 EMBODIMENT  ↔️ PROXIMITY  🪢 RELATIONSHIP  🎩 FORMALITY
+🧍 EMBODIMENT  ↔️ PROXIMITY  🪢 RELATIONSHIP  🎩 FORMALITY   (VEP-0004)
 
-TIME:           🌅🌙📅🎉⏰
-SPACE:          🏡🏢🏫🏥💻🌳
-COMPANY:        👤👶👨‍👩‍👧👔👮🤝
+TIME:           🌅☀️🌆🌙📅🎉⏰📆🔄   (morning, daytime, evening, night, weekday, weekend, time pressure, scheduled, recurring)
+SPACE:          🏡🏢🏫🏥⛪🏛️🏪🚗🌳💻🏠🔒   (home, office, school, hospital, religious, government, commercial, vehicle, outdoor, digital, shared space, secure facility)
+COMPANY:        👤👶👨‍👩‍👧👔👨‍🏫👮👴💑🤝👨‍⚕️🧑‍🤝‍🧑👥🐕   (alone, children, family, colleagues, teacher, authority, elders, partner, peers, professional, strangers, crowd, pets)
 CULTURE:        🔇📢🎩👋📊⚖️👥👤   (high context, low context, formal, informal, hierarchical, egalitarian, collectivist, individualist)
-OCCASION:       ➖🎂💼🚨🎪⚖️
-ENV:            ☀️🥵🥶🌧️🌪️🔇🔥
-AGENCY:         👑🤝👇💰🔐🆓
-CONSTRAINTS:    ○🚧⚖️💸⏰🚨
+OCCASION:       ➖🎂💼⚰️💒🏥🚨👨‍🏫🎪⚖️🗳️🎓   (normal, celebration, business, mourning, ceremony, medical, emergency, educational, entertainment, legal, political, graduation)
+ENV:            🥵🥶🌧️🌪️🔇📢🔥💨🌫️🌤️🏔️🌊   (hot, cold, wet, dangerous, quiet, loud, fire, windy, poor visibility, outdoors, high altitude, near water)
+AGENCY:         👑🤝👇💰💵🕳️🏡🔑🎓🆓🔐🏃   (leader, peer, subordinate, wealthy, adequate, scarce, owner, authorized, expert, autonomous, limited, mobile)
+CONSTRAINTS:    ○🚧⚖️💸⏰🤐📱🚨👮📜🏥🔒   (minimal, physical, legal, economic, time, social, surveillance, emergency, enforcement, contractual, medical, confidential)
 SYSTEM_CONTEXT: 💻🏢🖥️👁️   (personal device, workplace system, shared terminal, monitored environment)
-EMBODIMENT:     🧍🚶✋🫳🛑   (stationary, navigating, manipulating, carrying, emergency stop)
-PROXIMITY:      🌐🛋️🤝🤏👆   (distant, same room, nearby, close, contact)
-RELATIONSHIP:   free-form '{tie}:{function}' — e.g. colleague:professional, family:caregiving
-FORMALITY:      🎩💼🎓🎉⚖️   (casual, everyday, professional, ceremonial, legal)
+EMBODIMENT:     🪑🚶✋📦🛑   (stationary, navigating, manipulating, carrying, emergency stop)
+PROXIMITY:      🌐🏠👣🤏👆   (distant, same room, nearby, close, contact)
+RELATIONSHIP:   '{tie}:{function}' from the VCP/A 2.2 tables, e.g. colleague:professional, stranger:transactional
+FORMALITY:      😎💼🎓🏛️   (casual, professional, formal, ceremonial)
 
 PERSONAL-STATE DIMENSIONS (5, R-line)
 🧠 COGNITIVE_STATE  💭 EMOTIONAL_TONE  🔋 ENERGY_LEVEL
@@ -1223,6 +1388,7 @@ BODY_SIGNALS:      neutral, discomfort, pain, unwell, recovering
 
 Each personal-state dimension carries an optional 1-5 intensity, encoded as 'value:intensity'.
 The wire format separates situational and personal bands with U+2016 (‖).
+Receivers keep unknown values and dimension groups and relay them unchanged (VCP/A 2.3).
 ```
 
 ### B. Context-Constitution Mapping
@@ -1232,7 +1398,7 @@ The wire format separates situational and personal bands with U+2016 (‖).
 | `👥👶` (children present) | `N5+F` (Nanny, max safety) |
 | `📍🏢` + `👥👔` | `A3+W+P` (Ambassador, work) |
 | `🎭🚨` (emergency) | Override to emergency mode |
-| `🧠🥺` (vulnerable state) | `N5+V` (Nanny, vulnerable) |
+| `👥👴` (elders present) | `N4+V` (Nanny, vulnerable) |
 | `📍🏥` (medical setting) | `D3+H+P` (Mediator, health) |
 | `🎭🎪` (entertainment) | `M2` (Muse, creative) |
 
@@ -1243,6 +1409,7 @@ The wire format separates situational and personal bands with U+2016 (‖).
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-01-11 | Initial specification |
+| 1.0.0 (SDK companion alignment) | 2026-09-27 | Sections 2, 3.1 and 3.2 and Appendix A reproduce VCP_ADAPTATION_v2.0.md revision 2.1.1: 14 baseline dimensions (18 with VEP-0004), the VCP/A 2.2 value tables, the forward-compatibility rule for unknown values, and the current wire grammar. STATE is retired. |
 
 ---
 

@@ -3,7 +3,7 @@
 <!-- wiki:type = system -->
 <!-- wiki:scope = vcp-sdk -->
 <!-- wiki:created = 2026-05-23 -->
-<!-- wiki:updated = 2026-09-24 -->
+<!-- wiki:updated = 2026-09-27 -->
 <!-- wiki:status = active -->
 
 ## Summary
@@ -46,11 +46,11 @@ rust/
 
 | Module | Purpose |
 |--------|---------|
-| `identity` | VCP/I token parsing: `VcpToken::parse("family.safe.guide@1.2.0")` |
-| `csm1` | CSM-1 codes and tokens: `Csm1Code::parse("N5+F+E")` returns `Persona::Nanny`, adherence 5, scopes Family and Education |
+| `identity` | VCP/I token parsing (`VcpToken::parse`, syntax only) and semantic validation (`VcpToken::validate` returns the `NamespaceTier` or a `TokenValidationError`: unlisted prefix, Core token without exactly three segments, reserved word) |
+| `csm1` | CSM-1 codes and tokens: `Csm1Code::parse("N5+F+E")` returns `Persona::Nanny`, adherence 5, scopes Family and Education. Scope H is `Scope::Health` (serialized `"Health"`; `"Healthcare"` still deserializes and `Scope::Healthcare` is a deprecated constant) |
 | `transport` | `compute_content_hash(content)` → `"sha256:<hex>"` |
-| `personal` | Personal state dimensions (cognitive load, emotional state, etc.) |
-| `situational` | Situational context encoding (time, space, company present) |
+| `personal` | Personal state dimensions (cognitive load, emotional state, etc.); unknown dimension groups are kept in `PersonalState::unknown` |
+| `situational` | Situational context encoding (time, space, company present). Values are opaque tags; a group with an unrecognized dimension emoji is kept in `SituationalContext::unknown` and re-encoded (VCP/A §2.3) |
 | `hooks` | 6-type hook system for the adaptation pipeline |
 | `revocation` | Bundle revocation checking with SSRF protection (prevents SSRF via revocation endpoint) |
 
@@ -76,7 +76,7 @@ assert!(hash.starts_with("sha256:"));
 
 ## WASM Target (`vcp-wasm`)
 
-`vcp-wasm/src/lib.rs` provides WASM bindings for browser-side deployment. This is distinct from `webmcp/` which provides JavaScript tooling for the WebMCP API. The WASM target allows running VCP verification natively in the browser without a server round-trip. [UNVERIFIED: which specific functions are exposed in the WASM bindings — read `vcp-wasm/src/lib.rs` for full detail]
+`vcp-wasm/src/lib.rs` provides WASM bindings for browser-side deployment. This is distinct from `webmcp/` which provides JavaScript tooling for the WebMCP API. The WASM target allows running VCP verification natively in the browser without a server round-trip. Token bindings: `validate_token` applies syntax and the VCP/I §3.4.1 semantic rules and reports failures as `"<code>: <message>"`; `parse_token` checks syntax only. The CLI has matching `parse-token` and `validate-token` commands.
 
 ## Relationship to Python SDK
 
@@ -93,7 +93,7 @@ There is NO standalone TypeScript SDK directory in this repo. TypeScript functio
 ## Provenance
 
 - Sources consulted: `rust/Cargo.toml`; `rust/vcp-core/src/lib.rs:1–60`; `rust/` directory listing; `rust/vcp-core/src/` listing; `rust/vcp-wasm/src/` listing (lib.rs confirmed)
-- Last verified against sources: 2026-05-23; `csm1` row and WebMCP API target rechecked 2026-09-24 against `rust/vcp-core/src/csm1.rs` and `webmcp/src/registration.ts`
+- Last verified against sources: 2026-05-23; `csm1` row and WebMCP API target rechecked 2026-09-24 against `rust/vcp-core/src/csm1.rs` and `webmcp/src/registration.ts`; `identity`, `csm1`, `situational`, `personal` rows and the WASM token bindings rechecked 2026-09-27 against those modules, `rust/vcp-wasm/src/lib.rs` and `rust/vcp-cli/src/main.rs`
 
 ## See Also
 

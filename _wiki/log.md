@@ -21,3 +21,18 @@ Key corrections: removed stale claims that deleted API, MCP, integrations, and
 website code remain maintained; documented the archived boundaries, 16-profile
 checked conformance model, risk-based coverage, mutation and fuzz programmes,
 installed-artifact checks, runtime matrix, and candidate-bound release gates.
+
+## [2026-09-27] update | Canon reconciliation with VCP-Spec
+Pages updated: systems/python-sdk-modules, systems/rust-implementation,
+systems/webmcp-typescript, systems/sdk-architecture, systems/testing-approach,
+flows/bundle-sign-verify
+Sources ingested: VCP-Spec canon/2026-09-27-reconcile (VCP/A §2.1 to §2.3,
+VCP/I §3.4.1 and §4.2, VCP/S §2.6.1, core audit §3.1 and §6, mcp-bridge §1.2);
+python/src/vcp/audit.py, identity/, adaptation/context.py, semantics/csm1.py,
+mcp_server.py; rust/vcp-core identity, csm1, situational, personal;
+rust/vcp-wasm/src/lib.rs; webmcp/src/identity.ts, extensions/context.ts, tools.ts.
+Key changes: 14 baseline dimensions (18 with VEP-0004) and the VCP/A §2.2
+vocabularies; unknown values tolerated and unknown dimension groups passed
+through; audit default `minimal` with the keyed `hmac-sha256:` hash; five Core
+identity prefixes with semantic validation; scope H named Health; MCP revision
+caveat for the tools-only MCP server.

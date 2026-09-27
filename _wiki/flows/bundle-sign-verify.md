@@ -3,7 +3,7 @@
 <!-- wiki:type = flow -->
 <!-- wiki:scope = vcp-sdk -->
 <!-- wiki:created = 2026-05-23 -->
-<!-- wiki:updated = 2026-09-24 -->
+<!-- wiki:updated = 2026-09-27 -->
 <!-- wiki:status = active -->
 
 ## Summary
@@ -26,7 +26,7 @@ From `python/src/vcp/` (directory listing):
 | `manifest.py` | Manifest structure — metadata about bundle contents |
 | `orchestrator.py` | Entry point for verify-then-inject flow |
 | `revocation.py` | Checks revocation status before accepting a bundle (fails closed with `REVOCATION_UNAVAILABLE` when no configured source can establish a status) |
-| `audit.py` | Records verification and privacy-filter events with salted identifier hashes (no hash chain; the core-profile chain is implemented in the Creed Space platform, not this SDK) |
+| `audit.py` | Records verification and privacy-filter events with keyed `hmac-sha256:` identifier pseudonyms at the configured level (default `minimal`); no hash chain, since the core-profile chain is implemented in the Creed Space platform, not this SDK |
 | `injection.py` | Formats verified bundles for injection into the model context (the injection scan itself runs in `orchestrator.py`) |
 
 ## Flow Steps
@@ -50,7 +50,7 @@ Bundle manifest validated against `schemas/vcp-manifest-v1.schema.json`. (VCP-Sp
 ## Provenance
 
 - Sources consulted: VCP-SDK/CLAUDE.md, python/src/vcp/ directory listing, VCP-Spec/README.md; `python/src/vcp/orchestrator.py` (verification steps 1-12), `python/src/vcp/audit.py`, `python/src/vcp/injection.py`
-- Last verified against sources: 2026-09-24
+- Last verified against sources: 2026-09-24; `audit.py` row rechecked 2026-09-27
 
 ## See Also
 

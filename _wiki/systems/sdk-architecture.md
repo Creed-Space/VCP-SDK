@@ -3,7 +3,7 @@
 <!-- wiki:type = system -->
 <!-- wiki:scope = vcp-sdk -->
 <!-- wiki:created = 2026-05-23 -->
-<!-- wiki:updated = 2026-09-24 -->
+<!-- wiki:updated = 2026-09-27 -->
 <!-- wiki:status = active -->
 
 ## Summary
@@ -24,7 +24,7 @@ VCP-Spec; the maintained interactive application belongs in VCP-Demo-Site.
 | `rust/vcp-wasm/` | Browser-compatible WASM bindings over `vcp-core` |
 | `webmcp/` | TypeScript WebMCP tools, explicit registration lifecycle, hooks, polyfill loading boundary, and supported extensions |
 | `schemas/` | SDK-owned schemas and reviewed copies synchronized from VCP-Spec |
-| `conformance/` | Authored fixtures, 16 profile runners, coverage classification, and aggregate reports |
+| `conformance/` | Authored fixtures, 17 profile runners, coverage classification, and aggregate reports |
 | `examples/` | Executable integration examples and deployment configuration samples |
 | `scripts/` | Repository, schema, ecosystem, package, performance, coverage, and release-evidence validators |
 | `archives/` | Retired adjacent projects and host-specific integrations preserved with archive metadata |
@@ -70,6 +70,17 @@ copies are synchronized, which SDK schemas are implementation-specific, and the
 intentional VCP/M version split. `scripts/check_schema_sync.py` compares an exact
 Spec and SDK checkout; `scripts/validate_public_contract.py` checks public names,
 versions, exports, protocol labels, and Demo guidance across all three projects.
+
+## Canon alignment
+
+The unreleased tree follows the VCP-Spec canon reconciliation of 27 September
+2026: VCP/A §2.2 vocabularies with tolerant decoding (VCP/A §2.3), the five
+Core identity prefixes with semantic token validation (VCP/I §3.4.1), scope H
+named Health, the `minimal` default audit level with the keyed `hmac-sha256:`
+privacy hash (core audit §3.1, §6), and the full emergency indicator set. The
+`vcp-mcp-server` is a tools-only MCP server and does not implement the VCP/MCP
+bridge, which targets MCP revisions up to 2025-11-25 (`initialize` and
+Sampling); VEP-0005 is the adaptation path for MCP 2026-07-28.
 
 ## Release architecture
 

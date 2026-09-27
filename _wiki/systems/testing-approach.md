@@ -3,7 +3,7 @@
 <!-- wiki:type = system -->
 <!-- wiki:scope = vcp-sdk -->
 <!-- wiki:created = 2026-05-23 -->
-<!-- wiki:updated = 2026-08-14 -->
+<!-- wiki:updated = 2026-09-27 -->
 <!-- wiki:status = active -->
 
 ## Summary
@@ -21,7 +21,7 @@ package-install smoke tests, schema synchronization, and dependency audits.
 | Python behavior | Unit, integration, property, and protocol-vector tests under `python/tests/` | `make python`, `make property`, and `make coverage` |
 | Rust behavior | Unit, integration, property, examples, CLI, and documentation | `make rust`, `make examples`, and `make packages` |
 | WebMCP behavior | Type checks, unit tests, property tests, registration lifecycle, and packed-package import | `make webmcp` |
-| Cross-language behavior | 27 JSON fixture files containing 337 tracked cases | `make conformance` |
+| Cross-language behavior | 30 JSON fixture files containing 366 tracked cases (240 vectors plus 126 test cases) | `make conformance` |
 | Security depth | Critical module statement and branch floors, scheduled mutation lanes, fuzzing, and audits | `make coverage`, `mutation.yml`, `fuzz.yml`, and `make audits` |
 | Runtime compatibility | Python 3.10 through 3.14, two Node LTS lines, Rust 1.87 and stable, native OS matrix, WASM | `.github/workflows/ci.yml` |
 | Installed artifacts | Wheel, sdist, three Cargo crates, npm tarball, and WASM target | `scripts/verify_artifacts.py` |
@@ -32,7 +32,10 @@ package-install smoke tests, schema synchronization, and dependency audits.
 The conformance corpus is organized by identity, semantics, adaptation,
 extensions, interoperability, transport, and security. Each case is classified
 as checked, unsupported, or not applicable in `conformance/coverage-manifest.json`.
-The aggregate runner executes 16 checked profiles and writes candidate-bound
+Identity vectors separate parsing (syntax only) from `validate` operations
+(VCP/I §3.4.1 semantic rules), and context vectors include unknown values,
+unknown dimension groups and malformed strings (VCP/A §2.3). The aggregate
+runner executes 17 checked profiles and writes candidate-bound
 JSON reports under `conformance/reports/`. Fixture presence by itself is not a
 pass.
 
@@ -79,7 +82,9 @@ review, registry publication, and governance decisions remain distinct gates.
 
 ## Provenance
 
-Sources verified on 2026-08-14: `Makefile`; `.github/workflows/ci.yml`;
+Sources verified on 2026-08-14 (fixture counts and conformance profiles
+rechecked 2026-09-27 against `scripts/validate_repo.py`,
+`conformance/coverage-manifest.json` and `conformance/runners/run_all.py`): `Makefile`; `.github/workflows/ci.yml`;
 `.github/workflows/fuzz.yml`; `.github/workflows/mutation.yml`;
 `.github/workflows/performance.yml`; `python/pyproject.toml`;
 `scripts/check_critical_coverage.py`; `scripts/verify_artifacts.py`;
