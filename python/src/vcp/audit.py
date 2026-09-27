@@ -267,7 +267,7 @@ class AuditLogger:
         self._lock = threading.Lock()
 
     def _hash(self, value: str) -> str:
-        """Privacy-hash ``value`` with this logger's salt."""
+        """Pseudonymize ``value`` with the keyed privacy hash under this logger's K_audit."""
         return _hash_for_privacy(value, self._audit_key)
 
     def track_exported_path(self, path: str) -> None:
@@ -462,16 +462,36 @@ class AuditLogger:
         Get audit entries.
 
         Args:
-            since: Only return entries after this time
+            since: Only return entries recorded after this time. Timestamps
+                are a ``standard``-level field, so time filtering is only
+                available when entries expose them: with ``since`` set, a
+                logger at ``minimal`` raises ``ValueError``, and any entry
+                recorded below ``standard`` is left out rather than
+                revealing when it was recorded.
 
         Returns:
             List of audit entries, each the :meth:`AuditEntry.redacted` view
             permitted at its level
+
+        Raises:
+            ValueError: If ``since`` is given and the logger's level is
+                ``minimal``.
         """
+        if since is not None and _LEVEL_RANK[self.level] < _LEVEL_RANK[AuditLevel.STANDARD]:
+            raise ValueError(
+                "get_entries(since=...) needs timestamps, which the minimal audit level "
+                "does not expose; use AuditLevel.STANDARD or higher"
+            )
         with self._lock:
             entries = list(self._entries)
-        if since:
-            entries = [e for e in entries if e.timestamp is not None and e.timestamp > since]
+        if since is not None:
+            entries = [
+                e
+                for e in entries
+                if _LEVEL_RANK[e.audit_level] >= _LEVEL_RANK[AuditLevel.STANDARD]
+                and e.timestamp is not None
+                and e.timestamp > since
+            ]
         return [e.redacted() for e in entries]
 
     def log_privacy_filter(

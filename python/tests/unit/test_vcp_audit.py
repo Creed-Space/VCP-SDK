@@ -574,3 +574,24 @@ class TestCallbackRedaction:
         logger.purge_by_session("user-A")
         tombstone = [e for e in captured if e.verification_result == "PURGE_TOMBSTONE"]
         assert tombstone and tombstone[0].session_id_hash is None
+
+
+class TestSinceFilterPrivacy:
+    """get_entries(since=...) must not reveal timing below the standard level."""
+
+    def test_since_is_rejected_at_minimal(self) -> None:
+        logger = AuditLogger()
+        logger._entries.append(_make_entry(AuditLevel.MINIMAL))
+        with pytest.raises(ValueError, match="minimal"):
+            logger.get_entries(since=datetime(2020, 1, 1, tzinfo=timezone.utc))
+        assert len(logger.get_entries()) == 1
+
+    def test_since_skips_entries_below_standard(self) -> None:
+        logger = AuditLogger(level=AuditLevel.STANDARD)
+        logger._entries.append(_make_entry(AuditLevel.MINIMAL))
+        logger._entries.append(_make_entry(AuditLevel.STANDARD))
+        entries = logger.get_entries(since=datetime(2020, 1, 1, tzinfo=timezone.utc))
+        assert [e.audit_level for e in entries] == [AuditLevel.STANDARD]
+        assert entries[0].timestamp is not None
+        later = logger.get_entries(since=datetime(2030, 1, 1, tzinfo=timezone.utc))
+        assert later == []
