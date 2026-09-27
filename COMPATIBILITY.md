@@ -151,3 +151,11 @@ VCP-Spec layer specifications. Integrators upgrading from 4.2.0 should check:
   `validate_token` and the WebMCP `vcp_chat` `constitution_id` check reject
   unlisted prefixes, Core tokens without exactly three segments and reserved
   words. The WebMCP `vcp_chat` default constitution is `creative.growth.muse`.
+* Pseudonymous identities are `user.anon-<24 hex>.*` and
+  `user.pseudo-<24 hex>.*`. The registry rejects `anon.*`, `pseudo.*` and any
+  other token that fails `Token.validate()`. Convert stored legacy tokens with
+  `migrate_legacy_pseudonymous_token` before registering them, and expect
+  24-character pseudonyms from `generate_pseudonym`.
+* A personal-state intensity is exactly one digit 1-5 in every binding;
+  `focused:04`, `focused:+4` and `focused:0` are malformed. A personal-only
+  context string begins with `‖`.

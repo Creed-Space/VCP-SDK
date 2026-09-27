@@ -4,7 +4,7 @@
   "schema": "vcp-conformance-coverage/1",
   "suites": [
     {
-      "case_count": 12,
+      "case_count": 14,
       "cases": [
         {
           "applicability": "protocol_behavior",
@@ -233,10 +233,48 @@
               "status": "checked"
             }
           }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Personal-only context begins with the separator (VCP/A 2.3)",
+          "id": "ctx-013",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "Intensity with a leading zero is malformed",
+          "id": "ctx-014",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
         }
       ],
       "fixture": "conformance/adaptation/context_encoding.json",
-      "fixture_sha256": "c2f7987c88bf7f9b4d6bdcff50adbcf7aa89be20b67409d63fa65351f8c56844",
+      "fixture_sha256": "91d6e42e96f2ac9c1be0addea332309e40bd3b79f8bb72bbcb3677dbbff52abc",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/docs/context/VCP_CONTEXT_SPECIFICATION.md",
       "runner": "conformance/runners/context_parity.py",
@@ -7322,22 +7360,22 @@
     "fixture_count": 30,
     "implementation_status": {
       "python": {
-        "checked": 352,
+        "checked": 354,
         "not_applicable": 8,
         "unsupported": 6
       },
       "rust": {
-        "checked": 292,
+        "checked": 294,
         "not_applicable": 8,
         "unsupported": 66
       },
       "webmcp": {
-        "checked": 77,
+        "checked": 79,
         "not_applicable": 283,
         "unsupported": 6
       }
     },
-    "vector_count": 366,
+    "vector_count": 368,
     "webmcp_surface_checks": 2
   },
   "webmcp_surface": {

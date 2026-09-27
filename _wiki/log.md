@@ -36,3 +36,10 @@ vocabularies; unknown values tolerated and unknown dimension groups passed
 through; audit default `minimal` with the keyed `hmac-sha256:` hash; five Core
 identity prefixes with semantic validation; scope H named Health; MCP revision
 caveat for the tools-only MCP server.
+
+## [2026-09-27] update | Canon round 3: pseudonyms and intensity
+Pages updated: systems/python-sdk-modules
+Sources ingested: /home/claude/vcp/pseudonym_decision.md; VCP-Spec bc743e6
+(VCP/A §2.3 personal-only form and one-digit intensity); python/src/vcp/identity/registry.py.
+Key changes: pseudonymous identities under user.anon-<hex> and user.pseudo-<hex>;
+the registry rejects unlisted prefixes; intensity is exactly one digit 1-5.

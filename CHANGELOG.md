@@ -70,8 +70,46 @@ version.
   `ctx-012` (malformed input rejected by all three bindings).
 - Python `AuditEntry.redacted()`, the view of an entry holding only the
   fields permitted at its level.
+- Pseudonymous identities under the Personal tier: Python
+  `pseudonymous_token(kind, pseudonym, *rest)` builds
+  `user.anon-<24 hex>.<rest...>` or `user.pseudo-<24 hex>.<rest...>`, and
+  `pseudonym_of`, `is_pseudonymous_token` and
+  `migrate_legacy_pseudonymous_token` (all exported from `vcp.identity`) read
+  and convert them. The registry module documents that pseudonymous owners
+  prove possession of the pseudonym secret instead of the VCP/I §4.2.4 email
+  verification.
+- Conformance vectors `ctx-013` (a personal-only context that begins with
+  `‖`) and `ctx-014` (a leading-zero intensity, rejected by Python, Rust and
+  WebMCP).
 
 ### Changed
+- **Breaking:** VCP/I defines no `anon` or `pseudo` prefix, so pseudonymous
+  identities move to `user.anon-<hex>.*` and `user.pseudo-<hex>.*`
+  (the round-3 pseudonym decision). `LocalRegistry.register` now applies
+  `Token.validate()` and raises `TokenValidationError` for an unlisted prefix
+  (including `anon.*` and `pseudo.*`), a Core token without exactly three
+  segments or a reserved-word segment, because a registry MUST NOT register
+  such a token (VCP/I §3.4.1). `PseudonymousRegistry.generate_pseudonym`
+  returns 24 lowercase hex characters (was 32) so the pseudonym fits the
+  username segment, and `register_pseudonymous` requires a token whose
+  username carries that pseudonym. `infer_privacy_tier` returns PSEUDONYMOUS
+  for the new form; the retired `anon.*` and `pseudo.*` tokens still parse
+  but get the restrictive ORGANIZATIONAL tier, fail validation, and convert
+  with `migrate_legacy_pseudonymous_token` (the first 24 hex characters of the
+  legacy hash become the pseudonym).
+- **Breaking:** a personal-state intensity is exactly one ASCII digit from 1
+  to 5 (VCP/A §2.3). Python `PersonalState.decode` and Rust
+  `PersonalDimension::from_wire` previously accepted `04`, `+4` (and, in
+  Python, `" 4"` and non-ASCII digits); WebMCP `decodePersonalState`
+  previously returned `value:suffix` as a raw value. All three now reject any
+  text after `:` other than one digit 1-5, and context decoders reject the
+  string as malformed.
+- The synchronized `vcp-adaptation-context.schema.json` rejects a
+  personal-band intensity that is not one digit 1-5 and admits a
+  personal-only context beginning with `‖`. The adaptation companion docs
+  pick up the VCP/A revision: the personal-only form in the ABNF and
+  examples, the one-digit intensity rule, and valid RELATIONSHIP examples
+  (`trusted_collaborator:professional`, `long_term:social`).
 - **Breaking:** the audit privacy hash is the keyed form of VCP core audit §6:
   `"hmac-sha256:"` followed by the first 32 lowercase hex characters of
   HMAC-SHA256(K_audit, UTF-8(identifier)), replacing the salted

@@ -91,6 +91,8 @@ The unreleased tree follows the VCP-Spec canon reconciliation of 27 September 20
 - **Identity**: core prefixes are `family`, `work`, `secure`, `creative` and `reality`; organizational `company`, `school`, `ngo`; community `religion`, `culture`, `community`; personal `user`. `Token.parse` accepts any syntactically valid token; `Token.validate` and the MCP `vcp_validate_token` tool reject unlisted prefixes (VCP/I §3.4.1).
 - **Adaptation**: every situational vocabulary and the personal-state categories equal the VCP/A §2.2 and §3.1 tables and the synchronized schema enums. Decoders keep unknown values raw and pass unknown dimension groups through; malformed strings are rejected.
 - **Semantics**: scope H is named Health.
+- **Registry**: `LocalRegistry.register` validates every token, so unlisted prefixes are rejected. Pseudonymous identities are Personal-tier tokens `user.anon-<24 hex>.*` and `user.pseudo-<24 hex>.*` (`pseudonymous_token`, `migrate_legacy_pseudonymous_token` for the retired `anon.*` and `pseudo.*` forms); pseudonymous owners prove possession of the pseudonym secret instead of the §4.2.4 email check.
+- **Personal-state intensity**: exactly one digit 1-5 in every binding; a personal-only context begins with `‖`.
 
 ## MCP server and MCP revisions
 
