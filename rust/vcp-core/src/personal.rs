@@ -272,10 +272,16 @@ pub struct PersonalState {
     /// Body signals (neutral / discomfort / pain / unwell / recovering).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub body: Option<PersonalDimension>,
+    /// Raw groups whose dimension emoji is not recognized, in wire order.
+    /// They take no part in adaptation and are re-encoded unchanged after the
+    /// known dimensions (VCP/A §2.3).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unknown: Vec<String>,
 }
 
 impl PersonalState {
-    /// Returns `true` if at least one dimension is set.
+    /// Returns `true` if at least one known dimension is set. Unknown
+    /// dimension groups do not count.
     pub fn has_any(&self) -> bool {
         self.cognitive.is_some()
             || self.emotional.is_some()
@@ -303,14 +309,16 @@ impl PersonalState {
                 parts.push(format!("{}{}", kind.symbol(), dim.to_wire()));
             }
         }
+        parts.extend(self.unknown.iter().cloned());
 
         parts.join("|")
     }
 
     /// Parse personal state from wire format (the part after `\u{2016}`).
     ///
-    /// A segment that starts with an unknown dimension emoji is skipped and
-    /// the rest is parsed (VCP/S §2.4.2).
+    /// A segment that starts with an unknown dimension emoji is kept in
+    /// [`PersonalState::unknown`], re-encoded unchanged, and the rest is
+    /// parsed (VCP/S §2.4.2, VCP/A §2.3).
     ///
     /// # Errors
     ///
@@ -346,7 +354,8 @@ impl PersonalState {
                 )));
             }
             let Some(kind) = PersonalDimensionKind::from_symbol(symbol) else {
-                // Unknown dimension emoji: skip it and parse the remainder.
+                // Unknown dimension emoji: keep it for pass-through.
+                state.unknown.push(segment.to_string());
                 continue;
             };
 
@@ -494,14 +503,17 @@ mod tests {
     }
 
     #[test]
-    fn personal_wire_skips_unknown_dimension_emoji() {
+    fn personal_wire_passes_unknown_dimension_emoji_through() {
         let state = PersonalState::from_wire("\u{1F984}sparkly:2|\u{1F9E0}focused:4").unwrap();
         assert_eq!(state.cognitive.as_ref().unwrap().value, "focused");
         assert!(state.emotional.is_none());
-        assert_eq!(state.to_wire(), "\u{1F9E0}focused:4");
+        assert_eq!(state.unknown, vec!["\u{1F984}sparkly:2".to_string()]);
+        // Known dimensions first, then unknown groups in wire order (VCP/A §2.3).
+        assert_eq!(state.to_wire(), "\u{1F9E0}focused:4|\u{1F984}sparkly:2");
 
         let only_unknown = PersonalState::from_wire("\u{1F984}sparkly:2").unwrap();
         assert!(!only_unknown.has_any());
+        assert_eq!(only_unknown.to_wire(), "\u{1F984}sparkly:2");
 
         // A segment with no leading emoji is malformed, not an unknown dimension.
         assert!(PersonalState::from_wire("focused:4").is_err());
@@ -541,6 +553,7 @@ mod tests {
             energy: Some(PersonalDimension::new("depleted", 4).unwrap()),
             urgency: Some(PersonalDimension::new("critical", 5).unwrap()),
             body: Some(PersonalDimension::with_extended("pain", 4, "migraine").unwrap()),
+            unknown: Vec::new(),
         };
 
         let wire = ps.to_wire();

@@ -29,6 +29,57 @@ from mcp.types import (
 logger = logging.getLogger(__name__)
 
 
+_MULTI_VALUE_DIMENSIONS = frozenset({"company", "culture", "constraints"})
+_DIMENSION_DESCRIPTIONS = {
+    "time": "Time of day context",
+    "space": "Physical space context",
+    "company": "Who is present",
+    "culture": "Communication style (not nationality)",
+    "occasion": "Current occasion/event type",
+    "agency": "Agency/authority level",
+    "system_context": "Computing environment",
+}
+
+
+def _situational_input_properties() -> dict[str, Any]:
+    """JSON Schema properties for every situational dimension (VCP/A §2.2)."""
+    from vcp.adaptation.context import SituationalDimension
+
+    properties: dict[str, Any] = {}
+    for dim in SituationalDimension:
+        name = dim._name
+        if dim.is_free_form:
+            properties[name] = {"type": "string", "pattern": "^[^:]+:[^:]+$"}
+            continue
+        names = list(dim.values.values())
+        single: dict[str, Any] = {"type": "string", "enum": names}
+        if name in _MULTI_VALUE_DIMENSIONS:
+            schema: dict[str, Any] = {
+                "oneOf": [
+                    single,
+                    {"type": "array", "items": single, "uniqueItems": True},
+                ]
+            }
+        else:
+            schema = dict(single)
+        if name in _DIMENSION_DESCRIPTIONS:
+            schema["description"] = _DIMENSION_DESCRIPTIONS[name]
+        properties[name] = schema
+    return properties
+
+
+def _situational_value_summary() -> str:
+    from vcp.adaptation.context import SituationalDimension
+
+    lines = []
+    for dim in SituationalDimension:
+        if dim.is_free_form:
+            lines.append(f"- {dim._name}: compound tie:function value")
+        else:
+            lines.append(f"- {dim._name}: {', '.join(dim.values.values())}")
+    return "\n".join(lines)
+
+
 async def list_tools() -> list[Tool]:
     """List available VCP tools."""
     return [
@@ -95,22 +146,12 @@ Example codes:
             name="vcp_encode_context",
             description="""Encode context dimensions to VCP/A format.
 
-Encodes contextual state across 13 situational and 5 personal-state dimensions:
-- time: morning, midday, evening, night
-- space: home, office, school, hospital, transit
-- company: alone, children, colleagues, family, strangers
-- culture: high_context, low_context, formal, informal, hierarchical,
-  egalitarian, collectivist, individualist
-- occasion: normal, celebration, mourning, emergency, business
-- environment: comfortable, hot, cold, quiet, noisy
-- agency: leader, peer, subordinate, limited
-- constraints: minimal, legal, economic, time
-- system_context: personal_device, workplace_system, shared_terminal,
-  monitored_environment
-- embodiment: stationary, navigating, manipulating, carrying, emergency_stop
-- proximity: distant, same_room, nearby, close, contact
-- relationship: compound tie:function value
-- formality: casual, professional, formal, ceremonial
+Encodes contextual state across the 9 baseline situational dimensions, the 4
+experimental VEP-0004 situational dimensions and the 5 personal-state
+dimensions. Situational values are the VCP/A §2.2 names:
+"""
+            + _situational_value_summary()
+            + """
 - personal state: cognitive_state, emotional_tone, energy_level,
   perceived_urgency, body_signals (each with optional intensity 1-5)
 
@@ -118,112 +159,7 @@ Returns wire format (emoji-based) and JSON format.""",
             input_schema={
                 "type": "object",
                 "properties": {
-                    "time": {
-                        "type": "string",
-                        "enum": ["morning", "midday", "evening", "night"],
-                        "description": "Time of day context",
-                    },
-                    "space": {
-                        "type": "string",
-                        "enum": ["home", "office", "school", "hospital", "transit"],
-                        "description": "Physical space context",
-                    },
-                    "company": {
-                        "oneOf": [
-                            {
-                                "type": "string",
-                                "enum": ["alone", "children", "colleagues", "family", "strangers"],
-                            },
-                            {
-                                "type": "array",
-                                "items": {
-                                    "type": "string",
-                                    "enum": [
-                                        "alone",
-                                        "children",
-                                        "colleagues",
-                                        "family",
-                                        "strangers",
-                                    ],
-                                },
-                                "uniqueItems": True,
-                            },
-                        ],
-                        "description": "Who is present (alone, children, colleagues, family)",
-                    },
-                    "culture": {
-                        "type": "string",
-                        "enum": [
-                            "high_context",
-                            "low_context",
-                            "formal",
-                            "informal",
-                            "hierarchical",
-                            "egalitarian",
-                            "collectivist",
-                            "individualist",
-                        ],
-                        "description": "Communication style (not nationality)",
-                    },
-                    "occasion": {
-                        "type": "string",
-                        "enum": ["normal", "celebration", "mourning", "emergency", "business"],
-                        "description": "Current occasion/event type",
-                    },
-                    "environment": {
-                        "type": "string",
-                        "enum": ["comfortable", "hot", "cold", "quiet", "noisy"],
-                    },
-                    "agency": {
-                        "type": "string",
-                        "enum": ["leader", "peer", "subordinate", "limited"],
-                        "description": "Agency/authority level",
-                    },
-                    "constraints": {
-                        "oneOf": [
-                            {"type": "string", "enum": ["minimal", "legal", "economic", "time"]},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "type": "string",
-                                    "enum": ["minimal", "legal", "economic", "time"],
-                                },
-                                "uniqueItems": True,
-                            },
-                        ],
-                    },
-                    "system_context": {
-                        "type": "string",
-                        "enum": [
-                            "personal_device",
-                            "workplace_system",
-                            "shared_terminal",
-                            "monitored_environment",
-                        ],
-                        "description": "Computing environment",
-                    },
-                    "embodiment": {
-                        "type": "string",
-                        "enum": [
-                            "stationary",
-                            "navigating",
-                            "manipulating",
-                            "carrying",
-                            "emergency_stop",
-                        ],
-                    },
-                    "proximity": {
-                        "type": "string",
-                        "enum": ["distant", "same_room", "nearby", "close", "contact"],
-                    },
-                    "relationship": {
-                        "type": "string",
-                        "pattern": "^[^:]+:[^:]+$",
-                    },
-                    "formality": {
-                        "type": "string",
-                        "enum": ["casual", "professional", "formal", "ceremonial"],
-                    },
+                    **_situational_input_properties(),
                     **{
                         name: {
                             "oneOf": [

@@ -157,6 +157,38 @@ def main() -> int:
         document = json.loads(fixture.read_text(encoding="utf-8"))
         for vector in document["vectors"]:
             case_id = vector["id"]
+            if "wire_input" in vector and vector["expected"].get("valid") is False:
+                # Malformed input: every implementation must reject it.
+                if str(PYTHON_SRC) not in sys.path:
+                    sys.path.insert(0, str(PYTHON_SRC))
+                from vcp.adaptation.context import VCPContext
+
+                rejected: dict[str, bool] = {}
+                try:
+                    VCPContext.decode(vector["wire_input"])
+                    rejected["python"] = False
+                except ValueError:
+                    rejected["python"] = True
+                parsed = subprocess.run(
+                    [str(RUST_BINARY), "parse-context", vector["wire_input"]],
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                rejected["rust"] = parsed.returncode != 0
+                try:
+                    webmcp_context(vector)
+                    rejected["webmcp"] = False
+                except RuntimeError:
+                    rejected["webmcp"] = True
+                failures.extend(
+                    f"{implementation}: {case_id}: accepted malformed wire input"
+                    for implementation, was_rejected in rejected.items()
+                    if not was_rejected
+                )
+                results.append({"id": case_id, "rejected": rejected})
+                continue
             if "wire_input" in vector:
                 if str(PYTHON_SRC) not in sys.path:
                     sys.path.insert(0, str(PYTHON_SRC))

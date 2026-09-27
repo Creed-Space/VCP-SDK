@@ -94,6 +94,8 @@ export {
   contextFromJSON,
   conformanceLevel,
   buildContext,
+  validateContextWire,
+  PERSONAL_STATE_CATEGORIES,
 } from './context.js';
 export type {
   SituationalDimensionSpec,

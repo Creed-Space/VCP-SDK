@@ -533,7 +533,7 @@ class TestContextEncoder:
         ctx = encoder.encode(constraints=["legal", "time"])
         values = ctx.get(SituationalDimension.CONSTRAINTS)
         assert "⚖️" in values
-        assert "⏱️" in values
+        assert "⏰" in values
 
     # ── VEP-0004 ────────────────────────────────────────────────────────
     def test_encode_embodiment(self, encoder):
@@ -670,3 +670,136 @@ class TestConformanceLevel:
             personal={PersonalStateDimension.COGNITIVE_STATE: PersonalState("focused")},
         )
         assert ctx.conformance_level() == "VCP-Extended"
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# VCP/A §2.2 vocabularies and §2.3 forward compatibility
+# ────────────────────────────────────────────────────────────────────────────
+
+_SCHEMA_PATH = (
+    __import__("pathlib").Path(__file__).resolve().parents[4]
+    / "schemas"
+    / "vcp-adaptation-context.schema.json"
+)
+
+
+def _schema_definitions() -> dict:
+    import json
+
+    return json.loads(_SCHEMA_PATH.read_text(encoding="utf-8"))["definitions"]
+
+
+class TestVocabulariesMatchSchema:
+    @pytest.mark.parametrize("dim", [d for d in SituationalDimension if not d.is_free_form])
+    def test_situational_values_match_schema_enum(self, dim):
+        """Every situational vocabulary equals the synchronized schema enum, in order."""
+        enum = _schema_definitions()[f"{dim._name}_values"]["enum"]
+        assert list(dim.values) == enum
+
+    @pytest.mark.parametrize("pdim", list(PersonalStateDimension))
+    def test_personal_categories_match_schema_enum(self, pdim):
+        enum = _schema_definitions()[f"{pdim._name}_values"]["enum"]
+        assert pdim.values == set(enum)
+
+    @pytest.mark.parametrize(
+        ("dimension", "retired", "canonical", "emoji"),
+        [
+            ("time", "midday", "daytime", "☀️"),
+            ("space", "transit", "vehicle", "🚗"),
+            ("environment", "noisy", "loud", "📢"),
+            ("culture", "casual", "informal", "👋"),
+        ],
+    )
+    def test_renamed_values_are_deprecated_aliases(self, dimension, retired, canonical, emoji):
+        encoder = ContextEncoder()
+        with pytest.warns(DeprecationWarning, match=canonical):
+            ctx = encoder.encode(**{dimension: retired})
+        assert ctx.get(SituationalDimension.from_name(dimension)) == [emoji]
+
+    @pytest.mark.parametrize(
+        ("dimension", "retired"),
+        [("environment", "comfortable"), ("culture", "mixed"), ("system_context", "online")],
+    )
+    def test_removed_values_have_no_alias(self, dimension, retired):
+        with pytest.raises(ValueError, match="Unknown"):
+            ContextEncoder().encode(**{dimension: retired})
+
+    def test_value_emoji_changes(self):
+        encoder = ContextEncoder()
+        ctx = encoder.encode(
+            company="strangers",
+            occasion="mourning",
+            agency="subordinate",
+            constraints="time",
+        )
+        assert ctx.encode() == "👥🧑‍🤝‍🧑|🎭⚰️|🔷👇|🔶⏰"
+
+
+class TestForwardCompatibleDecoding:
+    """VCP/A §2.3: receivers ignore or pass through; strict validators report."""
+
+    def test_unknown_values_are_kept_raw(self):
+        ctx = VCPContext.decode("🎭😢|🔷📋|🔶⏱️")
+        assert ctx.get(SituationalDimension.OCCASION) == ["😢"]
+        assert ctx.get(SituationalDimension.AGENCY) == ["📋"]
+        assert ctx.encode() == "🎭😢|🔷📋|🔶⏱️"
+
+    def test_unknown_dimension_groups_pass_through(self):
+        wire = "⏰🌅|🦄sparkle|📍🏡‖🧠focused:4|🪐orbit:2"
+        ctx = VCPContext.decode(wire)
+        assert ctx.unknown_situational == ("🦄sparkle",)
+        assert ctx.unknown_personal == ("🪐orbit:2",)
+        assert ctx.get(SituationalDimension.TIME) == ["🌅"]
+        assert ctx.encode() == "⏰🌅|📍🏡|🦄sparkle‖🧠focused:4|🪐orbit:2"
+        assert VCPContext.decode(ctx.encode()) == ctx
+        assert VCPContext.from_json(ctx.to_json()) == ctx
+
+    def test_known_emergency_indicator_survives_unknown_groups(self):
+        from vcp.adaptation import StateTracker, TransitionSeverity
+
+        tracker = StateTracker()
+        tracker.record(VCPContext.decode("⏰🌅"))
+        transition = tracker.record(VCPContext.decode("⏰🌅|🦄sparkle|🎭🚨"))
+        assert transition.severity is TransitionSeverity.EMERGENCY
+
+    def test_only_unknown_groups(self):
+        ctx = VCPContext.decode("🦄sparkle")
+        assert not ctx
+        assert ctx.encode() == "🦄sparkle"
+
+    @pytest.mark.parametrize(
+        "wire",
+        [
+            "⏰🌅||📍🏡",
+            "⏰🌅|",
+            "⏰",
+            "⏰🌅‖",
+            "‖🧠focused:4|",
+            "‖🧠",
+            "‖🧠focused:9",
+            "abc",
+            "⏰🌅‖focused",
+        ],
+    )
+    def test_malformed_strings_are_rejected(self, wire):
+        with pytest.raises(ValueError):
+            VCPContext.decode(wire)
+
+    def test_strict_validator_reports_unknowns(self):
+        from vcp.adaptation import validate_context_wire
+
+        assert validate_context_wire("⏰🌅|📍🏡|🎭⚰️‖🧠focused:4") == []
+        issues = validate_context_wire("🎭😢|🦄sparkle|🪢friend:gaming‖🧠scattered|🪐orbit")
+        assert issues == [
+            "unknown situational dimension group: '🦄sparkle'",
+            "unknown occasion value: '😢'",
+            "unknown relationship value: 'friend:gaming'",
+            "unknown personal dimension group: '🪐orbit'",
+            "unknown cognitive_state category: 'scattered'",
+        ]
+        assert validate_context_wire("⏰🌅||📍🏡")[0].startswith("malformed:")
+
+    def test_strict_decode_raises(self):
+        with pytest.raises(ValueError, match="unknown occasion value"):
+            VCPContext.decode("🎭😢", strict=True)
+        assert VCPContext.decode("🎭⚰️", strict=True).get(SituationalDimension.OCCASION) == ["⚰️"]

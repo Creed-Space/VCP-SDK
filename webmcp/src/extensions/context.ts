@@ -69,7 +69,17 @@ export const SITUATIONAL_SPECS: Readonly<
     name: 'time',
     symbol: '⏰',
     position: 1,
-    values: { '🌅': 'morning', '☀️': 'midday', '🌆': 'evening', '🌙': 'night' },
+    values: {
+      '🌅': 'morning',
+      '☀️': 'daytime',
+      '🌆': 'evening',
+      '🌙': 'night',
+      '📅': 'weekday',
+      '🎉': 'weekend',
+      '⏰': 'time_pressure',
+      '📆': 'scheduled',
+      '🔄': 'recurring',
+    },
     freeForm: false,
     isVep0004: false,
   },
@@ -82,7 +92,14 @@ export const SITUATIONAL_SPECS: Readonly<
       '🏢': 'office',
       '🏫': 'school',
       '🏥': 'hospital',
-      '🚗': 'transit',
+      '⛪': 'religious',
+      '🏛️': 'government',
+      '🏪': 'commercial',
+      '🚗': 'vehicle',
+      '🌳': 'outdoor',
+      '💻': 'digital',
+      '🏠': 'shared_space',
+      '🔒': 'secure_facility',
     },
     freeForm: false,
     isVep0004: false,
@@ -94,9 +111,17 @@ export const SITUATIONAL_SPECS: Readonly<
     values: {
       '👤': 'alone',
       '👶': 'children',
-      '👔': 'colleagues',
       '👨\u200d👩\u200d👧': 'family',
-      '👥': 'strangers',
+      '👔': 'colleagues',
+      '👨\u200d🏫': 'teacher',
+      '👮': 'authority',
+      '👴': 'elders',
+      '💑': 'partner',
+      '🤝': 'peers',
+      '👨\u200d⚕️': 'professional',
+      '🧑\u200d🤝\u200d🧑': 'strangers',
+      '👥': 'crowd',
+      '🐕': 'pets',
     },
     freeForm: false,
     isVep0004: false,
@@ -126,9 +151,16 @@ export const SITUATIONAL_SPECS: Readonly<
     values: {
       '➖': 'normal',
       '🎂': 'celebration',
-      '😢': 'mourning',
-      '🚨': 'emergency',
       '💼': 'business',
+      '⚰️': 'mourning',
+      '💒': 'ceremony',
+      '🏥': 'medical',
+      '🚨': 'emergency',
+      '👨\u200d🏫': 'educational',
+      '🎪': 'entertainment',
+      '⚖️': 'legal',
+      '🗳️': 'political',
+      '🎓': 'graduation',
     },
     freeForm: false,
     isVep0004: false,
@@ -138,11 +170,18 @@ export const SITUATIONAL_SPECS: Readonly<
     symbol: '🌡️',
     position: 6,
     values: {
-      '☀️': 'comfortable',
       '🥵': 'hot',
       '🥶': 'cold',
+      '🌧️': 'wet',
+      '🌪️': 'dangerous',
       '🔇': 'quiet',
-      '🔊': 'noisy',
+      '📢': 'loud',
+      '🔥': 'fire',
+      '💨': 'windy',
+      '🌫️': 'poor_visibility',
+      '🌤️': 'outdoors',
+      '🏔️': 'high_altitude',
+      '🌊': 'near_water',
     },
     freeForm: false,
     isVep0004: false,
@@ -151,7 +190,20 @@ export const SITUATIONAL_SPECS: Readonly<
     name: 'agency',
     symbol: '🔷',
     position: 7,
-    values: { '👑': 'leader', '🤝': 'peer', '📋': 'subordinate', '🔐': 'limited' },
+    values: {
+      '👑': 'leader',
+      '🤝': 'peer',
+      '👇': 'subordinate',
+      '💰': 'wealthy',
+      '💵': 'adequate',
+      '🕳️': 'scarce',
+      '🏡': 'owner',
+      '🔑': 'authorized',
+      '🎓': 'expert',
+      '🆓': 'autonomous',
+      '🔐': 'limited',
+      '🏃': 'mobile',
+    },
     freeForm: false,
     isVep0004: false,
   },
@@ -159,7 +211,20 @@ export const SITUATIONAL_SPECS: Readonly<
     name: 'constraints',
     symbol: '🔶',
     position: 8,
-    values: { '○': 'minimal', '⚖️': 'legal', '💸': 'economic', '⏱️': 'time' },
+    values: {
+      '○': 'minimal',
+      '🚧': 'physical',
+      '⚖️': 'legal',
+      '💸': 'economic',
+      '⏰': 'time',
+      '🤐': 'social',
+      '📱': 'surveillance',
+      '🚨': 'emergency',
+      '👮': 'enforcement',
+      '📜': 'contractual',
+      '🏥': 'medical',
+      '🔒': 'confidential',
+    },
     freeForm: false,
     isVep0004: false,
   },
@@ -331,6 +396,15 @@ export function decodePersonalState(segment: string): PersonalState {
 export interface VCPContext {
   readonly situational: Readonly<Partial<Record<SituationalDimension, readonly string[]>>>;
   readonly personal: Readonly<Partial<Record<PersonalStateDimension, PersonalState>>>;
+  /**
+   * Raw groups whose dimension symbol is not recognized, in order, so a relay
+   * passes them through unchanged (VCP/A §2.3). They take no part in
+   * adaptation. Omitted when there are none.
+   */
+  readonly unknown?: {
+    readonly situational: readonly string[];
+    readonly personal: readonly string[];
+  };
 }
 
 export function emptyContext(): VCPContext {
@@ -347,6 +421,8 @@ export function encodeContext(ctx: VCPContext): string {
     const spec = SITUATIONAL_SPECS[dim];
     sitParts.push(`${spec.symbol}${values.join('')}`);
   }
+  // Unknown dimension groups are relayed unchanged (VCP/A §2.3).
+  sitParts.push(...(ctx.unknown?.situational ?? []));
   const situational = sitParts.join(DIM_SEPARATOR);
 
   const perParts: string[] = [];
@@ -356,6 +432,7 @@ export function encodeContext(ctx: VCPContext): string {
     const spec = PERSONAL_STATE_SPECS[dim];
     perParts.push(`${spec.symbol}${encodePersonalState(state)}`);
   }
+  perParts.push(...(ctx.unknown?.personal ?? []));
   if (perParts.length === 0) {
     return situational;
   }
@@ -411,6 +488,17 @@ function extractKnownValues(raw: string, spec: SituationalDimensionSpec): string
   return values;
 }
 
+/**
+ * Decode a context wire string.
+ *
+ * Receivers are forward compatible (VCP/A §2.3): a value outside the §2.2 or
+ * §3.1 vocabularies is kept as a raw string, and a group whose dimension
+ * symbol is not recognized is kept in `unknown` and re-encoded unchanged. A
+ * malformed string (an empty group, a group that does not begin with an
+ * emoji, a dimension with no value, an intensity outside 1-5) throws a
+ * `SyntaxError`. Use {@link validateContextWire} for
+ * strict validation.
+ */
 export function decodeContext(encoded: string): VCPContext {
   if (encoded === '') return emptyContext();
 
@@ -420,43 +508,121 @@ export function decodeContext(encoded: string): VCPContext {
   if (sepIdx !== -1) {
     sitPart = encoded.slice(0, sepIdx);
     perPart = encoded.slice(sepIdx + PERSONAL_SEPARATOR.length);
+    if (perPart === '') throw new SyntaxError('personal band is empty after the separator');
   }
 
   const situational: Partial<Record<SituationalDimension, string[]>> = {};
-  for (const part of sitPart.split(DIM_SEPARATOR)) {
-    if (!part) continue;
-    for (const dim of SITUATIONAL_ORDER) {
-      const spec = SITUATIONAL_SPECS[dim];
-      const raw = afterDimensionSymbol(part, spec.symbol);
-      if (raw !== null) {
-        if (!raw) break;
+  const unknownSituational: string[] = [];
+  if (sitPart !== '') {
+    for (const part of sitPart.split(DIM_SEPARATOR)) {
+      if (!part) throw new SyntaxError('situational band contains an empty group');
+      let matched = false;
+      for (const dim of SITUATIONAL_ORDER) {
+        const spec = SITUATIONAL_SPECS[dim];
+        const raw = afterDimensionSymbol(part, spec.symbol);
+        if (raw === null) continue;
+        matched = true;
+        if (!raw) throw new SyntaxError(`situational dimension ${dim} has no value`);
         if (spec.freeForm) {
           situational[dim] = [raw];
         } else {
           const values = extractKnownValues(raw, spec);
+          // Unknown value: keep the raw text (VCP/A §2.3).
           situational[dim] = values.length > 0 ? values : [raw];
         }
         break;
+      }
+      if (!matched) {
+        if (part.charCodeAt(0) < 0x80) {
+          throw new SyntaxError(`situational group must start with a dimension emoji: ${part}`);
+        }
+        unknownSituational.push(part);
       }
     }
   }
 
   const personal: Partial<Record<PersonalStateDimension, PersonalState>> = {};
-  for (const part of perPart.split(DIM_SEPARATOR)) {
-    if (!part) continue;
-    for (const dim of PERSONAL_STATE_ORDER) {
-      const spec = PERSONAL_STATE_SPECS[dim];
-      if (part.startsWith(spec.symbol)) {
-        const raw = part.slice(spec.symbol.length);
-        if (raw) {
-          personal[dim] = decodePersonalState(raw);
+  const unknownPersonal: string[] = [];
+  if (perPart !== '') {
+    for (const part of perPart.split(DIM_SEPARATOR)) {
+      if (!part) throw new SyntaxError('personal band contains an empty group');
+      const dim = PERSONAL_STATE_ORDER.find((candidate) =>
+        part.startsWith(PERSONAL_STATE_SPECS[candidate].symbol),
+      );
+      if (dim === undefined) {
+        if (part.charCodeAt(0) < 0x80) {
+          throw new SyntaxError(`personal group must start with a dimension emoji: ${part}`);
         }
-        break;
+        unknownPersonal.push(part);
+        continue;
       }
+      const raw = part.slice(PERSONAL_STATE_SPECS[dim].symbol.length);
+      if (!raw) throw new SyntaxError(`personal dimension ${dim} has no value`);
+      const state = decodePersonalState(raw);
+      const intensity = /:(-?[0-9]+)$/.exec(raw);
+      if (state.intensity === null && intensity !== null) {
+        throw new SyntaxError(`personal dimension ${dim} intensity must be 1-5`);
+      }
+      personal[dim] = state;
     }
   }
 
-  return { situational, personal };
+  const context: VCPContext = { situational, personal };
+  if (unknownSituational.length > 0 || unknownPersonal.length > 0) {
+    return { ...context, unknown: { situational: unknownSituational, personal: unknownPersonal } };
+  }
+  return context;
+}
+
+/** RELATIONSHIP vocabulary (VCP/A §2.2, schema `relationship_value`). */
+const RELATIONSHIP_CANONICAL =
+  /^(?:(?:stranger|acquaintance|colleague|friend|family|intimate|long_term|trusted_collaborator)(?::(?:transactional|professional|educational|therapeutic|social|intimate|adversarial))?|:(?:transactional|professional|educational|therapeutic|social|intimate|adversarial))$/;
+
+/** Canonical personal-state categories (VCP/A §3.1). */
+export const PERSONAL_STATE_CATEGORIES: Readonly<Record<PersonalStateDimension, readonly string[]>> = {
+  cognitive_state: ['focused', 'distracted', 'overloaded', 'foggy', 'reflective'],
+  emotional_tone: ['calm', 'tense', 'frustrated', 'neutral', 'uplifted'],
+  energy_level: ['rested', 'low_energy', 'fatigued', 'wired', 'depleted'],
+  perceived_urgency: ['unhurried', 'time_aware', 'pressured', 'critical'],
+  body_signals: ['neutral', 'discomfort', 'pain', 'unwell', 'recovering'],
+};
+
+/**
+ * Strictly validate a context wire string (VCP/A §2.3). Returns one message
+ * per unknown value or dimension group, or a single `malformed:` message; an
+ * empty array means the string uses only canonical vocabulary. Mirrors the
+ * Python `validate_context_wire`.
+ */
+export function validateContextWire(encoded: string): string[] {
+  let context: VCPContext;
+  try {
+    context = decodeContext(encoded);
+  } catch (error) {
+    return [`malformed: ${error instanceof Error ? error.message : String(error)}`];
+  }
+  const issues: string[] = [];
+  for (const group of context.unknown?.situational ?? []) {
+    issues.push(`unknown situational dimension group: '${group}'`);
+  }
+  for (const dim of Object.keys(context.situational) as SituationalDimension[]) {
+    const spec = SITUATIONAL_SPECS[dim];
+    for (const value of context.situational[dim] ?? []) {
+      const known = spec.freeForm
+        ? RELATIONSHIP_CANONICAL.test(value)
+        : Object.prototype.hasOwnProperty.call(spec.values, value);
+      if (!known) issues.push(`unknown ${dim} value: '${value}'`);
+    }
+  }
+  for (const group of context.unknown?.personal ?? []) {
+    issues.push(`unknown personal dimension group: '${group}'`);
+  }
+  for (const dim of Object.keys(context.personal) as PersonalStateDimension[]) {
+    const state = context.personal[dim];
+    if (state && !PERSONAL_STATE_CATEGORIES[dim].includes(state.value)) {
+      issues.push(`unknown ${dim} category: '${state.value}'`);
+    }
+  }
+  return issues;
 }
 
 // ── JSON shape ───────────────────────────────────────────────────────────
@@ -468,6 +634,8 @@ export function decodeContext(encoded: string): VCPContext {
 export interface VCPContextJSON {
   situational: Record<string, string[]>;
   personal: Record<string, { value: string; intensity: number | null }>;
+  /** Present only when the context carries unknown dimension groups. */
+  unknown?: { situational: string[]; personal: string[] };
 }
 
 export function contextToJSON(ctx: VCPContext): VCPContextJSON {
@@ -482,7 +650,14 @@ export function contextToJSON(ctx: VCPContext): VCPContextJSON {
       personal[dim] = { value: state.value, intensity: state.intensity };
     }
   }
-  return { situational, personal };
+  const json: VCPContextJSON = { situational, personal };
+  if (ctx.unknown && (ctx.unknown.situational.length > 0 || ctx.unknown.personal.length > 0)) {
+    json.unknown = {
+      situational: [...ctx.unknown.situational],
+      personal: [...ctx.unknown.personal],
+    };
+  }
+  return json;
 }
 
 export function contextFromJSON(data: unknown): VCPContext {
@@ -522,6 +697,14 @@ export function contextFromJSON(data: unknown): VCPContext {
         );
       }
     }
+  }
+  const unknown = obj.unknown as { situational?: unknown; personal?: unknown } | undefined;
+  const strings = (value: unknown): string[] =>
+    Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item !== '') : [];
+  const unknownSituational = strings(unknown?.situational);
+  const unknownPersonal = strings(unknown?.personal);
+  if (unknownSituational.length > 0 || unknownPersonal.length > 0) {
+    return { situational, personal, unknown: { situational: unknownSituational, personal: unknownPersonal } };
   }
   return { situational, personal };
 }
@@ -575,14 +758,17 @@ export interface EncoderInput {
 /**
  * Retired value names that {@link buildContext} still resolves to the
  * canonical VCP/A §2.2 value that replaced them. Deprecated: pass the
- * canonical name. The retired CULTURE `mixed` and every retired
- * SYSTEM_CONTEXT value (online, degraded, offline, sandboxed, testing)
- * have no equivalent and are dropped like any other unknown name.
+ * canonical name. The retired CULTURE `mixed`, ENVIRONMENT `comfortable` and
+ * every retired SYSTEM_CONTEXT value (online, degraded, offline, sandboxed,
+ * testing) have no equivalent and are dropped like any other unknown name.
  */
 const DEPRECATED_VALUE_NAMES: Readonly<
   Partial<Record<SituationalDimension, Readonly<Record<string, string>>>>
 > = {
+  time: { midday: 'daytime' },
+  space: { transit: 'vehicle' },
   culture: { casual: 'informal' },
+  environment: { noisy: 'loud' },
 };
 
 function lookupEmoji(spec: SituationalDimensionSpec, value: string): string | null {

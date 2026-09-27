@@ -222,10 +222,16 @@ pub struct SituationalContext {
     pub relationship: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub formality: Option<Vec<String>>,
+    /// Raw groups whose dimension symbol is not recognized, in wire order.
+    /// They take no part in adaptation and are re-encoded unchanged after the
+    /// known dimensions, so a relay passes them through (VCP/A §2.3).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unknown: Vec<String>,
 }
 
 impl SituationalContext {
-    /// Returns `true` if at least one dimension has tags.
+    /// Returns `true` if at least one known dimension has tags. Unknown
+    /// dimension groups do not count.
     pub fn has_any(&self) -> bool {
         self.time.is_some()
             || self.space.is_some()
@@ -286,17 +292,24 @@ impl SituationalContext {
             }
         }
 
+        // Unknown dimension groups are relayed unchanged (VCP/A §2.3).
+        parts.extend(self.unknown.iter().cloned());
+
         parts.join("|")
     }
 
     /// Parse from wire format.
     ///
-    /// The wire format is `<symbol><tags>|<symbol><tags>|...`.
+    /// The wire format is `<symbol><tags>|<symbol><tags>|...`. Values are
+    /// opaque tags, so a value outside the VCP/A §2.2 vocabulary is kept as
+    /// written. A group that begins with an unrecognized dimension emoji is
+    /// kept in [`SituationalContext::unknown`] and re-encoded unchanged
+    /// (VCP/A §2.3).
     ///
     /// # Errors
     ///
-    /// Returns [`VcpError::ParseError`] if a segment contains an
-    /// unrecognized dimension symbol.
+    /// Returns [`VcpError::ParseError`] if a segment is empty, does not begin
+    /// with an emoji, has no value, or repeats a dimension.
     pub fn from_wire(wire: &str) -> VcpResult<Self> {
         let mut ctx = SituationalContext::default();
 
@@ -324,7 +337,15 @@ impl SituationalContext {
                 ));
             }
 
-            let (dim, rest) = split_situational_symbol(segment)?;
+            let Some((dim, rest)) = split_situational_symbol(segment) else {
+                if segment.chars().next().is_some_and(|first| first.is_ascii()) {
+                    return Err(VcpError::ParseError(format!(
+                        "situational segment must start with a dimension emoji: {segment}"
+                    )));
+                }
+                ctx.unknown.push(segment.to_string());
+                continue;
+            };
             if rest.is_empty() {
                 return Err(VcpError::ParseError(format!(
                     "situational dimension {dim} has no value"
@@ -410,7 +431,7 @@ impl fmt::Display for SituationalContext {
 /// Environment uses a two-codepoint emoji (`🌡️` = U+1F321 U+FE0F), and
 /// Proximity uses a two-codepoint emoji (`↔️` = U+2194 U+FE0F), so
 /// these must be checked before their single-codepoint base forms.
-fn split_situational_symbol(s: &str) -> VcpResult<(SituationalDimension, &str)> {
+fn split_situational_symbol(s: &str) -> Option<(SituationalDimension, &str)> {
     static SYMBOLS: &[(SituationalDimension, &str)] = &[
         (SituationalDimension::Space, "\u{1F4CD}"),
         (SituationalDimension::Company, "\u{1F465}"),
@@ -428,31 +449,29 @@ fn split_situational_symbol(s: &str) -> VcpResult<(SituationalDimension, &str)> 
     // Two-codepoint (VS16) symbols — check first.
     let env_sym = "\u{1F321}\u{FE0F}";
     if let Some(rest) = s.strip_prefix(env_sym) {
-        return Ok((SituationalDimension::Environment, rest));
+        return Some((SituationalDimension::Environment, rest));
     }
     let prox_sym = "\u{2194}\u{FE0F}";
     if let Some(rest) = s.strip_prefix(prox_sym) {
-        return Ok((SituationalDimension::Proximity, rest));
+        return Some((SituationalDimension::Proximity, rest));
     }
     // Also accept bare (no-VS16) variants.
     let env_bare = "\u{1F321}";
     if let Some(rest) = s.strip_prefix(env_bare) {
-        return Ok((SituationalDimension::Environment, rest));
+        return Some((SituationalDimension::Environment, rest));
     }
     let prox_bare = "\u{2194}";
     if let Some(rest) = s.strip_prefix(prox_bare) {
-        return Ok((SituationalDimension::Proximity, rest));
+        return Some((SituationalDimension::Proximity, rest));
     }
 
     for (dim, sym) in SYMBOLS {
         if let Some(rest) = s.strip_prefix(sym) {
-            return Ok((*dim, rest));
+            return Some((*dim, rest));
         }
     }
 
-    Err(VcpError::ParseError(format!(
-        "unrecognized situational dimension symbol in: {s}"
-    )))
+    None
 }
 
 // ── Tests ───────────────────────────────────────────────────
@@ -461,6 +480,27 @@ fn split_situational_symbol(s: &str) -> VcpResult<(SituationalDimension, &str)> 
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+
+    #[test]
+    fn unknown_dimension_groups_pass_through() {
+        let ctx = SituationalContext::from_wire("⏰🌅|🦄sparkle|📍🏡").unwrap();
+        assert_eq!(ctx.unknown, vec!["🦄sparkle".to_string()]);
+        assert_eq!(ctx.time, Some(vec!["🌅".to_string()]));
+        assert_eq!(ctx.to_wire(), "⏰🌅|📍🏡|🦄sparkle");
+        let only_unknown = SituationalContext::from_wire("🦄sparkle").unwrap();
+        assert!(!only_unknown.has_any());
+        assert_eq!(only_unknown.to_wire(), "🦄sparkle");
+        // Unknown values of a known dimension stay as written.
+        let legacy = SituationalContext::from_wire("🎭😢|🔷📋").unwrap();
+        assert_eq!(legacy.to_wire(), "🎭😢|🔷📋");
+    }
+
+    #[test]
+    fn malformed_groups_are_rejected() {
+        for wire in ["⏰🌅||📍🏡", "⏰🌅|", "⏰", "abc", "⏰🌅|x"] {
+            assert!(SituationalContext::from_wire(wire).is_err(), "{wire}");
+        }
+    }
 
     #[test]
     fn dimension_symbols_roundtrip() {

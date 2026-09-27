@@ -105,7 +105,7 @@
       "input": {
         "situational": {
           "company": [
-            "team"
+            "\ud83d\udc54"
           ]
         },
         "personal": {
@@ -141,7 +141,7 @@
             "\u2796"
           ],
           "environment": [
-            "\u2600\ufe0f"
+            "\ud83c\udf27\ufe0f"
           ],
           "agency": [
             "\ud83d\udc51"
@@ -220,6 +220,28 @@
         "has_vep_0004": false,
         "conformance_level": "VCP-Minimal",
         "note": "CULTURE carries communication styles (hierarchical, collectivist); SYSTEM_CONTEXT carries the computing environment (monitored_environment). The retired online/degraded/offline/sandboxed/testing and casual/mixed values are not canonical."
+      }
+    },
+    {
+      "id": "ctx-011",
+      "description": "Unknown values and unknown dimension groups are tolerated and passed through (VCP/A 2.3)",
+      "wire_input": "\u23f0\ud83c\udf05|\ud83c\udfad\ud83d\ude22|\ud83e\udd84sparkle\u2016\ud83e\udde0focused:4|\ud83e\ude90orbit:2",
+      "expected": {
+        "wire": "\u23f0\ud83c\udf05|\ud83c\udfad\ud83d\ude22|\ud83e\udd84sparkle\u2016\ud83e\udde0focused:4|\ud83e\ude90orbit:2",
+        "has_situational": true,
+        "has_personal": true,
+        "has_vep_0004": false,
+        "conformance_level": "VCP-Standard",
+        "note": "\ud83d\ude22 is not an OCCASION value in VCP/A 2.2 and is kept as written. \ud83e\udd84 and \ud83e\ude90 are not dimension symbols, so their groups are kept, ignored for adaptation, and re-encoded after the known dimensions. A strict validator reports all three."
+      }
+    },
+    {
+      "id": "ctx-012",
+      "description": "A malformed context string is still rejected: empty group",
+      "wire_input": "\u23f0\ud83c\udf05||\ud83d\udccd\ud83c\udfe1",
+      "expected": {
+        "valid": false,
+        "note": "An empty group is a validation error, not an unknown value (VCP/A 2.3)."
       }
     }
   ]

@@ -1,8 +1,10 @@
 """
 VCP/A Adaptation Layer context encoder (v3.2).
 
-Encodes context as 13 situational dimensions + 5 personal-state dimensions
-per CSM1 / VCP v3.2 and VEP-0004.
+Encodes context as 14 baseline dimensions in VCP v3.1 (9 situational + 5
+personal-state), plus the 4 experimental VEP-0004 situational dimensions
+(18 with them). Value vocabularies follow VCP/A §2.2 and §3.1; decoders
+tolerate values and dimension groups outside them (VCP/A §2.3).
 
 Situational dimensions (positions 1-13):
     1.  TIME          ⏰
@@ -75,13 +77,36 @@ class SituationalDimension(Enum):
         "time",
         "⏰",
         1,
-        {"🌅": "morning", "☀️": "midday", "🌆": "evening", "🌙": "night"},
+        {
+            "🌅": "morning",
+            "☀️": "daytime",
+            "🌆": "evening",
+            "🌙": "night",
+            "📅": "weekday",
+            "🎉": "weekend",
+            "⏰": "time_pressure",
+            "📆": "scheduled",
+            "🔄": "recurring",
+        },
     )
     SPACE = (
         "space",
         "📍",
         2,
-        {"🏡": "home", "🏢": "office", "🏫": "school", "🏥": "hospital", "🚗": "transit"},
+        {
+            "🏡": "home",
+            "🏢": "office",
+            "🏫": "school",
+            "🏥": "hospital",
+            "⛪": "religious",
+            "🏛️": "government",
+            "🏪": "commercial",
+            "🚗": "vehicle",
+            "🌳": "outdoor",
+            "💻": "digital",
+            "🏠": "shared_space",
+            "🔒": "secure_facility",
+        },
     )
     COMPANY = (
         "company",
@@ -90,9 +115,17 @@ class SituationalDimension(Enum):
         {
             "👤": "alone",
             "👶": "children",
-            "👔": "colleagues",
             "👨‍👩‍👧": "family",
-            "👥": "strangers",
+            "👔": "colleagues",
+            "👨‍🏫": "teacher",
+            "👮": "authority",
+            "👴": "elders",
+            "💑": "partner",
+            "🤝": "peers",
+            "👨‍⚕️": "professional",
+            "🧑‍🤝‍🧑": "strangers",
+            "👥": "crowd",
+            "🐕": "pets",
         },
     )
     CULTURE = (
@@ -118,28 +151,74 @@ class SituationalDimension(Enum):
         {
             "➖": "normal",
             "🎂": "celebration",
-            "😢": "mourning",
-            "🚨": "emergency",
             "💼": "business",
+            "⚰️": "mourning",
+            "💒": "ceremony",
+            "🏥": "medical",
+            "🚨": "emergency",
+            "👨‍🏫": "educational",
+            "🎪": "entertainment",
+            "⚖️": "legal",
+            "🗳️": "political",
+            "🎓": "graduation",
         },
     )
     ENVIRONMENT = (
         "environment",
         "🌡️",
         6,
-        {"☀️": "comfortable", "🥵": "hot", "🥶": "cold", "🔇": "quiet", "🔊": "noisy"},
+        {
+            "🥵": "hot",
+            "🥶": "cold",
+            "🌧️": "wet",
+            "🌪️": "dangerous",
+            "🔇": "quiet",
+            "📢": "loud",
+            "🔥": "fire",
+            "💨": "windy",
+            "🌫️": "poor_visibility",
+            "🌤️": "outdoors",
+            "🏔️": "high_altitude",
+            "🌊": "near_water",
+        },
     )
     AGENCY = (
         "agency",
         "🔷",
         7,
-        {"👑": "leader", "🤝": "peer", "📋": "subordinate", "🔐": "limited"},
+        {
+            "👑": "leader",
+            "🤝": "peer",
+            "👇": "subordinate",
+            "💰": "wealthy",
+            "💵": "adequate",
+            "🕳️": "scarce",
+            "🏡": "owner",
+            "🔑": "authorized",
+            "🎓": "expert",
+            "🆓": "autonomous",
+            "🔐": "limited",
+            "🏃": "mobile",
+        },
     )
     CONSTRAINTS = (
         "constraints",
         "🔶",
         8,
-        {"○": "minimal", "⚖️": "legal", "💸": "economic", "⏱️": "time"},
+        {
+            "○": "minimal",
+            "🚧": "physical",
+            "⚖️": "legal",
+            "💸": "economic",
+            "⏰": "time",
+            "🤐": "social",
+            "📱": "surveillance",
+            "🚨": "emergency",
+            "👮": "enforcement",
+            "📜": "contractual",
+            "🏥": "medical",
+            "🔒": "confidential",
+        },
     )
     SYSTEM_CONTEXT = (
         "system_context",
@@ -182,9 +261,10 @@ class SituationalDimension(Enum):
         "relationship",
         "🪢",
         12,
-        # Compound grammar: "{tie}:{function}" — stored as raw string values.
-        # Example values: "colleague:professional", "friend:social",
-        # "family:caregiving", "stranger:service".
+        # Compound grammar: "{tie}:{function}", stored as raw string values.
+        # Tie and function come from the VCP/A §2.2 tables, for example
+        # "colleague:professional", "friend:social", "family:intimate",
+        # "stranger:transactional".
         dict[str, str](),
     )
     FORMALITY = (
@@ -239,10 +319,14 @@ class SituationalDimension(Enum):
 
 # Retired value names that still resolve in ContextEncoder, with a
 # DeprecationWarning, to the canonical VCP/A §2.2 value that replaced them.
-# The retired CULTURE "mixed" and every retired SYSTEM_CONTEXT value
-# (online, degraded, offline, sandboxed, testing) have no equivalent.
+# The retired CULTURE "mixed", ENVIRONMENT "comfortable" and every retired
+# SYSTEM_CONTEXT value (online, degraded, offline, sandboxed, testing) have
+# no equivalent.
 _DEPRECATED_VALUE_NAMES: dict[SituationalDimension, dict[str, str]] = {
+    SituationalDimension.TIME: {"midday": "daytime"},
+    SituationalDimension.SPACE: {"transit": "vehicle"},
     SituationalDimension.CULTURE: {"casual": "informal"},
+    SituationalDimension.ENVIRONMENT: {"noisy": "loud"},
 }
 
 
@@ -264,40 +348,41 @@ class PersonalStateDimension(Enum):
     Note: `vcp.extensions.personal.PersonalDimension` is a separate str-enum
     used by the decay-aware PersonalSignal model. This enum is purely for
     wire-format encoding (symbol + position). The two cover the same domain
-    concept but are not interchangeable; the categorical vocabularies below
-    are non-normative documentation only — the wire format accepts any
-    string value.
+    concept but are not interchangeable. The value sets below are the
+    canonical VCP/A §3.1 categories that emitters should use; decoders accept
+    any lowercase category so receivers stay forward compatible (VCP/A §2.3),
+    and ``validate_context_wire`` reports values outside them.
     """
 
     COGNITIVE_STATE = (
         "cognitive_state",
         "🧠",
         1,
-        {"focused", "scattered", "contemplative", "alert", "foggy"},
+        {"focused", "distracted", "overloaded", "foggy", "reflective"},
     )
     EMOTIONAL_TONE = (
         "emotional_tone",
         "💭",
         2,
-        {"calm", "anxious", "joyful", "frustrated", "melancholy", "neutral"},
+        {"calm", "tense", "frustrated", "neutral", "uplifted"},
     )
     ENERGY_LEVEL = (
         "energy_level",
         "🔋",
         3,
-        {"depleted", "low", "moderate", "rested", "energized"},
+        {"rested", "low_energy", "fatigued", "wired", "depleted"},
     )
     PERCEIVED_URGENCY = (
         "perceived_urgency",
         "⚡",
         4,
-        {"unhurried", "mild_urgency", "pressing", "critical"},
+        {"unhurried", "time_aware", "pressured", "critical"},
     )
     BODY_SIGNALS = (
         "body_signals",
         "🩺",
         5,
-        {"neutral", "tense", "relaxed", "discomfort", "pain"},
+        {"neutral", "discomfort", "pain", "unwell", "recovering"},
     )
 
     def __init__(self, name: str, symbol: str, position: int, values: set[str]):
@@ -389,10 +474,15 @@ class VCPContext:
     `.situational`. New code should use `.situational` and `.personal`.
     """
 
-    __slots__ = ("situational", "personal")
+    __slots__ = ("situational", "personal", "unknown_situational", "unknown_personal")
 
     situational: dict[SituationalDimension, list[str]]
     personal: dict[PersonalStateDimension, PersonalState]
+    #: Raw groups whose dimension symbol this SDK does not recognize, kept in
+    #: order so a relay passes them through unchanged (VCP/A §2.3). They play
+    #: no part in adaptation.
+    unknown_situational: tuple[str, ...]
+    unknown_personal: tuple[str, ...]
 
     def __init__(
         self,
@@ -400,6 +490,8 @@ class VCPContext:
         personal: dict[PersonalStateDimension, PersonalState] | None = None,
         *,
         dimensions: dict[SituationalDimension, list[str]] | None = None,
+        unknown_situational: tuple[str, ...] | list[str] = (),
+        unknown_personal: tuple[str, ...] | list[str] = (),
     ) -> None:
         if situational is not None and dimensions is not None:
             raise TypeError(
@@ -411,6 +503,21 @@ class VCPContext:
         personal_source = {} if personal is None else personal
         object.__setattr__(self, "situational", self._validated_situational(situational_source))
         object.__setattr__(self, "personal", self._validated_personal(personal_source))
+        object.__setattr__(
+            self, "unknown_situational", self._validated_unknown(unknown_situational)
+        )
+        object.__setattr__(self, "unknown_personal", self._validated_unknown(unknown_personal))
+
+    @staticmethod
+    def _validated_unknown(groups: tuple[str, ...] | list[str]) -> tuple[str, ...]:
+        if isinstance(groups, str) or not isinstance(groups, (tuple, list)):
+            raise TypeError("unknown dimension groups must be a list of strings")
+        for group in groups:
+            if not isinstance(group, str) or not group:
+                raise ValueError("unknown dimension groups must be non-empty strings")
+            if DIM_SEPARATOR in group or PERSONAL_SEPARATOR in group:
+                raise ValueError("unknown dimension groups must not contain separators")
+        return tuple(groups)
 
     @staticmethod
     def _validated_situational(
@@ -485,9 +592,11 @@ class VCPContext:
             if dim in self.situational and self.situational[dim]:
                 values = "".join(self.situational[dim])
                 sit_parts.append(f"{dim.symbol}{values}")
+        # Unknown dimension groups are relayed unchanged (VCP/A §2.3).
+        sit_parts.extend(self.unknown_situational)
         situational = DIM_SEPARATOR.join(sit_parts)
 
-        if not self.personal:
+        if not self.personal and not self.unknown_personal:
             return situational
 
         per_parts: list[str] = []
@@ -495,6 +604,7 @@ class VCPContext:
             if pdim in self.personal:
                 state = self.personal[pdim]
                 per_parts.append(f"{pdim.symbol}{state.encode()}")
+        per_parts.extend(self.unknown_personal)
         personal = DIM_SEPARATOR.join(per_parts)
 
         if not situational:
@@ -502,10 +612,31 @@ class VCPContext:
         return f"{situational}{PERSONAL_SEPARATOR}{personal}"
 
     @classmethod
-    def decode(cls, encoded: str) -> VCPContext:
-        """Decode from wire format."""
+    def decode(cls, encoded: str, *, strict: bool = False) -> VCPContext:
+        """Decode from wire format.
+
+        Receivers are forward compatible (VCP/A §2.3): a value outside the
+        §2.2 or §3.1 vocabularies is kept as a raw string, and a group whose
+        dimension symbol is not recognized is kept in
+        ``unknown_situational`` or ``unknown_personal`` and re-encoded
+        unchanged. A malformed string (an empty group, a dimension with no
+        value, an intensity outside 1-5) raises ``ValueError``.
+
+        Args:
+            encoded: Wire-format context string.
+            strict: Validate strictly first and raise ``ValueError`` listing
+                every issue ``validate_context_wire`` reports, including
+                unknown values and dimensions.
+        """
+        if strict:
+            issues = validate_context_wire(encoded)
+            if issues:
+                raise ValueError("; ".join(issues))
+
         situational: dict[SituationalDimension, list[str]] = {}
         personal: dict[PersonalStateDimension, PersonalState] = {}
+        unknown_situational: list[str] = []
+        unknown_personal: list[str] = []
 
         if not encoded:
             return cls()
@@ -513,42 +644,73 @@ class VCPContext:
         # Split on personal-state separator ‖ first.
         if PERSONAL_SEPARATOR in encoded:
             sit_part, per_part = encoded.split(PERSONAL_SEPARATOR, 1)
+            if not per_part:
+                raise ValueError("personal band is empty after the separator")
         else:
             sit_part, per_part = encoded, ""
 
         # Decode situational band.
-        for part in sit_part.split(DIM_SEPARATOR):
-            if not part:
-                continue
-            for dim in SituationalDimension:
-                raw = cls._after_dimension_symbol(part, dim)
-                if raw is not None:
-                    if not raw:
-                        break
-                    if dim.is_free_form:
-                        # RELATIONSHIP: raw string preserved intact
-                        situational[dim] = [raw]
-                    else:
-                        values = cls._extract_known_values(raw, dim)
-                        if values:
-                            situational[dim] = values
-                        else:
-                            # Fallback: unknown value format, store raw.
-                            situational[dim] = [raw]
-                    break
+        if sit_part:
+            for part in sit_part.split(DIM_SEPARATOR):
+                if not part:
+                    raise ValueError("situational band contains an empty group")
+                dim, raw = cls._split_situational(part)
+                if dim is None:
+                    if part[0].isascii():
+                        raise ValueError(
+                            f"situational group must start with a dimension emoji: {part!r}"
+                        )
+                    unknown_situational.append(part)
+                    continue
+                if not raw:
+                    raise ValueError(f"situational dimension {dim._name} has no value")
+                if dim.is_free_form:
+                    # RELATIONSHIP: raw string preserved intact
+                    situational[dim] = [raw]
+                else:
+                    values = cls._extract_known_values(raw, dim)
+                    # Unknown value: keep the raw text (VCP/A §2.3).
+                    situational[dim] = values if values else [raw]
 
         # Decode personal-state band.
-        for part in per_part.split(DIM_SEPARATOR):
-            if not part:
-                continue
-            for pdim in PersonalStateDimension:
-                if part.startswith(pdim.symbol):
-                    raw = part[len(pdim.symbol) :]
-                    if raw:
-                        personal[pdim] = PersonalState.decode(raw)
-                    break
+        if per_part:
+            for part in per_part.split(DIM_SEPARATOR):
+                if not part:
+                    raise ValueError("personal band contains an empty group")
+                pdim = next(
+                    (
+                        candidate
+                        for candidate in PersonalStateDimension
+                        if part.startswith(candidate.symbol)
+                    ),
+                    None,
+                )
+                if pdim is None:
+                    if part[0].isascii():
+                        raise ValueError(
+                            f"personal group must start with a dimension emoji: {part!r}"
+                        )
+                    unknown_personal.append(part)
+                    continue
+                raw = part[len(pdim.symbol) :]
+                if not raw:
+                    raise ValueError(f"personal dimension {pdim._name} has no value")
+                personal[pdim] = PersonalState.decode(raw)
 
-        return cls(situational=situational, personal=personal)
+        return cls(
+            situational=situational,
+            personal=personal,
+            unknown_situational=unknown_situational,
+            unknown_personal=unknown_personal,
+        )
+
+    @classmethod
+    def _split_situational(cls, part: str) -> tuple[SituationalDimension | None, str]:
+        for dim in SituationalDimension:
+            raw = cls._after_dimension_symbol(part, dim)
+            if raw is not None:
+                return dim, raw
+        return None, part
 
     @staticmethod
     def _after_dimension_symbol(part: str, dim: SituationalDimension) -> str | None:
@@ -611,6 +773,11 @@ class VCPContext:
                 if pdim in self.personal
             },
         }
+        if self.unknown_situational or self.unknown_personal:
+            out["unknown"] = {
+                "situational": list(self.unknown_situational),
+                "personal": list(self.unknown_personal),
+            }
         return out
 
     @classmethod
@@ -662,7 +829,15 @@ class VCPContext:
                 else:
                     raise ValueError(f"personal.{key} must be a string or object")
 
-        return cls(situational=situational, personal=personal)
+        unknown = data.get("unknown", {})
+        if not isinstance(unknown, dict):
+            raise ValueError("unknown must be an object")
+        return cls(
+            situational=situational,
+            personal=personal,
+            unknown_situational=list(unknown.get("situational", [])),
+            unknown_personal=list(unknown.get("personal", [])),
+        )
 
     # ── Accessors ──────────────────────────────────────────────────────────
     def get(self, dimension: SituationalDimension) -> list[str]:
@@ -677,7 +852,12 @@ class VCPContext:
         """Return new context with situational dimension values set."""
         new_sit = dict(self.situational)
         new_sit[dimension] = list(values)
-        return VCPContext(situational=new_sit, personal=dict(self.personal))
+        return VCPContext(
+            situational=new_sit,
+            personal=dict(self.personal),
+            unknown_situational=self.unknown_situational,
+            unknown_personal=self.unknown_personal,
+        )
 
     def set_personal(
         self,
@@ -688,7 +868,12 @@ class VCPContext:
         """Return new context with personal-state dimension set."""
         new_per = dict(self.personal)
         new_per[dimension] = PersonalState(value=value, intensity=intensity)
-        return VCPContext(situational=dict(self.situational), personal=new_per)
+        return VCPContext(
+            situational=dict(self.situational),
+            personal=new_per,
+            unknown_situational=self.unknown_situational,
+            unknown_personal=self.unknown_personal,
+        )
 
     def has(self, dimension: SituationalDimension | PersonalStateDimension) -> bool:
         """Check if dimension has any value set."""
@@ -719,9 +904,55 @@ class VCPContext:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, VCPContext):
             return NotImplemented
-        return self.situational == other.situational and self.personal == other.personal
+        return (
+            self.situational == other.situational
+            and self.personal == other.personal
+            and self.unknown_situational == other.unknown_situational
+            and self.unknown_personal == other.unknown_personal
+        )
 
     __hash__ = None  # type: ignore[assignment]
+
+
+# RELATIONSHIP vocabulary (VCP/A §2.2, schema ``relationship_value``).
+_RELATIONSHIP_CANONICAL_RE = re.compile(
+    r"^(?:(?:stranger|acquaintance|colleague|friend|family|intimate|long_term"
+    r"|trusted_collaborator)(?::(?:transactional|professional|educational|therapeutic"
+    r"|social|intimate|adversarial))?|:(?:transactional|professional|educational"
+    r"|therapeutic|social|intimate|adversarial))$"
+)
+
+
+def validate_context_wire(encoded: str) -> list[str]:
+    """Strictly validate a context wire string (VCP/A §2.3).
+
+    Decoders tolerate unknown values and unknown dimension groups; a strict
+    validator, such as a conformance test or an emitter checking its own
+    output, reports them. Returns one message per issue, or an empty list
+    when the string is well formed and uses only the canonical §2.2 values
+    and §3.1 categories. A malformed string yields a single ``malformed:``
+    message.
+    """
+    try:
+        context = VCPContext.decode(encoded)
+    except ValueError as error:
+        return [f"malformed: {error}"]
+    issues: list[str] = []
+    for group in context.unknown_situational:
+        issues.append(f"unknown situational dimension group: {group!r}")
+    for dim, values in context.situational.items():
+        for value in values:
+            if dim.is_free_form:
+                if not _RELATIONSHIP_CANONICAL_RE.fullmatch(value):
+                    issues.append(f"unknown {dim._name} value: {value!r}")
+            elif value not in dim.values:
+                issues.append(f"unknown {dim._name} value: {value!r}")
+    for group in context.unknown_personal:
+        issues.append(f"unknown personal dimension group: {group!r}")
+    for pdim, state in context.personal.items():
+        if state.value not in pdim.values:
+            issues.append(f"unknown {pdim._name} category: {state.value!r}")
+    return issues
 
 
 # ────────────────────────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ from .context import (
     PersonalStateDimension,
     SituationalDimension,
     VCPContext,
+    validate_context_wire,
 )
 from .redis_state import HybridStateTracker, RedisStateTracker, get_sync_redis_client
 from .state import StateTracker, Transition, TransitionSeverity
@@ -23,6 +24,7 @@ __all__ = [
     "SituationalDimension",
     "PersonalStateDimension",
     "PersonalState",
+    "validate_context_wire",
     "Dimension",  # deprecated alias kept for backwards compatibility
     "StateTracker",
     "Transition",

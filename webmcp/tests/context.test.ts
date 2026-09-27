@@ -235,13 +235,13 @@ describe('VCPContext JSON', () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 describe('decodeContext vocabulary scanning', () => {
-  it('preserves VS16 and keeps ⏱️ in constraints', () => {
-    const ctx = decodeContext('🔶⚖️⏱️');
-    expect(ctx.situational.constraints).toEqual(['⚖️', '⏱️']);
+  it('preserves VS16 and keeps ⏰ in constraints', () => {
+    const ctx = decodeContext('🔶⚖️⏰');
+    expect(ctx.situational.constraints).toEqual(['⚖️', '⏰']);
   });
 
   it('preserves VS16 in environment values', () => {
-    expect(decodeContext('🌡️☀️').situational.environment).toEqual(['☀️']);
+    expect(decodeContext('🌡️🌧️').situational.environment).toEqual(['🌧️']);
   });
 
   it('does not split ZWJ family sequences', () => {
@@ -250,7 +250,7 @@ describe('decodeContext vocabulary scanning', () => {
 
   it('accepts bare (VS16-less) dimension symbols per vep-011', () => {
     expect(decodeContext('↔🌐').situational.proximity).toEqual(['🌐']);
-    expect(decodeContext('🌡☀').situational.environment).toEqual(['☀️']);
+    expect(decodeContext('🌡🌧').situational.environment).toEqual(['🌧️']);
   });
 
   it('falls back to the raw part for unknown values', () => {
@@ -385,3 +385,85 @@ describe('conformanceLevel', () => {
 
 // Keep reference to avoid unused-imports linter warnings in strict modes.
 void PersonalStateDimension;
+
+// ───────────────────────────────────────────────────────────────────────────
+// VCP/A §2.2 vocabularies and §2.3 forward compatibility
+// ───────────────────────────────────────────────────────────────────────────
+
+import { readFileSync } from 'node:fs';
+import { validateContextWire, PERSONAL_STATE_CATEGORIES } from '../src/extensions/context.js';
+
+const schemaDefinitions = JSON.parse(
+  readFileSync(new URL('../../schemas/vcp-adaptation-context.schema.json', import.meta.url), 'utf8'),
+).definitions as Record<string, { enum?: string[] }>;
+
+describe('vocabularies match the synchronized schema', () => {
+  for (const dim of SITUATIONAL_ORDER) {
+    if (SITUATIONAL_SPECS[dim].freeForm) continue;
+    it(`${dim} equals the schema enum`, () => {
+      expect(Object.keys(SITUATIONAL_SPECS[dim].values)).toEqual(
+        schemaDefinitions[`${dim}_values`].enum,
+      );
+    });
+  }
+  for (const dim of PERSONAL_STATE_ORDER) {
+    it(`${dim} categories equal the schema enum`, () => {
+      expect([...PERSONAL_STATE_CATEGORIES[dim]]).toEqual(schemaDefinitions[`${dim}_values`].enum);
+    });
+  }
+
+  it('resolves renamed value names and drops removed ones', () => {
+    expect(buildContext({ time: 'midday' }).situational.time).toEqual(['☀️']);
+    expect(buildContext({ space: 'transit' }).situational.space).toEqual(['🚗']);
+    expect(buildContext({ environment: 'noisy' }).situational.environment).toEqual(['📢']);
+    expect(buildContext({ environment: 'comfortable' }).situational.environment).toBeUndefined();
+    expect(
+      encodeContext(
+        buildContext({
+          company: 'strangers',
+          occasion: 'mourning',
+          agency: 'subordinate',
+          constraints: 'time',
+        }),
+      ),
+    ).toBe('👥🧑\u200d🤝\u200d🧑|🎭⚰️|🔷👇|🔶⏰');
+  });
+});
+
+describe('forward-compatible decoding (VCP/A 2.3)', () => {
+  it('keeps unknown values raw and re-encodes them', () => {
+    const ctx = decodeContext('🎭😢|🔷📋|🔶⏱️');
+    expect(ctx.situational.occasion).toEqual(['😢']);
+    expect(encodeContext(ctx)).toBe('🎭😢|🔷📋|🔶⏱️');
+  });
+
+  it('passes unknown dimension groups through', () => {
+    const wire = '⏰🌅|🦄sparkle|📍🏡‖🧠focused:4|🪐orbit:2';
+    const ctx = decodeContext(wire);
+    expect(ctx.unknown).toEqual({ situational: ['🦄sparkle'], personal: ['🪐orbit:2'] });
+    expect(encodeContext(ctx)).toBe('⏰🌅|📍🏡|🦄sparkle‖🧠focused:4|🪐orbit:2');
+    expect(contextFromJSON(contextToJSON(ctx))).toEqual(ctx);
+    expect(conformanceLevel(decodeContext('🦄sparkle'))).toBe('VCP-Minimal');
+  });
+
+  it.each(['⏰🌅||📍🏡', '⏰🌅|', '⏰', '⏰🌅‖', '‖🧠focused:4|', '‖🧠', '‖🧠focused:9', 'abc', '⏰🌅‖focused'])(
+    'rejects malformed %s',
+    (wire) => {
+      expect(() => decodeContext(wire)).toThrow(SyntaxError);
+    },
+  );
+
+  it('reports unknowns in strict validation', () => {
+    expect(validateContextWire('⏰🌅|📍🏡|🎭⚰️‖🧠focused:4')).toEqual([]);
+    expect(
+      validateContextWire('🎭😢|🦄sparkle|🪢friend:gaming‖🧠scattered|🪐orbit'),
+    ).toEqual([
+      "unknown situational dimension group: '🦄sparkle'",
+      "unknown occasion value: '😢'",
+      "unknown relationship value: 'friend:gaming'",
+      "unknown personal dimension group: '🪐orbit'",
+      "unknown cognitive_state category: 'scattered'",
+    ]);
+    expect(validateContextWire('⏰🌅||📍🏡')[0]).toMatch(/^malformed:/);
+  });
+});

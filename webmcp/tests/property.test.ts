@@ -107,7 +107,15 @@ describe("deterministic generative invariants", () => {
   it("normalizes arbitrary bounded wire input idempotently", () => {
     fc.assert(
       fc.property(fc.string({ maxLength: 256 }), (wire) => {
-        const canonical = encodeContext(decodeContext(wire));
+        let decoded;
+        try {
+          decoded = decodeContext(wire);
+        } catch (error) {
+          // Malformed strings are rejected, never silently repaired (VCP/A §2.3).
+          expect(error).toBeInstanceOf(SyntaxError);
+          return;
+        }
+        const canonical = encodeContext(decoded);
         expect(encodeContext(decodeContext(canonical))).toBe(canonical);
       }),
       PROPERTY_OPTIONS,

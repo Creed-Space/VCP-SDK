@@ -60,17 +60,17 @@
     },
     {
       "id": "vep-004",
-      "description": "RELATIONSHIP alternates: stranger:service, family:caregiving, friend:social",
+      "description": "RELATIONSHIP alternates: stranger:transactional, family:intimate, friend:social",
       "input": {
         "situational": {
-          "relationship": ["stranger:service"]
+          "relationship": ["stranger:transactional"]
         },
         "personal": {}
       },
       "expected": {
-        "wire": "\ud83e\udea2stranger:service",
+        "wire": "\ud83e\udea2stranger:transactional",
         "roundtrip_preserves_relationship_compound": true,
-        "note": "Any non-empty '{tie}:{function}' pair is valid; there is no closed vocabulary for RELATIONSHIP."
+        "note": "Tie and function values come from the VCP/A 2.2 RELATIONSHIP tables."
       }
     },
     {
@@ -167,7 +167,7 @@
     },
     {
       "id": "vep-009",
-      "description": "RELATIONSHIP containing an emoji in the tie slot",
+      "description": "RELATIONSHIP value outside the VCP/A 2.2 tables is kept as written",
       "input": {
         "situational": {
           "relationship": ["parent:caregiving"]
@@ -177,7 +177,7 @@
       "expected": {
         "wire": "\ud83e\udea2parent:caregiving",
         "roundtrip_preserves_relationship_compound": true,
-        "note": "RELATIONSHIP values are arbitrary strings. Implementations MUST NOT validate against a closed vocabulary for the tie or function slot."
+        "note": "parent and caregiving are not in the tie and function tables. Receivers MUST NOT reject the value and keep it as written (VCP/A 2.3); strict validators report it."
       }
     },
     {
