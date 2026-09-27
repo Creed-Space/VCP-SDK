@@ -100,12 +100,21 @@ version.
   (`🧠focused`): it decodes with `intensity` 3 and the new public field
   `intensity_explicit` set to `false`, and re-encodes without one
   (`PersonalDimension::without_intensity`). JSON omits `intensity` in that
-  case. The R-line still requires an intensity. Vector `ctx-016` is the
+  case. The CSM-1 R-line follows VCP/S §2.4.1 as revised at VCP-Spec
+  57a561e (`value [":" intensity [":" extended]]`): `from_r_line` also accepts
+  an omitted intensity (default 3), rejects a sub-signal without an explicit
+  intensity (`unwell:migraine`), and `to_r_line` always writes the intensity.
+  Vector `ctx-016` is the
   VCP/A §2.4 personal-only example.
 - Python and WebMCP keep known values in a group that also holds unknown
   ones: `🎭🚨🦖` decodes to `🚨` and a raw `🦖` (it used to become one raw
   value, hiding the emergency). Unmatched runs are kept as written, and
-  strict validators report only them (vector `ctx-017`).
+  strict validators report only them (vector `ctx-017`). A known value is
+  accepted only on a grapheme boundary, never inside an emoji sequence: it
+  must not follow a ZERO WIDTH JOINER or be followed by a ZWJ, VS16,
+  skin-tone modifier, combining keycap or tag character. `📡👁️‍🗨️`, `👥👶🏽`
+  and `📍🏠️` therefore decode as single raw values rather than as `👁️`,
+  `👶` or `🏠` plus a stray tail (vectors `ctx-023` to `ctx-025`).
 - **Breaking:** Python and WebMCP reject a dimension repeated in one context
   string (`⏰🌅|⏰🌙`, `‖🧠focused|🧠foggy`), as Rust already did (VCP/A
   §2.3; vectors `ctx-018`, `ctx-019`).

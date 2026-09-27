@@ -16,7 +16,7 @@
     "schemas/vcp-semantics-csm1.schema.json": "db67f3416983c0a75303c571ae718f721225cb99156f029e2b2b3fb1609521bb",
     "webmcp/src/agent.ts": "88e11aa6c571da35d8a837dfbf1bb4812a833d04b7835aafdf3b6f12e9a07853",
     "webmcp/src/extensions/consensus.ts": "b3313d0071f2cede8b977bd2822b04bf7e9096ed6a076834565d6d27c73f3785",
-    "webmcp/src/extensions/context.ts": "e2b025f8616a52ae81e97082583bc18693fc5bbf3e5d9665414a0fc0bec2d7b1",
+    "webmcp/src/extensions/context.ts": "39c1e9230ce0f4e1b4ba6f75b6dd0b0a366e28cef93a1f76e885b1b961d9a1ce",
     "webmcp/src/extensions/index.ts": "2b0095d3ab51098d6e074d881c59cf733ed7537e04792c4885e74a8734006851",
     "webmcp/src/extensions/negotiation.ts": "e21a8f65289bfa295b26bb809cab16123319a382f28bb51ab944882ed2fe25c6",
     "webmcp/src/extensions/personal.ts": "5be23f9a63ab543d3171272fbf0ef5df880d5291eb722508f37cfa6032d4915c",

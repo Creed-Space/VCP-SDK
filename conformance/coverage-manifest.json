@@ -4,7 +4,7 @@
   "schema": "vcp-conformance-coverage/1",
   "suites": [
     {
-      "case_count": 22,
+      "case_count": 25,
       "cases": [
         {
           "applicability": "protocol_behavior",
@@ -423,10 +423,67 @@
               "status": "checked"
             }
           }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A ZWJ sequence that starts with a known value is one unknown value",
+          "id": "ctx-023",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A skin-tone modifier stays with its base emoji",
+          "id": "ctx-024",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
+        },
+        {
+          "applicability": "protocol_behavior",
+          "description": "A VS16 tail on a value without one stays with it",
+          "id": "ctx-025",
+          "implementations": {
+            "python": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "rust": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            },
+            "webmcp": {
+              "reason": "Executed by the declared checked runner",
+              "status": "checked"
+            }
+          }
         }
       ],
       "fixture": "conformance/adaptation/context_encoding.json",
-      "fixture_sha256": "7ba6f64244870d987de6331510e622f54ab45ce11700910e99facb742c456ca1",
+      "fixture_sha256": "12f92230692d9f947e45523ea54b77d502f620f8c876b028035a234a20d26c16",
       "maturity": "conformance-candidate",
       "normative_source": "VCP-Spec/docs/context/VCP_CONTEXT_SPECIFICATION.md",
       "runner": "conformance/runners/context_parity.py",
@@ -7512,22 +7569,22 @@
     "fixture_count": 30,
     "implementation_status": {
       "python": {
-        "checked": 362,
+        "checked": 365,
         "not_applicable": 8,
         "unsupported": 6
       },
       "rust": {
-        "checked": 302,
+        "checked": 305,
         "not_applicable": 8,
         "unsupported": 66
       },
       "webmcp": {
-        "checked": 87,
+        "checked": 90,
         "not_applicable": 283,
         "unsupported": 6
       }
     },
-    "vector_count": 376,
+    "vector_count": 379,
     "webmcp_surface_checks": 2
   },
   "webmcp_surface": {
