@@ -4,12 +4,15 @@ VCP Audit Module
 Privacy-preserving audit logging for VCP operations.
 """
 
+import dataclasses
 import hashlib
+import hmac
 import json
 import logging
 import os
 import threading
 import uuid
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -20,10 +23,36 @@ from .metrics import vcp_audit_events_total
 
 logger = logging.getLogger(__name__)
 
-# Per-process random salt for privacy hashing. Makes hashes non-reversible
-# from known inputs while remaining deterministic within a process lifetime
-# (required for purge_by_session matching).
-_PRIVACY_SALT: bytes = os.urandom(32)
+# Minimum length of an audit pseudonymization key (VCP core audit §6.2).
+MIN_AUDIT_KEY_BYTES = 32
+
+# Prefix of the keyed privacy hash (VCP core audit §6.1).
+PRIVACY_HASH_PREFIX = "hmac-sha256:"
+
+# Per-process random K_audit (VCP core audit §6.2, rule 2): 32 bytes from a
+# CSPRNG, generated when the audit module loads and used for the lifetime of
+# the process. It is never logged, exported or persisted, so pseudonyms (and
+# purge_by_session matching) are stable only within this process. Configure
+# an operator key with ``AuditLogger(audit_key=...)`` for cross-restart
+# stability.
+_PROCESS_AUDIT_KEY: bytes = os.urandom(MIN_AUDIT_KEY_BYTES)
+
+
+def _coerce_audit_key(key: bytes | bytearray | str) -> bytes:
+    """Return operator key bytes, enforcing the §6.2 minimum length.
+
+    Text keys are encoded as UTF-8; the resulting bytes must be at least
+    32 long.
+    """
+    if isinstance(key, str):
+        raw = key.encode("utf-8")
+    elif isinstance(key, (bytes, bytearray)):
+        raw = bytes(key)
+    else:
+        raise TypeError("audit key must be bytes or str")
+    if len(raw) < MIN_AUDIT_KEY_BYTES:
+        raise ValueError(f"audit key must be at least {MIN_AUDIT_KEY_BYTES} bytes, got {len(raw)}")
+    return raw
 
 
 class AuditLevel(Enum):
@@ -44,15 +73,15 @@ class AuditLevel(Enum):
 class AuditEntry:
     """A VCP audit log entry."""
 
-    timestamp: datetime
-    session_id_hash: str
+    timestamp: datetime | None
+    session_id_hash: str | None
     verification_result: str
-    checks_passed: list[str]
+    checks_passed: list[str] | None
     bundle_id_hash: str
     content_hash: str
-    issuer_hash: str
-    version: str
-    manifest_signature: str
+    issuer_hash: str | None
+    version: str | None
+    manifest_signature: str | None
     audit_level: AuditLevel = AuditLevel.MINIMAL
 
     # Optional fields for higher audit levels
@@ -60,6 +89,33 @@ class AuditEntry:
     duration_ms: int | None = None
     token_count: int | None = None
     content_preview: str | None = None  # For diagnostic level only
+
+    def redacted(self) -> "AuditEntry":
+        """Return a copy holding only the fields permitted at this entry's level.
+
+        Fields above ``audit_level`` are set to ``None``, so the copy carries
+        exactly what :meth:`to_dict` would emit. :class:`AuditLogger` hands
+        this view to ``log_callback`` and to callers.
+        """
+        rank = _LEVEL_RANK[self.audit_level]
+        standard = rank >= _LEVEL_RANK[AuditLevel.STANDARD]
+        full = rank >= _LEVEL_RANK[AuditLevel.FULL]
+        diagnostic = self.audit_level is AuditLevel.DIAGNOSTIC
+        return dataclasses.replace(
+            self,
+            timestamp=self.timestamp if standard else None,
+            session_id_hash=self.session_id_hash if standard else None,
+            checks_passed=(
+                list(self.checks_passed) if standard and self.checks_passed is not None else None
+            ),
+            issuer_hash=self.issuer_hash if standard else None,
+            version=self.version if standard else None,
+            manifest_signature=self.manifest_signature if standard else None,
+            request_id=self.request_id if standard else None,
+            duration_ms=self.duration_ms if full else None,
+            token_count=self.token_count if full else None,
+            content_preview=self.content_preview if diagnostic else None,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for logging.
@@ -95,7 +151,8 @@ class AuditEntry:
             AuditLevel.FULL,
             AuditLevel.DIAGNOSTIC,
         ):
-            result["timestamp"] = _format_utc_timestamp(self.timestamp)
+            if self.timestamp is not None:
+                result["timestamp"] = _format_utc_timestamp(self.timestamp)
             result["session_id_hash"] = self.session_id_hash
             result["manifest_signature"] = self.manifest_signature
             verification["checks_passed"] = self.checks_passed
@@ -133,16 +190,26 @@ def _format_utc_timestamp(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _hash_for_privacy(value: str, salt: bytes | None = None) -> str:
-    """Hash a value for privacy-preserving logging.
+_LEVEL_RANK: dict[AuditLevel, int] = {
+    AuditLevel.MINIMAL: 0,
+    AuditLevel.STANDARD: 1,
+    AuditLevel.FULL: 2,
+    AuditLevel.DIAGNOSTIC: 3,
+}
 
-    Uses a per-process random salt by default so hashes are not reversible
-    from known inputs, but remain deterministic within the same process
-    (required for purge_by_session matching). Pass a stable ``salt`` to make
-    hashes comparable across process restarts.
+
+def _hash_for_privacy(value: str, key: bytes | None = None) -> str:
+    """Pseudonymize an identifier with the keyed privacy hash (audit §6).
+
+    Returns ``"hmac-sha256:"`` followed by the first 32 lowercase hex
+    characters of HMAC-SHA256(K_audit, UTF-8(value)), 44 characters in all.
+    The value is used exactly as supplied (no trimming, case folding or
+    normalization). ``key`` is the operator K_audit; when it is omitted the
+    per-process random key is used.
     """
-    salted = (salt if salt is not None else _PRIVACY_SALT) + value.encode()
-    return f"sha256:{hashlib.sha256(salted).hexdigest()[:32]}"
+    audit_key = _PROCESS_AUDIT_KEY if key is None else key
+    tag = hmac.new(audit_key, value.encode("utf-8"), hashlib.sha256).hexdigest()
+    return f"{PRIVACY_HASH_PREFIX}{tag[:32]}"
 
 
 class AuditLogger:
@@ -153,6 +220,8 @@ class AuditLogger:
         level: AuditLevel = AuditLevel.MINIMAL,
         log_callback: Callable[[AuditEntry], None] | None = None,
         privacy_salt: bytes | None = None,
+        *,
+        audit_key: bytes | str | None = None,
     ):
         """
         Initialize audit logger.
@@ -162,18 +231,36 @@ class AuditLogger:
                    most privacy-preserving level; pass
                    ``AuditLevel.STANDARD`` or higher to opt in to more fields.
             log_callback: Function to call with audit entries
-                         (entry: AuditEntry) -> None
-            privacy_salt: Optional stable secret salt for privacy hashing.
-                         Defaults to a per-process random salt, in which case
-                         :meth:`purge_by_session` can only match entries and
-                         exported files produced by this process. Operators
-                         that need cross-restart purges must supply a stable
-                         secret salt and re-register exported paths with
+                         (entry: AuditEntry) -> None. It receives the
+                         :meth:`AuditEntry.redacted` view, which holds only
+                         the fields permitted at ``level``.
+            privacy_salt: Deprecated alias for ``audit_key``. It is now used
+                         as the HMAC key and must be at least 32 bytes.
+            audit_key: Operator K_audit for the keyed privacy hash (VCP core
+                         audit §6.2): at least 32 bytes, or text that is
+                         encoded as UTF-8 and must then be at least 32 bytes.
+                         Use it only for audit pseudonymization. Without it a
+                         per-process random key is used, so pseudonyms and
+                         :meth:`purge_by_session` matching only cover entries
+                         and exports produced by this process. Deployments
+                         that need cross-restart purges must configure a key
+                         and re-register exported paths with
                          :meth:`track_exported_path`.
         """
+        if privacy_salt is not None:
+            if audit_key is not None:
+                raise TypeError("pass audit_key or the deprecated privacy_salt, not both")
+            warnings.warn(
+                "privacy_salt is deprecated; pass audit_key (an HMAC key of at least 32 bytes)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            audit_key = privacy_salt
         self.level = level
         self._log_callback = log_callback
-        self._privacy_salt = privacy_salt
+        self._audit_key: bytes | None = (
+            _coerce_audit_key(audit_key) if audit_key is not None else None
+        )
         self._entries: list[AuditEntry] = []
         self._exported_paths: list[str] = []
         self._purge_handlers: list[Callable[[str, str], dict[str, Any]]] = []
@@ -181,7 +268,7 @@ class AuditLogger:
 
     def _hash(self, value: str) -> str:
         """Privacy-hash ``value`` with this logger's salt."""
-        return _hash_for_privacy(value, self._privacy_salt)
+        return _hash_for_privacy(value, self._audit_key)
 
     def track_exported_path(self, path: str) -> None:
         """Register a previously exported JSON file for future purges.
@@ -364,10 +451,11 @@ class AuditLogger:
             self._entries.append(entry)
         vcp_audit_events_total.labels(event_type="verification").inc()
 
+        view = entry.redacted()
         if self._log_callback:
-            self._log_callback(entry)
+            self._log_callback(view)
 
-        return entry
+        return view
 
     def get_entries(self, since: datetime | None = None) -> list[AuditEntry]:
         """
@@ -377,12 +465,14 @@ class AuditLogger:
             since: Only return entries after this time
 
         Returns:
-            List of audit entries
+            List of audit entries, each the :meth:`AuditEntry.redacted` view
+            permitted at its level
         """
         with self._lock:
-            if since:
-                return [e for e in self._entries if e.timestamp > since]
-            return list(self._entries)
+            entries = list(self._entries)
+        if since:
+            entries = [e for e in entries if e.timestamp is not None and e.timestamp > since]
+        return [e.redacted() for e in entries]
 
     def log_privacy_filter(
         self,
@@ -434,10 +524,11 @@ class AuditLogger:
             self._entries.append(entry)
         vcp_audit_events_total.labels(event_type="privacy_filter").inc()
 
+        view = entry.redacted()
         if self._log_callback:
-            self._log_callback(entry)
+            self._log_callback(view)
 
-        return entry
+        return view
 
     def clear(self) -> None:
         """Clear stored entries."""
@@ -550,7 +641,7 @@ class AuditLogger:
                 manifest_signature="n/a",
                 audit_level=self.level,
             )
-            self._log_callback(purge_entry)
+            self._log_callback(purge_entry.redacted())
 
         return tombstone
 

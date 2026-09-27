@@ -12,6 +12,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
+import pytest
+
 from vcp.audit import AuditEntry, AuditLevel, AuditLogger, _hash_for_privacy
 
 # ---------------------------------------------------------------------------
@@ -432,9 +434,143 @@ class TestHashForPrivacy:
         assert _hash_for_privacy("a") != _hash_for_privacy("b")
 
     def test_prefix_format(self) -> None:
-        assert _hash_for_privacy("x").startswith("sha256:")
+        assert _hash_for_privacy("x").startswith("hmac-sha256:")
 
     def test_truncated_to_32_hex(self) -> None:
         h = _hash_for_privacy("x")
         hex_part = h.split(":")[1]
         assert len(hex_part) == 32
+        assert len(h) == 44
+        assert hex_part == hex_part.lower()
+
+    def test_spec_vectors(self) -> None:
+        """VCP core audit §6.2 test vectors, K_audit = bytes 00..1f."""
+        key = bytes(range(32))
+        assert _hash_for_privacy("session-123", key) == (
+            "hmac-sha256:155ac01a3ea3ea086d4b81a0927566d1"
+        )
+        assert _hash_for_privacy("bundle:family.safe.guide@1.2.0", key) == (
+            "hmac-sha256:f5ac6afff147efb0a91ea7e2476025fd"
+        )
+
+    def test_value_is_not_normalized(self) -> None:
+        key = bytes(range(32))
+        assert _hash_for_privacy("Session-123", key) != _hash_for_privacy("session-123", key)
+        assert _hash_for_privacy(" session-123", key) != _hash_for_privacy("session-123", key)
+
+    def test_is_hmac_not_salted_sha256(self) -> None:
+        import hashlib
+
+        key = bytes(range(32))
+        salted = hashlib.sha256(key + b"session-123").hexdigest()[:32]
+        assert _hash_for_privacy("session-123", key) != f"hmac-sha256:{salted}"
+
+
+class TestAuditKeySource:
+    """VCP core audit §6.2 key sourcing."""
+
+    def test_operator_key_is_used(self) -> None:
+        key = bytes(range(32))
+        logger = AuditLogger(audit_key=key)
+        assert logger._hash("session-123") == "hmac-sha256:155ac01a3ea3ea086d4b81a0927566d1"
+
+    def test_text_key_is_utf8_encoded(self) -> None:
+        text = "k" * 32
+        logger = AuditLogger(audit_key=text)
+        assert logger._hash("v") == _hash_for_privacy("v", text.encode("utf-8"))
+
+    def test_short_keys_are_rejected(self) -> None:
+        with pytest.raises(ValueError, match="at least 32 bytes"):
+            AuditLogger(audit_key=b"x" * 31)
+        with pytest.raises(ValueError, match="at least 32 bytes"):
+            AuditLogger(audit_key="short")
+
+    def test_default_key_is_per_process_random(self) -> None:
+        from vcp import audit
+
+        assert len(audit._PROCESS_AUDIT_KEY) == 32
+        assert AuditLogger()._hash("v") == _hash_for_privacy("v")
+        assert AuditLogger(audit_key=bytes(range(32)))._hash("v") != _hash_for_privacy("v")
+
+    def test_two_loggers_with_same_operator_key_agree(self) -> None:
+        key = bytes(range(32, 64))
+        assert AuditLogger(audit_key=key)._hash("s") == AuditLogger(audit_key=key)._hash("s")
+
+    def test_privacy_salt_is_a_deprecated_alias(self) -> None:
+        key = bytes(range(32))
+        with pytest.warns(DeprecationWarning, match="audit_key"):
+            logger = AuditLogger(privacy_salt=key)
+        assert logger._hash("session-123") == "hmac-sha256:155ac01a3ea3ea086d4b81a0927566d1"
+        with pytest.warns(DeprecationWarning), pytest.raises(ValueError):
+            AuditLogger(privacy_salt=b"short")
+        with pytest.raises(TypeError):
+            AuditLogger(privacy_salt=key, audit_key=key)
+
+
+class TestCallbackRedaction:
+    """log_callback receives only the fields permitted at the level."""
+
+    @staticmethod
+    def _log(level: AuditLevel) -> tuple[AuditEntry, AuditEntry]:
+        from vcp.types import VerificationResult
+
+        captured: list[AuditEntry] = []
+        logger = AuditLogger(level=level, log_callback=captured.append)
+        returned = logger.log_verification(
+            TestAuditDefaultLevel._bundle(),
+            VerificationResult.VALID,
+            session_id="sess-1",
+            request_id="req-1",
+            duration_ms=12,
+        )
+        assert len(captured) == 1
+        return captured[0], returned
+
+    @pytest.mark.parametrize("level", list(AuditLevel))
+    def test_callback_matches_serialized_output(self, level: AuditLevel) -> None:
+        seen, returned = self._log(level)
+        assert seen == returned
+        emitted = seen.to_dict()
+        permitted = {
+            "timestamp": "timestamp" in emitted,
+            "session_id_hash": "session_id_hash" in emitted,
+            "checks_passed": "checks_passed" in emitted["verification"],
+            "issuer_hash": "issuer_hash" in emitted["bundle_ref"],
+            "version": "version" in emitted["bundle_ref"],
+            "manifest_signature": "manifest_signature" in emitted,
+            "request_id": "request_id" in emitted,
+            "duration_ms": "duration_ms" in emitted["verification"],
+            "token_count": "token_count" in emitted["bundle_ref"],
+            "content_preview": "content_preview" in emitted["bundle_ref"],
+        }
+        for field_name, is_emitted in permitted.items():
+            assert (getattr(seen, field_name) is not None) == is_emitted, field_name
+
+    def test_minimal_callback_has_no_session_data(self) -> None:
+        seen, _ = self._log(AuditLevel.MINIMAL)
+        assert seen.timestamp is None
+        assert seen.session_id_hash is None
+        assert seen.issuer_hash is None
+        assert seen.request_id is None
+        assert seen.manifest_signature is None
+        assert seen.checks_passed is None
+        assert seen.bundle_id_hash.startswith("hmac-sha256:")
+
+    def test_get_entries_is_redacted_but_purge_still_works(self) -> None:
+        from vcp.types import VerificationResult
+
+        logger = AuditLogger()
+        logger.log_verification(
+            TestAuditDefaultLevel._bundle(), VerificationResult.VALID, session_id="sess-1"
+        )
+        assert all(entry.session_id_hash is None for entry in logger.get_entries())
+        assert logger.purge_by_session("sess-1")["entries_removed"] == 1
+
+    def test_purge_tombstone_callback_is_redacted(self) -> None:
+        captured: list[AuditEntry] = []
+        logger = AuditLogger(log_callback=captured.append)
+        logger.register_purge_handler(lambda _hash, _purge: {"ok": True})
+        logger._entries.append(_make_entry(session_id_hash=_hash_for_privacy("user-A")))
+        logger.purge_by_session("user-A")
+        tombstone = [e for e in captured if e.verification_result == "PURGE_TOMBSTONE"]
+        assert tombstone and tombstone[0].session_id_hash is None
