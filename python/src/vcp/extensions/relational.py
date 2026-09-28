@@ -1,13 +1,13 @@
 """VCP 3.1 Relational Context Extensions.
 
-Pure-Python relational context layer for partnership-level state.
+Pure-Python relational context (VCP-X-Relational extension) for partnership-level state.
 Includes trust levels, standing, AI self-model, and relational norms.
 No external dependencies.
 
 Design principles:
 1. Uncertainty markers are REQUIRED on AI self-reports (the ? is load-bearing)
 2. Negative states must be representable (no positivity-only schemas)
-3. Zero external dependencies -- dataclasses and stdlib only
+3. Zero external dependencies (dataclasses and stdlib only)
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from typing import Any
 
 
 class TrustLevel(str, Enum):
-    """Trust levels -- established through behavior, not declared."""
+    """Trust levels are established through behavior, not declared."""
 
     INITIAL = "initial"
     DEVELOPING = "developing"
@@ -122,7 +122,7 @@ class AISelfModel:
         """Check that at least one dimension is marked as uncertain.
 
         A model where ALL dimensions claim certainty is epistemically
-        dishonest -- no system has perfect self-knowledge.
+        dishonest; no system has perfect self-knowledge.
         """
         all_dims = [
             self.valence,
@@ -277,7 +277,7 @@ class PreferenceModelMeta:
 
     Args:
         overall_confidence: Confidence in the preference model (0.0-1.0).
-        preference_source: Origin of preference data -- "explicit", "inferred",
+        preference_source: Origin of preference data, one of "explicit", "inferred",
             "default", or "stale".
         last_confirmed: ISO8601 timestamp of last explicit confirmation.
         exploratory_appetite: User's novelty vs routine appetite (0.0=routine, 1.0=novelty).
@@ -326,7 +326,7 @@ class PreferenceModelMeta:
 
 @dataclass
 class RelationalContext:
-    """VCP relational context -- the state of the partnership itself.
+    """VCP relational context — the state of the partnership itself.
 
     Distinct from user state and AI state. This is about the relationship:
     trust, standing, norms, self-model, and interaction history.

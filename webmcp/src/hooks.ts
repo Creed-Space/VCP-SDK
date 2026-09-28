@@ -281,7 +281,7 @@ function validateHookDefinition(hook: HookDefinition): void {
  * Central hook registry and executor.
  *
  * Manages hook registration, chain assembly, and deterministic execution.
- * Designed for browser-side use -- all chain execution is synchronous.
+ * Designed for browser-side use; all chain execution is synchronous.
  *
  * @example
  * ```ts
@@ -300,7 +300,7 @@ function validateHookDefinition(hook: HookDefinition): void {
  *
  * const result = registry.fire(HookType.PostSelect, {
  *   context: { dimensions: {} },
- *   constitution: { id: 'general' },
+ *   constitution: { id: 'personal.growth.creative' },
  *   event: {},
  *   session: {},
  *   chainState: {},

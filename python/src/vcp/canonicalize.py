@@ -47,7 +47,7 @@ def parse_json_strict(value: str | bytes | bytearray) -> Any:
 
     Python's default decoder silently keeps the last occurrence of a duplicate
     object key and accepts the non-standard ``NaN`` and infinity constants.
-    Both behaviours are unsafe for signed or security-sensitive documents,
+    Both behaviors are unsafe for signed or security-sensitive documents,
     because different implementations can assign different meaning to the
     same bytes.
     """

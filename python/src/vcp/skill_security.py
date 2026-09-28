@@ -543,8 +543,8 @@ def main(argv: list[str] | None = None) -> int:
 
     Supports two sub-commands:
 
-    * ``sign`` -- Sign a skill directory with an Ed25519 key.
-    * ``verify`` -- Verify a signed skill directory.
+    * ``sign``: sign a skill directory with an Ed25519 key.
+    * ``verify``: verify a signed skill directory.
 
     Args:
         argv: Command-line arguments (defaults to ``sys.argv[1:]``).

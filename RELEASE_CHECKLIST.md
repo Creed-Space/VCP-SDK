@@ -38,7 +38,7 @@ not transfer to a changed candidate.
 ## Rights and policy gate
 
 * [ ] Asset and document provenance reviewed
-* [ ] Licence, trademark, patent, contribution, and privacy posture approved
+* [ ] License, trademark, patent, contribution, and privacy posture approved
 * [ ] Package metadata and notices approved
 
 ## Deployment and publication gate

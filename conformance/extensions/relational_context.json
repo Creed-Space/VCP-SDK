@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "schema_version": "1.0.0",
   "vcp_version": "3.1.0",
-  "description": "Conformance test vectors for VCP relational context layer",
+  "description": "Conformance test vectors for the VCP-X-Relational relational context extension",
   "test_cases": [
     {
       "id": "trust-level-ordering",

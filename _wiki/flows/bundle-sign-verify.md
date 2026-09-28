@@ -3,7 +3,7 @@
 <!-- wiki:type = flow -->
 <!-- wiki:scope = vcp-sdk -->
 <!-- wiki:created = 2026-05-23 -->
-<!-- wiki:updated = 2026-05-23 -->
+<!-- wiki:updated = 2026-09-24 -->
 <!-- wiki:status = active -->
 
 ## Summary
@@ -25,9 +25,9 @@ From `python/src/vcp/` (directory listing):
 | `trust.py` | Trust anchor and chain verification |
 | `manifest.py` | Manifest structure — metadata about bundle contents |
 | `orchestrator.py` | Entry point for verify-then-inject flow |
-| `revocation.py` | Checks revocation status before accepting a bundle |
-| `audit.py` | Appends to tamper-evident audit chain on each operation |
-| `injection.py` | Injection scanning — checks for injection attacks in bundle content |
+| `revocation.py` | Checks revocation status before accepting a bundle (fails closed with `REVOCATION_UNAVAILABLE` when no configured source can establish a status) |
+| `audit.py` | Records verification and privacy-filter events with salted identifier hashes (no hash chain; the core-profile chain is implemented in the Creed Space platform, not this SDK) |
+| `injection.py` | Formats verified bundles for injection into the model context (the injection scan itself runs in `orchestrator.py`) |
 
 ## Flow Steps
 
@@ -36,11 +36,12 @@ From `python/src/vcp/` (directory listing):
 3. **Sign**: private key signs canonical form; signature embedded in bundle
 4. **Transport**: bundle travels as MCP resource (`vcp://bundle/*`)
 5. **Orchestrator receive**: `orchestrator.py` receives bundle at enforcement boundary
-6. **Revocation check**: `revocation.py` verifies token not revoked
-7. **Trust verify**: `trust.py` checks signature against trust anchor chain
-8. **Injection scan**: `injection.py` scans content for injection attacks
-9. **Audit log**: `audit.py` records operation on tamper-evident chain
-10. **Inject**: validated text injected into model context
+6. **Trust verify**: `trust.py` checks the issuer signature and the safety attestation against the configured trust anchors
+7. **Revocation check**: `revocation.py` confirms the bundle is not revoked, between attestation and temporal checks
+8. **Temporal, replay, budget and scope checks**: `orchestrator.py` applies them in that order
+9. **Injection scan**: `orchestrator.py` scans content for prompt-injection patterns
+10. **Audit log**: `audit.py` records the verification event (the application supplies the `AuditLogger`; the orchestrator does not call it)
+11. **Inject**: `injection.py` formats the validated text for the model context
 
 ## Schemas
 
@@ -48,8 +49,8 @@ Bundle manifest validated against `schemas/vcp-manifest-v1.schema.json`. (VCP-Sp
 
 ## Provenance
 
-- Sources consulted: VCP-SDK/CLAUDE.md, python/src/vcp/ directory listing, VCP-Spec/README.md
-- Last verified against sources: 2026-05-23
+- Sources consulted: VCP-SDK/CLAUDE.md, python/src/vcp/ directory listing, VCP-Spec/README.md; `python/src/vcp/orchestrator.py` (verification steps 1-12), `python/src/vcp/audit.py`, `python/src/vcp/injection.py`
+- Last verified against sources: 2026-09-24
 
 ## See Also
 

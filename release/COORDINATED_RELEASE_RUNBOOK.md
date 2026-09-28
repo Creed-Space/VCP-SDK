@@ -37,7 +37,7 @@ Assign names before freezing a release candidate.
 |---|---|---|
 | Release coordinator | Maintains candidate identity, sequencing, and ledger integrity | May also be a maintainer |
 | Machine evidence owner | Runs reproducible checks and records logs | May also be a maintainer |
-| Legal reviewer | Decides trademark, patent, licence, contribution, and redistribution posture | Must have the required authority |
+| Legal reviewer | Decides trademark, patent, license, contribution, and redistribution posture | Must have the required authority |
 | Protocol reviewer | Reviews normative protocol and cryptographic assumptions | Independent from the implementation authors for X017 |
 | SDK security reviewer | Reviews signature, revocation, and scope enforcement | Independent from the implementation authors for K045 |
 | Accessibility reviewer | Performs keyboard and assistive technology review | Must use the named candidate and environment |
@@ -147,7 +147,7 @@ runs maintained-SDK and Demo coverage in `full` mode. The VCP Inspector
 `vcp-sdk` PyPI package (https://github.com/Creed-Space/vcp-sdk-python) are
 validated separately with their own candidate-bound evidence.
 
-### 5.2 New regression programmes
+### 5.2 New regression programs
 
 ```bash
 make property PYTHON=/path/to/locked/python
@@ -302,8 +302,10 @@ environment, a coordinated ledger that passes `--require-prepublication`,
 an exact dispatch digest for the protected external ledger, ratified package
 names, and registry-specific protected environments. K044 and X018 are then
 completed from the publication receipts and production smoke evidence before
-the ledger passes `--require-complete`. The current source-only publication
-state deliberately causes publication preflight to fail.
+the ledger passes `--require-complete`. Publication preflight fails closed
+unless the publication state, ledger, and tag all match the version being
+published. SDK 4.2.0 is recorded as published, so a new release needs its own
+coordinated review ledger before preflight will pass.
 
 1. Create signed, immutable repository tags for the approved Spec and SDK
    commits. Record tag-object hashes and signature verification output.
@@ -378,7 +380,7 @@ configuration.
 X018 must exercise what users receive, not local source:
 
 1. Install each published SDK in a fresh environment by exact version.
-2. Verify package name, version, exported API, licence, notices, and checksum.
+2. Verify package name, version, exported API, license, notices, and checksum.
 3. Run one documented signing and verification flow for each supported SDK
    distribution.
 4. Verify a confirmed revocation, an explicitly clear revocation response, and

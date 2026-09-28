@@ -4,14 +4,14 @@
 //!
 //! VCP is a protocol for expressing and transmitting human values,
 //! context, and personal state between Becoming Minds so they can
-//! adapt their behaviour accordingly.
+//! adapt their behavior accordingly.
 //!
 //! ## Modules
 //!
 //! | Module | Purpose |
 //! |--------|---------|
 //! | [`identity`] | VCP/I token parsing (`family.safe.guide@1.2.0`) |
-//! | [`csm1`] | CSM-1 compact codes and 8-line tokens |
+//! | [`csm1`] | CSM-1 codes (NANO, MICRO and COMPACT tiers) and CSM-1 tokens |
 //! | [`personal`] | Personal state dimensions (cognitive, emotional, ...) |
 //! | [`situational`] | Situational context (time, space, company, ...) |
 //! | [`context`] | Full context wire format (situational + personal) |
@@ -33,7 +33,7 @@
 //! let token = VcpToken::parse("family.safe.guide@1.2.0").unwrap();
 //! assert_eq!(token.domain(), "family");
 //!
-//! // Parse a CSM-1 compact code.
+//! // Parse a CSM-1 code.
 //! let code = Csm1Code::parse("N5+F+E").unwrap();
 //! assert_eq!(code.persona, Persona::Nanny);
 //! assert_eq!(code.encode(), "N5+E+F");

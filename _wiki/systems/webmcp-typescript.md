@@ -3,16 +3,16 @@
 <!-- wiki:type = system -->
 <!-- wiki:scope = vcp-sdk -->
 <!-- wiki:created = 2026-05-23 -->
-<!-- wiki:updated = 2026-05-23 -->
+<!-- wiki:updated = 2026-09-24 -->
 <!-- wiki:status = active -->
 
 ## Summary
 
-`webmcp/` is a TypeScript package that registers VCP capabilities as discoverable tools for AI agents via the WebMCP API (`navigator.modelContext`). This is the browser-side integration layer — it is NOT a general-purpose TypeScript VCP SDK. It targets web apps that want to expose VCP verification to AI agents visiting the page. (webmcp/package.json; webmcp/src/ listing)
+`webmcp/` is a TypeScript package that registers VCP capabilities as discoverable tools for AI agents via the experimental WebMCP API on `document.modelContext`, falling back to `navigator.modelContext` (webmcp/src/registration.ts). This is the browser-side integration layer — it is NOT a general-purpose TypeScript VCP SDK. It targets web apps that want to expose VCP verification to AI agents visiting the page. (webmcp/package.json; webmcp/src/ listing)
 
 ## What WebMCP Is
 
-The WebMCP API (`navigator.modelContext`) is a browser standard for exposing tools to AI models. METTLE's webmcp package registers VCP capabilities as tools so that when an AI agent visits a VCP-aware webpage, it can discover and invoke VCP operations directly. (webmcp/package.json description: "Register VCP capabilities as discoverable tools for AI agents via the WebMCP API")
+The WebMCP API (`document.modelContext`; earlier previews used `navigator.modelContext`) is an experimental browser API for exposing tools to AI models. The webmcp package registers VCP capabilities as tools so that when an AI agent visits a VCP-aware webpage, it can discover and invoke VCP operations directly. (webmcp/package.json description: "Register VCP capabilities as discoverable tools for AI agents via the WebMCP API")
 
 This is the browser-analog to the MCP server pattern: MCP server = CLI/server tool exposure; WebMCP = browser tool exposure.
 
@@ -24,7 +24,8 @@ This is the browser-analog to the MCP server pattern: MCP server = CLI/server to
 | `tools.ts` | Tool definitions (capabilities exposed to AI agents) |
 | `types.ts` | TypeScript type definitions |
 | `hooks.ts` | Hook implementations |
-| `polyfill.ts` | `navigator.modelContext` polyfill for environments that don't support WebMCP natively |
+| `registration.ts` | Registers the tools on `document.modelContext`, falling back to `navigator.modelContext` |
+| `polyfill.ts` | Runs a caller-supplied polyfill loader (behind `?webmcp=polyfill`) to populate `document.modelContext` where WebMCP is not native |
 | `extensions/` | Extension tool registrations |
 
 (webmcp/src/ directory listing)
@@ -49,12 +50,12 @@ For in-browser VCP verification without a server round-trip, use `vcp-wasm/` (Ru
 
 ## What This Is NOT
 
-There is no general-purpose TypeScript/JavaScript VCP SDK (comparable to the Python SDK) in this repository. WebMCP is specifically for the `navigator.modelContext` tool registration pattern. For Node.js/server-side TypeScript usage of VCP, the Python SDK or Rust crate are the intended paths. (VCP-SDK/ directory listing; this page)
+There is no general-purpose TypeScript/JavaScript VCP SDK (comparable to the Python SDK) in this repository. WebMCP is specifically for the `document.modelContext` tool registration pattern (with the `navigator.modelContext` fallback). For Node.js/server-side TypeScript usage of VCP, the Python SDK or Rust crate are the intended paths. (VCP-SDK/ directory listing; this page)
 
 ## Provenance
 
-- Sources consulted: `webmcp/package.json` (description, scripts, main); `webmcp/src/` directory listing
-- Last verified against sources: 2026-05-23
+- Sources consulted: `webmcp/package.json` (description, scripts, main); `webmcp/src/` directory listing; `webmcp/src/registration.ts` and `webmcp/src/polyfill.ts` (API target)
+- Last verified against sources: 2026-09-24
 
 ## See Also
 

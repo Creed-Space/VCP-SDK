@@ -455,17 +455,17 @@ impl VcpToken {
 
     // ── Accessors ───────────────────────────────────────────
 
-    /// First segment -- the domain / category.
+    /// First segment: the domain or category.
     pub fn domain(&self) -> &str {
         &self.segments[0]
     }
 
-    /// Penultimate segment -- the approach / method.
+    /// Penultimate segment: the approach or method.
     pub fn approach(&self) -> &str {
         &self.segments[self.segments.len() - 2]
     }
 
-    /// Last segment -- the role / function.
+    /// Last segment: the role or function.
     pub fn role(&self) -> &str {
         &self.segments[self.segments.len() - 1]
     }

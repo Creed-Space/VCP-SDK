@@ -3,22 +3,33 @@
 <!-- vcp-document-control
 status: Current implementation companion
 normative-authority: VCP-Spec controls protocol semantics
-protocol-version: VCP 3.1 baseline with explicit candidate and experimental surfaces
-last-reviewed: 2026-08-13
+protocol-version: VCP 3.1 source baseline with explicit candidate and experimental surfaces
+last-reviewed: 2026-09-24
 owner: VCP-SDK maintainers
-evidence-boundary: Source implementation guidance, not publication or deployment proof
+evidence-boundary: Implementation guidance, not publication or deployment proof
 -->
 
 ## Source boundary
 
-VCP-SDK contains portable Python, Rust, CLI, WASM, and WebMCP source candidates.
+VCP-SDK contains the portable Python, Rust, CLI, WASM, and WebMCP packages,
+published at 4.2.0 on PyPI, npm and crates.io.
 It excludes the former Creed Space host application and cross-project Interiora
 bridges. Select an exact Spec and SDK commit pair before using schemas or making
 a conformance claim.
 
-## Source installation
+## Installation
 
-From an immutable SDK checkout:
+The package names are ratified and 4.2.0 is published:
+
+```bash
+python -m pip install value-context-protocol==4.2.0
+npm install @creedspace/vcp-sdk@4.2.0
+cargo add vcp-core@4.2.0
+```
+
+`release/publication-state.json` records each registry receipt. To build the
+same release from source, check out tag `v4.2.0` and run from the repository
+root:
 
 ```bash
 python -m pip install ./python
@@ -26,9 +37,6 @@ npm --prefix webmcp ci
 npm --prefix webmcp run build
 cargo build --manifest-path rust/Cargo.toml --workspace
 ```
-
-Registry commands remain invalid until names are ratified and publication
-receipts are recorded in `release/publication-state.json`.
 
 ## Trust pipeline
 

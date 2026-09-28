@@ -10,8 +10,12 @@ compatibility table below.
 
 ## Quick Start
 
+```bash
+npm install @creedspace/vcp-sdk@4.2.0
+```
+
 ```typescript
-// From a local VCP-SDK source checkout after `npm --prefix webmcp run build`.
+// After npm install @creedspace/vcp-sdk@4.2.0 (or a source build, see below).
 import { registerVCPTools } from '@creedspace/vcp-sdk';
 
 const { registered, failed, api, cleanup } = await registerVCPTools({
@@ -28,14 +32,16 @@ To build the published version from source in another local project:
 ```bash
 git clone https://github.com/Creed-Space/VCP-SDK.git
 cd VCP-SDK
+git checkout v4.2.0
 npm --prefix webmcp ci
 npm --prefix webmcp test
 npm --prefix webmcp run build
 npm install ./webmcp
 ```
 
-Bind the checkout to an immutable commit recorded in the coordinated candidate
-manifest before using it as release evidence.
+The `git checkout v4.2.0` step pins the build to commit `c5035e9`, the
+`source_commit` recorded in `release/publication-state.json`. Keep it whenever a
+source build serves as release evidence.
 
 ## Tools Registered
 

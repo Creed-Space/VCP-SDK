@@ -11,15 +11,22 @@ Protocol (VCP).
 > [`release/publication-state.json`](release/publication-state.json) for the
 > machine-readable gate.
 
-| Candidate distribution | Version | Publication state | Scope |
+| Distribution | Version | Publication state | Scope |
 |:---|:---|:---|:---|
-| Python, `value-context-protocol` | 4.2.0 | Source-only | Full project-maintained implementation, complete local Agent Runtime reference, orchestration, hooks, privacy, messaging, and extensions |
-| Rust workspace, including `vcp-core` | 4.2.0 | Source-only | Core parsing, transport, orchestration, CLI, and WASM bindings |
-| npm, `@creedspace/vcp-sdk` | 4.2.0 | Source-only | Browser and WebMCP integration library |
+| Python, `value-context-protocol` | 4.2.0 | Published (PyPI) | Full project-maintained implementation, complete local Agent Runtime reference, orchestration, hooks, privacy, messaging, and extensions |
+| Rust workspace, including `vcp-core` | 4.2.0 | Published (crates.io: vcp-core, vcp-cli, vcp-wasm) | Core parsing, transport, orchestration, CLI, and WASM bindings |
+| npm, `@creedspace/vcp-sdk` | 4.2.0 | Published (npm) | Browser and WebMCP integration library |
 
-Package versions use SDK semantic versioning. The published protocol baseline is
-VCP v3.1. The repository also implements selected v3.2 candidate amendments and
-experimental VEP-0004 behavior. See [COMPATIBILITY.md](COMPATIBILITY.md) before
+```bash
+python -m pip install value-context-protocol==4.2.0
+npm install @creedspace/vcp-sdk@4.2.0
+cargo add vcp-core@4.2.0
+```
+
+Package versions use SDK semantic versioning. The protocol source baseline is
+VCP v3.1; it is not yet an immutable, ratified protocol release. The repository
+also implements selected v3.2 candidate amendments and experimental VEP-0004
+behavior. See [COMPATIBILITY.md](COMPATIBILITY.md) before
 claiming protocol conformance.
 
 ## Repository map
@@ -42,7 +49,7 @@ normative protocol source lives in
 
 ## Agent Runtime Profile candidate
 
-The Python source candidate implements the complete local `observe@0.1.0`, `controlled@0.1.0`, and `accretive@0.1.0` loop. One bounded SituationView leads through contextual Affordances, proof planning, exact preflight, host-owned decision and single-use grant, controlled reversible execution, reconciliation, RunProof, candidate-first accretion, promotion, attributable influence, and revocation.
+The published Python package (`value-context-protocol` 4.2.0) implements the complete local `observe@0.1.0`, `controlled@0.1.0`, and `accretive@0.1.0` loop of the draft Agent Runtime Profile 0.1 (VEP-0006). One bounded SituationView leads through contextual Affordances, proof planning, exact preflight, host-owned decision and single-use grant, controlled reversible execution, reconciliation, RunProof, candidate-first accretion, promotion, attributable influence, and revocation.
 
 ```python
 from vcp.agent import AgentRuntime
@@ -54,7 +61,7 @@ async with AgentRuntime.connect(profile="controlled@0.1.0") as runtime:
     )).require_value()
 ```
 
-Local mode opens no network and performs only deterministic in-memory reference effects. Policy, grants, review, dispatch, and durable memory remain host authorities. Rust and TypeScript provide strict portable contract facades and no-network orientation. The 24-case Agent Experience harness currently reports zero failures and zero unsupported cases in the local reference scope. The candidate remains unratified, unpublished, undeployed, and independently unreviewed. See [the Agent Runtime guide](docs/VCP_AGENT_RUNTIME_GUIDE.md).
+Local mode opens no network and performs only deterministic in-memory reference effects. Policy, grants, review, dispatch, and durable memory remain host authorities. Rust and TypeScript provide strict portable contract facades and no-network orientation. The 24-case Agent Experience harness currently reports zero failures and zero unsupported cases in the local reference scope. The profile itself is still a draft candidate: unratified, not issued as a protocol release, undeployed, and not independently reviewed. Its reference facades ship in the published 4.2.0 packages. See [the Agent Runtime guide](docs/VCP_AGENT_RUNTIME_GUIDE.md).
 
 ## Python
 
@@ -70,7 +77,8 @@ python -m ruff check src tests
 python -m mypy src/vcp
 ```
 
-The candidate distribution name is `value-context-protocol`; imports use `vcp`:
+The distribution name is `value-context-protocol` (published on PyPI at 4.2.0);
+imports use `vcp`:
 
 ```python
 from vcp.identity import Token
@@ -186,7 +194,7 @@ python3 scripts/validate_public_contract.py \
 Schema ownership, the intentional messaging-version split, and capability
 handshake ownership are documented in [SCHEMA_OWNERSHIP.md](SCHEMA_OWNERSHIP.md).
 
-## Property, fuzz, and performance regression programmes
+## Property, fuzz, and performance regression programs
 
 Deterministic property suites exercise Python parsers, Rust parsers and
 classifiers, and WebMCP inputs. Performance probes enforce profile-specific
@@ -203,7 +211,7 @@ Pull requests run bounded fuzz cases and smoke performance probes. Scheduled CI
 runs longer fuzz campaigns and the full performance profile. Reproduce any fuzz
 failure, minimize it, and commit the input to the relevant corpus before closing
 the finding. Performance results under `performance-results/` are generated
-evidence and remain outside the source candidate.
+evidence and are not committed.
 
 ## Security
 
@@ -217,7 +225,7 @@ private vulnerability reporting for this repository.
 ## Release evidence
 
 [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md) keeps machine validation, human
-review, rights and licence review, deployment, and publication authority as
+review, rights and license review, deployment, and publication authority as
 separate gates. A passing local build establishes machine evidence for its exact
 candidate hash only.
 
@@ -227,7 +235,7 @@ The repository validates a permanently pending ledger template with all 13
 remaining human and publication gates. Copy that template to a controlled
 evidence directory before reviewers add identities or decisions.
 
-## Licence
+## License
 
 SDK source is licensed under [MIT](LICENSE). The conformance fixture corpus
 declares CC BY 4.0 in its own README. Confirm every distributed artifact against

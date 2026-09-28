@@ -1,7 +1,8 @@
 """
 VCP Metrics Module
 
-Optional Prometheus instrumentation for all four VCP layers.
+Optional Prometheus instrumentation for the four core VCP layers (Identity, Transport,
+Semantics, Adaptation).
 Falls back to no-ops if prometheus_client is not installed.
 
 Usage::

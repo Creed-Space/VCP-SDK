@@ -4,8 +4,8 @@
 
 | Surface | Status |
 |:---|:---|
-| Python, Rust, and WebMCP SDK 4.2.x | Supported candidate |
-| VCP v3.1 protocol baseline | Supported |
+| Python, Rust, and WebMCP SDK 4.2.x | Supported (4.2.0 published 3 September 2026) |
+| VCP v3.1 protocol source baseline | Supported |
 | v3.2 amendments and VEP-0004 | Pre-release review candidate |
 | Older SDK and protocol versions | Considered case by case |
 

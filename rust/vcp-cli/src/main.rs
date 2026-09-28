@@ -76,7 +76,7 @@ enum Commands {
         uri: String,
     },
 
-    /// Parse a CSM-1 compact code and display its components.
+    /// Parse a one-line CSM-1 code (NANO or MICRO tier) and display its components.
     ParseCsm1 {
         /// CSM-1 code string (e.g. "N5+F+E").
         code: String,
@@ -85,9 +85,9 @@ enum Commands {
     /// Resolve a case-sensitive CSM-1 persona wire code.
     ResolvePersona { code: String },
 
-    /// Parse a CSM-1 8-line token from a file or stdin.
+    /// Parse a CSM-1 token (7 lines, optional R-line and extension lines) from a file or stdin.
     ParseCsm1Token {
-        /// Path to a file containing the 8-line token, or "-" for stdin.
+        /// Path to a file containing the CSM-1 token, or "-" for stdin.
         #[arg(default_value = "-")]
         path: String,
     },

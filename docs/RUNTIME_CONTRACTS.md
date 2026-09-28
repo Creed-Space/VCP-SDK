@@ -3,7 +3,7 @@
 <!-- vcp-document-control
 status: Current implementation contract
 normative-authority: SDK behavior only; VCP-Spec controls protocol semantics
-protocol-version: VCP 3.1 source baseline with labelled candidate behavior
+protocol-version: VCP 3.1 source baseline with labeled candidate behavior
 last-reviewed: 2026-08-15
 owner: VCP-SDK maintainers
 evidence-boundary: Documented project implementation, not deployment approval or independent review

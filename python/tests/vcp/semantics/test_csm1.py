@@ -290,3 +290,181 @@ class TestCSM1Methods:
         """repr() should include class name."""
         code = CSM1Code.parse("N5")
         assert repr(code) == "CSM1Code('N5')"
+
+
+class TestCSM1Compact:
+    """COMPACT tier (VCP/S §2.8.3): CS1|<persona>|<level>|<token>|<scopes>."""
+
+    @pytest.mark.parametrize(
+        ("raw", "persona", "level", "token", "scopes"),
+        [
+            (
+                "CS1|nanny|5|family.safe.guide|E,F",
+                Persona.NANNY,
+                5,
+                "family.safe.guide",
+                [Scope.EDUCATION, Scope.FAMILY],
+            ),
+            (
+                "CS1|sentinel|4|secure.privacy.guardian|P,W",
+                Persona.SENTINEL,
+                4,
+                "secure.privacy.guardian",
+                [Scope.PRIVACY, Scope.WORK],
+            ),
+            (
+                "CS1|custom|3|company.acme.legal|O,W",
+                Persona.CUSTOM,
+                3,
+                "company.acme.legal",
+                [Scope.OFFICIAL, Scope.WORK],
+            ),
+            (
+                "CS1|nanny|5|family.safe.guide@1.2.3:CORE|F,E",
+                Persona.NANNY,
+                5,
+                "family.safe.guide@1.2.3:CORE",
+                [Scope.FAMILY, Scope.EDUCATION],
+            ),
+        ],
+    )
+    def test_parse_spec_examples(self, raw, persona, level, token, scopes):
+        code = CSM1Code.parse(raw)
+        assert code.persona is persona
+        assert code.adherence_level == level
+        assert code.uvc_token == token
+        assert code.scopes == scopes  # wire order is preserved
+        assert code.namespace is None
+        assert code.version is None
+        assert CSM1Code.parse_compact(raw) == code
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "CS1|nanny|5|family.safe.guide|",  # no scope
+            "CS1|nanny|5|family.safe.guide|F,F",  # duplicate scope
+            "CS1|nanny|5|family.safe.guide|F,A",  # conflicting scopes
+            "CS1|nanny|5|family.safe.guide|V,A",
+            "CS1|nanny|5|family.safe.guide|H,A",
+            "CS1|Nanny|5|family.safe.guide|F",  # persona name must be lowercase
+            "CS1|nanny|5|family.guide|F",  # token needs 3+ segments
+            "CS1|nanny|5|a.b.c.d.e.f.g.h.i.j.k|F",  # token allows at most 10 segments
+            "CS1|nanny|5|Family.safe.guide|F",  # token must be canonical
+            "CS1|nanny|5|family.safe.guide@01.2.3|F",  # no leading zeroes on input
+            "CS1|nanny|6|family.safe.guide|F",  # level out of range
+            "CS1|nanny|5|family.safe.guide|X",  # unknown scope
+            "CS1|nanny|5|family.safe.guide|F+E",  # scopes are comma-separated
+            "CS1|robot|5|family.safe.guide|F",  # unknown persona
+            "CS1|nanny|5|family.safe.guide@1.2.3-beta|F",  # no prerelease
+            " CS1|nanny|5|family.safe.guide|F",  # surrounding whitespace
+            "CS1|nanny|5|family.safe.guide|F ",
+            "CS1|nanny|5|family.safe.guide|F|E",
+        ],
+    )
+    def test_parse_rejects_malformed(self, raw):
+        with pytest.raises(ValueError):
+            CSM1Code.parse(raw)
+
+    def test_parse_rejects_over_length(self):
+        segments = ".".join(["a" + "b" * 31] * 10)
+        raw = f"CS1|ambassador|3|{segments}@^99999.99999.99999:{'N' * 32}|F,W"
+        assert len(raw) > CSM1Code.COMPACT_MAX_LENGTH
+        with pytest.raises(ValueError, match="characters"):
+            CSM1Code.parse(raw)
+
+    def test_parse_accepts_maximum_length(self):
+        segments = ".".join(["a" + "b" * 26] * 9)
+        raw = f"CS1|ambassador|3|{segments}@^99999.99999.99999:NNNN|F"
+        assert len(raw) == CSM1Code.COMPACT_MAX_LENGTH
+        assert CSM1Code.parse(raw).encode_compact() == raw
+
+    def test_parse_rejects_too_short(self):
+        with pytest.raises(ValueError, match="characters"):
+            CSM1Code.parse("CS1|muse|0|a.b|F")
+
+    def test_encode_compact_round_trip(self):
+        raw = "CS1|nanny|5|family.safe.guide|E,F"
+        assert CSM1Code.parse(raw).encode_compact() == raw
+
+    def test_encode_compact_sorts_scopes(self):
+        code = CSM1Code.parse("CS1|nanny|5|family.safe.guide@1.2.3:CORE|F,E")
+        assert code.encode_compact() == "CS1|nanny|5|family.safe.guide@1.2.3:CORE|E,F"
+
+    def test_encode_compact_from_micro_with_token(self):
+        code = CSM1Code.parse("Z4+W+P:SEC@1.0.0")
+        assert (
+            code.encode_compact("secure.privacy.guardian")
+            == "CS1|sentinel|4|secure.privacy.guardian|P,W"
+        )
+
+    def test_encode_compact_normalizes_leading_zeroes(self):
+        code = CSM1Code.parse("N5+F")
+        assert (
+            code.encode_compact("family.safe.guide@01.02.003:CORE")
+            == "CS1|nanny|5|family.safe.guide@1.2.3:CORE|F"
+        )
+        stored = CSM1Code(Persona.NANNY, 5, [Scope.FAMILY], uvc_token="family.safe.guide@~01.0.0")
+        assert stored.uvc_token == "family.safe.guide@~1.0.0"
+
+    def test_encode_compact_requires_token(self):
+        with pytest.raises(ValueError, match="token"):
+            CSM1Code.parse("N5+F").encode_compact()
+
+    def test_encode_compact_rejects_invalid_token(self):
+        with pytest.raises(ValueError, match="Invalid constitution token"):
+            CSM1Code.parse("N5+F").encode_compact("family.guide")
+
+    def test_encode_compact_rejects_over_length(self):
+        token = ".".join(["a" + "b" * 31] * 10)
+        with pytest.raises(ValueError, match="characters"):
+            CSM1Code.parse("A3+W").encode_compact(token)
+
+    def test_encode_compact_requires_scope(self):
+        with pytest.raises(ValueError, match="at least one scope"):
+            CSM1Code.parse("N5").encode_compact("family.safe.guide")
+
+    def test_micro_form_of_compact_code(self):
+        code = CSM1Code.parse("CS1|nanny|5|family.safe.guide|F,E")
+        assert code.encode() == "N5+E+F"
+        assert str(code) == "N5+E+F"
+
+    def test_custom_without_namespace_has_only_compact_form(self):
+        code = CSM1Code.parse("CS1|custom|3|company.acme.legal|O,W")
+        assert code.has_micro_form is False
+        with pytest.raises(ValueError, match="no MICRO form"):
+            code.encode()
+        assert str(code) == "CS1|custom|3|company.acme.legal|O,W"
+        assert repr(code) == "CSM1Code('CS1|custom|3|company.acme.legal|O,W')"
+        assert code.with_level(4).encode_compact() == "CS1|custom|4|company.acme.legal|O,W"
+        with pytest.raises(ValueError, match="namespace"):
+            code.with_scopes([])
+
+    def test_custom_still_needs_namespace_without_token(self):
+        with pytest.raises(ValueError, match="namespace"):
+            CSM1Code(Persona.CUSTOM, 3, [Scope.WORK])
+        with pytest.raises(ValueError):
+            CSM1Code.parse("C3+W")
+
+    def test_persona_names(self):
+        assert [p.wire_name for p in Persona] == [
+            "nanny",
+            "sentinel",
+            "godparent",
+            "ambassador",
+            "muse",
+            "mediator",
+            "custom",
+        ]
+        for persona in Persona:
+            assert Persona.from_name(persona.wire_name) is persona
+        with pytest.raises(ValueError, match="Unknown persona name"):
+            Persona.from_name("Nanny")
+
+    def test_nano_and_micro_unchanged(self):
+        assert CSM1Code.parse("N5+F+E").uvc_token is None
+        assert CSM1Code.parse("N5+F+E").encode() == "N5+E+F"
+        assert CSM1Code.parse("N5+F+E+W+P+T+O+V+H+S+R:ABCDEFGH@100.100.100").namespace == (
+            "ABCDEFGH"
+        )
+        with pytest.raises(ValueError, match="maximum length"):
+            CSM1Code.parse("N5" + "+F" * 22)

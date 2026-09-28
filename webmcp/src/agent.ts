@@ -1,8 +1,10 @@
 /**
  * Agent-intuitive VCP Agent Runtime Profile contracts.
  *
- * This module is a source candidate. It performs no implicit network access and
- * carries no authority. Hosts inject controlled and accretive services.
+ * This module implements contracts from the draft Agent Runtime Profile 0.1
+ * candidate (VEP-0006); it ships in @creedspace/vcp-sdk 4.2.0. It performs no
+ * implicit network access and carries no authority. Hosts inject controlled and
+ * accretive services.
  */
 
 export type AgentProfile =

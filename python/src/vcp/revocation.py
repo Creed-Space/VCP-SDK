@@ -115,7 +115,7 @@ def _is_private_ip(ip_str: str) -> bool:
     try:
         addr = ipaddress.ip_address(ip_str)
     except ValueError:
-        # Unparseable IP -- reject for safety
+        # An unparseable IP is rejected for safety
         return True
 
     if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped:
@@ -186,7 +186,7 @@ def validate_uri(uri: str, allowed_ports: set[int] | None = None) -> tuple[bool,
     if not addrinfo:
         return False, f"No addresses resolved for {hostname!r}"
 
-    # Check ALL resolved IPs -- reject if ANY is private
+    # Check ALL resolved IPs and reject if ANY is private
     for family, _type, _proto, _canonname, sockaddr in addrinfo:
         ip_str = str(sockaddr[0])
         if _is_private_ip(ip_str):

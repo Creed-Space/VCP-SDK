@@ -39,7 +39,8 @@ from vcp.privacy import (
 
 
 def _gentian_context() -> dict:
-    """Gentian (guitar learner) from learning path demo — single parent with fatigue."""
+    """Gentian (guitar learner) from the demo — shift worker, noise-sensitive neighbor,
+    tight budget."""
     return {
         "public_profile": {
             "display_name": "Gentian",
@@ -53,23 +54,23 @@ def _gentian_context() -> dict:
             "noise_mode": "quiet",
             "feedback_style": "encouragement",
         },
-        "constraints": {},
+        "constraints": {"time_limited": True},
         "private_context": {
-            "family_status": "single_parent",
-            "dependents": 2,
-            "childcare_hours": "18:00-20:00",
-            "health_conditions": "fatigue",
+            "schedule": "rotating_shifts",
+            "financial_constraint": True,
+            "neighbor_situation": "noise_sensitive",
         },
     }
 
 
 def _campion_context() -> dict:
-    """Campion (career advisor) from learning path demo — shift worker, financial constraint."""
+    """Campion (senior software engineer) from the demo — single parent, chronic condition,
+    moderate financial constraint."""
     return {
         "public_profile": {
             "display_name": "Campion",
-            "role": "software engineer",
-            "career_goal": "lead engineer",
+            "role": "senior software engineer",
+            "career_goal": "tech lead",
         },
         "portable_preferences": {
             "workload_level": "high",
@@ -77,8 +78,10 @@ def _campion_context() -> dict:
         },
         "constraints": {},
         "private_context": {
-            "financial_constraint": True,
-            "schedule": "shift",
+            "family_status": "single_parent",
+            "childcare_hours": "08:00-15:00",
+            "health_conditions": ["chronic_condition"],
+            "financial_constraint": "moderate",
         },
     }
 
@@ -279,21 +282,24 @@ class TestExtractConstraintFlags:
         assert extract_constraint_flags(ctx).mobility_limited is True
 
     def test_gentian_context_flags(self) -> None:
-        """Single parent + fatigue → time/schedule/energy/health flags."""
+        """Shift work + tight budget + noise-sensitive neighbor → schedule/energy/budget/noise."""
         flags = extract_constraint_flags(_gentian_context())
+        assert flags.budget_limited is True  # financial_constraint
+        assert flags.energy_variable is True  # schedule=rotating_shifts
+        assert flags.schedule_irregular is True  # schedule=rotating_shifts
+        assert flags.noise_restricted is True  # neighbor_situation
+        assert flags.time_limited is True  # declared publicly in constraints
+        assert flags.health_considerations is False
+
+    def test_campion_context_flags(self) -> None:
+        """Single parent + chronic condition + financial constraint → five flags."""
+        flags = extract_constraint_flags(_campion_context())
         assert flags.time_limited is True  # childcare_hours
         assert flags.schedule_irregular is True  # childcare_hours
         assert flags.energy_variable is True  # health_conditions
         assert flags.health_considerations is True  # health_conditions
-        assert flags.budget_limited is False
-
-    def test_campion_context_flags(self) -> None:
-        """Shift worker + financial constraint → budget/energy/schedule flags."""
-        flags = extract_constraint_flags(_campion_context())
         assert flags.budget_limited is True  # financial_constraint
-        assert flags.energy_variable is True  # schedule=shift
-        assert flags.schedule_irregular is True  # schedule=shift
-        assert flags.health_considerations is False
+        assert flags.noise_restricted is False
 
     def test_active_count_zero_on_empty(self) -> None:
         assert extract_constraint_flags({}).active_count == 0
@@ -419,14 +425,15 @@ class TestFilterContextForPlatform:
         assert result.preferences["feedback_style"] == "encouragement"
 
         # Private data NEVER present in any output
-        assert "family_status" not in result.public
-        assert "family_status" not in result.preferences
-        assert "health_conditions" not in result.public
-        assert "health_conditions" not in result.preferences
+        for private_field in ("schedule", "financial_constraint", "neighbor_situation"):
+            assert private_field not in result.public
+            assert private_field not in result.preferences
 
         # Boolean constraint flags reflect private reality
-        assert result.constraints.time_limited is True
-        assert result.constraints.health_considerations is True
+        assert result.constraints.noise_restricted is True
+        assert result.constraints.budget_limited is True
+        assert result.constraints.schedule_irregular is True
+        assert result.constraints.energy_variable is True
 
     def test_campion_full_scenario(self) -> None:
         ctx = _campion_context()
@@ -441,15 +448,20 @@ class TestFilterContextForPlatform:
         assert result.preferences["workload_level"] == "high"
         assert result.preferences["budget_range"] == "limited"
 
-        # Financial constraint and schedule never directly exposed
-        assert "financial_constraint" not in result.public
-        assert "financial_constraint" not in result.preferences
-        assert "schedule" not in result.public
-        assert "schedule" not in result.preferences
+        # Family, health and financial details never directly exposed
+        for private_field in (
+            "family_status",
+            "childcare_hours",
+            "health_conditions",
+            "financial_constraint",
+        ):
+            assert private_field not in result.public
+            assert private_field not in result.preferences
 
         # But boolean flags reflect them
+        assert result.constraints.time_limited is True
+        assert result.constraints.health_considerations is True
         assert result.constraints.budget_limited is True
-        assert result.constraints.schedule_irregular is True
 
     def test_empty_manifest_only_public_fields(self) -> None:
         ctx = {"public_profile": {"display_name": "Test", "goal": "test"}}

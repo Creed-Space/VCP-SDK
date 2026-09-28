@@ -201,7 +201,7 @@ describe('VCPContext wire format', () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 describe('VCPContext JSON', () => {
-  it('serialises empty context to the v3.2 nested shape', () => {
+  it('serializes empty context to the v3.2 nested shape', () => {
     const data = contextToJSON(emptyContext());
     expect(data.situational).toBeDefined();
     expect(data.personal).toBeDefined();

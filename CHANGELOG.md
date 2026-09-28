@@ -6,10 +6,75 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-Version 4.2.0 was published to PyPI, npm and crates.io on 2026-09-03 from
-signed tag `v4.2.0` (see `release/publication-state.json`). Changes listed
-under Unreleased are in the published 4.2.0 artifacts when they predate that
-tag; the next registry release will carry a new version.
+These changes were made after signed tag `v4.2.0`. The published 4.2.0
+packages do not contain them, and the next registry release will carry a new
+version.
+
+### Added
+- The COMPACT tier of CSM-1 codes (VCP/S §2.8.3),
+  `CS1|<persona name>|<adherence>|<identity token>|<scopes>`, in Python and
+  Rust. Python `CSM1Code.parse` now accepts COMPACT input (it previously raised
+  `ValueError`), and `CSM1Code.parse_compact`, `CSM1Code.encode_compact`, the
+  optional `uvc_token` field and `Persona.from_name` / `Persona.wire_name` are
+  new. The MCP server's `vcp_parse_csm1` tool accepts COMPACT input and
+  reports its `uvc_token`. Rust adds the separate
+  `vcp_core::csm1::Csm1CompactCode` type and `Persona::name` /
+  `Persona::from_name`; `Csm1Code::parse`, `vcp-cli parse-csm1` and
+  `vcp-wasm` `parse_csm1` still accept NANO and MICRO only. Python and Rust
+  both require at least one scope and a canonical VCP/I token, and encode scopes
+  in sorted order. They strip leading zeroes from the token's version only when
+  building a code, not when parsing one.
+- Rust `Csm1Token::extension_lines` keeps the optional lines that follow line 7
+  and the R-line (`LC:`, `WC:`, `AS:`, `Q:` and the other prefixes in
+  `Csm1Token::EXTENSION_PREFIXES`) verbatim and in order, so conformant tokens
+  that carry them now parse and re-encode unchanged (VCP/S §2.4.7). The
+  `vcp-wasm` `parse_csm1_token` output gains an `extension_lines` array only
+  when such lines are present.
+- The `measured` and `elicitation` signal sources, completing the seven-value
+  VCP-X-Personal §2.3 source list in every binding: Python `SignalSource` enum
+  and `SIGNAL_SOURCE_VALUES` (exported from `vcp.extensions`), Rust
+  `SignalSource::Measured` and `SignalSource::Elicitation`, and WebMCP
+  `SignalSource.MEASURED` and `SignalSource.ELICITATION`.
+
+### Changed
+- Python `PersonalSignal` now raises `ValueError` for a `source` outside the
+  seven VCP-X-Personal §2.3 values; it previously accepted any string.
+- The CSM-1 token parser in Rust accepts adherence 0 (Minimal, advisory only) on
+  the P-line, as codes already did. It reads `R:none` as personal state
+  declared empty, and the encoder now writes `R:none` for that state instead of
+  a bare `R:` (still accepted on input). An R-line dimension with an unknown
+  emoji is skipped and the rest of the line is parsed, per VCP/S §2.4.2.
+- The manifest schemas accept `metadata.adherence_level` 0 (VCP/S §2.7).
+  `vcp-manifest-v2.schema.json` also narrows the level from 1-9 to 0-5 and
+  rejects leading zeroes in the `metadata.csm1` version, matching v1.
+- **Wire format:** the Rust personal-extension enums (`PersonalDimension`,
+  `SignalSource`, `LifecycleState`, `DecayCurve`) now serialize with the
+  snake_case wire values of VCP-X-Personal (`cognitive_state`,
+  `inferred_local`, `decaying`, `exponential`) instead of Rust's PascalCase
+  variant names. JSON written with the old names no longer deserializes.
+- Persona descriptions follow the VCP/S persona table. Rust `Persona::Muse`
+  describes itself as "Creative challenge and provocation", matching Python.
+  The WebMCP `vcp_list_personas` descriptions and use cases for all six
+  personas were rewritten; Nanny now holds the child-safety and vulnerable-user
+  role and Godparent the ethical-guidance role.
+- WebMCP `vcp_chat` sends `constitution_id` `personal.growth.creative` when the
+  caller omits one, instead of `general`, which is not a valid three-segment
+  VCP/I token. The `vcp_chat` and `vcp_build_token` tool descriptions now say
+  what the context and token actually carry.
+- The messaging conformance suite id is now `messaging/messaging` (was
+  `adaptation/messaging`), and its fixture moved from
+  `conformance/adaptation/messaging.json` to
+  `conformance/messaging/messaging.json`. The coverage manifest, feature matrix
+  and messaging runner use the new id.
+- The CSM-1 docs, CLI help and `vcp-wasm` bindings call the one-line form a
+  "CSM-1 code" and the multi-line form a "CSM-1 token" (7 lines, then an
+  optional R-line and extension lines), and describe the token header version (currently `1.0`) as opaque.
+  Error messages and doc comments use American spelling ("unrecognized").
+
+## [4.2.0] - 2026-09-03
+
+Published to PyPI, npm and crates.io from signed tag `v4.2.0` (see
+`release/publication-state.json`).
 
 ### Changed
 - WebMCP package published under the `@creedspace` npm scope as `@creedspace/vcp-sdk`; the
@@ -98,8 +163,6 @@ tag; the next registry release will carry a new version.
   echoes extra boolean core features like the native SDKs; `HookRegistry`,
   `TorchConsumer.receiveTorch`, `computeDecayedIntensity`, and
   `createVCPTools({personas})` validate their inputs.
-- WebMCP package renamed from `@vcp/webmcp` to `@creedspace/vcp-sdk` (applied
-  in 4.2.0; recorded here because the 4.2.0 entry omitted it).
 - Online status responses must echo the requested JTI and issuer. Confirmed
   revocations must include a non-empty reason and a strict RFC 3339 timestamp.
 - The Python HTTPS transport now enforces JSON content types, identity encoding,
@@ -109,7 +172,7 @@ tag; the next registry release will carry a new version.
   only the safe standard-library engine. These updates do not change the SDK's
   public API, wire behavior, package version, or Rust 1.87 minimum.
 
-## [4.2.0] - 2026-04-22
+**Set as the version on 2026-04-22:**
 
 ### Added
 - **VCP v3.2 / VEP-0004 adaptation layer** — `vcp.adaptation.context` (Python), `src/extensions/context.ts` (TypeScript), `vcp_core::situational` + `vcp_core::context` (Rust) now implement the full 18-dimension v3.2 context model:
@@ -217,9 +280,9 @@ tag; the next registry release will carry a new version.
 - Dependabot configuration for all package ecosystems
 - Comprehensive README with architecture diagrams, quick-start guides, and full documentation index
 
-<!-- No vX.Y.Z tags exist yet; links use the commits that set each version. -->
-[Unreleased]: https://github.com/Creed-Space/VCP-SDK/compare/4367ca4...HEAD
-[4.2.0]: https://github.com/Creed-Space/VCP-SDK/commit/4367ca4
+<!-- v4.2.0 is the first signed tag; older links use the commits that set each version. -->
+[Unreleased]: https://github.com/Creed-Space/VCP-SDK/compare/v4.2.0...HEAD
+[4.2.0]: https://github.com/Creed-Space/VCP-SDK/releases/tag/v4.2.0
 [4.1.0]: https://github.com/Creed-Space/VCP-SDK/commits/4367ca4/CHANGELOG.md
 [4.0.0]: https://github.com/Creed-Space/VCP-SDK/commits/4367ca4/CHANGELOG.md
 [3.1.0]: https://github.com/Creed-Space/VCP-SDK/commits/4367ca4/CHANGELOG.md

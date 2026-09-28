@@ -24,11 +24,13 @@ from vcp.extensions.consensus import (
 )
 from vcp.extensions.personal import (
     DECAY_CONFIGS,
+    SIGNAL_SOURCE_VALUES,
     DecayConfig,
     LifecycleState,
     PersonalContext,
     PersonalDimension,
     PersonalSignal,
+    SignalSource,
     compute_decayed_intensity,
 )
 from vcp.extensions.relational import (
@@ -59,6 +61,8 @@ __all__ = [
     # Personal
     "PersonalDimension",
     "PersonalSignal",
+    "SignalSource",
+    "SIGNAL_SOURCE_VALUES",
     "PersonalContext",
     "DecayConfig",
     "DECAY_CONFIGS",

@@ -18,7 +18,7 @@ if str(ROOT) not in sys.path:
 from scripts.jsonschema_formats import strict_format_checker
 
 PYTHON_SRC = ROOT / "python" / "src"
-FIXTURE = ROOT / "conformance" / "adaptation" / "messaging.json"
+FIXTURE = ROOT / "conformance" / "messaging" / "messaging.json"
 SCHEMA = ROOT / "schemas" / "vcp-messaging-v2.0.schema.json"
 
 

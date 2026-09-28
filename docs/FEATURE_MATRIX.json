@@ -1,5 +1,5 @@
 {
-  "claim_boundary": "Statuses summarize same-programme candidate runners. They do not establish independent interoperability, certification, publication, or deployment support.",
+  "claim_boundary": "Statuses summarize same-program candidate runners. They do not establish independent interoperability, certification, publication, or deployment support.",
   "features": [
     {
       "case_count": 9,
@@ -68,40 +68,6 @@
       "runner": "conformance/runners/context_parity.py",
       "suite": "adaptation/context_encoding_extended",
       "version": "3.2.0"
-    },
-    {
-      "case_count": 41,
-      "fixture": "conformance/adaptation/messaging.json",
-      "implementations": {
-        "python": {
-          "applicable_cases": 41,
-          "case_statuses": {
-            "checked": 41
-          },
-          "checked_cases": 41,
-          "status": "full"
-        },
-        "rust": {
-          "applicable_cases": 41,
-          "case_statuses": {
-            "unsupported": 41
-          },
-          "checked_cases": 0,
-          "status": "unsupported"
-        },
-        "webmcp": {
-          "applicable_cases": 0,
-          "case_statuses": {
-            "not_applicable": 41
-          },
-          "checked_cases": 0,
-          "status": "not_applicable"
-        }
-      },
-      "maturity": "conformance-candidate",
-      "runner": "conformance/runners/messaging_conformance.py",
-      "suite": "adaptation/messaging",
-      "version": "2.0.0"
     },
     {
       "case_count": 14,
@@ -655,6 +621,40 @@
       "version": "1.0.0"
     },
     {
+      "case_count": 41,
+      "fixture": "conformance/messaging/messaging.json",
+      "implementations": {
+        "python": {
+          "applicable_cases": 41,
+          "case_statuses": {
+            "checked": 41
+          },
+          "checked_cases": 41,
+          "status": "full"
+        },
+        "rust": {
+          "applicable_cases": 41,
+          "case_statuses": {
+            "unsupported": 41
+          },
+          "checked_cases": 0,
+          "status": "unsupported"
+        },
+        "webmcp": {
+          "applicable_cases": 0,
+          "case_statuses": {
+            "not_applicable": 41
+          },
+          "checked_cases": 0,
+          "status": "not_applicable"
+        }
+      },
+      "maturity": "conformance-candidate",
+      "runner": "conformance/runners/messaging_conformance.py",
+      "suite": "messaging/messaging",
+      "version": "2.0.0"
+    },
+    {
       "case_count": 10,
       "fixture": "conformance/security/revocation-crl-responses.json",
       "implementations": {
@@ -1040,6 +1040,6 @@
   "schema": "vcp-feature-matrix/1",
   "source": {
     "path": "conformance/coverage-manifest.json",
-    "sha256": "94c607f0f64275e11a60da4453537d229225970abcb423005c71e0ebd1206dd5"
+    "sha256": "4c8d9ec7b067b22973dc793dd0a63a12503d1ce1b47a207dd76c6c2dd798b273"
   }
 }

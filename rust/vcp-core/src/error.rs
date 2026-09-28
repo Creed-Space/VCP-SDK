@@ -15,7 +15,7 @@ pub enum VcpError {
     #[error("parse error: {0}")]
     ParseError(String),
 
-    /// An unrecognised persona character was encountered.
+    /// An unrecognized persona character was encountered.
     #[error("invalid persona character: '{0}'")]
     InvalidPersona(char),
 
@@ -27,7 +27,7 @@ pub enum VcpError {
     #[error("invalid intensity: {0} (must be 1-5)")]
     InvalidIntensity(u8),
 
-    /// An unrecognised scope character was encountered.
+    /// An unrecognized scope character was encountered.
     #[error("invalid scope character: '{0}'")]
     InvalidScope(char),
 

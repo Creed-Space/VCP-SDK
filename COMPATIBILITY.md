@@ -13,12 +13,12 @@ protocol release.
 | WebMCP SDK | 4.2.0, `@creedspace/vcp-sdk` | Browser integration subset, not a full protocol implementation |
 | Demo | 0.1.0 application | Demonstration release, not conformance evidence |
 
-## Candidate runtime matrix
+## Runtime matrix
 
-The source candidate declares the following compatibility window. CI is the
-acceptance authority for each row; metadata alone is not proof.
+SDK 4.2.0 declares the following compatibility window. CI is the acceptance
+authority for each row; metadata alone is not proof.
 
-| Surface | Declared candidate support | Required evidence |
+| Surface | Declared support | Required evidence |
 |:---|:---|:---|
 | Python | CPython 3.10 through 3.14 | Full suite on Ubuntu for every version; Python 3.12 smoke on macOS and Windows |
 | Python extras | core, server, MCP, Redis, metrics, and combined | Clean install and import smoke for every surface |
@@ -34,7 +34,7 @@ TLS 1.2 or later. Applications may impose a higher floor, but they must not
 weaken this minimum. Certificate and hostname verification remain enabled.
 
 No `no_std`, WASI, alternative Python implementation, Node 20, or non-Chromium
-WebMCP support is claimed by this candidate.
+WebMCP support is claimed for SDK 4.2.0.
 
 ## Python 3.10 retirement
 
@@ -76,7 +76,7 @@ VCP-Spec and are consumed here only after review.
 1. Normative changes require the VEP process and an explicit protocol release.
 2. SDK patch and minor releases may repair defects without changing the wire
    protocol. Fail-closed changes still require migration notes.
-3. Experimental behavior must be capability-negotiated and labelled.
+3. Experimental behavior must be capability-negotiated and labeled.
 4. Conformance applies to an exact Spec and SDK commit pair. A green build in one
    repository is insufficient.
 5. Release notes state both package versions and the supported protocol baseline.
@@ -88,20 +88,27 @@ VCP-Spec and are consumed here only after review.
 
 ## Revocation migration note
 
-The unreleased revocation transport adds verification result code `17`, exposed
-as `REVOCATION_UNAVAILABLE` in Python and `RevocationUnavailable` in Rust. It is
-a fail-closed rejection with the transient category. Code `15` remains reserved
-for a confirmed revocation.
+Since 4.2.0, the revocation transport can return verification result code `17`,
+exposed as `REVOCATION_UNAVAILABLE` in Python and `RevocationUnavailable` in
+Rust. It is a fail-closed rejection with the transient category. Code `15`
+remains reserved for a confirmed revocation.
 
 Online status services must echo the requested `jti` and `issuer`. A response
 claiming revocation must also provide a non-empty reason and a timezone-qualified
-RFC 3339 `revoked_at`. Integrators should treat this as a behavior change and
-must complete the semver review in the coordinated release ledger before
-publishing packages.
+RFC 3339 `revoked_at`. Integrators upgrading from earlier versions should treat
+this as a behavior change.
 
 ## CSM-1 encoding tiers
 
-The Python, Rust and WebMCP implementations support the NANO and MICRO CSM-1
-tiers. The COMPACT tier (`CS1|<persona>|<level>|<token>|<scopes>`, VCP/S §2.8)
-is not implemented in this repository: parsers reject COMPACT input. The
-standalone `vcp-sdk` package and VCP-Inspector parse COMPACT.
+The published 4.2.0 packages parse and encode only the NANO and MICRO CSM-1
+tiers; their parsers reject COMPACT input
+(`CS1|<persona>|<level>|<token>|<scopes>`, VCP/S §2.8.3).
+
+The unreleased source tree adds COMPACT to the Python SDK and to Rust
+`vcp-core`. Python `CSM1Code.parse` accepts all three tiers and
+`CSM1Code.encode_compact` writes COMPACT. Rust keeps COMPACT in the separate
+`vcp_core::csm1::Csm1CompactCode` type, so `Csm1Code::parse`, the `vcp-cli`
+`parse-csm1` command and the `vcp-wasm` `parse_csm1` binding still accept NANO
+and MICRO only. The WebMCP package has no CSM-1 code parser of its own; it
+builds and parses tokens through the encoder and parser the host supplies. The
+standalone `vcp-sdk` package and VCP-Inspector also parse COMPACT.

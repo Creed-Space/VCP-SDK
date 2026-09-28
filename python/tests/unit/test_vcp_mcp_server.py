@@ -67,6 +67,34 @@ def test_encode_context_handles_extended_and_intensity_dimensions(server_module)
     ]
 
 
+@pytest.mark.parametrize(
+    ("code", "encoded", "uvc_token"),
+    [
+        ("N5+F+E", "N5+E+F", None),
+        ("CS1|nanny|5|family.safe.guide|E,F", "N5+E+F", "family.safe.guide"),
+        (
+            "CS1|custom|3|company.acme.legal|O,W",
+            "CS1|custom|3|company.acme.legal|O,W",
+            "company.acme.legal",
+        ),
+    ],
+)
+def test_parse_csm1_reports_every_tier_as_valid(
+    server_module, code: str, encoded: str, uvc_token: str | None
+) -> None:
+    response = asyncio.run(server_module._handle_parse_csm1({"code": code}))
+    payload = json.loads(response[0].text)
+
+    assert payload["valid"] is True
+    assert payload["encoded"] == encoded
+    assert payload["uvc_token"] == uvc_token
+
+
+def test_parse_csm1_reports_invalid_code(server_module) -> None:
+    response = asyncio.run(server_module._handle_parse_csm1({"code": "CS1|nanny|5|x|E"}))
+    assert json.loads(response[0].text)["valid"] is False
+
+
 def test_status_reports_installed_sdk_version(server_module) -> None:
     from vcp import __version__
 

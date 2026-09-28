@@ -1,10 +1,10 @@
-//! Personal state dimensions (VCP v3.1 Layer 3).
+//! Personal state dimensions (VCP v3.1 personal context tier).
 //!
 //! Personal state carries five categorical dimensions, each with a named
 //! value and a 1-5 intensity.  An optional `extended` sub-signal provides
 //! additional specificity (e.g. `body_signals = pain:4 [migraine]`).
 //!
-//! This layer is **not diagnostic or therapeutic**; it reflects
+//! This tier is **not diagnostic or therapeutic**; it reflects
 //! self-reported state for adaptation purposes only.
 
 use std::fmt;
@@ -41,7 +41,7 @@ impl PersonalDimensionKind {
         }
     }
 
-    /// Parse from the emoji symbol. Returns `None` on unrecognised input.
+    /// Parse from the emoji symbol. Returns `None` on unrecognized input.
     pub fn from_symbol(s: &str) -> Option<Self> {
         match s {
             "\u{1F9E0}" => Some(Self::CognitiveState),
@@ -254,7 +254,7 @@ impl fmt::Display for PersonalDimension {
 
 /// Complete personal state across all five dimensions.
 ///
-/// Each dimension is optional -- only dimensions with active signals are set.
+/// Each dimension is optional; only dimensions with active signals are set.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PersonalState {
     /// Cognitive state (focused / distracted / overloaded / foggy / reflective).
@@ -309,10 +309,14 @@ impl PersonalState {
 
     /// Parse personal state from wire format (the part after `\u{2016}`).
     ///
+    /// A segment that starts with an unknown dimension emoji is skipped and
+    /// the rest is parsed (VCP/S §2.4.2).
+    ///
     /// # Errors
     ///
-    /// Returns [`VcpError::ParseError`] if a segment contains an
-    /// unrecognised dimension symbol or malformed dimension data.
+    /// Returns [`VcpError::ParseError`] if a segment is empty, lacks a
+    /// leading emoji, repeats a dimension, or carries malformed dimension
+    /// data.
     pub fn from_wire(wire: &str) -> VcpResult<Self> {
         let mut state = PersonalState::default();
 
@@ -336,9 +340,15 @@ impl PersonalState {
             // Emojis can be multi-byte, so we need to find the split point.
             let (symbol, rest) = split_leading_emoji(segment)?;
 
-            let kind = PersonalDimensionKind::from_symbol(symbol).ok_or_else(|| {
-                VcpError::ParseError(format!("unknown personal dimension symbol: {symbol}"))
-            })?;
+            if symbol.is_ascii() {
+                return Err(VcpError::ParseError(format!(
+                    "personal dimension segment must start with a dimension emoji: {segment}"
+                )));
+            }
+            let Some(kind) = PersonalDimensionKind::from_symbol(symbol) else {
+                // Unknown dimension emoji: skip it and parse the remainder.
+                continue;
+            };
 
             let dim = PersonalDimension::from_wire(rest)?;
 
@@ -481,6 +491,20 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("8192 characters"));
+    }
+
+    #[test]
+    fn personal_wire_skips_unknown_dimension_emoji() {
+        let state = PersonalState::from_wire("\u{1F984}sparkly:2|\u{1F9E0}focused:4").unwrap();
+        assert_eq!(state.cognitive.as_ref().unwrap().value, "focused");
+        assert!(state.emotional.is_none());
+        assert_eq!(state.to_wire(), "\u{1F9E0}focused:4");
+
+        let only_unknown = PersonalState::from_wire("\u{1F984}sparkly:2").unwrap();
+        assert!(!only_unknown.has_any());
+
+        // A segment with no leading emoji is malformed, not an unknown dimension.
+        assert!(PersonalState::from_wire("focused:4").is_err());
     }
 
     #[test]

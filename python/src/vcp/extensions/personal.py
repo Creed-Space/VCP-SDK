@@ -3,7 +3,7 @@
 Pure-Python personal state signals with categorical dimensions, intensity (1-5),
 and time-based exponential decay. No external dependencies.
 
-Layer 3 is not diagnostic or therapeutic; it reflects self-reported state
+The personal tier is not diagnostic or therapeutic; it reflects self-reported state
 for adaptation purposes only.
 """
 
@@ -24,6 +24,24 @@ class PersonalDimension(str, Enum):
     ENERGY_LEVEL = "energy_level"
     PERCEIVED_URGENCY = "perceived_urgency"
     BODY_SIGNALS = "body_signals"
+
+
+class SignalSource(str, Enum):
+    """How a personal signal was obtained (VCP-X-Personal §2.3).
+
+    Provenance metadata only; it says nothing about the signal's content.
+    """
+
+    DECLARED = "declared"  # User explicitly stated or selected the value
+    INFERRED = "inferred"  # System inferred from user behavior (LLM-based)
+    INFERRED_LOCAL = "inferred_local"  # Inferred from local device signals (regex, heuristic)
+    MEASURED = "measured"  # Physical instrument (IoT sensor, wearable, biometric device)
+    ELICITATION = "elicitation"  # Self-reported via an MCP elicitation dialog mid-task
+    PRESET = "preset"  # Loaded from a saved preset profile
+    DECAYED = "decayed"  # Was active; decay has been applied to intensity
+
+
+SIGNAL_SOURCE_VALUES: frozenset[str] = frozenset(s.value for s in SignalSource)
 
 
 class LifecycleState(str, Enum):
@@ -64,14 +82,16 @@ class PersonalSignal:
     Args:
         category: Categorical value (e.g., 'focused', 'calm', 'rested').
         intensity: Signal intensity 1-5 (1=minimal, 5=strong). Defaults to 3.
-        source: How this signal was obtained ('declared', 'inferred', 'preset').
+        source: How this signal was obtained: one of 'declared', 'inferred',
+            'inferred_local', 'measured', 'elicitation', 'preset' or 'decayed'
+            (VCP-X-Personal §2.3). Defaults to 'declared'.
         confidence: Confidence in this signal (0.0-1.0). Defaults to 1.0.
         declared_at: When signal was declared (ISO 8601 string or datetime).
     """
 
     category: str
     intensity: int = 3
-    source: str = "declared"
+    source: str = SignalSource.DECLARED.value
     confidence: float = 1.0
     declared_at: str | None = None
 
@@ -83,6 +103,12 @@ class PersonalSignal:
             )
         if not 1 <= self.intensity <= 5:
             raise ValueError(f"Intensity must be 1-5, got {self.intensity}")
+        if isinstance(self.source, SignalSource):
+            self.source = self.source.value
+        if self.source not in SIGNAL_SOURCE_VALUES:
+            raise ValueError(
+                f"Invalid source '{self.source}'. Must be one of: {sorted(SIGNAL_SOURCE_VALUES)}"
+            )
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError(f"Confidence must be 0.0-1.0, got {self.confidence}")
 

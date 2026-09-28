@@ -3,7 +3,7 @@
 <!-- wiki:type = system -->
 <!-- wiki:scope = vcp-sdk -->
 <!-- wiki:created = 2026-05-23 -->
-<!-- wiki:updated = 2026-05-23 -->
+<!-- wiki:updated = 2026-09-24 -->
 <!-- wiki:status = active -->
 
 ## Summary
@@ -22,7 +22,7 @@ rust/
 │   └── src/
 │       ├── lib.rs      # Public module exports + quick-start docs
 │       ├── identity.rs  # VCP/I token parsing
-│       ├── csm1.rs     # CSM-1 compact codes (e.g. "N5+F+E")
+│       ├── csm1.rs     # CSM-1 codes and tokens (e.g. "N5+F+E")
 │       ├── context.rs  # Full context wire format
 │       ├── transport.rs # Hashing, canonicalization, signing, bundle verification
 │       ├── trust.rs    # Trust anchor management
@@ -47,7 +47,7 @@ rust/
 | Module | Purpose |
 |--------|---------|
 | `identity` | VCP/I token parsing: `VcpToken::parse("family.safe.guide@1.2.0")` |
-| `csm1` | CSM-1 compact codes: `Csm1Code::parse("N5+F+E")` returns `Persona::Nanny`, adherence 5, goals Family+Education |
+| `csm1` | CSM-1 codes and tokens: `Csm1Code::parse("N5+F+E")` returns `Persona::Nanny`, adherence 5, scopes Family and Education |
 | `transport` | `compute_content_hash(content)` → `"sha256:<hex>"` |
 | `personal` | Personal state dimensions (cognitive load, emotional state, etc.) |
 | `situational` | Situational context encoding (time, space, company present) |
@@ -85,7 +85,7 @@ The Rust crates mirror the Python module structure but are independent implement
 ## TypeScript SDK Status
 
 There is NO standalone TypeScript SDK directory in this repo. TypeScript functionality is provided via:
-1. `webmcp/` — Web-facing MCP bindings (TypeScript, targets `navigator.modelContext` WebMCP API)
+1. `webmcp/` — Web-facing MCP bindings (TypeScript, targets the experimental `document.modelContext` WebMCP API, with a `navigator.modelContext` fallback)
 2. `vcp-wasm/` — Rust compiled to WASM, callable from JavaScript/TypeScript
 
 (VCP-SDK/ directory listing — no `typescript/` directory present)
@@ -93,7 +93,7 @@ There is NO standalone TypeScript SDK directory in this repo. TypeScript functio
 ## Provenance
 
 - Sources consulted: `rust/Cargo.toml`; `rust/vcp-core/src/lib.rs:1–60`; `rust/` directory listing; `rust/vcp-core/src/` listing; `rust/vcp-wasm/src/` listing (lib.rs confirmed)
-- Last verified against sources: 2026-05-23
+- Last verified against sources: 2026-05-23; `csm1` row and WebMCP API target rechecked 2026-09-24 against `rust/vcp-core/src/csm1.rs` and `webmcp/src/registration.ts`
 
 ## See Also
 
