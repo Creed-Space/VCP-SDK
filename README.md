@@ -49,7 +49,7 @@ normative protocol source lives in
 
 ## Agent Runtime Profile candidate
 
-The published Python package (`value-context-protocol` 4.2.0) implements the complete local `observe@0.1.0`, `controlled@0.1.0`, and `accretive@0.1.0` loop of the draft Agent Runtime Profile 0.1 (VEP-0006). One bounded SituationView leads through contextual Affordances, proof planning, exact preflight, host-owned decision and single-use grant, controlled reversible execution, reconciliation, RunProof, candidate-first accretion, promotion, attributable influence, and revocation.
+The published Python package (`value-context-protocol` 4.2.0) implements the complete local `observe@0.1.0`, `controlled@0.1.0`, and `accretive@0.1.0` loop of the draft Agent Runtime Profile 0.1 (VEP-0006). One bounded SituationView leads through contextual Affordances, proof planning, exact preflight, host-owned decision and single-use grant, controlled reversible execution, reconciliation, RunProof, candidate-first accretion, promotion, attributable influence, and revocation. In plain terms: an agent gets a bounded view of its situation, finds the actions available to it, plans and pre-checks one change, waits for the host to decide and issue a single-use grant, runs the change in a controlled, reversible way, reconciles the result and records a RunProof; later stages cover candidate-first accretion, promotion, attributable influence and revocation.
 
 ```python
 from vcp.agent import AgentRuntime
@@ -231,8 +231,8 @@ candidate hash only.
 
 The detailed process lives in
 [`release/COORDINATED_RELEASE_RUNBOOK.md`](release/COORDINATED_RELEASE_RUNBOOK.md).
-The repository validates a permanently pending ledger template with all 13
-remaining human and publication gates. Copy that template to a controlled
+The repository validates a blank, permanently pending ledger template listing
+the 13 human and publication gates. Copy that template to a controlled
 evidence directory before reviewers add identities or decisions.
 
 ## License
