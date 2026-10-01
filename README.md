@@ -13,7 +13,7 @@ Protocol (VCP).
 
 | Distribution | Version | Publication state | Scope |
 |:---|:---|:---|:---|
-| Python, `value-context-protocol` | 4.2.0 | Published (PyPI) | Full project-maintained implementation, complete local Agent Runtime reference, orchestration, hooks, privacy, messaging, and extensions |
+| Python, `value-context-protocol` | 4.2.0 | Published (PyPI) | Most complete project-maintained implementation (VCP/E Economic Governance not yet implemented), complete local Agent Runtime reference, orchestration, hooks, privacy, messaging, and extensions |
 | Rust workspace, including `vcp-core` | 4.2.0 | Published (crates.io: vcp-core, vcp-cli, vcp-wasm) | Core parsing, transport, orchestration, CLI, and WASM bindings |
 | npm, `@creedspace/vcp-sdk` | 4.2.0 | Published (npm) | Browser and WebMCP integration library |
 
@@ -232,7 +232,7 @@ candidate hash only.
 The detailed process lives in
 [`release/COORDINATED_RELEASE_RUNBOOK.md`](release/COORDINATED_RELEASE_RUNBOOK.md).
 The repository validates a blank, permanently pending ledger template listing
-the 13 human and publication gates. Copy that template to a controlled
+the 13 human and publication gates, all still open. Copy that template to a controlled
 evidence directory before reviewers add identities or decisions.
 
 ## License
