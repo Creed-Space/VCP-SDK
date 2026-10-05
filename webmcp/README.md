@@ -123,8 +123,13 @@ remote scripts and does not log loader errors by default.
 | Other browsers | No native claim; an application-owned bundled polyfill may be used behind explicit opt-in |
 | SSR | Safe; returns `{ api: 'unavailable', registered: [], failed: [] }` |
 
-Last reviewed: 2026-09-28. WebMCP remains under active development, so version
+Last reviewed: 2026-10-05. WebMCP remains under active development, so version
 numbers alone never establish browser support.
+
+The reviewed upstream source accepts object inputs to `executeTool` and supplies
+`{}` when inputs are omitted. It no longer requires an origin-keyed agent cluster;
+secure-context and `tools` Permissions Policy requirements remain. This SDK
+registers tools and does not call `executeTool`.
 
 ### Upstream contract monitoring
 
