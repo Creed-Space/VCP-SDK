@@ -664,9 +664,9 @@ mod tests {
     fn empty_constitutions_produces_empty_result() {
         let composer = Composer::new();
         let result = composer.compose(&[], CompositionMode::Extend).unwrap();
-        assert!(result.merged_rules.is_empty());
+        assert_eq!(result.merged_rules, [] as [String; 0]);
         assert!(result.conflicts.is_empty());
-        assert!(result.warnings.is_empty());
+        assert_eq!(result.warnings, [] as [String; 0]);
     }
 
     #[test]
@@ -760,7 +760,7 @@ mod tests {
 
         assert_eq!(result.merged_rules.len(), 1);
         assert_eq!(result.merged_rules[0], "Never collect user tracking data.");
-        assert!(!result.warnings.is_empty());
+        assert_ne!(result.warnings, [] as [String; 0]);
     }
 
     // ── STRICT mode ──────────────────────────────────────────
