@@ -24,7 +24,7 @@ python -m pytest -q
 Regenerate the development lock only when dependency inputs change:
 
 ```bash
-python -m pip install 'pip==26.2.1' 'uv==0.12.7'
+python -m pip install 'pip==26.2.1' 'uv==0.13.4'
 uv pip compile pyproject.toml \
   --extra dev --extra server --extra mcp \
   --universal --python-version 3.10 \

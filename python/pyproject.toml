@@ -60,7 +60,10 @@ dev = [
     "twine==7.0.0",
     "urllib3>=2.8.0,<3",
     "pip-audit>=2.9.0",
-    "uv==0.12.7",
+    # Python 3.10 uses the last release before the affected ReadWriteLock code.
+    "filelock==3.20.3; python_version < '3.11'",
+    "filelock==4.2.1; python_version >= '3.11'",
+    "uv==0.13.4",
     "prometheus-client>=0.20.0",
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
