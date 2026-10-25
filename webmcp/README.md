@@ -24,7 +24,8 @@ const { registered, failed, api, cleanup } = await registerVCPTools({
 
 // registered = ['vcp_chat', 'vcp_list_personas']
 // failed identifies any browser-rejected registrations.
-// cleanup() aborts all accepted registrations and is safe to call repeatedly.
+// cleanup() unregisters accepted tools and is safe to call repeatedly.
+// It does not cancel executions already running.
 ```
 
 To build the published version from source in another local project:
@@ -123,8 +124,18 @@ remote scripts and does not log loader errors by default.
 | Other browsers | No native claim; an application-owned bundled polyfill may be used behind explicit opt-in |
 | SSR | Safe; returns `{ api: 'unavailable', registered: [], failed: [] }` |
 
-Last reviewed: 2026-09-28. WebMCP remains under active development, so version
+Last reviewed: 2026-10-25. WebMCP remains under active development, so version
 numbers alone never establish browser support.
+
+The reviewed upstream source accepts object inputs to `executeTool` and supplies
+`{}` when inputs are omitted. It no longer requires an origin-keyed agent cluster;
+secure-context and `tools` Permissions Policy requirements remain. This SDK
+uses imperative registration only and does not call `executeTool`.
+
+The browser rechecks document activity and duplicate tool names after serializing
+the input schema and may reject registration with `InvalidStateError`. The SDK
+reports these through its existing generic registration-failure handling and
+aborts the failed registration's lifecycle signal.
 
 ### Upstream contract monitoring
 
