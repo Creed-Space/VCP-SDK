@@ -777,7 +777,7 @@ mod tests {
         assert_eq!(t.role(), "guide");
         assert_eq!(t.version, None);
         assert_eq!(t.namespace, None);
-        assert!(t.path().is_empty());
+        assert_eq!(t.path(), [] as [String; 0]);
     }
 
     #[test]

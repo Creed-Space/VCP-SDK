@@ -1240,7 +1240,7 @@ mod tests {
     #[test]
     fn persona_descriptions() {
         for p in Persona::all() {
-            assert!(!p.description().is_empty());
+            assert_ne!(p.description(), "");
         }
     }
 
@@ -1280,7 +1280,7 @@ mod tests {
         let code = Csm1Code::parse("N5").unwrap();
         assert_eq!(code.persona, Persona::Nanny);
         assert_eq!(code.adherence_level, 5);
-        assert!(code.scopes.is_empty());
+        assert_eq!(code.scopes, [] as [Scope; 0]);
         assert_eq!(code.namespace, None);
         assert_eq!(code.version, None);
     }
@@ -1530,7 +1530,7 @@ mod tests {
     fn with_scopes() {
         let code1 = Csm1Code::parse("N5").unwrap();
         let code2 = code1.with_scopes(vec![Scope::Family, Scope::Work]);
-        assert!(code1.scopes.is_empty());
+        assert_eq!(code1.scopes, [] as [Scope; 0]);
         assert_eq!(code2.scopes, vec![Scope::Family, Scope::Work]);
     }
 

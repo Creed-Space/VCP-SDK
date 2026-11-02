@@ -337,7 +337,7 @@ mod tests {
         assert_eq!(ctx.trust_level, TrustLevel::Initial);
         assert_eq!(ctx.standing, StandingLevel::None);
         assert_eq!(ctx.continuity_depth, 0);
-        assert!(ctx.established_norms.is_empty());
+        assert_eq!(ctx.established_norms, [] as [RelationalNorm; 0]);
         assert!(ctx.ai_self_model.is_none());
     }
 
