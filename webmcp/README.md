@@ -124,7 +124,7 @@ remote scripts and does not log loader errors by default.
 | Other browsers | No native claim; an application-owned bundled polyfill may be used behind explicit opt-in |
 | SSR | Safe; returns `{ api: 'unavailable', registered: [], failed: [] }` |
 
-Last reviewed: 2026-10-25. WebMCP remains under active development, so version
+Last reviewed: 2026-11-02. WebMCP remains under active development, so version
 numbers alone never establish browser support.
 
 The reviewed upstream source accepts object inputs to `executeTool` and supplies
@@ -136,6 +136,12 @@ The browser rechecks document activity and duplicate tool names after serializin
 the input schema and may reject registration with `InvalidStateError`. The SDK
 reports these through its existing generic registration-failure handling and
 aborts the failed registration's lifecycle signal.
+
+Upstream now accepts an optional `outputSchema`. VCP tools omit that field;
+their registration and result shapes are unchanged. The clarified cross-origin
+model requires Permissions Policy delegation, provider `exposedTo` opt-in, and
+consumer `fromOrigins` opt-in. This SDK registers tools without `exposedTo`,
+retaining the browser's same-origin default.
 
 ### Upstream contract monitoring
 
