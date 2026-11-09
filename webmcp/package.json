@@ -59,10 +59,10 @@
     "provenance": true
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/coverage-v8": "4.1.12",
     "fast-check": "4.9.0",
     "typescript": "7.0.2",
-    "vitest": "4.1.11",
+    "vitest": "4.1.12",
     "webmcp-types": "0.1.5"
   },
   "allowScripts": {

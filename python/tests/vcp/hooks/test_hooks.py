@@ -569,6 +569,42 @@ class TestExceptionHandling:
         assert result.aborted_by == "malformed"
         assert result.context == {"safe": True}
 
+    def test_late_completion_is_rejected_when_caller_resumes_after_hook(
+        self,
+        registry: HookRegistry,
+        executor: HookExecutor,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        class CompletedBeforeCallerResumes(threading.Thread):
+            def start(self) -> None:
+                super().start()
+                self.join(timeout=1)
+                assert not self.is_alive()
+
+        monkeypatch.setattr("vcp.hooks.executor.threading.Thread", CompletedBeforeCallerResumes)
+        downstream: list[str] = []
+
+        def late_action(inp: HookInput) -> HookResult:
+            time.sleep(0.03)
+            return HookResult(status=ResultStatus.CONTINUE)
+
+        registry.register(_make_hook(name="late", priority=90, action=late_action, timeout_ms=5))
+        registry.register(
+            _make_hook(
+                name="downstream",
+                priority=10,
+                action=lambda inp: (
+                    downstream.append("ran"),
+                    HookResult(status=ResultStatus.CONTINUE),
+                )[1],
+            )
+        )
+        result = executor.execute(HookType.PRE_INJECT, "s1", {"safe": True}, None, PreInjectEvent())
+        assert result.status == "aborted"
+        assert result.aborted_by == "late"
+        assert result.reason == "Hook 'late' timed out"
+        assert downstream == []
+
     def test_timed_out_hook_cannot_mutate_returned_or_caller_state_later(
         self, registry: HookRegistry, executor: HookExecutor
     ) -> None:

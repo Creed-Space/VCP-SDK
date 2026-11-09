@@ -248,20 +248,26 @@ class HookExecutor:
         """
         result_container: list[HookResult | None] = [None]
         error_container: list[Exception | None] = [None]
+        completed_ns: list[int | None] = [None]
+        deadline_ns = time.monotonic_ns() + hook.timeout_ms * 1_000_000
 
         def _run() -> None:
             try:
                 result_container[0] = hook.action(hook_input)
             except Exception as exc:
                 error_container[0] = exc
+            finally:
+                completed_ns[0] = time.monotonic_ns()
 
         thread = threading.Thread(target=_run, daemon=True)
         thread.start()
-        thread.join(timeout=hook.timeout_ms / 1000.0)
+        remaining_ns = max(0, deadline_ns - time.monotonic_ns())
+        thread.join(timeout=remaining_ns / 1_000_000_000)
 
-        if thread.is_alive():
+        finished_ns = completed_ns[0]
+        if thread.is_alive() or finished_ns is None or finished_ns > deadline_ns:
             # Thread exceeded timeout - we can't forcibly kill it,
-            # but we treat it as timed out per spec
+            # but we reject late completion even if the caller resumed afterward.
             raise _HookTimeoutError(f"Hook '{hook.name}' exceeded timeout of {hook.timeout_ms}ms")
 
         if error_container[0] is not None:
