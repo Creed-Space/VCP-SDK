@@ -124,7 +124,7 @@ remote scripts and does not log loader errors by default.
 | Other browsers | No native claim; an application-owned bundled polyfill may be used behind explicit opt-in |
 | SSR | Safe; returns `{ api: 'unavailable', registered: [], failed: [] }` |
 
-Last reviewed: 2026-11-02. WebMCP remains under active development, so version
+Last reviewed: 2026-11-16. WebMCP remains under active development, so version
 numbers alone never establish browser support.
 
 The reviewed upstream source accepts object inputs to `executeTool` and supplies
@@ -142,6 +142,12 @@ their registration and result shapes are unchanged. The clarified cross-origin
 model requires Permissions Policy delegation, provider `exposedTo` opt-in, and
 consumer `fromOrigins` opt-in. This SDK registers tools without `exposedTo`,
 retaining the browser's same-origin default.
+
+Upstream binds each `ModelContext` to its owning `Document`, defines `getTools()`
+discovery across active documents in the same traversable, and fires
+`toolactivated` after invoking the tool callback. This SDK registers tools on
+the current document and emits its own `webmcp:tool-call` event from the callback;
+it does not implement discovery or listen for `toolactivated`.
 
 ### Upstream contract monitoring
 
