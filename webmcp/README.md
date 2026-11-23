@@ -124,7 +124,7 @@ remote scripts and does not log loader errors by default.
 | Other browsers | No native claim; an application-owned bundled polyfill may be used behind explicit opt-in |
 | SSR | Safe; returns `{ api: 'unavailable', registered: [], failed: [] }` |
 
-Last reviewed: 2026-11-16. WebMCP remains under active development, so version
+Last reviewed: 2026-11-23. WebMCP remains under active development, so version
 numbers alone never establish browser support.
 
 The reviewed upstream source accepts object inputs to `executeTool` and supplies
@@ -148,6 +148,11 @@ discovery across active documents in the same traversable, and fires
 `toolactivated` after invoking the tool callback. This SDK registers tools on
 the current document and emits its own `webmcp:tool-call` event from the callback;
 it does not implement discovery or listen for `toolactivated`.
+
+Upstream now returns a `Tool` handle for each registration from `getTools()`.
+Executing a stale handle rejects with `NotFoundError`, even if a tool with
+the same name has since been registered. The SDK only uses `registerTool`,
+so its adapter, types, and polyfill detection are unchanged.
 
 ### Upstream contract monitoring
 
