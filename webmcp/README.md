@@ -124,7 +124,7 @@ remote scripts and does not log loader errors by default.
 | Other browsers | No native claim; an application-owned bundled polyfill may be used behind explicit opt-in |
 | SSR | Safe; returns `{ api: 'unavailable', registered: [], failed: [] }` |
 
-Last reviewed: 2026-11-23. WebMCP remains under active development, so version
+Last reviewed: 2026-11-24. WebMCP remains under active development, so version
 numbers alone never establish browser support.
 
 The reviewed upstream source accepts object inputs to `executeTool` and supplies
@@ -153,6 +153,11 @@ Upstream now returns a `Tool` handle for each registration from `getTools()`.
 Executing a stale handle rejects with `NotFoundError`, even if a tool with
 the same name has since been registered. The SDK only uses `registerTool`,
 so its adapter, types, and polyfill detection are unchanged.
+
+Upstream adds an optional `waitForToolsUntil()` signal for documents that
+register tools asynchronously. Browser agents can use it to defer observing
+the tools until the promises settle or time out. The SDK does not call or
+require this method; registration and polyfill detection are unchanged.
 
 ### Upstream contract monitoring
 
